@@ -1,0 +1,6 @@
+.idstack/
+.claude/
+.DS_Store
+*.swp
+*.swo
+*~

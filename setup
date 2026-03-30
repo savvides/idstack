@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -e
+
+IDSTACK_DIR="$(cd "$(dirname "$0")" && pwd)"
+SKILLS_DIR="$HOME/.claude/skills"
+
+# Support --local flag for project-scoped install
+if [ "$1" = "--local" ]; then
+  SKILLS_DIR="$(pwd)/.claude/skills"
+fi
+
+mkdir -p "$SKILLS_DIR"
+
+echo "Installing idstack..."
+echo "  source: $IDSTACK_DIR"
+echo "  target: $SKILLS_DIR"
+echo ""
+
+# Link repo root so skill symlinks can resolve relatively
+ln -snf "$IDSTACK_DIR" "$SKILLS_DIR/idstack"
+
+# Link each skill directory that contains a SKILL.md
+for skill_dir in "$IDSTACK_DIR"/*/; do
+  if [ -f "$skill_dir/SKILL.md" ]; then
+    skill_name="$(basename "$skill_dir")"
+    target="$SKILLS_DIR/$skill_name"
+    if [ -L "$target" ] || [ ! -e "$target" ]; then
+      ln -snf "idstack/$skill_name" "$target"
+      echo "  linked: /$skill_name"
+    else
+      echo "  skipped: $skill_name (non-symlink already exists at $target)"
+    fi
+  fi
+done
+
+echo ""
+echo "idstack installed successfully."
+echo "  Skills directory: $SKILLS_DIR"
+echo ""
+echo "Open Claude Code and try: /needs-analysis"
