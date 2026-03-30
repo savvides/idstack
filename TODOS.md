@@ -35,8 +35,18 @@ The full skill suite from the evidence synthesis includes 7 more skills:
 **Why:** Completes the full ID lifecycle coverage. Each backed by evidence synthesis.
 **Depends on:** v1 adoption and feedback from real instructional designers.
 
-## v2+: LMS Integration
-Skills that push designs directly into Canvas, Blackboard, Moodle via API.
-The output IS the course, not a spec for the course.
+## v2: LMS-Specific API Integrations
+Add Blackboard (xAPI), Moodle (web services), and D2L (Valence API) as import
+sources alongside Canvas. The IMS Common Cartridge format covers these generically,
+but LMS-specific APIs unlock richer data (rubrics, analytics, student engagement).
+**Why:** Each LMS has unique data that cartridge export doesn't capture.
+**Depends on:** /course-import Canvas API path stable and tested. User demand.
+**Priority:** P3
+
+## v3: Bidirectional LMS Sync
+Push changes back to Canvas (and eventually other LMS) via API. After
+/course-quality-review identifies issues and /learning-objectives generates better
+ILOs, push the improvements back to the LMS. The output IS the course.
 **Why:** The 10x vision. Eliminates the translation step from design doc to LMS.
-**Depends on:** v1 stable, LMS API investigation, institutional partnerships.
+**Depends on:** /course-import stable, Canvas API write operations investigated,
+conflict handling designed, institutional partnerships.

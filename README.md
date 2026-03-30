@@ -1,6 +1,6 @@
 # idstack
 
-Evidence-based design partner for instructional designers. Three Claude Code skills that encode findings from 283 research papers into your course design workflow.
+Evidence-based design partner for instructional designers. Four Claude Code skills that encode findings from 283 research papers into your course design workflow.
 
 Unlike generic AI prompts, idstack maintains a project manifest that remembers your course across sessions. Your needs analysis feeds your learning objectives. Your objectives feed your quality review. It works like a knowledgeable colleague who read all the research.
 
@@ -11,6 +11,9 @@ Walks you through a structured three-level assessment before you build anything.
 
 ### /learning-objectives
 Helps you write measurable learning objectives using the revised Bloom's taxonomy. Classifies each objective on two dimensions (knowledge type and cognitive process), checks alignment between objectives, activities, and assessments, and flags gaps. Reads from your needs analysis to give better recommendations.
+
+### /course-import
+Imports your course from any LMS. Reads IMS Common Cartridge files (Canvas, Blackboard, Moodle, D2L), pasted documents (zero friction), or connects to Canvas via API. During import, it flags quality issues, maps modules to a task analysis, and pre-classifies learning objectives with Bloom's taxonomy. One command to go from "course in Canvas" to "structured manifest ready for review."
 
 ### /course-quality-review
 Audits your course against Quality Matters standards and the Community of Inquiry framework. Checks 8 structural standards, evaluates teaching/social/cognitive presence, and runs a constructive alignment audit. Every finding includes the evidence strength behind it.
