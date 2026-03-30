@@ -291,7 +291,7 @@ cd ~/.claude/skills/idstack && ./setup
 
 Found a bug or have a suggestion? [Open an issue on GitHub](https://github.com/savvides/idstack/issues).
 
-Want to add a new skill? The architecture is simple: create a directory with a SKILL.md file and run `./setup`. See the existing skills for the pattern. The evidence synthesis supports 4 more specialized skills (content sequencing, media selection, evaluation design, model selection).
+Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. The architecture is simple: create a directory with a SKILL.md file and run `./setup`.
 
 ## License
 
