@@ -6,7 +6,7 @@ The problem is that none of your course design tools implement any of it.
 
 idstack is an open source set of Claude Code skills that encode findings from 283 research papers into your actual workflow. Not a chatbot that summarizes papers. A design partner that checks your alignment matrix, flags cognitive load issues, classifies your objectives with Bloom's taxonomy, and tells you the evidence strength behind every recommendation.
 
-Four skills. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
+Seven skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
 Free, MIT licensed, open source.
 
@@ -150,7 +150,10 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 |-------|----------------|--------------|
 | `/needs-analysis` | **Needs Analyst** | Three-level assessment before you build anything. Organizational analysis (is training even the right intervention?), task analysis (what must learners do?), learner profiling (prior knowledge, not learning styles). Creates the project manifest. |
 | `/learning-objectives` | **Curriculum Designer** | Writes measurable objectives with revised Bloom's taxonomy. Classifies on two dimensions (knowledge type + cognitive process). Bidirectional alignment check: does each objective have a matching activity AND assessment? Flags gaps. |
+| `/assessment-design` | **Assessment Architect** | Designs assessments aligned to Bloom's levels with evidence-based rubrics and feedback strategies. Applies Nicol's 7 principles of good feedback. Builds formative checkpoints before summative assessments. |
 | `/course-import` | **LMS Bridge** | Imports your course from any LMS. Three input methods: IMS Common Cartridge (Canvas, Blackboard, Moodle, D2L), pasted documents, or Canvas API. Quick-scan quality flags, auto-maps modules to task analysis, pre-classifies objectives with Bloom's. |
+| `/course-builder` | **Content Generator** | Generates complete course content from the manifest: syllabus, module pages, assignment descriptions, and rubric documents. Content follows cognitive load principles and adapts to learner expertise level. |
+| `/course-export` | **LMS Publisher** | Exports to any LMS. Generates IMS Common Cartridge files (.imscc) or pushes directly to Canvas via API. The output IS the course. |
 | `/course-quality-review` | **Quality Auditor** | Full QM-aligned audit plus Community of Inquiry presence layer. 8 structural standards, 3 presence dimensions (teaching, social, cognitive), constructive alignment audit. Every finding cites its evidence tier. |
 
 ## The workflow
@@ -171,7 +174,23 @@ EXISTING COURSE                           NEW COURSE
               /learning-objectives
                 Write measurable ILOs
                 Bloom's classification
-                Alignment check (ILO ↔ activity ↔ assessment)
+                Alignment check
+                       │
+                       ▼
+              /assessment-design
+                Design assessments per Bloom's level
+                Evidence-based rubrics + feedback
+                Formative checkpoints
+                       │
+                       ▼
+              /course-builder
+                Generate syllabus, modules, assignments
+                Content adapts to learner expertise
+                       │
+                       ▼
+              /course-export
+                IMS Common Cartridge (.imscc)
+                or Canvas API push
                        │
                        ▼
              /course-quality-review

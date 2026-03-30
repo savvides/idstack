@@ -24,16 +24,16 @@ At 5+ skills, evaluate SKILL.md.tmpl -> SKILL.md template system for shared prea
 **Depends on:** Decision to build additional skills beyond v1's 3.
 
 ## v2: Additional Skills (from literature synthesis)
-The full skill suite from the evidence synthesis includes 7 more skills:
+The remaining skill suite from the evidence synthesis includes 4 more skills:
 - id-model-selector (Domain 1) — context-driven model/framework recommendation
 - content-sequencing (Domain 4) — cognitive load-aware sequencing and chunking
 - media-selection (Domain 6) — multimedia principle application and violation flagging
-- assessment-design (Domains 2, 5) — formative/summative design with feedback quality
 - evaluation-design (Domain 8) — Kirkpatrick+ evaluation planning
-- prototype-iteration (Domain 9) — rapid prototyping cycle structure
-- learner-analysis (Domain 7) — standalone learner characteristic profiling
-**Why:** Completes the full ID lifecycle coverage. Each backed by evidence synthesis.
-**Depends on:** v1 adoption and feedback from real instructional designers.
+**Why:** Extends coverage for specialized ID workflows. Each backed by evidence synthesis.
+**Depends on:** User feedback on which capabilities are most requested.
+**Note:** assessment-design, course-builder, and course-export are now shipped (v1.1).
+learner-analysis is partially covered by /needs-analysis (Level 3) and /course-import.
+prototype-iteration overlaps with the build/export pipeline.
 
 ## v2: LMS-Specific API Integrations
 Add Blackboard (xAPI), Moodle (web services), and D2L (Valence API) as import
