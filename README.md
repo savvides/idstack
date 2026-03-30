@@ -8,7 +8,7 @@ idstack is an open source set of Claude Code skills that encode findings from 28
 
 Four skills. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
-Built at ASU RealmSpark. Free, MIT licensed, open source.
+Free, MIT licensed, open source.
 
 ## Quick start
 
