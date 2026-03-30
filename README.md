@@ -1,12 +1,12 @@
 # idstack
 
-283 papers say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is not the problem.
+Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is not the problem.
 
 The problem is that none of your course design tools implement any of it.
 
-idstack is an open source set of Claude Code skills that encode findings from 283 research papers into your actual workflow. Not a chatbot that summarizes papers. A design partner that checks your alignment matrix, flags cognitive load issues, classifies your objectives with Bloom's taxonomy, and tells you the evidence strength behind every recommendation.
+idstack is an open source set of Claude Code skills that encode peer-reviewed instructional design research into your actual workflow. Not a chatbot that summarizes papers. A design partner that checks your alignment matrix, flags cognitive load issues, classifies your objectives with Bloom's taxonomy, and tells you the evidence strength behind every recommendation.
 
-Seven skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
+Skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
 Free, MIT licensed, open source.
 
@@ -229,7 +229,7 @@ Any skill works on its own. `/course-quality-review` works without a manifest by
 
 ## The evidence base
 
-idstack encodes findings from a literature synthesis of approximately 283 papers across 10 domains of instructional design research. The full citation list is in [evidence/references.md](evidence/references.md).
+idstack encodes findings from a literature synthesis spanning multiple domains of instructional design research. The full citation list is in [evidence/references.md](evidence/references.md).
 
 | Domain | Evidence Strength | Key Finding |
 |--------|------------------|-------------|
