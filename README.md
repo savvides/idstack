@@ -133,6 +133,9 @@ cd idstack
 You should see:
 ```
 Installing idstack...
+  linked: /assessment-design
+  linked: /course-builder
+  linked: /course-export
   linked: /course-import
   linked: /course-quality-review
   linked: /learning-objectives
@@ -206,7 +209,7 @@ Any skill works independently. The pipeline adds context but isn't required.
 ### The project manifest
 idstack saves your design decisions in `.idstack/project.json` so each skill remembers your course context. You never edit this file directly. The skills manage it.
 
-When you run `/course-import`, it creates the manifest with your course structure. When you run `/learning-objectives`, it reads the manifest and extends it with your objectives and alignment data. When you run `/course-quality-review`, it reads everything and audits the full chain.
+When you run `/course-import`, it creates the manifest with your course structure. When you run `/learning-objectives`, it reads the manifest and extends it with objectives and alignment data. `/assessment-design` adds rubrics and feedback strategies. `/course-builder` generates the actual content. `/course-export` packages it for your LMS. `/course-quality-review` audits the full chain. Each skill reads what came before and adds its layer.
 
 ### Evidence tiers
 Every recommendation includes an evidence tier so you know how strong the backing is:
@@ -265,7 +268,7 @@ idstack runs locally on your machine. Course data stays in your project folder (
 You can, but let the skills manage it. If you do edit it, keep the JSON valid.
 
 **How do I update idstack?**
-If you installed with git: `cd path/to/idstack && git pull`
+idstack checks for updates automatically. When you run any skill, it tells you if a newer version is available. To update: `cd ~/.claude/skills/idstack && git pull && ./setup`
 If you downloaded ZIP: download the latest version and run `./setup` again.
 
 **Does idstack work offline?**
@@ -288,7 +291,7 @@ cd ~/.claude/skills/idstack && ./setup
 
 Found a bug or have a suggestion? [Open an issue on GitHub](https://github.com/savvides/idstack/issues).
 
-Want to add a new skill? The architecture is simple: create a directory with a SKILL.md file and run `./setup`. See the existing skills for the pattern. The full evidence synthesis supports 7 more skills beyond the current 4.
+Want to add a new skill? The architecture is simple: create a directory with a SKILL.md file and run `./setup`. See the existing skills for the pattern. The evidence synthesis supports 4 more specialized skills (content sequencing, media selection, evaluation design, model selection).
 
 ## License
 
