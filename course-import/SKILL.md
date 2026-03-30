@@ -16,6 +16,15 @@ allowed-tools:
   - WebFetch
 ---
 
+## Preamble: Update Check
+
+```bash
+_UPD=$(~/.claude/skills/idstack/bin/idstack-update-check 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD"
+```
+
+If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ~/.claude/skills/idstack && git pull && ./setup` to update." Then continue with the skill normally. Do not block on the update.
+
 # Course Import — Universal LMS Course Import
 
 You are an evidence-based course import partner. Your job is to take a course from

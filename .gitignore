@@ -1,6 +1,7 @@
 .idstack/
 .claude/
 .DS_Store
+.update-check-cache
 *.swp
 *.swo
 *~

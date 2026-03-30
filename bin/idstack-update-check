@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Check if a newer version of idstack is available on GitHub.
+# Prints "UPDATE_AVAILABLE <local> <remote>" if an update exists.
+# Prints nothing if up to date or if check fails (silent failure).
+# Runs in <2 seconds. Safe to call from skill preambles.
+
+set -e
+
+# Find idstack root (the directory containing this script's parent)
+IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Only works for git installs
+[ -d "$IDSTACK_DIR/.git" ] || exit 0
+
+# Don't check more than once per hour
+CACHE_FILE="$IDSTACK_DIR/.update-check-cache"
+if [ -f "$CACHE_FILE" ]; then
+  CACHE_AGE=$(( $(date +%s) - $(stat -f %m "$CACHE_FILE" 2>/dev/null || stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0) ))
+  [ "$CACHE_AGE" -lt 3600 ] && cat "$CACHE_FILE" 2>/dev/null && exit 0
+fi
+
+# Get local and remote commit hashes
+LOCAL=$(git -C "$IDSTACK_DIR" rev-parse HEAD 2>/dev/null) || exit 0
+git -C "$IDSTACK_DIR" fetch origin main --quiet 2>/dev/null || exit 0
+REMOTE=$(git -C "$IDSTACK_DIR" rev-parse origin/main 2>/dev/null) || exit 0
+
+if [ "$LOCAL" != "$REMOTE" ]; then
+  LOCAL_SHORT=$(echo "$LOCAL" | cut -c1-7)
+  REMOTE_SHORT=$(echo "$REMOTE" | cut -c1-7)
+  RESULT="UPDATE_AVAILABLE $LOCAL_SHORT $REMOTE_SHORT"
+  echo "$RESULT" > "$CACHE_FILE"
+  echo "$RESULT"
+else
+  echo "" > "$CACHE_FILE"
+fi
