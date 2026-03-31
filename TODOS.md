@@ -43,6 +43,14 @@ but LMS-specific APIs unlock richer data (rubrics, analytics, student engagement
 **Depends on:** /course-import Canvas API path stable and tested. User demand.
 **Priority:** P3
 
+## v2: Standardize Next-Step Formatting
+Normalize the "next step" section format across all SKILL.md files.
+Currently inconsistent: "Next step:" (singular), "Next steps:" (plural),
+"Recommended next steps:" (course-import).
+**Why:** Consistency improves the user experience and makes the pipeline feel cohesive.
+**Depends on:** Nothing. Low-effort cleanup.
+**Priority:** P3
+
 ## v3: Bidirectional LMS Sync
 Push changes back to Canvas (and eventually other LMS) via API. After
 /course-quality-review identifies issues and /learning-objectives generates better

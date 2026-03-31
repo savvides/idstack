@@ -191,15 +191,15 @@ EXISTING COURSE                           NEW COURSE
                 Content adapts to learner expertise
                        │
                        ▼
-              /course-export
-                IMS Common Cartridge (.imscc)
-                or Canvas API push
-                       │
-                       ▼
              /course-quality-review
                 QM structural audit (8 standards)
                 CoI presence analysis
                 Evidence-tiered recommendations
+                       │
+                       ▼
+              /course-export
+                IMS Common Cartridge (.imscc)
+                or Canvas API push
 ```
 
 Any skill works independently. The pipeline adds context but isn't required.
@@ -209,7 +209,7 @@ Any skill works independently. The pipeline adds context but isn't required.
 ### The project manifest
 idstack saves your design decisions in `.idstack/project.json` so each skill remembers your course context. You never edit this file directly. The skills manage it.
 
-When you run `/course-import`, it creates the manifest with your course structure. When you run `/learning-objectives`, it reads the manifest and extends it with objectives and alignment data. `/assessment-design` adds rubrics and feedback strategies. `/course-builder` generates the actual content. `/course-export` packages it for your LMS. `/course-quality-review` audits the full chain. Each skill reads what came before and adds its layer.
+When you run `/course-import`, it creates the manifest with your course structure. When you run `/learning-objectives`, it reads the manifest and extends it with objectives and alignment data. `/assessment-design` adds rubrics and feedback strategies. `/course-builder` generates the actual content. `/course-quality-review` audits the full chain. `/course-export` packages it for your LMS. Each skill reads what came before and adds its layer.
 
 ### Evidence tiers
 Every recommendation includes an evidence tier so you know how strong the backing is:

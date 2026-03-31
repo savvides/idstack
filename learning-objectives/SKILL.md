@@ -367,8 +367,8 @@ Write the manifest, then confirm to the user:
 
 "Your learning objectives and alignment matrix have been saved to `.idstack/project.json`.
 
-**Next step:** Run `/course-quality-review` to audit the full alignment chain and check
-against Quality Matters standards."
+**Next step:** Run `/assessment-design` to design assessments aligned to your objectives
+with evidence-based rubrics and feedback strategies."
 
 ---
 

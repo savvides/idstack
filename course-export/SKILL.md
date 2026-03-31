@@ -704,9 +704,8 @@ Write the manifest, then confirm:
 
 "Your export metadata has been saved to `.idstack/project.json`.
 
-Your course has been exported. Run `/course-quality-review` on the imported
-course in your LMS to verify everything transferred correctly. Pay particular
-attention to:
+Your course has been exported. Verify that the LMS import preserved
+everything correctly. Pay particular attention to:
 - Quiz questions (auto-generated, may need editing)
 - Assignment rubrics (verify formatting survived the transfer)
 - Discussion prompts (check that instructions are clear)

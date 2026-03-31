@@ -589,8 +589,8 @@ After writing the manifest, confirm:
 
 **Next steps:**
 - Review and edit the generated files to add your expertise and institutional voice
-- Run `/course-export` to package the content as an IMS Common Cartridge or push to Canvas
-- Run `/course-quality-review` to audit the complete course against QM standards and CoI presence"
+- Run `/course-quality-review` to audit the complete course against QM standards and CoI presence
+- Run `/course-export` to package the content as an IMS Common Cartridge or push to Canvas"
 
 ---
 

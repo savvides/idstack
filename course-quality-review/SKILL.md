@@ -569,7 +569,9 @@ recommendations.
 
 **Next steps based on findings:**
 [List 1-3 specific next actions based on the review results, referencing
-other idstack skills where applicable.]"
+other idstack skills where applicable. When no critical issues remain,
+include: Run `/course-export` to package your course as an IMS Common
+Cartridge or push to Canvas.]"
 
 ---
 
