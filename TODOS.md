@@ -55,6 +55,20 @@ frontmatter uses Claude Code tool names, and tool name compatibility needs verif
 one SKILL.md to verify compatibility before full implementation.
 **Priority:** P2
 
+## v2: Sub-Agent Architecture for Context Efficiency
+Skills like /red-team run 5 adversarial dimensions sequentially in the main context.
+Each dimension could dispatch as a sub-agent, keeping the main session lean. Carl
+Vellotti's research shows sub-agents can reduce main session context from 25% to 16.5%
+for equivalent work. For /red-team: dimensions 1-5 as parallel sub-agents, results
+aggregated in the main session for scoring. Same pattern applies to /accessibility-review
+(WCAG + UDL could be parallel sub-agents) and /course-quality-review (QM + CoI).
+**Why:** Context efficiency directly affects session length. A session that compacts
+after 5 messages vs one that lasts 30 is a completely different user experience.
+**Depends on:** Understanding how each AI CLI handles sub-agent dispatching (Claude Code
+Agent tool, Gemini CLI equivalent, Codex subagents). Template system (v2) would make
+this easier to implement consistently across skills.
+**Priority:** P2
+
 ## v3: Bidirectional LMS Sync
 Push changes back to Canvas (and eventually other LMS) via API. After
 /course-quality-review identifies issues and /learning-objectives generates better
