@@ -27,10 +27,10 @@ Each skill is a directory with a single `SKILL.md` file:
 └── SKILL.md    # YAML frontmatter + Markdown workflow
 ```
 
-The 7 skills form a pipeline, each reading/extending the shared manifest:
+The 9 skills form a pipeline, each reading/extending the shared manifest:
 
 ```
-/needs-analysis → /learning-objectives → /assessment-design → /course-builder → /course-quality-review → /course-export
+/needs-analysis → /learning-objectives → /assessment-design → /course-builder → /course-quality-review → /accessibility-review → /red-team → /course-export
                           ↑
 /course-import ───────────┘
 ```

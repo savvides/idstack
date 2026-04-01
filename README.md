@@ -131,6 +131,7 @@ cd idstack
 You should see:
 ```
 Installing idstack...
+  linked: /accessibility-review
   linked: /assessment-design
   linked: /course-builder
   linked: /course-export
@@ -138,6 +139,7 @@ Installing idstack...
   linked: /course-quality-review
   linked: /learning-objectives
   linked: /needs-analysis
+  linked: /red-team
 
 idstack installed successfully.
 Open Claude Code and try: /needs-analysis
@@ -156,6 +158,8 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 | `/course-builder` | **Content Generator** | Generates complete course content from the manifest: syllabus, module pages, assignment descriptions, and rubric documents. Content follows cognitive load principles and adapts to learner expertise level. |
 | `/course-export` | **LMS Publisher** | Exports to any LMS. Generates IMS Common Cartridge files (.imscc) or pushes directly to Canvas via API. The output IS the course. |
 | `/course-quality-review` | **Quality Auditor** | Full QM-aligned audit plus Community of Inquiry presence layer. 8 structural standards, 3 presence dimensions (teaching, social, cognitive), constructive alignment audit. Every finding cites its evidence tier. |
+| `/accessibility-review` | **Accessibility Reviewer** | WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) enhancement review. Two-tier output: "Must Fix" for accessibility violations, "Should Improve" for UDL recommendations. Scores accessibility 0-100. |
+| `/red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Five dimensions: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Produces a confidence score. |
 
 ## The workflow
 
@@ -193,6 +197,18 @@ EXISTING COURSE                           NEW COURSE
                 QM structural audit (8 standards)
                 CoI presence analysis
                 Evidence-tiered recommendations
+                       │
+                       ▼
+             /accessibility-review
+                WCAG 2.1 AA compliance
+                UDL 3.0 enhancement
+                Accessibility score (0-100)
+                       │
+                       ▼
+                  /red-team
+                Adversarial stress test
+                Persona simulation
+                Confidence score (0-100)
                        │
                        ▼
               /course-export

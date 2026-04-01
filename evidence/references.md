@@ -144,6 +144,18 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Online-16] Gopal, R. et al. (2021). Impact of online classes on satisfaction and performance. *Education and Information Technologies*. T4
 - [Online-17] Picciano, A.G. (2019). Beyond Student Perceptions: Interaction, Presence, and Performance. *Online Learning*. T4
 
+## Domain 11: Accessibility & Universal Design for Learning
+
+- [Access-1] W3C (2018). Web Content Accessibility Guidelines (WCAG) 2.1. W3C Recommendation. T5
+- [Access-2] W3C (2023). Web Content Accessibility Guidelines (WCAG) 2.2. W3C Recommendation. T5
+- [Access-3] CAST (2024). Universal Design for Learning Guidelines 3.0. T5
+- [Access-4] Rao, K. & Tanners, A. (2011). Curb cuts in cyberspace: Universal instructional design for online courses. *Journal of Postsecondary Education and Disability*. T3
+- [Access-5] Burgstahler, S. (2015). Universal Design in Higher Education: From Principles to Practice. *Harvard Education Press*. T3
+- [Access-6] Roberts, K.D. et al. (2011). Universal Design for Instruction in Postsecondary Education: A Systematic Review of Empirically Based Articles. *Journal of Postsecondary Education and Disability*. T2
+- [Access-7] Rusconi, L. & Squillaci, M. (2023). Effects of a UDL Training Course on Teachers' Competences. *Education Sciences*. T3
+- [Access-8] Schreffler, J. et al. (2019). Universal Design for Learning in postsecondary STEM education. *International Journal of STEM Education*. T3
+- [Access-9] Puzio, K. et al. (2020). Differentiated Literacy Instruction: Boondoggle or Best Practice? *Review of Educational Research*. T1
+
 ---
 
 ## Cross-Domain High-Confidence Principles
