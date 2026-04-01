@@ -1,21 +1,14 @@
 # TODOS
 
-## v1.1: Manifest Versioning
-Add a version migration check to the manifest preamble. When the schema changes,
-existing project.json files need graceful upgrade rather than silent breakage.
-Check manifest.version field on read, apply migrations if needed.
-**Why:** Zero users now, but once people have real project.json files, schema
-changes will break their work.
-**Depends on:** v1 shipped and schema changes needed.
+## ~~v1.1: Manifest Versioning~~ SHIPPED (v1.2.0)
+Shipped in v1.2.0. `bin/idstack-migrate` handles schema migrations.
+All 7 skill preambles call it automatically.
 
-## v2: Cross-Domain Quality Checks
-Add 4 deferred checks to /course-quality-review:
-- Cognitive load flags (Domain 4, T1 evidence) — split attention, redundancy, poor sequencing
-- Multimedia principle violations (Domain 6, T1 evidence) — contiguity, segmenting, modality
-- Feedback quality check (Domain 5, T1 evidence) — elaborated vs correctness feedback
-- Expertise reversal check (Domains 4/7, T1 evidence) — strategy-audience mismatch
-**Why:** These are the strongest evidence domains in the synthesis. High value.
-**Depends on:** v1 quality review skill stable and tested.
+## ~~v2: Cross-Domain Quality Checks~~ SHIPPED (v1.2.0)
+Shipped in v1.2.0. Four checks added to /course-quality-review:
+cognitive load, multimedia principles, feedback quality, expertise reversal.
+Plus: fix-link integration, quick-win prioritization, score trending,
+shareable quality report, and per-category scoring breakdown.
 
 ## v2: Template System
 At 5+ skills, evaluate SKILL.md.tmpl -> SKILL.md template system for shared preamble

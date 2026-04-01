@@ -73,7 +73,7 @@ Before starting the export, verify that generated course content exists.
 ```bash
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  cat .idstack/project.json
+  ~/.claude/skills/idstack/bin/idstack-migrate .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi

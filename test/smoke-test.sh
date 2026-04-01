@@ -52,6 +52,15 @@ done
 # Check evidence file exists
 check "evidence/references.md exists" "[ -f '$SKILLS_DIR/idstack/evidence/references.md' ]"
 
+# Check migration script exists and is executable
+check "bin/idstack-migrate exists" "[ -f '$SKILLS_DIR/idstack/bin/idstack-migrate' ]"
+check "bin/idstack-migrate is executable" "[ -x '$SKILLS_DIR/idstack/bin/idstack-migrate' ]"
+
+# Check all skills reference idstack-migrate in preamble
+for skill in needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export; do
+  check "$skill preamble calls idstack-migrate" "grep -q 'idstack-migrate' '$SKILLS_DIR/$skill/SKILL.md'"
+done
+
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

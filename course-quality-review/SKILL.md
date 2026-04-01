@@ -94,7 +94,7 @@ Before starting the review, check for an existing project manifest.
 ```bash
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  cat .idstack/project.json
+  ~/.claude/skills/idstack/bin/idstack-migrate .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -415,27 +415,150 @@ misalignment patterns listed above.
 
 ---
 
-## Expertise Reversal Check
+## Cross-Domain Evidence Checks
+
+Run all four checks below. Each check produces a list of flags with severity
+(critical / moderate / minor) and a fix-link pointing to the idstack skill that
+resolves the issue. When a check has no findings, record "No flags."
+
+### Check 1: Cognitive Load Flags
+
+**Evidence:** [CogLoad-1] [CogLoad-16] [CogLoad-17] [T1]
+
+Scan the course design for these cognitive load violations:
+
+- **Split attention:** Content explanation is separated from the diagram, example,
+  or visual it references. Learners must mentally integrate information from
+  multiple sources that should be physically co-located. Flag as moderate.
+  Fix: run /course-builder to regenerate module with integrated content.
+- **Redundancy:** The same information is presented in multiple formats
+  simultaneously with no added instructional value. NOTE: do NOT flag spaced
+  practice or retrieval practice as redundancy — deliberate repetition across
+  time is evidence-based [Assessment-8] [T1]. Only flag identical information
+  presented simultaneously (e.g., reading aloud on-screen text verbatim).
+  Flag as minor.
+  Fix: run /course-builder to consolidate redundant presentations.
+- **Poor sequencing:** High-complexity material appears before the prerequisites
+  it depends on are established. Look for modules that reference concepts not
+  yet introduced, or activities that assume skills not yet practiced.
+  Flag as critical.
+  Fix: run /course-builder to resequence modules based on prerequisite chain.
+- **Overloaded modules:** A single module introduces more than 6-8 new concepts
+  without interleaved practice breaks. Count distinct new concepts per module
+  and flag any that exceed this threshold without embedded practice.
+  Flag as moderate.
+  Fix: run /course-builder to split module or add practice checkpoints.
+
+### Check 2: Multimedia Principle Violations
+
+**Evidence:** [Multimedia-1] [Multimedia-5] [Multimedia-9] [T1]
+
+Scan for violations of Mayer's multimedia learning principles:
+
+- **Spatial contiguity:** Text and related visuals are physically separated
+  (e.g., figure on one page, explanation on another; caption far from image).
+  Flag as moderate.
+  Fix: run /course-builder to co-locate text and visuals.
+- **Temporal contiguity:** Narration and visuals are not synchronized (e.g.,
+  a video describes a diagram that appears 30 seconds later). Flag as moderate.
+  Fix: run /course-builder to synchronize narration with visual presentation.
+- **Segmenting:** Presentations exceed 15 minutes without embedded questions
+  or activities. Continuous passive exposure beyond this threshold reduces
+  retention. Flag as moderate.
+  Fix: run /course-builder to segment long presentations with embedded activities.
+- **Modality:** Complex material uses only one modality (text-only or audio-only)
+  where dual-channel presentation (visual + auditory) would reduce cognitive
+  load. Flag as minor.
+  Fix: run /course-builder to add complementary modality.
+- **Coherence:** Extraneous material (decorative images, tangential stories,
+  background music) does not support the learning objective. Seductive details
+  hurt learning. Flag as minor.
+  Fix: run /course-builder to remove extraneous elements.
+
+### Check 3: Feedback Quality
+
+**Evidence:** [Assessment-8] [Assessment-10] [T1]
+
+Scan the assessment design for feedback quality issues:
+
+- **Correctness-only feedback at apply+ Bloom's levels:** This is the most
+  critical flag. Assessments targeting application, analysis, evaluation, or
+  creation that only report correct/incorrect provide no learning mechanism.
+  Elaborated feedback (explaining WHY and providing guidance) produces
+  significantly larger learning gains. Flag as critical.
+  Fix: run /assessment-design to add elaborated feedback for higher-order assessments.
+- **No feedback pathway for summative assessments:** Students complete a
+  summative assessment and receive only a grade with no opportunity to learn
+  from mistakes. Flag as moderate.
+  Fix: run /assessment-design to add post-submission feedback or reflection activity.
+- **Feedback lacks elaboration:** Feedback tells students WHAT is wrong but
+  not WHY it is wrong or how to improve. Flag as moderate.
+  Fix: run /assessment-design to add elaborated feedback with explanations.
+- **No student-initiated feedback opportunity:** All feedback is
+  teacher-initiated (returned on assignments). There is no mechanism for
+  students to seek feedback when they need it (e.g., self-check quizzes,
+  rubric previews, peer review). Flag as minor.
+  Fix: run /assessment-design to add formative self-check opportunities.
+
+### Check 4: Expertise Reversal
+
+**Evidence:** [CogLoad-19] [T1]
 
 If a learner profile is available (from manifest `needs_analysis.learner_profile`
-or from user input), check whether instructional strategies match the audience
-expertise level.
+or from user input), systematically check whether instructional strategies match
+the audience expertise level. If no learner profile exists, flag the absence as
+a moderate concern and recommend running /needs-analysis.
 
-**Novice audience with minimal scaffolding:**
-Flag as critical. Novice learners need worked examples, structured guidance,
-and explicit instruction. Throwing novices into open-ended problem-solving
-causes cognitive overload and poor learning outcomes [CogLoad-19] [T1].
+- **Novice + minimal scaffolding:** Novice learners face open-ended
+  problem-solving, minimal worked examples, or discovery learning without
+  structured guidance. This causes cognitive overload and poor learning
+  outcomes. Flag as critical.
+  Fix: run /course-builder to regenerate module with scaffolding and worked examples.
+- **Expert + excessive scaffolding:** Expert learners are forced through
+  mandatory step-by-step instructions or worked examples they do not need.
+  Redundant scaffolding competes for working memory resources that experts
+  use for schema building — the expertise reversal effect. Flag as moderate.
+  Fix: run /course-builder to offer advanced-track options that skip scaffolding.
+- **Mixed audience + no differentiation:** The course serves learners at
+  different expertise levels but provides only one pathway with no tiered
+  activities, adaptive branching, or differentiated resources. Flag as moderate.
+  Fix: run /needs-analysis to establish a detailed learner profile, then
+  run /course-builder to create differentiated pathways.
+- **Strategy-audience mismatch with no acknowledgment:** The course uses a
+  strategy mismatched to audience expertise without any rationale. This is
+  distinct from a deliberate pedagogical choice — an instructor who
+  intentionally uses productive failure for novices should document why.
+  Undocumented mismatches are flags. Flag as minor.
+  Fix: run /course-builder to add instructor rationale or adjust strategy.
 
-**Expert audience with excessive scaffolding:**
-Flag as moderate. Expert learners find redundant information and step-by-step
-instructions actively harmful — the redundant information competes for working
-memory resources that experts use for schema building. This is the expertise
-reversal effect [CogLoad-19] [T1].
+---
 
-**Mixed audience with one-size-fits-all approach:**
-Flag as moderate. Recommend tiered activities, adaptive pathways, or
-differentiated resources. "Run `/needs-analysis` to establish a detailed
-learner profile if one is not yet available."
+## Quick Wins
+
+After completing all checks (QM Structural, CoI Presence, Constructive Alignment,
+and Cross-Domain Evidence), rank every finding by impact using this formula:
+
+**Impact score = Evidence tier weight x Severity x Ease of fix**
+
+| Factor | Values |
+|--------|--------|
+| Evidence tier | T1=5, T2=4, T3=3, T4=2, T5=1 |
+| Severity | critical=3, moderate=2, minor=1 |
+| Ease of fix | S (small, <1 hour)=3, M (medium, 1-4 hours)=2, L (large, >4 hours)=1 |
+
+Present the **Top 3 fixes for maximum impact**:
+
+```
+### Top 3 Quick Wins
+| # | Finding | Impact | Skill to Run |
+|---|---------|--------|--------------|
+| 1 | [finding] | [score] (T?/sev/ease) | /skill-name |
+| 2 | [finding] | [score] (T?/sev/ease) | /skill-name |
+| 3 | [finding] | [score] (T?/sev/ease) | /skill-name |
+```
+
+Estimate the ease of fix based on: S = a single skill run fixes it, M = requires
+reworking one module or assessment, L = requires rethinking course structure.
 
 ---
 
@@ -448,9 +571,25 @@ is wrong, why it matters (with evidence tier), how to fix it, and severity
 ```
 ## Course Quality Review Summary
 
-**Overall Score: XX/100**
+## Quality Score: XX/100
 
-### QM Structural Review
+| Category | Score | Status |
+|----------|-------|--------|
+| QM Structural | XX/40 | N flags |
+| CoI Presence | XX/25 | [weakest dimension note] |
+| Constructive Alignment | XX/15 | [alignment status] |
+| Cross-Domain Evidence | XX/20 | N flags |
+```
+
+If previous review scores exist in the manifest `review_history`, show:
+```
+Previous score: X/100 (reviewed YYYY-MM-DD). Current score: Y/100. Delta: +/-Z.
+```
+
+Then present the detailed findings:
+
+```
+### QM Structural Review (XX/40)
 | Standard | Status | Key Finding |
 |----------|--------|-------------|
 | 1. Course Overview | pass/flag/na | [one-line finding] |
@@ -462,38 +601,45 @@ is wrong, why it matters (with evidence tier), how to fix it, and severity
 | 7. Learner Support | pass/flag/na | [one-line finding] |
 | 8. Accessibility & Usability | pass/flag/na | [one-line finding] |
 
-### Community of Inquiry Presence
+### Community of Inquiry Presence (XX/25)
 - Teaching Presence: X/10 — [one-line finding]
 - Social Presence: X/10 — [one-line finding]
 - Cognitive Presence: X/10 — [one-line finding]
+(Scores summed and scaled: raw X/30 -> XX/25)
 
-### Constructive Alignment Audit
+### Constructive Alignment Audit (XX/15)
 [findings or "Full alignment verified across all ILOs"]
 
-### Expertise Reversal Check
-[findings or "Strategies appropriate for stated audience level"]
+### Cross-Domain Evidence Checks (XX/20)
+| Check | Flags | Severity | Fix |
+|-------|-------|----------|-----|
+| Cognitive Load | [findings or "No flags"] | [level] | [skill] |
+| Multimedia Principles | [findings or "No flags"] | [level] | [skill] |
+| Feedback Quality | [findings or "No flags"] | [level] | [skill] |
+| Expertise Reversal | [findings or "No flags"] | [level] | [skill] |
 
-### Top Recommendations (prioritized)
-1. [Most impactful finding] — [evidence tier] — Severity: [level]
-   Fix: [specific action, reference other idstack skill if applicable]
-2. [Second finding] — [evidence tier] — Severity: [level]
-   Fix: [specific action]
-3. [Third finding] — [evidence tier] — Severity: [level]
-   Fix: [specific action]
+### Top 3 Quick Wins
+| # | Finding | Impact | Skill to Run |
+|---|---------|--------|--------------|
+| 1 | [finding] | [score] (T?/sev/ease) | /skill-name |
+| 2 | [finding] | [score] (T?/sev/ease) | /skill-name |
+| 3 | [finding] | [score] (T?/sev/ease) | /skill-name |
 ```
 
 ### Scoring Rubric
 
-Calculate the overall score from these components:
+Calculate the overall score from these components (total: 100 points):
 
-- **QM Structural Review (50 points):** 6.25 points per standard. Pass = full
-  points, flag = half points, na = excluded from denominator.
-- **CoI Presence Layer (30 points):** 10 points per dimension, scaled to 30.
-  Each dimension scored 0-10, then summed.
+- **QM Structural Review (40 points):** 5 points per standard. Pass = full
+  points, flag = half points (2.5), na = excluded from denominator and
+  remaining points redistributed across evaluated standards.
+- **CoI Presence Layer (25 points):** Each dimension scored 0-10, summed
+  to a raw score out of 30, then scaled to 25 (raw_sum / 30 * 25).
 - **Constructive Alignment (15 points):** Full points if alignment verified.
   Deduct 5 points per critical misalignment, 2 per moderate.
-- **Expertise Reversal (5 points):** Full points if strategies match audience.
-  Deduct for mismatches.
+- **Cross-Domain Evidence Checks (20 points):** 5 points per check. Full
+  points if no flags. Deduct per flag: critical = -3, moderate = -2,
+  minor = -1. Minimum 0 per check.
 
 ### Cross-Referencing Other idstack Skills
 
@@ -548,7 +694,29 @@ Populate the `quality_review` section with:
       "cognitive_presence": {"score": 0, "findings": ["..."]}
     },
     "alignment_audit": {"findings": ["..."]},
+    "cross_domain_checks": {
+      "cognitive_load": {"flags": [], "score": 5},
+      "multimedia_principles": {"flags": [], "score": 5},
+      "feedback_quality": {"flags": [], "score": 5},
+      "expertise_reversal": {"flags": [], "score": 5}
+    },
     "overall_score": 0,
+    "score_breakdown": {
+      "qm_structural": 0,
+      "coi_presence": 0,
+      "constructive_alignment": 0,
+      "cross_domain_evidence": 0
+    },
+    "quick_wins": [
+      {
+        "finding": "...",
+        "impact_score": 0,
+        "evidence_tier": "T1-T5",
+        "severity": "critical|moderate|minor",
+        "ease": "S|M|L",
+        "fix_skill": "/skill-name"
+      }
+    ],
     "recommendations": [
       {
         "finding": "...",
@@ -556,16 +724,98 @@ Populate the `quality_review` section with:
         "severity": "critical|moderate|minor",
         "fix": "..."
       }
+    ],
+    "review_history": [
+      {
+        "date": "ISO-8601 timestamp",
+        "score": 0,
+        "version": "1.1"
+      }
     ]
   }
 }
 ```
 
-After writing the manifest, confirm to the user:
+When writing the manifest:
+- If `review_history` already exists, APPEND the new entry. Do not overwrite
+  previous entries — the history is the basis for score trending.
+- If `review_history` does not exist, create it with a single entry for this review.
+- Each entry records the date, overall score, and schema version.
 
-"Your quality review has been saved to `.idstack/project.json`. This captures
-the QM structural review, CoI presence scores, alignment audit, and prioritized
-recommendations.
+### Generate Quality Report
+
+After writing the manifest, generate a shareable quality report at
+`.idstack/quality-report.md` using the Write tool. The report must contain:
+
+```markdown
+# Course Quality Report
+
+**Course:** [project_name from manifest or user-provided name]
+**Reviewed:** [ISO-8601 date]
+**Overall Score:** XX/100
+
+## Score Breakdown
+
+| Category | Score | Status |
+|----------|-------|--------|
+| QM Structural | XX/40 | N flags |
+| CoI Presence | XX/25 | [weakest dimension note] |
+| Constructive Alignment | XX/15 | [alignment status] |
+| Cross-Domain Evidence | XX/20 | N flags |
+
+[If previous scores exist:]
+Previous score: X/100 (reviewed YYYY-MM-DD). Delta: +/-Z.
+
+## QM Structural Review
+
+[Full findings for each of the 8 standards]
+
+## Community of Inquiry Presence
+
+[Teaching, Social, Cognitive presence scores and findings]
+
+## Constructive Alignment Audit
+
+[All alignment findings]
+
+## Cross-Domain Evidence Checks
+
+### Cognitive Load Flags
+[findings or "No flags"]
+
+### Multimedia Principle Violations
+[findings or "No flags"]
+
+### Feedback Quality
+[findings or "No flags"]
+
+### Expertise Reversal
+[findings or "No flags"]
+
+## Top 3 Quick Wins
+
+| # | Finding | Impact | Skill to Run |
+|---|---------|--------|--------------|
+| 1 | [finding] | [score] | /skill-name |
+| 2 | [finding] | [score] | /skill-name |
+| 3 | [finding] | [score] | /skill-name |
+
+## All Recommendations
+
+[Full list of recommendations with evidence citations, severity, and fix actions]
+
+---
+*Generated by idstack /course-quality-review*
+```
+
+After writing both the manifest and the quality report, confirm to the user:
+
+"Your quality review has been saved to `.idstack/project.json` and a shareable
+report generated at `.idstack/quality-report.md`. This captures the QM
+structural review, CoI presence scores, alignment audit, cross-domain evidence
+checks, and prioritized recommendations.
+
+**Score: XX/100** [If previous: "Previous: X/100 (DATE). Delta: +/-Z."]
 
 **Next steps based on findings:**
 [List 1-3 specific next actions based on the review results, referencing
@@ -577,12 +827,12 @@ Cartridge or push to Canvas.]"
 
 ## Manifest Schema Reference
 
-The complete manifest schema. Use this as the template when creating or validating
-the manifest. All fields shown below must exist in the JSON.
+The complete manifest schema (v1.1). Use this as the template when creating or
+validating the manifest. All fields shown below must exist in the JSON.
 
 ```json
 {
-  "version": "1.0",
+  "version": "1.1",
   "project_name": "",
   "created": "",
   "updated": "",
@@ -647,8 +897,22 @@ the manifest. All fields shown below must exist in the JSON.
       "cognitive_presence": {"score": 0, "findings": []}
     },
     "alignment_audit": {"findings": []},
+    "cross_domain_checks": {
+      "cognitive_load": {"flags": [], "score": 5},
+      "multimedia_principles": {"flags": [], "score": 5},
+      "feedback_quality": {"flags": [], "score": 5},
+      "expertise_reversal": {"flags": [], "score": 5}
+    },
     "overall_score": 0,
-    "recommendations": []
+    "score_breakdown": {
+      "qm_structural": 0,
+      "coi_presence": 0,
+      "constructive_alignment": 0,
+      "cross_domain_evidence": 0
+    },
+    "quick_wins": [],
+    "recommendations": [],
+    "review_history": []
   }
 }
 ```

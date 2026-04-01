@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Migrate .idstack/project.json to the latest schema version.
+# Reads the manifest, applies any needed migrations, writes it back, and
+# outputs the (possibly updated) JSON to stdout.
+# Prints "MIGRATED <from> <to>" to stderr when a migration is applied.
+# If the file does not exist, prints nothing and exits 0.
+# If python3 is unavailable, falls back to cat (graceful degradation).
+
+set -e
+
+LATEST_VERSION="1.1"
+
+MANIFEST="${1:-.idstack/project.json}"
+
+# Nothing to do if no manifest exists
+[ -f "$MANIFEST" ] || exit 0
+
+# Require python3 for JSON manipulation; fall back to cat if missing
+if ! command -v python3 &>/dev/null; then
+  cat "$MANIFEST"
+  exit 0
+fi
+
+VERSION=$(python3 -c "
+import json, sys
+try:
+    with open('$MANIFEST') as f:
+        data = json.load(f)
+    print(data.get('version', ''))
+except Exception:
+    sys.exit(1)
+" 2>/dev/null) || { cat "$MANIFEST"; exit 0; }
+
+# Already at latest — just output and exit
+if [ "$VERSION" = "$LATEST_VERSION" ]; then
+  cat "$MANIFEST"
+  exit 0
+fi
+
+# Migration: 1.0 -> 1.1
+if [ "$VERSION" = "1.0" ]; then
+  python3 -c "
+import json, sys
+
+with open('$MANIFEST') as f:
+    data = json.load(f)
+
+# Ensure top-level sections exist with defaults
+data.setdefault('assessments', {'items': [], 'formative_checkpoints': [], 'feedback_quality_score': 0})
+data.setdefault('course_content', {'modules': [], 'generated_files': [], 'build_timestamp': ''})
+data.setdefault('import_metadata', {'source': '', 'imported_at': '', 'source_lms': '', 'items_imported': {'modules': 0, 'objectives': 0, 'assessments': 0, 'activities': 0, 'pages': 0}, 'quality_flags': 0})
+data.setdefault('export_metadata', {'exported_at': '', 'format': '', 'destination': '', 'items_exported': {'modules': 0, 'pages': 0, 'assignments': 0, 'quizzes': 0, 'discussions': 0}, 'failed_items': 0, 'notes': ''})
+
+# Add cross_domain_checks and review_history to quality_review
+qr = data.setdefault('quality_review', {})
+qr.setdefault('cross_domain_checks', {
+    'cognitive_load':        {'score': 0, 'flags': []},
+    'multimedia_principles': {'score': 0, 'flags': []},
+    'feedback_quality':      {'score': 0, 'flags': []},
+    'expertise_reversal':    {'score': 0, 'flags': []}
+})
+qr.setdefault('review_history', [])
+
+# Bump version
+data['version'] = '$LATEST_VERSION'
+
+with open('$MANIFEST', 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+
+# Output migrated JSON to stdout
+print(json.dumps(data, indent=2))
+" || { cat "$MANIFEST"; exit 0; }
+
+  echo "MIGRATED 1.0 $LATEST_VERSION" >&2
+  exit 0
+fi
+
+# Unknown version — don't touch, just output
+cat "$MANIFEST"
