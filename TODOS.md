@@ -44,6 +44,17 @@ Currently inconsistent: "Next step:" (singular), "Next steps:" (plural),
 **Depends on:** Nothing. Low-effort cleanup.
 **Priority:** P3
 
+## v2: Multi-Platform Install (Gemini CLI + Codex CLI)
+Add install support for Gemini CLI (~/.gemini/skills/) and Codex CLI (~/.agents/skills/).
+All three platforms use the same SKILL.md format (name + description frontmatter).
+Key challenges: hardcoded ~/.claude/ paths in all 7 SKILL.md preambles need refactoring
+to platform-agnostic paths (IDSTACK_HOME env var or relative resolution), allowed-tools
+frontmatter uses Claude Code tool names, and tool name compatibility needs verification.
+**Why:** Expands addressable market to Gemini CLI and Codex CLI users.
+**Depends on:** User feedback confirming demand (via Google Form). Spike test on
+one SKILL.md to verify compatibility before full implementation.
+**Priority:** P2
+
 ## v3: Bidirectional LMS Sync
 Push changes back to Canvas (and eventually other LMS) via API. After
 /course-quality-review identifies issues and /learning-objectives generates better

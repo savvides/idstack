@@ -271,6 +271,9 @@ You can, but let the skills manage it. If you do edit it, keep the JSON valid.
 idstack checks for updates automatically. When you run any skill, it tells you if a newer version is available. To update: `cd ~/.claude/skills/idstack && git pull && ./setup`
 If you downloaded ZIP: download the latest version and run `./setup` again.
 
+**How do I request a feature or report a bug?**
+[Fill out this form](https://forms.gle/6LDgDD1M6WWyYvME8). No GitHub account needed. If you have a GitHub account, you can also [open an issue](https://github.com/savvides/idstack/issues).
+
 **Does idstack work offline?**
 idstack itself is just text files. But it runs inside Claude Code, which requires an internet connection.
 
@@ -289,7 +292,9 @@ cd ~/.claude/skills/idstack && ./setup
 
 ## Contributing
 
-Found a bug or have a suggestion? [Open an issue on GitHub](https://github.com/savvides/idstack/issues).
+Have feedback or a feature request? [Fill out this form](https://forms.gle/6LDgDD1M6WWyYvME8) — no GitHub account needed.
+
+Found a bug? You can also [open an issue on GitHub](https://github.com/savvides/idstack/issues).
 
 Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. The architecture is simple: create a directory with a SKILL.md file and run `./setup`.
 

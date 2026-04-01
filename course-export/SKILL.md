@@ -825,3 +825,7 @@ validating the manifest. All fields shown below must exist in the JSON.
   }
 }
 ```
+
+## Feedback
+
+Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6WWyYvME8) — no GitHub account needed.
