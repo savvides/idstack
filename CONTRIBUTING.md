@@ -95,6 +95,6 @@ Then test manually in Claude Code by running `/your-skill`.
 - **Standalone** — skill works without a manifest (ask questions as fallback)
 - **Pipeline-aware** — if upstream data exists in the manifest, use it to enrich recommendations
 
-## Questions?
+## Questions or feedback?
 
-[Open an issue](https://github.com/savvides/idstack/issues) — happy to help.
+[Fill out this form](https://forms.gle/6LDgDD1M6WWyYvME8) — no GitHub account needed. You can also [open an issue](https://github.com/savvides/idstack/issues).

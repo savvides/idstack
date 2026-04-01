@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is idstack
 
-An open source set of Claude Code skills that encode peer-reviewed instructional design research into the course design workflow. Each skill is a SKILL.md file that defines a conversational workflow backed by evidence from ~283 papers across 10 domains.
+An open source set of Claude Code skills that bring peer-reviewed instructional design research into the course design workflow. Each skill is a SKILL.md file that defines a conversational workflow backed by evidence from ~283 papers across 10 domains.
 
 ## Commands
 
