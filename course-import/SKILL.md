@@ -105,6 +105,9 @@ Options:
      or assignment descriptions. Zero friction, works with any course.
 - C) **Canvas API** — Connect directly to Canvas with an access token. Pulls the
      live course structure including rubrics and outcomes.
+- D) **PDF or document file** — Upload a PDF exported from Articulate Rise,
+     Storyline, or any authoring tool. Also works with Word docs, course packets,
+     and syllabus PDFs. Provide the file path and the AI reads it directly.
 
 ---
 
@@ -261,6 +264,57 @@ Present the extracted structure for confirmation:
 
 Does this look right? If I missed anything or got something wrong, let me know.
 ```
+
+If the user corrects something, incorporate the corrections.
+
+Continue to Step 2 (Quality Flags).
+
+---
+
+## Path D: PDF / Document File Import
+
+### D1. Get the file path
+
+Ask: "Where is your PDF or document file? Provide the file path (drag and drop the
+file into this window to paste the path).
+
+This works with PDFs exported from Articulate Rise, Storyline, Adobe Captivate,
+or any authoring tool. Also works with Word documents, course packets, and syllabus PDFs."
+
+### D2. Read the file
+
+Use the Read tool to read the file at the provided path. The Read tool can read
+PDFs directly (multimodal).
+
+If the file does not exist, ask the user to check the path.
+
+If the PDF is large (more than 10 pages), read in chunks using the `pages` parameter:
+- First pass: pages "1-10"
+- If more content exists: pages "11-20", etc.
+- Maximum 50 pages total. If the PDF is longer, note: "Reading first 50 pages.
+  If important content is after page 50, let me know which pages to focus on."
+
+### D3. Extract structure
+
+From the PDF content, identify and extract the same elements as Path B:
+
+1. **Course title and description**
+2. **Modules or sections** — look for numbered sections, week-by-week breakdowns,
+   unit headers, or topic groupings
+3. **Learning objectives** — statements starting with "Students will...",
+   "By the end of...", "Learners will be able to...", or similar
+4. **Assessments** — assignments, exams, quizzes, projects, presentations
+5. **Learning activities** — discussions, labs, group work, case studies
+6. **Course logistics** — modality, duration, class size if mentioned
+
+**Rise-specific notes:** Articulate Rise PDFs may lose interactive elements
+(Storyline blocks, flashcards, drag-and-drop activities). Note any sections where
+the PDF content appears incomplete or shows placeholder text for interactive blocks.
+Flag these as "interactive element not captured in PDF" in the import quality triage.
+
+### D4. Confirm extracted structure
+
+Present the extracted structure for confirmation (same format as Path B, Step B3).
 
 If the user corrects something, incorporate the corrections.
 
