@@ -272,6 +272,9 @@ Claude Code is Anthropic's coding tool. It's available as a [desktop app, web ap
 **Can I use this with Canvas?**
 Yes. `/course-import` connects to Canvas via API or reads Canvas course exports (.imscc files). It also works with Blackboard, Moodle, and D2L through the IMS Common Cartridge format.
 
+**Can I use this with Articulate Rise?**
+Yes. Export your Rise course as a PDF (hover over the course card > `...` > Download as PDF), then run `/course-import` and choose "Paste course documents." Claude reads the PDF and maps it to the project manifest. From there, every skill works: quality review, accessibility audit, red team, everything. Note: interactive elements like Storyline blocks and flashcards don't render in PDFs, but course structure, objectives, and assessment descriptions come through fine.
+
 **What if I only want to run the quality review?**
 That works. `/course-quality-review` asks you about your course directly if there's no manifest.
 
