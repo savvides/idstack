@@ -24,6 +24,8 @@ idstack: How do you want to import your course?
          A) IMS Common Cartridge file (.imscc)
          B) Paste course documents
          C) Canvas API
+         D) PDF or document file
+         E) SCORM package (.zip)
 
 You:    C — here's my Canvas URL and access token.
 
@@ -169,7 +171,7 @@ Each skill feeds into the next. The project manifest is the thread.
 EXISTING COURSE                           NEW COURSE
 
 /course-import                            /needs-analysis
-  Import from Canvas/Blackboard/Moodle      Three-level needs assessment
+  IMS Cartridge, SCORM, PDF, Canvas API     Three-level needs assessment
   Quick-scan quality flags                  Is training the right intervention?
   Pre-classify objectives                   Task analysis + learner profile
         │                                          │
@@ -213,6 +215,7 @@ EXISTING COURSE                           NEW COURSE
                        ▼
               /course-export
                 IMS Common Cartridge (.imscc)
+                SCORM 1.2 package
                 or Canvas API push
 ```
 
