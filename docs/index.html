@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>idstack — Evidence-Based Course Design Skills for Claude Code</title>
+  <meta name="description" content="Open source instructional design skills for Claude Code. 283 papers, 11 research domains, 5 evidence tiers. Review, align, and improve your courses with peer-reviewed research.">
+  <meta property="og:title" content="idstack — Design better courses. 283 papers did the reading.">
+  <meta property="og:description" content="Open source instructional design skills for Claude Code. Evidence-based course review, alignment checking, and quality audit.">
+  <meta property="og:type" content="website">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --bg-raised: #111118;
+      --bg-card: #16161f;
+      --text-primary: #e4e4e7;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --accent-start: #6366f1;
+      --accent-end: #a855f7;
+      --border: #1e1e2e;
+      --terminal-green: #4ade80;
+      --terminal-blue: #93c5fd;
+      --tier-t1: #4ade80;
+      --tier-t2: #60a5fa;
+      --tier-t3: #fbbf24;
+      --tier-t4: #fb923c;
+      --tier-t5: #a1a1aa;
+      --max-width: 960px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent-start); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible { outline: 2px solid var(--accent-start); outline-offset: 2px; border-radius: 2px; }
+
+    /* Nav */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1.25rem 1.5rem;
+    }
+    .nav-logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text-primary); text-decoration: none; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 5rem 1.5rem 3rem;
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* Audience Cards */
+    .audience-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      max-width: 640px;
+      margin: 3rem auto 0;
+      padding: 0 1.5rem;
+    }
+    .audience-card {
+      display: block;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem 1.5rem;
+      text-align: center;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+    .audience-card:hover, .audience-card:focus-visible {
+      border-color: var(--accent-start);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+      text-decoration: none;
+    }
+    .audience-card:focus-visible { outline: none; }
+    .audience-card .icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .audience-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .audience-card p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Sections */
+    .section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 4rem 1.5rem;
+    }
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent-start);
+      margin-bottom: 0.75rem;
+    }
+    .section h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.25rem;
+    }
+    .section p {
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin-bottom: 1rem;
+    }
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+
+    /* Feature list */
+    .features {
+      list-style: none;
+      display: grid;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .features li {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .features .check {
+      color: var(--terminal-green);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 0.15em;
+    }
+    .features .text { color: var(--text-secondary); }
+    .features .text strong { color: var(--text-primary); font-weight: 600; }
+
+    /* Demo block */
+    .demo-block {
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 2rem 0;
+    }
+    .demo-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .demo-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+    .demo-dot.red { background: #ef4444; }
+    .demo-dot.yellow { background: #eab308; }
+    .demo-dot.green { background: #22c55e; }
+    .demo-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: 0.5rem;
+      font-family: var(--font-mono);
+    }
+    .demo-body {
+      padding: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.7;
+      overflow-x: auto;
+    }
+    .demo-body .prompt { color: var(--terminal-green); }
+    .demo-body .command { color: #e4e4e7; font-weight: 600; }
+    .demo-body .output { color: var(--terminal-blue); }
+    .demo-body .dim { color: var(--text-muted); }
+    .demo-body .flag { color: #fbbf24; }
+    .demo-body .score { color: var(--accent-end); font-weight: 700; }
+    .demo-body .evidence { color: var(--tier-t1); font-style: italic; }
+
+    /* Steps */
+    .steps {
+      list-style: none;
+      counter-reset: step;
+      display: grid;
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .steps li::before {
+      content: counter(step);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .steps .step-content { color: var(--text-secondary); }
+    .steps .step-content strong { color: var(--text-primary); }
+    .steps code {
+      background: var(--bg-raised);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    /* Install block */
+    .install-block {
+      display: flex;
+      align-items: center;
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin: 1.5rem 0;
+      gap: 0.75rem;
+      max-width: 520px;
+    }
+    .install-block .dollar {
+      color: var(--terminal-green);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .install-block code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      padding: 0.35rem 0.6rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-family: var(--font);
+      transition: color 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
+    .copy-btn:focus-visible { outline: 2px solid var(--accent-start); outline-offset: 2px; }
+
+    /* Pipeline */
+    .pipeline {
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      overflow-x: auto;
+    }
+    .pipeline .skill { color: var(--accent-end); font-weight: 600; }
+    .pipeline .arrow { color: var(--text-muted); }
+
+    /* Evidence grid */
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+    .evidence-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .evidence-card h4 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      color: var(--text-primary);
+    }
+    .evidence-card .count {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .evidence-card .label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Tier legend */
+    .tier-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+    .tier-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .tier-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+    .footer a { color: var(--text-secondary); }
+    .footer .links { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.75rem; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .audience-cards { grid-template-columns: 1fr; }
+      .hero { padding: 3rem 1.5rem 2rem; }
+      .section { padding: 3rem 1.5rem; }
+      .evidence-grid { grid-template-columns: 1fr 1fr; }
+      .nav-links { gap: 1rem; }
+      .tier-legend { flex-direction: column; }
+    }
+
+    /* Terminal typing animation */
+    .typing-container { position: relative; }
+    .typing-line {
+      opacity: 0;
+      animation: fadeIn 0.1s forwards;
+      white-space: pre;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <span class="nav-logo">idstack</span>
+    <div class="nav-links">
+      <a href="https://github.com/savvides/idstack" aria-label="View idstack on GitHub">GitHub</a>
+      <a href="https://github.com/savvides/idstack/blob/main/LICENSE">MIT License</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero">
+    <h1>
+      Design better courses.<br>
+      <span class="gradient">283 papers did the reading.</span>
+    </h1>
+    <p>Open source instructional design skills for Claude Code. Every recommendation cites its research, from meta-analyses to expert opinion, so you always know how strong the evidence is.</p>
+  </header>
+
+  <!-- Audience routing cards -->
+  <div class="audience-cards" role="navigation" aria-label="Choose your path">
+    <a href="#for-designers" class="audience-card" aria-label="Section for instructional designers">
+      <div class="icon" role="img" aria-label="Graduation cap">&#127891;</div>
+      <h3>I design courses</h3>
+      <p>See what idstack does for your courses, in plain English</p>
+    </a>
+    <a href="#for-developers" class="audience-card" aria-label="Section for developers">
+      <div class="icon" role="img" aria-label="Laptop">&#128187;</div>
+      <h3>I write code</h3>
+      <p>Install in 30 seconds, see the architecture</p>
+    </a>
+  </div>
+
+  <hr class="section-divider" style="margin-top: 4rem;">
+
+  <!-- For Instructional Designers -->
+  <section class="section" id="for-designers">
+    <div class="section-label">For Instructional Designers</div>
+    <h2>Your course, reviewed by research</h2>
+    <p>idstack is a design partner that lives inside Claude Code. Import your course, and it checks your work against peer-reviewed research across 11 domains. No jargon. No guessing. Just evidence.</p>
+
+    <ul class="features">
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text"><strong>Quality review</strong> against Quality Matters standards and Community of Inquiry framework</span>
+      </li>
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text"><strong>Alignment check</strong> between your learning objectives, assessments, and activities</span>
+      </li>
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text"><strong>Cognitive load flags</strong> when modules overload working memory</span>
+      </li>
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text"><strong>Bloom's classification</strong> of every learning objective, automatically</span>
+      </li>
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text"><strong>Evidence strength</strong> for every recommendation, from T1 (meta-analyses) to T5 (expert opinion)</span>
+      </li>
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text"><strong>Accessibility audit</strong> with WCAG compliance and Universal Design for Learning review</span>
+      </li>
+    </ul>
+
+    <h3 style="font-size: 1.15rem; margin-top: 2.5rem; margin-bottom: 0.5rem;">See it work</h3>
+    <p>Import a course, get an evidence-based audit in minutes.</p>
+
+    <div class="demo-block">
+      <div class="demo-header">
+        <div class="demo-dot red"></div>
+        <div class="demo-dot yellow"></div>
+        <div class="demo-dot green"></div>
+        <span class="demo-title">claude code</span>
+      </div>
+      <div class="demo-body" aria-label="Example of idstack course review session">
+        <div><span class="prompt">You:</span> <span class="command">/course-import</span></div>
+        <br>
+        <div><span class="output">How do you want to import your course?</span></div>
+        <div><span class="dim">  A) IMS Common Cartridge file (.imscc)</span></div>
+        <div><span class="dim">  B) Paste course documents</span></div>
+        <div><span class="dim">  C) Canvas API</span></div>
+        <div><span class="dim">  D) PDF or document file</span></div>
+        <div><span class="dim">  E) SCORM package (.zip)</span></div>
+        <br>
+        <div><span class="prompt">You:</span> <span class="command">B</span> <span class="dim">- here's my syllabus.</span></div>
+        <br>
+        <div><span class="output">Analyzing... Found 12 modules, 8 assignments, 4 discussions.</span></div>
+        <br>
+        <div><span class="prompt">You:</span> <span class="command">/course-quality-review</span></div>
+        <br>
+        <div><span class="score">Overall Score: 62/100</span></div>
+        <br>
+        <div><span class="flag">&#9888; Learning Objectives</span> <span class="dim">- 8 modules lack stated objectives</span></div>
+        <div><span class="flag">&#9888; Assessment</span> <span class="dim">- no rubrics, no alignment to objectives</span></div>
+        <div><span class="flag">&#9888; Social Presence: 3/10</span> <span class="dim">- no group work, minimal peer interaction</span></div>
+        <br>
+        <div><span class="evidence">[Assessment-8] [T1] - elaborated feedback produces larger</span></div>
+        <div><span class="evidence">learning gains than correctness-only feedback</span></div>
+      </div>
+    </div>
+
+    <h3 style="font-size: 1.15rem; margin-top: 2.5rem; margin-bottom: 0.75rem;">Get started</h3>
+    <p style="margin-bottom: 1.5rem;">New to Claude Code? No problem. Here's everything, step by step.</p>
+
+    <ol class="steps">
+      <li>
+        <div class="step-content">
+          <strong>Install Claude Code.</strong> It's a free AI tool that runs in your terminal.<br>
+          Visit <a href="https://claude.ai/download" target="_blank" rel="noopener">claude.ai/download</a> and follow the instructions for your computer.
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <strong>Install idstack.</strong> Open your terminal and paste this:<br>
+          <code>git clone https://github.com/savvides/idstack.git && cd idstack && ./setup</code>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <strong>Start Claude Code</strong> by typing <code>claude</code> in your terminal.
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <strong>Import your course.</strong> Type <code>/course-import</code> and paste your syllabus, upload a Common Cartridge file, or connect your Canvas API.
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <strong>Get your review.</strong> Type <code>/course-quality-review</code> to see your evidence-based course audit. You'll know in 5 minutes if this is for you.
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- For Developers -->
+  <section class="section" id="for-developers">
+    <div class="section-label">For Developers</div>
+    <h2>9 skills. One manifest. Zero dependencies.</h2>
+    <p>Skills are plain Markdown files that form a pipeline. Each reads from and writes to a shared project manifest at <code style="background:var(--bg-raised);padding:0.1em 0.3em;border-radius:3px;font-family:var(--font-mono);font-size:0.85em;border:1px solid var(--border);">.idstack/project.json</code>. No build step. No runtime dependencies.</p>
+
+    <div class="install-block">
+      <span class="dollar" aria-hidden="true">$</span>
+      <code id="install-cmd">git clone https://github.com/savvides/idstack.git && cd idstack && ./setup</code>
+      <button class="copy-btn" onclick="copyInstall()" aria-label="Copy install command to clipboard">Copy</button>
+    </div>
+
+    <h3 style="font-size: 1.1rem; margin-top: 2.5rem; margin-bottom: 0.75rem;">The Pipeline</h3>
+
+    <div class="pipeline">
+      <span class="skill">/needs-analysis</span> <span class="arrow">&rarr;</span> <span class="skill">/learning-objectives</span> <span class="arrow">&rarr;</span> <span class="skill">/assessment-design</span><br>
+      <span class="arrow" style="margin-left: 1rem;">&darr;</span><br>
+      <span class="skill">/course-builder</span> <span class="arrow">&rarr;</span> <span class="skill">/course-quality-review</span> <span class="arrow">&rarr;</span> <span class="skill">/accessibility-review</span><br>
+      <span class="arrow" style="margin-left: 1rem;">&darr;</span><br>
+      <span class="skill">/red-team</span> <span class="arrow">&rarr;</span> <span class="skill">/course-export</span><br>
+      <br>
+      <span class="skill">/course-import</span> <span class="arrow">&rarr;</span> <span class="dim">enters at /learning-objectives</span>
+    </div>
+
+    <h3 style="font-size: 1.1rem; margin-top: 2rem; margin-bottom: 0.75rem;">Architecture</h3>
+    <ul class="features">
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text">Each skill is a directory with a single <strong>SKILL.md</strong> file (YAML frontmatter + Markdown workflow)</span>
+      </li>
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text">Shared state through <strong>.idstack/project.json</strong> manifest. Each skill owns its section, preserves the rest.</span>
+      </li>
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text">Every recommendation cites its evidence tier using domain codes from <strong>evidence/references.md</strong></span>
+      </li>
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text">Works standalone or as a pipeline. Skills ask questions directly if no manifest exists.</span>
+      </li>
+      <li>
+        <span class="check" aria-hidden="true">&#10003;</span>
+        <span class="text">Import from <strong>Common Cartridge, Canvas API, SCORM, PDF,</strong> or plain text. Export to <strong>IMS CC</strong> or <strong>SCORM</strong>.</span>
+      </li>
+    </ul>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Evidence Base -->
+  <section class="section" id="evidence">
+    <div class="section-label">Evidence Base</div>
+    <h2>~283 papers. 11 domains. 5 evidence tiers.</h2>
+    <p>Every recommendation in idstack traces back to peer-reviewed research. Stronger evidence takes precedence when tiers conflict.</p>
+
+    <div class="evidence-grid">
+      <div class="evidence-card">
+        <h4>Instructional Design</h4>
+        <div class="count">12</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Alignment &amp; Objectives</h4>
+        <div class="count">10</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Needs Analysis</h4>
+        <div class="count">7</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Cognitive Load</h4>
+        <div class="count">15</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Assessment &amp; Feedback</h4>
+        <div class="count">10</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Multimedia Learning</h4>
+        <div class="count">10</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Learner Analysis</h4>
+        <div class="count">8</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Evaluation Models</h4>
+        <div class="count">8</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Rapid Prototyping</h4>
+        <div class="count">9</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Online Quality</h4>
+        <div class="count">10</div>
+        <div class="label">papers cited</div>
+      </div>
+      <div class="evidence-card">
+        <h4>Accessibility &amp; UDL</h4>
+        <div class="count">9</div>
+        <div class="label">papers cited</div>
+      </div>
+    </div>
+
+    <div class="tier-legend" role="list" aria-label="Evidence tier legend">
+      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t1)"></span> T1: Meta-analyses, RCTs</span>
+      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t2)"></span> T2: Quasi-experimental</span>
+      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t3)"></span> T3: Systematic reviews</span>
+      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t4)"></span> T4: Observational</span>
+      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t5)"></span> T5: Expert opinion</span>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="links">
+      <a href="https://github.com/savvides/idstack">GitHub</a>
+      <a href="https://github.com/savvides/idstack/blob/main/LICENSE">MIT License</a>
+      <a href="https://github.com/savvides/idstack/blob/main/CONTRIBUTING.md">Contribute</a>
+      <a href="https://forms.gle/6LDgDD1M6WWyYvME8">Feedback</a>
+    </div>
+    <p>Free, open source. Built with evidence.</p>
+  </footer>
+
+  <script>
+    function copyInstall() {
+      var text = document.getElementById('install-cmd').textContent;
+      var btn = document.querySelector('.copy-btn');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+          btn.textContent = 'Copied!';
+          setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+        });
+      } else {
+        var textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          btn.textContent = 'Copied!';
+          setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+        } catch (e) { /* silent fail */ }
+        document.body.removeChild(textarea);
+      }
+    }
+  </script>
+
+</body>
+</html>

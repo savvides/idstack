@@ -1,6 +1,6 @@
 # idstack Evidence Base
 
-Full citation list from the literature synthesis (~283 papers across 10 domains).
+Full citation list from the literature synthesis (~283 papers across 11 domains).
 Each citation includes its domain shorthand and evidence tier for cross-referencing with skill outputs.
 
 ## Evidence Tier Definitions
