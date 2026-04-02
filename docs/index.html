@@ -98,44 +98,6 @@
       line-height: 1.7;
     }
 
-    /* Audience Cards */
-    .audience-cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-      max-width: 640px;
-      margin: 3rem auto 0;
-      padding: 0 1.5rem;
-    }
-    .audience-card {
-      display: block;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.75rem 1.5rem;
-      text-align: center;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      cursor: pointer;
-      color: var(--text-primary);
-    }
-    .audience-card:hover, .audience-card:focus-visible {
-      border-color: var(--accent-start);
-      box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
-      text-decoration: none;
-    }
-    .audience-card:focus-visible { outline: none; }
-    .audience-card .icon { font-size: 2rem; margin-bottom: 0.75rem; }
-    .audience-card h3 {
-      font-size: 1.05rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-    .audience-card p {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-    }
-
     /* Sections */
     .section {
       max-width: var(--max-width);
@@ -401,7 +363,6 @@
 
     /* Responsive */
     @media (max-width: 640px) {
-      .audience-cards { grid-template-columns: 1fr; }
       .hero { padding: 3rem 1.5rem 2rem; }
       .section { padding: 3rem 1.5rem; }
       .evidence-grid { grid-template-columns: 1fr 1fr; }
@@ -439,25 +400,11 @@
     <p>Open source instructional design skills for Claude Code. Every recommendation cites its research, from meta-analyses to expert opinion, so you always know how strong the evidence is.</p>
   </header>
 
-  <!-- Audience routing cards -->
-  <div class="audience-cards" role="navigation" aria-label="Choose your path">
-    <a href="#for-designers" class="audience-card" aria-label="Section for instructional designers">
-      <div class="icon" role="img" aria-label="Graduation cap">&#127891;</div>
-      <h3>I design courses</h3>
-      <p>See what idstack does for your courses, in plain English</p>
-    </a>
-    <a href="#for-developers" class="audience-card" aria-label="Section for developers">
-      <div class="icon" role="img" aria-label="Laptop">&#128187;</div>
-      <h3>I write code</h3>
-      <p>Install in 30 seconds, see the architecture</p>
-    </a>
-  </div>
+  <hr class="section-divider" style="margin-top: 3rem;">
 
-  <hr class="section-divider" style="margin-top: 4rem;">
-
-  <!-- For Instructional Designers -->
-  <section class="section" id="for-designers">
-    <div class="section-label">For Instructional Designers</div>
+  <!-- What it does -->
+  <section class="section" id="what-it-does">
+    <div class="section-label">What it does</div>
     <h2>Your course, reviewed by research</h2>
     <p>idstack is a design partner that lives inside Claude Code. Import your course, and it checks your work against peer-reviewed research across 11 domains. No jargon. No guessing. Just evidence.</p>
 
@@ -525,8 +472,22 @@
       </div>
     </div>
 
-    <h3 style="font-size: 1.15rem; margin-top: 2.5rem; margin-bottom: 0.75rem;">Get started</h3>
-    <p style="margin-bottom: 1.5rem;">New to Claude Code? No problem. Here's everything, step by step.</p>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Get started -->
+  <section class="section" id="get-started">
+    <div class="section-label">Get started</div>
+    <h2>Up and running in 5 minutes</h2>
+
+    <div class="install-block">
+      <span class="dollar" aria-hidden="true">$</span>
+      <code id="install-cmd">git clone https://github.com/savvides/idstack.git && cd idstack && ./setup</code>
+      <button class="copy-btn" onclick="copyInstall()" aria-label="Copy install command to clipboard">Copy</button>
+    </div>
+
+    <p style="margin-top: 1.5rem; margin-bottom: 1.5rem;">New to Claude Code? No problem. Here's everything, step by step.</p>
 
     <ol class="steps">
       <li>
@@ -537,7 +498,7 @@
       </li>
       <li>
         <div class="step-content">
-          <strong>Install idstack.</strong> Open your terminal and paste this:<br>
+          <strong>Install idstack.</strong> Open your terminal and paste the command above, or:<br>
           <code>git clone https://github.com/savvides/idstack.git && cd idstack && ./setup</code>
         </div>
       </li>
@@ -561,19 +522,13 @@
 
   <hr class="section-divider">
 
-  <!-- For Developers -->
-  <section class="section" id="for-developers">
-    <div class="section-label">For Developers</div>
+  <!-- How it works -->
+  <section class="section" id="how-it-works">
+    <div class="section-label">How it works</div>
     <h2>9 skills. One manifest. Zero dependencies.</h2>
-    <p>Skills are plain Markdown files that form a pipeline. Each reads from and writes to a shared project manifest at <code style="background:var(--bg-raised);padding:0.1em 0.3em;border-radius:3px;font-family:var(--font-mono);font-size:0.85em;border:1px solid var(--border);">.idstack/project.json</code>. No build step. No runtime dependencies.</p>
+    <p>Skills are plain Markdown files that form a pipeline. Each reads from and writes to a shared project manifest. No build step. No runtime dependencies.</p>
 
-    <div class="install-block">
-      <span class="dollar" aria-hidden="true">$</span>
-      <code id="install-cmd">git clone https://github.com/savvides/idstack.git && cd idstack && ./setup</code>
-      <button class="copy-btn" onclick="copyInstall()" aria-label="Copy install command to clipboard">Copy</button>
-    </div>
-
-    <h3 style="font-size: 1.1rem; margin-top: 2.5rem; margin-bottom: 0.75rem;">The Pipeline</h3>
+    <h3 style="font-size: 1.1rem; margin-top: 2rem; margin-bottom: 0.75rem;">The Pipeline</h3>
 
     <div class="pipeline">
       <span class="skill">/needs-analysis</span> <span class="arrow">&rarr;</span> <span class="skill">/learning-objectives</span> <span class="arrow">&rarr;</span> <span class="skill">/assessment-design</span><br>
