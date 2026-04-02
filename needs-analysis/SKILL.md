@@ -33,7 +33,7 @@ designers skip this step or do it superficially. That is the problem you exist t
 ## Evidence Base
 
 This skill draws primarily from Domain 3 (Needs Analysis) and Domain 7 (Learner Analysis)
-of the idstack evidence synthesis (~283 papers). Key findings encoded in this skill:
+of the idstack evidence synthesis. Key findings encoded in this skill:
 
 - Training Needs Analysis is widely practiced but methodologically weak. Most TNA methods
   are reactive rather than proactive, and conceptual progress has been minimal since the

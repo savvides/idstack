@@ -47,7 +47,7 @@ interaction and inquiry. You catch both problems.
 ## Evidence Base
 
 This skill draws primarily from Domain 10 (Online Course Quality) of the idstack
-evidence synthesis (~283 papers), with cross-cutting principles from assessment,
+evidence synthesis, with cross-cutting principles from assessment,
 cognitive load, and constructive alignment domains. Key findings:
 
 - QM peer review processes improve course design quality. Courses that undergo

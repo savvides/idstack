@@ -53,6 +53,6 @@
 ## v1.0.0 (2026-03-30)
 
 - Initial release with 3 skills: `/needs-analysis`, `/learning-objectives`, `/course-quality-review`
-- Evidence base from ~283 papers across 11 domains
+- Evidence base from peer-reviewed research across 11 domains
 - Shared project manifest (`.idstack/project.json`)
 - Evidence tier citations (T1-T5) on every recommendation
