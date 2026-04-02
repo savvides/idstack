@@ -320,6 +320,7 @@ Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full gui
 
 ## More
 
+- [idstack.org](https://idstack.org) — landing page
 - [CHANGELOG.md](CHANGELOG.md) — full version history
 - [ROADMAP.md](ROADMAP.md) — what's coming next
 - [Why AI-native?](docs/why-ai-native.md) — why idstack is built this way

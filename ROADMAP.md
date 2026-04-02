@@ -4,6 +4,10 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Landing page and auto-update (v1.4.1)
+- [idstack.org](https://idstack.org) — landing page with getting started guide, evidence grid, and SEO
+- Skills now auto-update when a new version is available. No manual `git pull` needed.
+
 ### SCORM import and export (v1.4.0)
 - `/course-import` now accepts SCORM 1.2/2004 packages from Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, and any SCORM-compliant authoring tool
 - `/course-export` now generates SCORM 1.2 packages for any LMS or corporate training platform

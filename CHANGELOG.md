@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.4.1 (2026-04-02)
+
+- Landing page live at [idstack.org](https://idstack.org) with getting started guide, terminal demo, skill pipeline diagram, and evidence grid across 11 research domains
+- Skills now auto-update when a new version is available. No manual `git pull` needed.
+- SEO: Open Graph and Twitter card tags, JSON-LD structured data, OG image, and favicon for link previews when shared on social media
+
 ## v1.4.0 (2026-04-01)
 
 - You can now import SCORM 1.2 and 2004 packages directly into `/course-import`. Works with Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, and any SCORM-compliant authoring tool. Extracts course structure, objectives, and assessments from the imsmanifest.xml.
@@ -47,6 +53,6 @@
 ## v1.0.0 (2026-03-30)
 
 - Initial release with 3 skills: `/needs-analysis`, `/learning-objectives`, `/course-quality-review`
-- Evidence base from ~283 papers across 10 domains
+- Evidence base from ~283 papers across 11 domains
 - Shared project manifest (`.idstack/project.json`)
 - Evidence tier citations (T1-T5) on every recommendation
