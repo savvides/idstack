@@ -376,6 +376,40 @@
       letter-spacing: 0.05em;
     }
 
+    /* Team grid */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+    .team-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+    }
+    .team-title {
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.2rem;
+    }
+    .team-skill {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      margin-bottom: 0.5rem;
+    }
+    .team-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
     /* Tier legend */
     .tier-legend {
       display: flex;
@@ -413,6 +447,7 @@
       .hero { padding: 3rem 1.5rem 2rem; }
       .section { padding: 3rem 1.5rem; }
       .evidence-grid { grid-template-columns: 1fr 1fr; }
+      .team-grid { grid-template-columns: 1fr; }
       .nav-links { gap: 1rem; }
       .tier-legend { flex-direction: column; }
     }
@@ -568,14 +603,61 @@
 
   <hr class="section-divider">
 
-  <!-- How it works -->
+  <!-- Your design team -->
   <section class="section" id="how-it-works">
-    <div class="section-label">How it works</div>
-    <h2>9 skills. One manifest. Zero dependencies.</h2>
-    <p>Skills are plain Markdown files that form a pipeline. Each reads from and writes to a shared project manifest. No build step. No runtime dependencies.</p>
+    <div class="section-label">Your design team</div>
+    <h2>9 specialists. One workflow.</h2>
+    <p>Each skill is a specialist on your team. Import your course and they get to work.</p>
 
-    <h3 style="font-size: 1.1rem; margin-top: 2rem; margin-bottom: 0.75rem;">The Pipeline</h3>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-title">Needs Analyst</div>
+        <div class="team-skill">/needs-analysis</div>
+        <div class="team-desc">Three-level assessment before you build anything. Is training the right intervention? Task analysis and learner profiling.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Curriculum Designer</div>
+        <div class="team-skill">/learning-objectives</div>
+        <div class="team-desc">Measurable objectives with Bloom's taxonomy. Bidirectional alignment check: does each objective have a matching activity AND assessment?</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Assessment Architect</div>
+        <div class="team-skill">/assessment-design</div>
+        <div class="team-desc">Evidence-based rubrics and feedback strategies. Formative checkpoints before summative assessments. Nicol's 7 principles of good feedback.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">LMS Bridge</div>
+        <div class="team-skill">/course-import</div>
+        <div class="team-desc">Import from Common Cartridge, Canvas API, SCORM, PDF, or paste. Quick-scan quality flags and Bloom's pre-classification on import.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Content Generator</div>
+        <div class="team-skill">/course-builder</div>
+        <div class="team-desc">Generates syllabus, module pages, assignments, and rubrics from your manifest. Content adapts to learner expertise level.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Quality Auditor</div>
+        <div class="team-skill">/course-quality-review</div>
+        <div class="team-desc">Full Quality Matters audit plus Community of Inquiry presence analysis. 8 structural standards, 3 presence dimensions. Every finding cites its evidence.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Accessibility Reviewer</div>
+        <div class="team-skill">/accessibility-review</div>
+        <div class="team-desc">WCAG 2.1 AA compliance audit plus Universal Design for Learning review. Scores accessibility 0-100 with "Must Fix" and "Should Improve" tiers.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Adversarial Auditor</div>
+        <div class="team-skill">/red-team</div>
+        <div class="team-desc">Assumes your course is broken and tries to prove it. Alignment stress test, persona simulation, prerequisite chain integrity. Confidence score.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">LMS Publisher</div>
+        <div class="team-skill">/course-export</div>
+        <div class="team-desc">Exports to IMS Common Cartridge, SCORM 1.2, or pushes directly to Canvas via API. The output is the course.</div>
+      </div>
+    </div>
 
+    <h3 style="font-size: 1.1rem; margin-top: 2rem; margin-bottom: 0.75rem;">The workflow</h3>
     <div class="pipeline">
       <span class="skill">/needs-analysis</span> <span class="arrow">&rarr;</span> <span class="skill">/learning-objectives</span> <span class="arrow">&rarr;</span> <span class="skill">/assessment-design</span><br>
       <span class="arrow" style="margin-left: 1rem;">&darr;</span><br>
@@ -585,30 +667,7 @@
       <br>
       <span class="skill">/course-import</span> <span class="arrow">&rarr;</span> <span class="dim">enters at /learning-objectives</span>
     </div>
-
-    <h3 style="font-size: 1.1rem; margin-top: 2rem; margin-bottom: 0.75rem;">Architecture</h3>
-    <ul class="features">
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text">Each skill is a directory with a single <strong>SKILL.md</strong> file (YAML frontmatter + Markdown workflow)</span>
-      </li>
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text">Shared state through <strong>.idstack/project.json</strong> manifest. Each skill owns its section, preserves the rest.</span>
-      </li>
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text">Every recommendation cites its evidence tier using domain codes from <strong>evidence/references.md</strong></span>
-      </li>
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text">Works standalone or as a pipeline. Skills ask questions directly if no manifest exists.</span>
-      </li>
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text">Import from <strong>Common Cartridge, Canvas API, SCORM, PDF,</strong> or plain text. Export to <strong>IMS CC</strong> or <strong>SCORM</strong>.</span>
-      </li>
-    </ul>
+    <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">Each skill feeds into the next, but any skill works on its own. No pipeline required.</p>
   </section>
 
   <hr class="section-divider">
