@@ -36,18 +36,9 @@ but LMS-specific APIs unlock richer data (rubrics, analytics, student engagement
 **Depends on:** /course-import Canvas API path stable and tested. User demand.
 **Priority:** P3
 
-## v2: SCORM/xAPI Package Import (Articulate Rise, Storyline, Captivate)
-Add SCORM/xAPI package parsing as an import method in /course-import. Users would
-upload the exported ZIP directly instead of going through PDF or LMS. Articulate Rise,
-Storyline, Adobe Captivate, and Lectora all export SCORM packages. Parsing the
-imsmanifest.xml inside the package extracts course structure, objectives, and
-assessment metadata. PDF import already works for Rise (documented in README FAQ)
-but loses interactive elements. SCORM import would preserve the full structure.
-**Why:** User feedback requested Articulate Rise support. PDF path works but SCORM
-is more complete. Opens idstack to the entire authoring tool ecosystem.
-**Depends on:** Understanding SCORM 1.2 and 2004 manifest XML schema, testing with
-real Rise/Storyline/Captivate exports.
-**Priority:** P2
+## ~~v2: SCORM/xAPI Package Import~~ SHIPPED (v1.4.0)
+Shipped in v1.4.0. SCORM 1.2/2004 import added as Path E in /course-import.
+SCORM 1.2 export added as Path C in /course-export. PDF import also added (Path D).
 
 ## v2: Standardize Next-Step Formatting
 Normalize the "next step" section format across all SKILL.md files.

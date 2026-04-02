@@ -108,6 +108,9 @@ Options:
 - D) **PDF or document file** — Upload a PDF exported from Articulate Rise,
      Storyline, or any authoring tool. Also works with Word docs, course packets,
      and syllabus PDFs. Provide the file path and the AI reads it directly.
+- E) **SCORM package (.zip)** — Import a SCORM 1.2 or 2004 package exported from
+     Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, or any
+     SCORM-compliant authoring tool. Extracts course structure from imsmanifest.xml.
 
 ---
 
@@ -427,6 +430,148 @@ From the API responses, extract:
 - **Pages:** title (for content page count)
 - **Discussions:** title, assignment_id (graded discussions)
 - **Outcomes:** title, description, mastery_points, ratings
+
+Continue to Step 2 (Quality Flags).
+
+---
+
+## Path E: SCORM Package Import
+
+### E1. Get the file path
+
+Ask: "Where is your SCORM package (.zip)? Provide the file path (drag and drop the
+file into this window to paste the path).
+
+This works with SCORM 1.2 and SCORM 2004 packages from Articulate Rise, Storyline,
+Adobe Captivate, Lectora, iSpring, or any SCORM-compliant authoring tool."
+
+### E2. Validate and extract
+
+```bash
+# Check file exists
+if [ ! -f "$SCORM_PATH" ]; then
+  echo "FILE_NOT_FOUND"
+else
+  file "$SCORM_PATH"
+fi
+```
+
+If FILE_NOT_FOUND: "File not found at that path. Check the path and try again."
+If not a ZIP: "This doesn't look like a SCORM package. It should be a .zip file
+exported from your authoring tool."
+
+Extract the package:
+
+```bash
+IMPORT_DIR=$(mktemp -d)
+unzip -q "$SCORM_PATH" -d "$IMPORT_DIR" 2>&1
+echo "IMPORT_DIR=$IMPORT_DIR"
+ls "$IMPORT_DIR/"
+```
+
+### E3. Find and read the manifest
+
+```bash
+if [ -f "$IMPORT_DIR/imsmanifest.xml" ]; then
+  echo "SCORM_MANIFEST_FOUND"
+  cat "$IMPORT_DIR/imsmanifest.xml"
+else
+  echo "NO_SCORM_MANIFEST"
+fi
+```
+
+If NO_SCORM_MANIFEST: "No imsmanifest.xml found in this ZIP. This may not be a valid
+SCORM package. Try exporting again from your authoring tool, or use Path D (PDF import)
+instead."
+
+### E4. Detect SCORM version
+
+From the manifest XML, check namespaces and schema references:
+- If `adlcp_rootv1p2` or `adlcp:scormtype` (lowercase) → SCORM 1.2
+- If `adlcp_v1p3` or `adlcp:scormType` (camelCase) → SCORM 2004
+- Note the version for the user: "Detected SCORM [version] package."
+
+### E5. Parse manifest structure
+
+From `imsmanifest.xml`, extract:
+
+**From `<organizations>`:**
+- The default organization (identified by `default` attribute on `<organizations>`)
+- Walk the `<item>` tree recursively to build the module hierarchy
+- For each item: `identifier`, `title`, `identifierref` (links to resource)
+- Items with children are module containers (aggregations)
+- Leaf items with `identifierref` are deliverable content (SCOs or assets)
+
+**From `<resources>`:**
+- For each `<resource>`: `identifier`, `type`, `href` (launch file), `adlcp:scormType`
+- SCO resources contain the actual learning content
+- Asset resources are supporting files (images, scripts, CSS)
+- Read the HTML content of SCO launch files to extract learning content:
+
+```bash
+# For each SCO resource, read its launch file
+for sco_href in $SCO_HREFS; do
+  if [ -f "$IMPORT_DIR/$sco_href" ]; then
+    echo "=== SCO: $sco_href ==="
+    cat "$IMPORT_DIR/$sco_href"
+  fi
+done
+```
+
+**From `<metadata>` (if present):**
+- Course title, description, keywords
+- Schema version
+
+### E6. Map to course structure
+
+From the parsed manifest, construct the course structure:
+
+1. **Course title:** From `<metadata>` or the root organization title
+2. **Modules:** Each top-level `<item>` with children becomes a module
+3. **Content items:** Leaf `<item>` elements become module items
+4. **Learning objectives:** Search SCO HTML content for objective-like statements
+   ("By the end of...", "Students will...", "Learners will be able to...")
+5. **Assessments:** Look for quiz/assessment patterns in SCO content (question banks,
+   score tracking via SCORM API calls in JavaScript)
+6. **Sequencing (SCORM 2004 only):** If `<imsss:sequencing>` elements exist, extract
+   prerequisite relationships and flow control rules
+
+**Articulate-specific parsing:** If the manifest contains `articulate` or `rise` in
+metadata or resource identifiers, note the authoring tool. Articulate packages often
+structure content as: one SCO per lesson, with a `story.html` or `index.html` launch
+file. Rise packages use a flat structure with a single SCO.
+
+### E7. Confirm extracted structure
+
+Present the extracted structure for confirmation:
+
+```
+## Extracted Course Structure (SCORM [version])
+
+**Title:** [extracted title]
+**Authoring tool:** [detected or unknown]
+**Modules found:** [count]
+**SCOs:** [count] | **Assets:** [count]
+
+| # | Module | Items | Objectives | Assessments |
+|---|--------|-------|------------|-------------|
+| 1 | [name] | [count] | [count] | [count] |
+| 2 | [name] | [count] | [count] | [count] |
+...
+
+**Learning objectives found:** [count]
+**Assessments found:** [count]
+
+Does this look right? If I missed anything or got something wrong, let me know.
+```
+
+If the user corrects something, incorporate the corrections.
+
+### E8. Cleanup
+
+```bash
+rm -rf "$IMPORT_DIR"
+```
 
 Continue to Step 2 (Quality Flags).
 

@@ -119,6 +119,9 @@ Options:
 - **B) Canvas API** — Push directly to a Canvas course. Modules, pages,
   assignments, and discussions appear immediately. Requires a Canvas access
   token and course ID.
+- **C) SCORM 1.2 package (.zip)** — Standard e-learning format. Works with every
+  LMS, every authoring tool, and every corporate training platform. Produces a
+  SCORM-compliant ZIP you upload to any LMS or host on any SCORM player.
 
 ---
 
@@ -661,9 +664,169 @@ to retry the failed items.
 
 ---
 
+## Path C: SCORM 1.2 Package Export
+
+### C1. Read Course Content Files
+
+Read all files in `.idstack/course-content/`:
+
+```bash
+find .idstack/course-content/ -type f | sort
+```
+
+If no course content files exist, tell the user: "No course content found in
+`.idstack/course-content/`. Run `/course-builder` first to generate content."
+
+### C2. Create SCORM package structure
+
+```bash
+EXPORT_DIR=$(mktemp -d)
+mkdir -p "$EXPORT_DIR/content"
+echo "EXPORT_DIR=$EXPORT_DIR"
+```
+
+### C3. Generate HTML content pages
+
+For each module page in `.idstack/course-content/`, convert the Markdown content
+to a self-contained HTML page. Each page becomes a SCO (Shareable Content Object).
+
+Write each HTML file to `$EXPORT_DIR/content/`:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>[Module Title]</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; }
+    h1 { color: #1a1a2e; }
+    h2 { color: #16213e; margin-top: 2rem; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+    th { background: #f5f5f5; }
+  </style>
+</head>
+<body>
+  [Converted HTML content]
+</body>
+</html>
+```
+
+Name files as `module-01.html`, `module-02.html`, etc. matching module order.
+
+### C4. Generate imsmanifest.xml
+
+Write `$EXPORT_DIR/imsmanifest.xml` following the SCORM 1.2 specification:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="idstack-course-[sanitized-title]"
+  version="1.0"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd
+                       http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
+
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+
+  <organizations default="idstack-org">
+    <organization identifier="idstack-org">
+      <title>[Course Title]</title>
+      <!-- One item per module -->
+      <item identifier="item-01" identifierref="resource-01">
+        <title>[Module 1 Title]</title>
+      </item>
+      <!-- ... more items ... -->
+    </organization>
+  </organizations>
+
+  <resources>
+    <!-- One resource per SCO -->
+    <resource identifier="resource-01" type="webcontent" adlcp:scormtype="sco"
+              href="content/module-01.html">
+      <file href="content/module-01.html"/>
+    </resource>
+    <!-- ... more resources ... -->
+  </resources>
+</manifest>
+```
+
+Rules for generating the manifest:
+- Each module becomes one `<item>` pointing to one `<resource>`
+- Each resource is a SCO (type="webcontent", adlcp:scormtype="sco")
+- Identifiers must be unique within the manifest
+- Sanitize the course title for use in the manifest identifier (lowercase, hyphens,
+  no special characters)
+- If modules have sub-modules, nest `<item>` elements accordingly
+
+### C5. Package as ZIP
+
+```bash
+cd "$EXPORT_DIR"
+zip -r scorm-export.zip imsmanifest.xml content/
+mv "$EXPORT_DIR/scorm-export.zip" .idstack/scorm-export.zip
+echo "SCORM package saved to .idstack/scorm-export.zip"
+```
+
+### C6. Verify package
+
+```bash
+file .idstack/scorm-export.zip
+unzip -l .idstack/scorm-export.zip | head -20
+echo "Total files: $(unzip -l .idstack/scorm-export.zip | tail -1)"
+```
+
+Verify:
+- `imsmanifest.xml` exists at the root of the ZIP
+- All `<file href>` references in the manifest have matching files in the ZIP
+- The ZIP is not empty
+
+### C7. Present export summary
+
+```
+## SCORM 1.2 Export Complete
+
+File: .idstack/scorm-export.zip
+Format: SCORM 1.2
+SCOs: [count] (one per module)
+Total files: [count]
+
+### How to import
+
+- **Any LMS:** Upload the .zip file through your LMS admin interface.
+  Most LMS platforms auto-detect SCORM packages.
+- **Canvas:** Settings > Import Course Content > SCORM package
+- **Moodle:** Add Activity > SCORM package > Upload
+- **Blackboard:** Content > Build Content > SCORM package
+- **Corporate LMS (Cornerstone, SAP SuccessFactors, etc.):**
+  Upload through your content management interface
+
+### Limitations
+
+- This SCORM package contains static HTML content. Interactive elements
+  (drag-and-drop, branching scenarios) are not generated.
+- SCORM API tracking (completion, score reporting) is not included.
+  The LMS will mark the SCO as complete when the learner opens it.
+- For richer interactivity, author in Articulate Rise or Storyline and
+  use idstack's /course-quality-review and /red-team on the exported package.
+```
+
+### C8. Cleanup
+
+```bash
+rm -rf "$EXPORT_DIR"
+```
+
+---
+
 ## Manifest Write
 
-After export completes (either path), update the project manifest with export
+After export completes (any path), update the project manifest with export
 metadata.
 
 **CRITICAL -- Manifest Integrity Rules:**
