@@ -315,6 +315,12 @@ Found a bug? You can also [open an issue on GitHub](https://github.com/savvides/
 
 Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. The architecture is simple: create a directory with a SKILL.md file and run `./setup`.
 
+## More
+
+- [CHANGELOG.md](CHANGELOG.md) — full version history
+- [ROADMAP.md](ROADMAP.md) — what's coming next
+- [Why AI-native?](docs/why-ai-native.md) — why idstack is built this way
+
 ## License
 
 MIT. Free forever. Go design something evidence-based.

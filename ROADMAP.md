@@ -4,8 +4,12 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
-### Accessibility review + Red team audit
-Two new skills added in v1.3.0:
+### SCORM import and export (v1.4.0)
+- `/course-import` now accepts SCORM 1.2/2004 packages from Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, and any SCORM-compliant authoring tool
+- `/course-export` now generates SCORM 1.2 packages for any LMS or corporate training platform
+- PDF and document file import also added for Rise course exports and syllabi
+
+### Accessibility review + Red team audit (v1.3.0)
 - `/accessibility-review` — WCAG 2.1 AA compliance plus Universal Design for Learning (UDL 3.0). Two-tier output: "Must Fix" for legal compliance, "Should Improve" for inclusive design.
 - `/red-team` — Adversarial course audit. Assumes the course is broken and tries to prove it. Five dimensions: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Produces a confidence score.
 
