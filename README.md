@@ -299,7 +299,7 @@ idstack itself is just text files. But it runs inside Claude Code, which require
 
 ## Troubleshooting
 
-**Skill not showing up?** Run setup again:
+**Skill not showing up?** Claude Code loads skills at session start. If you installed while Claude Code was running, restart it (close and reopen). If that doesn't help, run setup again:
 ```bash
 cd ~/.claude/skills/idstack && ./setup
 ```
