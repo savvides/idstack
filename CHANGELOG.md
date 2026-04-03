@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.4.1.1 (2026-04-03)
+
+- Setup now tells you to restart Claude Code if it's already running, so skills appear immediately
+- Post-install message routes you to the right starting skill: `/course-import` if you have an existing course, `/needs-analysis` if starting fresh
+
 ## v1.4.1 (2026-04-02)
 
 - Landing page live at [idstack.org](https://idstack.org) with getting started guide, terminal demo, skill pipeline diagram, and evidence grid across 11 research domains
