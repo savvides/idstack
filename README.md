@@ -144,7 +144,14 @@ Installing idstack...
   linked: /red-team
 
 idstack installed successfully.
-Open Claude Code and try: /needs-analysis
+
+  Have an existing course?
+    /course-import → /course-quality-review
+
+  Starting fresh?
+    /needs-analysis
+
+  All 9 skills: https://idstack.org
 ```
 
 ## Your design team
