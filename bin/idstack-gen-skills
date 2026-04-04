@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Generate SKILL.md files from .tmpl templates.
+# Usage: idstack-gen-skills [--dry-run]
+#
+# Reads each {skill}/SKILL.md.tmpl, replaces {{PREAMBLE}} with
+# templates/preamble.md contents, writes {skill}/SKILL.md.
+# Adds auto-generated header to each output file.
+
+set -e
+
+IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PREAMBLE="$IDSTACK_DIR/templates/preamble.md"
+DRY_RUN=0
+GENERATED=0
+ERRORS=0
+
+[ "$1" = "--dry-run" ] && DRY_RUN=1
+
+if [ ! -f "$PREAMBLE" ]; then
+  echo "ERROR: templates/preamble.md not found at $PREAMBLE" >&2
+  exit 1
+fi
+
+HEADER="<!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->"
+HEADER2="<!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->"
+
+for tmpl in "$IDSTACK_DIR"/*/SKILL.md.tmpl; do
+  [ -f "$tmpl" ] || continue
+  skill_dir="$(dirname "$tmpl")"
+  skill_name="$(basename "$skill_dir")"
+  output="$skill_dir/SKILL.md"
+
+  # Read template
+  tmpl_content=$(cat "$tmpl")
+
+  # Check for {{PREAMBLE}} placeholder
+  if ! echo "$tmpl_content" | grep -q '{{PREAMBLE}}'; then
+    echo "  SKIP: $skill_name/SKILL.md.tmpl (no {{PREAMBLE}} placeholder)"
+    continue
+  fi
+
+  # Read preamble content
+  preamble_content=$(cat "$PREAMBLE")
+
+  # Build output: extract YAML frontmatter, inject header after it, then replace placeholder
+  # The frontmatter is everything between the first --- and second ---
+  frontmatter=$(echo "$tmpl_content" | sed -n '1,/^---$/p' | head -1)
+
+  # Use awk to do the replacement properly
+  result=$(awk -v header="$HEADER" -v header2="$HEADER2" -v preamble_file="$PREAMBLE" '
+    BEGIN { after_frontmatter = 0; frontmatter_count = 0 }
+    /^---$/ {
+      frontmatter_count++
+      print
+      if (frontmatter_count == 2) {
+        print header
+        print header2
+        print ""
+      }
+      next
+    }
+    /\{\{PREAMBLE\}\}/ {
+      while ((getline line < preamble_file) > 0) print line
+      close(preamble_file)
+      next
+    }
+    { print }
+  ' "$tmpl")
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    if [ -f "$output" ]; then
+      current=$(cat "$output")
+      if [ "$result" != "$current" ]; then
+        echo "  STALE: $skill_name/SKILL.md (would be updated)"
+        ERRORS=$((ERRORS + 1))
+      else
+        echo "  OK: $skill_name/SKILL.md (up to date)"
+      fi
+    else
+      echo "  MISSING: $skill_name/SKILL.md (would be created)"
+      ERRORS=$((ERRORS + 1))
+    fi
+  else
+    echo "$result" > "$output"
+    echo "  GENERATED: $skill_name/SKILL.md"
+  fi
+  GENERATED=$((GENERATED + 1))
+done
+
+if [ "$GENERATED" -eq 0 ]; then
+  echo "No .tmpl files found."
+  exit 1
+fi
+
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo ""
+  echo "$GENERATED templates checked. $ERRORS stale."
+  if [ "$ERRORS" -gt 0 ]; then exit 1; fi
+else
+  echo ""
+  echo "$GENERATED skills generated."
+fi
