@@ -65,6 +65,42 @@ for skill in needs-analysis learning-objectives course-quality-review course-imp
   check "$skill preamble calls idstack-migrate" "grep -q 'idstack-migrate' '$SKILLS_DIR/$skill/SKILL.md'"
 done
 
+# Check new bin scripts exist and are executable
+check "bin/idstack-timeline-log exists" "[ -f '$SKILLS_DIR/idstack/bin/idstack-timeline-log' ]"
+check "bin/idstack-timeline-log is executable" "[ -x '$SKILLS_DIR/idstack/bin/idstack-timeline-log' ]"
+check "bin/idstack-learnings-log exists" "[ -f '$SKILLS_DIR/idstack/bin/idstack-learnings-log' ]"
+check "bin/idstack-learnings-log is executable" "[ -x '$SKILLS_DIR/idstack/bin/idstack-learnings-log' ]"
+check "bin/idstack-learnings-search exists" "[ -f '$SKILLS_DIR/idstack/bin/idstack-learnings-search' ]"
+check "bin/idstack-learnings-search is executable" "[ -x '$SKILLS_DIR/idstack/bin/idstack-learnings-search' ]"
+check "bin/idstack-status exists" "[ -f '$SKILLS_DIR/idstack/bin/idstack-status' ]"
+check "bin/idstack-status is executable" "[ -x '$SKILLS_DIR/idstack/bin/idstack-status' ]"
+check "bin/idstack-gen-skills exists" "[ -f '$SKILLS_DIR/idstack/bin/idstack-gen-skills' ]"
+check "bin/idstack-gen-skills is executable" "[ -x '$SKILLS_DIR/idstack/bin/idstack-gen-skills' ]"
+
+# Check template system
+check "templates/preamble.md exists" "[ -f '$SKILLS_DIR/idstack/templates/preamble.md' ]"
+for skill in needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team; do
+  check "$skill has SKILL.md.tmpl" "[ -f '$SKILLS_DIR/idstack/$skill/SKILL.md.tmpl' ]"
+done
+
+# Check generated files have auto-generated header
+for skill in needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team; do
+  check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$SKILLS_DIR/$skill/SKILL.md'"
+done
+
+# Check all skills have context recovery preamble
+for skill in needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team; do
+  check "$skill has context recovery" "grep -q 'Context Recovery' '$SKILLS_DIR/$skill/SKILL.md'"
+done
+
+# Check all skills have timeline logging
+for skill in needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team; do
+  check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$SKILLS_DIR/$skill/SKILL.md'"
+done
+
+# Template freshness check
+check "generated SKILL.md files are up to date" "'$SKILLS_DIR/idstack/bin/idstack-gen-skills' --dry-run"
+
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

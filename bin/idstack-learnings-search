@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Search learnings from .idstack/learnings.jsonl.
+# Usage: idstack-learnings-search --limit 3
+#        idstack-learnings-search --limit 5 --type operational
+# Outputs matching JSONL lines to stdout. Exit 0 always.
+
+LIMIT=3
+TYPE=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --limit) LIMIT="$2"; shift 2 ;;
+    --limit=*) LIMIT="${1#--limit=}"; shift ;;
+    --type) TYPE="$2"; shift 2 ;;
+    --type=*) TYPE="${1#--type=}"; shift ;;
+    *) shift ;;
+  esac
+done
+
+LEARNINGS=".idstack/learnings.jsonl"
+[ -f "$LEARNINGS" ] || exit 0
+
+if [ -n "$TYPE" ]; then
+  # Filter by type
+  if command -v python3 &>/dev/null; then
+    python3 -c "
+import json, sys
+lines = open('$LEARNINGS').readlines()
+matches = []
+for line in lines:
+    try:
+        d = json.loads(line)
+        if d.get('type') == '$TYPE':
+            matches.append(line.strip())
+    except Exception:
+        pass
+for m in matches[-$LIMIT:]:
+    print(m)
+" 2>/dev/null || grep "\"type\":\"$TYPE\"" "$LEARNINGS" | tail -"$LIMIT"
+  else
+    grep "\"type\":\"$TYPE\"" "$LEARNINGS" 2>/dev/null | tail -"$LIMIT"
+  fi
+else
+  tail -"$LIMIT" "$LEARNINGS" 2>/dev/null
+fi
