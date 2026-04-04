@@ -315,8 +315,11 @@ Yes. Export your Rise course as a PDF (hover over the course card > `...` > Down
 **What if I only want to run the quality review?**
 That works. `/course-quality-review` asks you about your course directly if there's no manifest.
 
+**Do I need python3?**
+python3 is recommended but not required. With python3, you get quality score trends, dimension analysis, search filtering, and safe JSON serialization. Without it, basic timeline logging and learnings still work via bash fallback, but score trends and search filtering are unavailable. Most systems have python3 pre-installed.
+
 **Is my data safe?**
-idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Nothing is sent to external servers by idstack itself. Claude Code's own privacy policy applies to the AI conversation.
+idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Session history (`.idstack/timeline.jsonl`) and learnings (`.idstack/learnings.jsonl`) are also local. Nothing is sent to external servers by idstack itself. Claude Code's own privacy policy applies to the AI conversation.
 
 **Can I edit the project manifest directly?**
 You can, but let the skills manage it. If you do edit it, keep the JSON valid.

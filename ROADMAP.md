@@ -4,6 +4,12 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Course memory (v1.5.0)
+- idstack remembers your design sessions across conversations. Each skill logs what it did, and the next session starts with context: quality score trends, last skill run, and suggested next step.
+- Skills store project-specific discoveries (LMS quirks, format issues) as learnings that surface in future sessions.
+- `bin/idstack-status` prints a course health dashboard at any time.
+- Template system for contributors: shared preamble maintained in one place.
+
 ### Landing page and auto-update (v1.4.1)
 - [idstack.org](https://idstack.org) — landing page with getting started guide, evidence grid, and SEO
 - Skills now auto-update when a new version is available. No manual `git pull` needed.

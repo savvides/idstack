@@ -40,14 +40,23 @@ allowed-tools:
 ---
 ```
 
-**2. Update check preamble** (copy from any existing skill):
-
-```bash
-_UPD=$(~/.claude/skills/idstack/bin/idstack-update-check 2>/dev/null || true)
-[ -n "$_UPD" ] && echo "$_UPD"
-```
+**2. `{{PREAMBLE}}` placeholder** — this is replaced by `bin/idstack-gen-skills` with the shared preamble (update check, manifest check, context recovery).
 
 **3. Skill implementation** — the rest of the file is Markdown that defines the skill's workflow, decision trees, and outputs.
+
+**4. Timeline logging** — at the end, a section that logs the session to `.idstack/timeline.jsonl` with skill-specific fields.
+
+### Template system
+
+Skills use a template system to share common preamble code. Edit `{skill}/SKILL.md.tmpl`, not `SKILL.md` directly. The generated `SKILL.md` files have an `<!-- AUTO-GENERATED -->` header.
+
+After editing a `.tmpl` file or `templates/preamble.md`, regenerate:
+
+```bash
+bin/idstack-gen-skills
+```
+
+The smoke test includes a freshness check that fails if any `SKILL.md` is stale.
 
 ## The project manifest
 

@@ -10,11 +10,10 @@ cognitive load, multimedia principles, feedback quality, expertise reversal.
 Plus: fix-link integration, quick-win prioritization, score trending,
 shareable quality report, and per-category scoring breakdown.
 
-## v2: Template System
-At 5+ skills, evaluate SKILL.md.tmpl -> SKILL.md template system for shared preamble
-(manifest read/write, cross-cutting concerns, evidence tier definitions).
-**Why:** Duplication across 3 skills is acceptable. Across 8+ it becomes a maintenance burden.
-**Depends on:** Decision to build additional skills beyond v1's 3.
+## ~~v2: Template System~~ SHIPPED (v1.5.0)
+Shipped in v1.5.0. `bin/idstack-gen-skills` generates SKILL.md from .tmpl templates.
+Shared preamble (update check, manifest check, context recovery) maintained in
+`templates/preamble.md`. Contributors edit .tmpl files, run gen-skills to regenerate.
 
 ## v2: Additional Skills (from literature synthesis)
 The remaining skill suite from the evidence synthesis includes 4 more skills:
@@ -40,13 +39,10 @@ but LMS-specific APIs unlock richer data (rubrics, analytics, student engagement
 Shipped in v1.4.0. SCORM 1.2/2004 import added as Path E in /course-import.
 SCORM 1.2 export added as Path C in /course-export. PDF import also added (Path D).
 
-## v2: Standardize Next-Step Formatting
-Normalize the "next step" section format across all SKILL.md files.
-Currently inconsistent: "Next step:" (singular), "Next steps:" (plural),
-"Recommended next steps:" (course-import).
-**Why:** Consistency improves the user experience and makes the pipeline feel cohesive.
-**Depends on:** Nothing. Low-effort cleanup.
-**Priority:** P3
+## ~~v2: Standardize Next-Step Formatting~~ SHIPPED (v1.5.0)
+Shipped in v1.5.0. Pipeline progression guidance now generates dynamic next-step
+recommendations based on timeline data. The shared preamble handles this consistently
+across all skills.
 
 ## v2: Multi-Platform Install (Gemini CLI + Codex CLI)
 Add install support for Gemini CLI (~/.gemini/skills/) and Codex CLI (~/.agents/skills/).
@@ -71,6 +67,23 @@ after 5 messages vs one that lasts 30 is a completely different user experience.
 **Depends on:** Understanding how each AI CLI handles sub-agent dispatching (Claude Code
 Agent tool, Gemini CLI equivalent, Codex subagents). Template system (v2) would make
 this easier to implement consistently across skills.
+**Priority:** P2
+
+## v2: Config System
+Add `bin/idstack-config` for persistent user preferences (auto-update on/off, default
+export format, context recovery verbosity). Plain YAML at `.idstack/config.yaml`.
+**Why:** As course memory adds configurable behaviors, users need a way to set preferences.
+**Depends on:** Course memory system (v1.5.0) proving useful. User feedback on what
+to make configurable.
+**Priority:** P3
+
+## v2: Cross-Course Intelligence
+Enable learnings and patterns to transfer across courses (e.g., PSY101 to PSY201).
+Requires a global storage location (`~/.idstack/global/learnings.jsonl`) alongside
+the project-local `.idstack/` files. Institutional knowledge compounds across semesters.
+**Why:** IDs who teach multiple courses discover the same quirks repeatedly.
+**Depends on:** Course memory system (v1.5.0) in use. Needs design for how global
+vs project-local learnings interact.
 **Priority:** P2
 
 ## v3: Bidirectional LMS Sync
