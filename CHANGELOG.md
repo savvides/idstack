@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5.0.1 (2026-04-04)
+
+- Landing page now shows development updates and roadmap at [idstack.org](https://idstack.org). Timeline with recent releases (dates as primary identifiers, not version numbers) plus "Coming soon" items and a "Where we're headed" narrative. Non-technical visitors can see what's new without navigating GitHub.
+- Updated architecture description on landing page to reflect course memory (timeline, learnings).
+- Removed stale architecture ASCII diagram from landing page (replaced with prose description).
+
 ## v1.5.0 (2026-04-04)
 
 - **Course memory.** idstack now remembers your design sessions. Each skill logs what it did to `.idstack/timeline.jsonl`, and the next session starts with a welcome-back message: quality score trend, last skill run, suggested next step. Your course context compounds across sessions instead of starting from scratch.
