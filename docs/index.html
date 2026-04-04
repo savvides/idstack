@@ -668,26 +668,26 @@
         <span class="demo-title">architecture</span>
       </div>
       <pre class="demo-body" style="margin: 0; white-space: pre; line-height: 1.4; color: var(--text-secondary);">
-┌─────────────────────────────────────────────────────┐
-│                    Claude Code                       │
-│                                                      │
-│  ┌─────────────────────────────────────────────┐    │
-│  │                 9 Skills                     │    │
-│  │  Each: SKILL.md (YAML frontmatter +         │    │
-│  │  evidence-based conversational workflow)     │    │
-│  └──────────┬──────────────────┬───────────────┘    │
-│             │                  │                     │
-│      reads/writes           cites                   │
-│             │                  │                     │
-│  ┌──────────▼──────┐  ┌───────▼────────────────┐   │
-│  │ .idstack/       │  │ evidence/              │   │
-│  │ project.json    │  │ references.md          │   │
-│  │ (manifest)      │  │ (11 domains, T1-T5)    │   │
-│  └─────────────────┘  └────────────────────────┘   │
-│                                                      │
-│  ./setup · bin/idstack-migrate                       │
-│  bin/idstack-update-check · test/smoke-test.sh       │
-└─────────────────────────────────────────────────────┘</pre>
++-------------------------------------------------------+
+|                     Claude Code                        |
+|                                                        |
+|  +-----------------------------------------------+    |
+|  |                  9 Skills                      |    |
+|  |   Each: SKILL.md (YAML frontmatter +           |    |
+|  |   evidence-based conversational workflow)       |    |
+|  +------------+-----------------------+-----------+    |
+|               |                       |                |
+|        reads/writes                cites               |
+|               |                       |                |
+|  +------------v------+  +------------v------------+   |
+|  | .idstack/         |  | evidence/               |   |
+|  | project.json      |  | references.md           |   |
+|  | (manifest)        |  | (11 domains, T1-T5)     |   |
+|  +-------------------+  +-------------------------+   |
+|                                                        |
+|  ./setup  bin/idstack-migrate                          |
+|  bin/idstack-update-check  test/smoke-test.sh          |
++-------------------------------------------------------+</pre>
     </div>
 
   </section>
