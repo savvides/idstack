@@ -228,6 +228,33 @@ EXISTING COURSE                           NEW COURSE
 
 Any skill works independently. The pipeline adds context but isn't required.
 
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    Claude Code                       │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │                 9 Skills                     │    │
+│  │  Each: SKILL.md (YAML frontmatter +         │    │
+│  │  evidence-based conversational workflow)     │    │
+│  └──────────┬──────────────────┬───────────────┘    │
+│             │                  │                     │
+│      reads/writes           cites                   │
+│             │                  │                     │
+│  ┌──────────▼──────┐  ┌───────▼────────────────┐   │
+│  │ .idstack/       │  │ evidence/              │   │
+│  │ project.json    │  │ references.md          │   │
+│  │ (manifest)      │  │ (11 domains, T1-T5)    │   │
+│  └─────────────────┘  └────────────────────────┘   │
+│                                                      │
+│  ./setup · bin/idstack-migrate                       │
+│  bin/idstack-update-check · test/smoke-test.sh       │
+└─────────────────────────────────────────────────────┘
+```
+
+Skills are plain Markdown files. No build step, no dependencies. `./setup` creates symlinks so Claude Code discovers the skills. Each skill reads the shared manifest, runs its evidence-based workflow, and writes back its section. The pipeline adds context but every skill also works standalone.
+
 ## How it works
 
 ### The project manifest

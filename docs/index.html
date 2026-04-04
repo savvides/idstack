@@ -657,6 +657,39 @@
       </div>
     </div>
 
+    <h3 style="font-size: 1.15rem; margin-top: 2.5rem; margin-bottom: 0.5rem;">How they fit together</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Skills are plain Markdown files. No build step, no dependencies. Each skill reads the shared manifest, runs its evidence-based workflow, and writes back its section.</p>
+
+    <div class="demo-block">
+      <div class="demo-header">
+        <div class="demo-dot red"></div>
+        <div class="demo-dot yellow"></div>
+        <div class="demo-dot green"></div>
+        <span class="demo-title">architecture</span>
+      </div>
+      <pre class="demo-body" style="margin: 0; white-space: pre; line-height: 1.4; color: var(--text-secondary);">
+┌─────────────────────────────────────────────────────┐
+│                    Claude Code                       │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │                 9 Skills                     │    │
+│  │  Each: SKILL.md (YAML frontmatter +         │    │
+│  │  evidence-based conversational workflow)     │    │
+│  └──────────┬──────────────────┬───────────────┘    │
+│             │                  │                     │
+│      reads/writes           cites                   │
+│             │                  │                     │
+│  ┌──────────▼──────┐  ┌───────▼────────────────┐   │
+│  │ .idstack/       │  │ evidence/              │   │
+│  │ project.json    │  │ references.md          │   │
+│  │ (manifest)      │  │ (11 domains, T1-T5)    │   │
+│  └─────────────────┘  └────────────────────────┘   │
+│                                                      │
+│  ./setup · bin/idstack-migrate                       │
+│  bin/idstack-update-check · test/smoke-test.sh       │
+└─────────────────────────────────────────────────────┘</pre>
+    </div>
+
   </section>
 
   <hr class="section-divider">
