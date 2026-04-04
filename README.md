@@ -236,24 +236,26 @@ Any skill works independently. The pipeline adds context but isn't required.
 |                                                        |
 |  +-----------------------------------------------+    |
 |  |                  9 Skills                      |    |
-|  |   Each: SKILL.md (YAML frontmatter +           |    |
-|  |   evidence-based conversational workflow)       |    |
-|  +------------+-----------------------+-----------+    |
-|               |                       |                |
-|        reads/writes                cites               |
-|               |                       |                |
-|  +------------v------+  +------------v------------+   |
-|  | .idstack/         |  | evidence/               |   |
-|  | project.json      |  | references.md           |   |
-|  | (manifest)        |  | (11 domains, T1-T5)     |   |
-|  +-------------------+  +-------------------------+   |
+|  |   Each: SKILL.md.tmpl -> SKILL.md              |    |
+|  |   (YAML frontmatter + shared preamble +        |    |
+|  |    evidence-based conversational workflow)      |    |
+|  +------+----------------+----------------+------+    |
+|         |                |                |           |
+|   reads/writes      reads on start     cites          |
+|         |                |                |           |
+|  +------v------+  +-----v---------+  +---v--------+  |
+|  | .idstack/   |  | .idstack/     |  | evidence/  |  |
+|  | project.json|  | timeline.jsonl|  | references |  |
+|  | (manifest)  |  | learnings.jsonl  | (T1-T5)    |  |
+|  +-------------+  +---------------+  +------------+  |
 |                                                        |
-|  ./setup  bin/idstack-migrate                          |
-|  bin/idstack-update-check  test/smoke-test.sh          |
+|  templates/preamble.md  bin/idstack-gen-skills          |
+|  bin/idstack-timeline-log  bin/idstack-learnings-log    |
+|  bin/idstack-status  bin/idstack-update-check           |
 +-------------------------------------------------------+
 ```
 
-Skills are plain Markdown files. No build step, no dependencies. `./setup` creates symlinks so Claude Code discovers the skills. Each skill reads the shared manifest, runs its evidence-based workflow, and writes back its section. The pipeline adds context but every skill also works standalone.
+Skills are plain Markdown files generated from templates. No build step for users, no dependencies. `./setup` creates symlinks so Claude Code discovers the skills. Each skill reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
 
 ## How it works
 
@@ -261,6 +263,9 @@ Skills are plain Markdown files. No build step, no dependencies. `./setup` creat
 idstack saves your design decisions in `.idstack/project.json` so each skill remembers your course context. You never edit this file directly. The skills manage it.
 
 When you run `/course-import`, it creates the manifest with your course structure. When you run `/learning-objectives`, it reads the manifest and extends it with objectives and alignment data. `/assessment-design` adds rubrics and feedback strategies. `/course-builder` generates the actual content. `/course-quality-review` audits the full chain. `/course-export` packages it for your LMS. Each skill reads what came before and adds its layer.
+
+### Course memory
+idstack remembers your design sessions. Each skill logs what it did to `.idstack/timeline.jsonl`, and project-specific discoveries (LMS quirks, format issues, course patterns) are stored in `.idstack/learnings.jsonl`. When you start a new session, idstack tells you where you left off: quality score trends, which skills have been completed, and what the next step is. Run `bin/idstack-status` anytime to see your course health dashboard.
 
 ### Evidence tiers
 Every recommendation includes an evidence tier so you know how strong the backing is:
