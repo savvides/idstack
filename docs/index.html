@@ -431,6 +431,111 @@
       flex-shrink: 0;
     }
 
+    /* Timeline */
+    .timeline {
+      position: relative;
+      margin: 2rem 0;
+      padding-left: 2rem;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -2rem;
+      top: 6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      z-index: 1;
+    }
+    .shipped-dot {
+      background: var(--accent-start);
+      border-color: var(--accent-start);
+    }
+    .coming-soon-dot {
+      background: transparent;
+      border-color: var(--text-muted);
+      border-style: dashed;
+    }
+    .timeline-content {
+      padding: 1rem 1.25rem;
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .coming-soon-card {
+      border-style: dashed;
+      border-color: var(--text-muted);
+      background: transparent;
+    }
+    .timeline-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+    .version-tag {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-left: 0.5rem;
+    }
+    .latest-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-start);
+      background: rgba(99, 102, 241, 0.15);
+      padding: 0.1em 0.5em;
+      border-radius: 3px;
+      margin-left: 0.5rem;
+    }
+    .timeline-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.35rem;
+    }
+    .timeline-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Builder note */
+    .builder-note {
+      margin-top: 3rem;
+      padding: 1.5rem;
+      border-left: 3px solid var(--accent-start);
+      background: rgba(99, 102, 241, 0.04);
+      border-radius: 0 8px 8px 0;
+    }
+    .builder-note h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+    .builder-note p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 0.75rem;
+      max-width: none;
+    }
+
     /* Footer */
     .footer {
       border-top: 1px solid var(--border);
@@ -658,37 +763,7 @@
     </div>
 
     <h3 style="font-size: 1.15rem; margin-top: 2.5rem; margin-bottom: 0.5rem;">How they fit together</h3>
-    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Skills are plain Markdown files. No build step, no dependencies. Each skill reads the shared manifest, runs its evidence-based workflow, and writes back its section.</p>
-
-    <div class="demo-block">
-      <div class="demo-header">
-        <div class="demo-dot red"></div>
-        <div class="demo-dot yellow"></div>
-        <div class="demo-dot green"></div>
-        <span class="demo-title">architecture</span>
-      </div>
-      <pre class="demo-body" style="margin: 0; white-space: pre; line-height: 1.4; color: var(--text-secondary);">
-+-------------------------------------------------------+
-|                     Claude Code                        |
-|                                                        |
-|  +-----------------------------------------------+    |
-|  |                  9 Skills                      |    |
-|  |   Each: SKILL.md (YAML frontmatter +           |    |
-|  |   evidence-based conversational workflow)       |    |
-|  +------------+-----------------------+-----------+    |
-|               |                       |                |
-|        reads/writes                cites               |
-|               |                       |                |
-|  +------------v------+  +------------v------------+   |
-|  | .idstack/         |  | evidence/               |   |
-|  | project.json      |  | references.md           |   |
-|  | (manifest)        |  | (11 domains, T1-T5)     |   |
-|  +-------------------+  +-------------------------+   |
-|                                                        |
-|  ./setup  bin/idstack-migrate                          |
-|  bin/idstack-update-check  test/smoke-test.sh          |
-+-------------------------------------------------------+</pre>
-    </div>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Skills are plain Markdown files. No build step, no dependencies. Each skill reads the shared manifest and session history, runs its evidence-based workflow, and logs the result. Your course context builds up over time.</p>
 
   </section>
 
@@ -766,6 +841,80 @@
       <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t5)"></span> T5: Expert opinion</span>
     </div>
   </section>
+
+  <hr class="section-divider">
+
+  <!-- Updates & Roadmap -->
+  <section class="section" id="updates">
+    <div class="section-label">Updates</div>
+    <h2>What's new and what's next.</h2>
+    <p>idstack is actively developed. Here's what shipped recently and what we're working on. Updates install automatically when you run any skill.</p>
+
+    <!-- Coming Soon -->
+    <div class="timeline">
+      <div class="timeline-item coming-soon">
+        <div class="timeline-dot coming-soon-dot"></div>
+        <div class="timeline-content coming-soon-card">
+          <div class="timeline-date">Coming soon</div>
+          <div class="timeline-title">More specialist skills</div>
+          <div class="timeline-desc">Content sequencing that manages cognitive load. Media selection that flags multimedia principle violations. Evaluation design using Kirkpatrick's four levels. Each backed by the same evidence base.</div>
+        </div>
+      </div>
+      <div class="timeline-item coming-soon">
+        <div class="timeline-dot coming-soon-dot"></div>
+        <div class="timeline-content coming-soon-card">
+          <div class="timeline-date">Exploring</div>
+          <div class="timeline-title">Push changes back to your LMS</div>
+          <div class="timeline-desc">After idstack reviews your course and generates better objectives, push the improvements directly back to Canvas. No more copy-pasting between design documents and your LMS.</div>
+        </div>
+      </div>
+
+      <!-- Shipped -->
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">April 4 <span class="version-tag">v1.5.0</span> <span class="latest-badge">Latest</span></div>
+          <div class="timeline-title">Course memory</div>
+          <div class="timeline-desc">idstack now remembers your design sessions. Quality score trends, which skills you've completed, and project-specific discoveries all carry over between conversations. Start a new session and idstack picks up where you left off.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">April 1 <span class="version-tag">v1.4.0</span></div>
+          <div class="timeline-title">SCORM import and export</div>
+          <div class="timeline-desc">Import courses from Articulate Rise, Storyline, Adobe Captivate, and any SCORM-compliant authoring tool. Export SCORM packages for any LMS. PDF import also added.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">April 1 <span class="version-tag">v1.3.0</span></div>
+          <div class="timeline-title">Accessibility review and stress testing</div>
+          <div class="timeline-desc">WCAG 2.1 AA compliance audit plus Universal Design for Learning review. Red team audit that assumes your course is broken and tries to prove it. Two new quality gates before export.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">March 31 <span class="version-tag">v1.2.0</span></div>
+          <div class="timeline-title">Cross-domain quality checks</div>
+          <div class="timeline-desc">Quality review now checks cognitive load, multimedia principles, feedback quality, and expertise reversal across your entire course. Score trending and per-category breakdown.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- From the builder -->
+    <div class="builder-note">
+      <h3>Where we're headed</h3>
+      <p>Right now idstack covers the core loop: analyze needs, write objectives, design assessments, build content, and review quality. That handles most of what you do day to day. But there's more to get to.</p>
+      <p>The next skills will handle the specialized workflows that eat up the rest of your time: sequencing content so it doesn't overload learners, choosing the right media for each objective, and planning how to measure whether your course actually worked.</p>
+      <p>Longer term, the goal is <strong>pushing changes back to your LMS</strong>. You update an objective in idstack, and it updates in Canvas. Every connected assessment and module page updates with it. No more maintaining two copies of your course.</p>
+      <p style="margin-top: 1.5rem;"><a href="https://forms.gle/6LDgDD1M6WWyYvME8">Tell us what matters most to you</a>. Priorities are shaped by what instructional designers actually need.</p>
+    </div>
+  </section>
+
+  <hr class="section-divider">
 
   <!-- Footer -->
   <footer class="footer">
