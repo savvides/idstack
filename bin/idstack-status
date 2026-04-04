@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# Course health dashboard. Reads .idstack/timeline.jsonl and prints a summary.
+# Usage: idstack-status
+# Shows: project name, skills completed, quality score trend, dimensions, next step.
+
+TIMELINE=".idstack/timeline.jsonl"
+LEARNINGS=".idstack/learnings.jsonl"
+MANIFEST=".idstack/project.json"
+
+# Project name
+PROJECT_NAME="unknown"
+if [ -f "$MANIFEST" ] && command -v python3 &>/dev/null; then
+  PROJECT_NAME=$(python3 -c "
+import json
+try:
+    d = json.load(open('$MANIFEST'))
+    print(d.get('project_name', d.get('needs_analysis', {}).get('project_name', 'unknown')))
+except: print('unknown')
+" 2>/dev/null) || PROJECT_NAME="unknown"
+fi
+
+echo "=============================="
+echo "  idstack course status"
+echo "=============================="
+echo ""
+
+if [ ! -f "$TIMELINE" ]; then
+  echo "No course data yet."
+  echo "Run /needs-analysis to start a new course, or /course-import to bring in an existing one."
+  exit 0
+fi
+
+if ! command -v python3 &>/dev/null; then
+  echo "Project: $PROJECT_NAME"
+  echo ""
+  TOTAL=$(wc -l < "$TIMELINE" 2>/dev/null | tr -d ' ')
+  echo "Timeline: $TOTAL events"
+  echo "(Install python3 for score trends and dimension analysis)"
+  exit 0
+fi
+
+python3 -c "
+import json, sys
+
+lines = open('$TIMELINE').readlines()[-200:]
+events = []
+for line in lines:
+    try:
+        events.append(json.loads(line))
+    except:
+        pass
+
+if not events:
+    print('No valid timeline entries.')
+    sys.exit(0)
+
+print(f'Project: $PROJECT_NAME')
+print()
+
+# Skills completed
+skills_run = {}
+for e in events:
+    s = e.get('skill', '?')
+    if e.get('event') == 'completed':
+        skills_run[s] = skills_run.get(s, 0) + 1
+
+print('Skills completed:')
+pipeline = [
+    'needs-analysis', 'learning-objectives', 'assessment-design',
+    'course-import', 'course-builder', 'course-quality-review',
+    'accessibility-review', 'red-team', 'course-export'
+]
+for s in pipeline:
+    count = skills_run.get(s, 0)
+    marker = 'x' if count > 0 else ' '
+    suffix = f' ({count}x)' if count > 1 else ''
+    print(f'  [{marker}] /{s}{suffix}')
+print()
+
+# Quality score trend
+quality_reviews = [e for e in events if e.get('skill') == 'course-quality-review' and 'score' in e]
+if quality_reviews:
+    trend = ' -> '.join(str(r['score']) for r in quality_reviews[-5:])
+    print(f'Quality trend: {trend}')
+    last = quality_reviews[-1]
+    dims = last.get('dimensions', {})
+    if dims:
+        tp = dims.get('teaching_presence', '?')
+        sp = dims.get('social_presence', '?')
+        cp = dims.get('cognitive_presence', '?')
+        print(f'Last presence scores: Teaching={tp}/10  Social={sp}/10  Cognitive={cp}/10')
+        cd = dims.get('cross_domain', {})
+        if cd:
+            print(f'Cross-domain: CogLoad={cd.get(\"cognitive_load\",\"?\")}/10  Multimedia={cd.get(\"multimedia\",\"?\")}/10  Feedback={cd.get(\"feedback_quality\",\"?\")}/10')
+    print()
+
+# Pipeline progression
+completed = set(skills_run.keys())
+pipeline_order = [
+    ('needs-analysis', 'learning-objectives'),
+    ('learning-objectives', 'assessment-design'),
+    ('assessment-design', 'course-builder'),
+    ('course-builder', 'course-quality-review'),
+    ('course-quality-review', 'accessibility-review'),
+    ('accessibility-review', 'red-team'),
+    ('red-team', 'course-export'),
+]
+next_skill = None
+for prev, nxt in pipeline_order:
+    if prev in completed and nxt not in completed:
+        next_skill = nxt
+        break
+if not next_skill and 'needs-analysis' not in completed and 'course-import' not in completed:
+    next_skill = 'needs-analysis'
+
+if next_skill:
+    print(f'Suggested next: /{next_skill}')
+    print()
+" 2>/dev/null || echo "Error reading timeline."
+
+# Learnings count
+if [ -f "$LEARNINGS" ]; then
+  LEARN_COUNT=$(wc -l < "$LEARNINGS" 2>/dev/null | tr -d ' ')
+  [ "$LEARN_COUNT" -gt 0 ] 2>/dev/null && echo "Learnings: $LEARN_COUNT discoveries stored"
+fi

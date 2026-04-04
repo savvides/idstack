@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Append one learning to .idstack/learnings.jsonl.
+# Usage: idstack-learnings-log '{"skill":"course-import","type":"operational","key":"canvas-rubrics","insight":"Uses HTML format","confidence":8}'
+# Injects "ts" field automatically. Creates .idstack/ if needed.
+# Exit 0 always — never blocks the calling skill.
+
+set -e
+
+JSON_ARG="${1:-}"
+[ -z "$JSON_ARG" ] && exit 0
+
+IDSTACK_DIR=".idstack"
+LEARNINGS="$IDSTACK_DIR/learnings.jsonl"
+
+mkdir -p "$IDSTACK_DIR" 2>/dev/null || exit 0
+
+TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+# Use python3 for safe JSON serialization (injects ts field)
+if command -v python3 &>/dev/null; then
+  LINE=$(python3 -c "
+import json, sys
+try:
+    d = json.loads(sys.argv[1])
+    d['ts'] = '$TS'
+    print(json.dumps(d))
+except Exception:
+    print(json.dumps({'raw': sys.argv[1], 'ts': '$TS'}))
+" "$JSON_ARG" 2>/dev/null) || LINE="{\"raw\":\"error\",\"ts\":\"$TS\"}"
+else
+  LINE=$(echo "$JSON_ARG" | sed "s/}$/,\"ts\":\"$TS\"}/")
+fi
+
+echo "$LINE" >> "$LEARNINGS" 2>/dev/null || true
