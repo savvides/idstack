@@ -330,7 +330,7 @@ idstack runs locally on your machine. Course data stays in your project folder (
 You can, but let the skills manage it. If you do edit it, keep the JSON valid.
 
 **How do I update idstack?**
-idstack updates automatically. When you run any skill, it checks for updates and pulls the latest version in the background. You'll see "idstack updated to the latest version" and the skill continues without interruption. If auto-update fails, it'll tell you how to update manually: `cd ~/.claude/skills/idstack && git pull && ./setup`
+idstack checks for updates when you run any skill. If a newer version is available, you'll see a notification. Update manually: `cd ~/.claude/skills/idstack && git pull && ./setup`
 If you downloaded ZIP: download the latest version and run `./setup` again.
 
 **How do I request a feature or report a bug?**

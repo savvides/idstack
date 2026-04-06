@@ -25,23 +25,12 @@ git -C "$IDSTACK_DIR" fetch origin main --quiet 2>/dev/null || exit 0
 REMOTE=$(git -C "$IDSTACK_DIR" rev-parse origin/main 2>/dev/null) || exit 0
 
 if [ "$LOCAL" != "$REMOTE" ]; then
-  # Auto-update: pull latest and re-run setup
-  OLD_VERSION=$(cat "$IDSTACK_DIR/VERSION" 2>/dev/null || echo "unknown")
-  git -C "$IDSTACK_DIR" pull --quiet origin main 2>/dev/null
-  if [ $? -eq 0 ]; then
-    # Re-run setup to update symlinks
-    "$IDSTACK_DIR/setup" > /dev/null 2>&1 || true
-    NEW_VERSION=$(cat "$IDSTACK_DIR/VERSION" 2>/dev/null || echo "unknown")
-    echo "UPDATED $OLD_VERSION $NEW_VERSION"
-    echo "" > "$CACHE_FILE"
-  else
-    # Pull failed, fall back to notification
-    LOCAL_SHORT=$(echo "$LOCAL" | cut -c1-7)
-    REMOTE_SHORT=$(echo "$REMOTE" | cut -c1-7)
-    RESULT="UPDATE_AVAILABLE $LOCAL_SHORT $REMOTE_SHORT"
-    echo "$RESULT" > "$CACHE_FILE"
-    echo "$RESULT"
-  fi
+  # Notify only — never auto-pull. Users review and update manually.
+  LOCAL_SHORT=$(echo "$LOCAL" | cut -c1-7)
+  REMOTE_SHORT=$(echo "$REMOTE" | cut -c1-7)
+  RESULT="UPDATE_AVAILABLE $LOCAL_SHORT $REMOTE_SHORT"
+  echo "$RESULT" > "$CACHE_FILE"
+  echo "$RESULT"
 else
   echo "" > "$CACHE_FILE"
 fi

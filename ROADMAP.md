@@ -10,9 +10,9 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - `bin/idstack-status` prints a course health dashboard at any time.
 - Template system for contributors: shared preamble maintained in one place.
 
-### Landing page and auto-update (v1.4.1)
+### Landing page and update check (v1.4.1)
 - [idstack.org](https://idstack.org) — landing page with getting started guide, evidence grid, and SEO
-- Skills now auto-update when a new version is available. No manual `git pull` needed.
+- Skills check for updates and notify when a new version is available.
 
 ### SCORM import and export (v1.4.0)
 - `/course-import` now accepts SCORM 1.2/2004 packages from Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, and any SCORM-compliant authoring tool

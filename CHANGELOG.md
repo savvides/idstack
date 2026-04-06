@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.0.2 (2026-04-06)
+
+### Fixed
+- **Security:** Removed silent auto-update that pulled and executed code from GitHub without user review. Skills now notify when updates are available. Users update manually with `git pull && ./setup`.
+
 ## v1.5.0.1 (2026-04-04)
 
 - Landing page now shows development updates and roadmap at [idstack.org](https://idstack.org). Timeline with recent releases (dates as primary identifiers, not version numbers) plus "Coming soon" items and a "Where we're headed" narrative. Non-technical visitors can see what's new without navigating GitHub.
@@ -23,7 +28,7 @@
 ## v1.4.1 (2026-04-02)
 
 - Landing page live at [idstack.org](https://idstack.org) with getting started guide, terminal demo, skill pipeline diagram, and evidence grid across 11 research domains
-- Skills now auto-update when a new version is available. No manual `git pull` needed.
+- Skills check for updates and notify when a new version is available.
 - SEO: Open Graph and Twitter card tags, JSON-LD structured data, OG image, and favicon for link previews when shared on social media
 
 ## v1.4.0 (2026-04-01)
