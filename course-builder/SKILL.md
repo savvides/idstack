@@ -25,7 +25,7 @@ _UPD=$(~/.claude/skills/idstack/bin/idstack-update-check 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATED`: tell the user "idstack updated to the latest version." Then continue normally. If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available but auto-update failed. Run `cd ~/.claude/skills/idstack && git pull && ./setup` to update." Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ~/.claude/skills/idstack && git pull && ./setup` to update." Then continue normally.
 
 ## Preamble: Project Manifest
 
