@@ -98,6 +98,33 @@ for skill in needs-analysis learning-objectives course-quality-review course-imp
   check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$SKILLS_DIR/$skill/SKILL.md'"
 done
 
+# Migration tests (v1.0 → v1.2 and v1.1 → v1.2)
+FIXTURE_DIR="$SKILLS_DIR/idstack/test/fixtures"
+if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
+  # Test v1.0 → v1.2 chained migration
+  TMPDIR_MIG=$(mktemp -d)
+  cp "$FIXTURE_DIR/manifest-v1.0.json" "$TMPDIR_MIG/project.json"
+  "$SKILLS_DIR/idstack/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
+  check "v1.0→v1.2: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.2'\""
+  check "v1.0→v1.2: has red_team_audit" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'red_team_audit' in d\""
+  check "v1.0→v1.2: has accessibility_review" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'accessibility_review' in d\""
+  check "v1.0→v1.2: has readiness_check" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'readiness_check' in d.get('export_metadata',{})\""
+  check "v1.0→v1.2: has quick_wins" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'quick_wins' in d.get('quality_review',{})\""
+  check "v1.0→v1.2: preserves project_name" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['project_name']=='Test Course v1.0'\""
+  rm -rf "$TMPDIR_MIG"
+
+  # Test v1.1 → v1.2 migration
+  TMPDIR_MIG=$(mktemp -d)
+  cp "$FIXTURE_DIR/manifest-v1.1.json" "$TMPDIR_MIG/project.json"
+  "$SKILLS_DIR/idstack/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
+  check "v1.1→v1.2: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.2'\""
+  check "v1.1→v1.2: has red_team_audit" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'red_team_audit' in d\""
+  check "v1.1→v1.2: has accessibility_review" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'accessibility_review' in d\""
+  check "v1.1→v1.2: preserves review_history" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert len(d['quality_review']['review_history'])==1\""
+  check "v1.1→v1.2: preserves existing data" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['import_metadata']['items_imported']['modules']==6\""
+  rm -rf "$TMPDIR_MIG"
+fi
+
 # Template freshness check
 check "generated SKILL.md files are up to date" "'$SKILLS_DIR/idstack/bin/idstack-gen-skills' --dry-run"
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.1.0 (2026-04-10)
+
+### Added
+- **Bidirectional pipeline.** All 9 skills now write back to the manifest. Previously 5 skills were read-only (course-quality-review, course-builder, red-team, accessibility-review, course-export). Now every skill contributes to the shared project state, so downstream skills get richer input.
+- **Score trending.** Run `/course-quality-review` multiple times and see your score improve: "Score: 78/100 (+16 since last review)." Current score in the manifest, history in the timeline. One source of truth per data point.
+- **Export readiness info.** `/course-export` now shows quality, red-team, and accessibility scores before export. Informational only, never blocks.
+- **WCAG 2.1 AA depth.** `/accessibility-review` expanded from 8 to 20+ evidence citations with full WCAG success criteria. Course-specific guidance for videos, quizzes, forums, PDFs, and simulations.
+- **Red-team evidence grounding.** `/red-team` expanded from 12 to ~45 evidence citations. All 5 adversarial dimensions now cite their research.
+- **Chained schema migrations.** `bin/idstack-migrate` refactored to support migration chains (1.0→1.1→1.2). Users on any version get upgraded in one pass.
+- **Migration test fixtures.** New `test/fixtures/` with v1.0 and v1.1 manifest fixtures. 11 new migration assertions in smoke-test.sh.
+
+### Changed
+- Manifest schema bumped to v1.2 (additive only, no breaking changes).
+
 ## v1.5.0.2 (2026-04-06)
 
 ### Fixed
