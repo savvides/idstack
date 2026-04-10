@@ -4,6 +4,14 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Bidirectional pipeline + evidence depth (v1.5.1)
+- All 9 skills now write back to the manifest, closing the feedback loop. Downstream skills get richer input from upstream analysis.
+- Score trending: run `/course-quality-review` multiple times and see your score improve over sessions.
+- `/accessibility-review` expanded to full WCAG 2.1 AA coverage with course-specific guidance for videos, quizzes, forums, PDFs, and simulations.
+- `/red-team` all 5 adversarial dimensions now cite their research evidence.
+- `/course-export` shows readiness info (quality, accessibility, red-team scores) before export.
+- Schema migration v1.2 with chained upgrades (any version → latest in one pass).
+
 ### Course memory (v1.5.0)
 - idstack remembers your design sessions across conversations. Each skill logs what it did, and the next session starts with context: quality score trends, last skill run, and suggested next step.
 - Skills store project-specific discoveries (LMS quirks, format issues) as learnings that surface in future sessions.
@@ -33,9 +41,6 @@ Four more skills based on the research synthesis:
 - **Media selection** — flags multimedia principle violations (redundancy, split attention, coherence) and recommends when to use video, text, diagrams, or interactive elements
 - **Evaluation design** — plans how to measure whether your course actually worked, using Kirkpatrick's four levels and beyond
 
-### Standardized skill transitions
-Smoother handoffs between skills. Right now, different skills say "Next step:" in slightly different ways. We're making the whole pipeline feel like one cohesive experience.
-
 ## Exploring
 
 These depend on user demand. If any of these would change your workflow, [let us know](https://forms.gle/6LDgDD1M6WWyYvME8).
@@ -45,9 +50,6 @@ Run idstack skills in Gemini CLI and Codex CLI, not just Claude Code. All three 
 
 ### More LMS integrations
 Direct API connections to Blackboard, Moodle, and D2L (beyond the IMS Common Cartridge format that already works). This would unlock richer data like rubrics, analytics, and student engagement metrics.
-
-### Template system
-As the skill count grows, a template system to share common patterns across skills. This is internal infrastructure, invisible to users, but it keeps the skills consistent and maintainable.
 
 ## The big vision
 
