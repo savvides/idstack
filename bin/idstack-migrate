@@ -82,6 +82,9 @@ def migrate_1_1_to_1_2(data):
     })
     # Add readiness_check to export_metadata
     em = data.setdefault('export_metadata', {})
+    # Convert failed_items from int (v1.1) to list (v1.2)
+    if isinstance(em.get('failed_items'), int):
+        em['failed_items'] = []
     em.setdefault('readiness_check', {
         'quality_score': 0,
         'quality_reviewed': False,

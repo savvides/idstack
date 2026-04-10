@@ -1005,7 +1005,7 @@ Add or update the `export_metadata` field at the root level:
       "red_team_reviewed": false,
       "accessibility_critical": 0,
       "accessibility_reviewed": false,
-      "verdict": "export_clean|export_with_warnings|export_blocked"
+      "verdict": "export_clean|export_with_warnings"
     }
   }
 }

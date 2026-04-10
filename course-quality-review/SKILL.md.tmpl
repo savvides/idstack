@@ -577,7 +577,7 @@ is wrong, why it matters (with evidence tier), how to fix it, and severity
 | Cross-Domain Evidence | XX/20 | N flags |
 ```
 
-If previous review scores exist in the manifest `review_history`, show:
+If previous review scores exist in `.idstack/timeline.jsonl`, show:
 ```
 Previous score: X/100 (reviewed YYYY-MM-DD). Current score: Y/100. Delta: +/-Z.
 ```
@@ -720,13 +720,6 @@ Populate the `quality_review` section with:
         "severity": "critical|moderate|minor",
         "fix": "..."
       }
-    ],
-    "review_history": [
-      {
-        "date": "ISO-8601 timestamp",
-        "score": 0,
-        "version": "1.1"
-      }
     ]
   }
 }
@@ -734,11 +727,7 @@ Populate the `quality_review` section with:
 
 When writing the manifest:
 - Populate ALL fields in the `quality_review` section from the analysis above.
-- If `review_history` already exists, APPEND the new entry. Do not overwrite
-  previous entries — the history is the basis for score trending.
-- If `review_history` does not exist, create it with a single entry for this review.
-- Each entry records the date, overall score, and schema version (use "1.2").
-- Cap `review_history` at 50 entries. If over 50, trim the oldest entries.
+- Update the top-level `updated` timestamp to reflect the current time.
 
 ### Score Trending Display
 
@@ -922,14 +911,19 @@ validating the manifest. All fields shown below must exist in the JSON.
       "cross_domain_evidence": 0
     },
     "quick_wins": [],
-    "recommendations": [],
-    "review_history": []
+    "recommendations": []
   },
   "red_team_audit": {
     "updated": "",
     "confidence_score": 0,
     "findings_summary": {"critical": 0, "warning": 0, "info": 0},
-    "dimensions": {},
+    "dimensions": {
+      "alignment": {"score": "", "findings": []},
+      "evidence": {"score": "", "mode": "", "findings": []},
+      "cognitive_load": {"score": "", "findings": []},
+      "personas": {"score": "", "findings": []},
+      "prerequisites": {"score": "", "findings": []}
+    },
     "top_actions": [],
     "limitations": []
   },
