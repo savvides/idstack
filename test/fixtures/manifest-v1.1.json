@@ -1,0 +1,89 @@
+{
+  "version": "1.1",
+  "project_name": "Test Course v1.1",
+  "created": "2026-02-01T00:00:00Z",
+  "updated": "2026-02-01T00:00:00Z",
+  "context": {
+    "modality": "hybrid",
+    "timeline": "10_weeks",
+    "class_size": "25",
+    "institution_type": "college",
+    "available_tech": ["moodle"]
+  },
+  "needs_analysis": {
+    "organizational_context": {
+      "problem_statement": "Test v1.1",
+      "stakeholders": [],
+      "current_state": "",
+      "desired_state": "",
+      "performance_gap": ""
+    },
+    "task_analysis": {
+      "job_tasks": [],
+      "prerequisite_knowledge": [],
+      "tools_and_resources": []
+    },
+    "learner_profile": {
+      "prior_knowledge_level": "novice",
+      "motivation_factors": [],
+      "demographics": "",
+      "access_constraints": [],
+      "learning_preferences_note": ""
+    },
+    "training_justification": {
+      "justified": true,
+      "confidence": 7,
+      "rationale": "Test v1.1",
+      "alternatives_considered": []
+    }
+  },
+  "learning_objectives": {
+    "ilos": [],
+    "alignment_matrix": {
+      "ilo_to_activity": {},
+      "ilo_to_assessment": {},
+      "gaps": []
+    },
+    "expertise_reversal_flags": []
+  },
+  "quality_review": {
+    "last_reviewed": "2026-02-01T00:00:00Z",
+    "qm_standards": {},
+    "coi_presence": {},
+    "alignment_audit": {"findings": []},
+    "cross_domain_checks": {
+      "cognitive_load": {"score": 6, "flags": []},
+      "multimedia_principles": {"score": 7, "flags": []},
+      "feedback_quality": {"score": 5, "flags": ["No rubrics"]},
+      "expertise_reversal": {"score": 8, "flags": []}
+    },
+    "review_history": [
+      {"date": "2026-02-01T00:00:00Z", "score": 65, "version": "1.1"}
+    ]
+  },
+  "assessments": {
+    "items": [],
+    "formative_checkpoints": [],
+    "feedback_quality_score": 0
+  },
+  "course_content": {
+    "modules": [],
+    "generated_files": [],
+    "build_timestamp": ""
+  },
+  "import_metadata": {
+    "source": "paste",
+    "imported_at": "2026-02-01T00:00:00Z",
+    "source_lms": "",
+    "items_imported": {"modules": 6, "objectives": 0, "assessments": 3, "activities": 2, "pages": 0},
+    "quality_flags": 2
+  },
+  "export_metadata": {
+    "exported_at": "",
+    "format": "",
+    "destination": "",
+    "items_exported": {"modules": 0, "pages": 0, "assignments": 0, "quizzes": 0, "discussions": 0},
+    "failed_items": 0,
+    "notes": ""
+  }
+}

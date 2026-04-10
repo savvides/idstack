@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "project_name": "Test Course v1.0",
+  "created": "2026-01-01T00:00:00Z",
+  "updated": "2026-01-01T00:00:00Z",
+  "context": {
+    "modality": "online_async",
+    "timeline": "15_weeks",
+    "class_size": "30",
+    "institution_type": "university",
+    "available_tech": ["canvas"]
+  },
+  "needs_analysis": {
+    "organizational_context": {
+      "problem_statement": "Test course",
+      "stakeholders": [],
+      "current_state": "",
+      "desired_state": "",
+      "performance_gap": ""
+    },
+    "task_analysis": {
+      "job_tasks": [],
+      "prerequisite_knowledge": [],
+      "tools_and_resources": []
+    },
+    "learner_profile": {
+      "prior_knowledge_level": "intermediate",
+      "motivation_factors": [],
+      "demographics": "",
+      "access_constraints": [],
+      "learning_preferences_note": ""
+    },
+    "training_justification": {
+      "justified": true,
+      "confidence": 8,
+      "rationale": "Test",
+      "alternatives_considered": []
+    }
+  },
+  "learning_objectives": {
+    "ilos": [],
+    "alignment_matrix": {
+      "ilo_to_activity": {},
+      "ilo_to_assessment": {},
+      "gaps": []
+    },
+    "expertise_reversal_flags": []
+  },
+  "quality_review": {
+    "last_reviewed": "",
+    "qm_standards": {},
+    "coi_presence": {},
+    "alignment_audit": {"findings": []}
+  }
+}
