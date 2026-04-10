@@ -86,6 +86,20 @@ the project-local `.idstack/` files. Institutional knowledge compounds across se
 vs project-local learnings interact.
 **Priority:** P2
 
+## v2: Interactive Landing Page Demo
+Upgrade the "See it work" section on idstack.org from static text to an interactive
+pre-install demo. The current section shows a text transcript of /course-import and
+/course-quality-review. A richer version could include: animated terminal replay
+(CSS-only, building on the existing typing animation), clickable pipeline explorer
+showing what each of the 9 skills does, or expanded sample output with evidence
+citations. The goal is to let prospective users experience the value before installing.
+**Why:** CEO review killed a post-install /demo command because IDs always have a course.
+The real TTHW problem is pre-install: visitors on idstack.org need to understand the
+value before committing to install. The landing page demo is where that conversion happens.
+**Depends on:** Design review of the current landing page to identify what's working
+and what's not. User feedback on whether the current "See it work" section is compelling.
+**Priority:** P2
+
 ## v3: Bidirectional LMS Sync
 Push changes back to Canvas (and eventually other LMS) via API. After
 /course-quality-review identifies issues and /learning-objectives generates better
