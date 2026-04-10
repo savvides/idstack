@@ -857,10 +857,25 @@ Populate the `quality_review` section with:
 ```
 
 When writing the manifest:
+- Populate ALL fields in the `quality_review` section from the analysis above.
 - If `review_history` already exists, APPEND the new entry. Do not overwrite
   previous entries — the history is the basis for score trending.
 - If `review_history` does not exist, create it with a single entry for this review.
-- Each entry records the date, overall score, and schema version.
+- Each entry records the date, overall score, and schema version (use "1.2").
+- Cap `review_history` at 50 entries. If over 50, trim the oldest entries.
+
+### Score Trending Display
+
+After writing the manifest, check `.idstack/timeline.jsonl` for prior course-quality-review
+scores. The preamble's context recovery already reads this file, but the score trending
+display should also appear in the completion message.
+
+- If 1 prior score exists: show delta. "Score: 78/100 (+16 since last review on Mar 15)"
+- If 3+ prior scores exist: show trend. "Trending up: 62 -> 72 -> 78 across 3 reviews."
+- If no prior scores exist: just show the current score.
+
+The manifest stores the current overall_score. The timeline stores historical scores.
+One source of truth per data point.
 
 ### Generate Quality Report
 
@@ -947,12 +962,12 @@ Cartridge or push to Canvas.]"
 
 ## Manifest Schema Reference
 
-The complete manifest schema (v1.1). Use this as the template when creating or
+The complete manifest schema (v1.2). Use this as the template when creating or
 validating the manifest. All fields shown below must exist in the JSON.
 
 ```json
 {
-  "version": "1.1",
+  "version": "1.2",
   "project_name": "",
   "created": "",
   "updated": "",
@@ -1033,6 +1048,21 @@ validating the manifest. All fields shown below must exist in the JSON.
     "quick_wins": [],
     "recommendations": [],
     "review_history": []
+  },
+  "red_team_audit": {
+    "updated": "",
+    "confidence_score": 0,
+    "findings_summary": {"critical": 0, "warning": 0, "info": 0},
+    "dimensions": {},
+    "top_actions": [],
+    "limitations": []
+  },
+  "accessibility_review": {
+    "updated": "",
+    "score": {"overall": 0, "wcag": 0, "udl": 0},
+    "wcag_violations": [],
+    "udl_recommendations": [],
+    "quick_wins": []
   }
 }
 ```
@@ -1045,14 +1075,16 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 
 ## Completion: Timeline Logging
 
-After the skill workflow completes successfully, log the session to the timeline:
+After the skill workflow completes successfully, log the session to the timeline.
+Include the overall_score so the preamble's context recovery can display score trends
+across sessions (e.g., "Quality score trend: 62 -> 72 -> 78 over 3 reviews").
 
 ```bash
-~/.claude/skills/idstack/bin/idstack-timeline-log '{"skill":"course-quality-review","event":"completed"}'
+~/.claude/skills/idstack/bin/idstack-timeline-log '{"skill":"course-quality-review","event":"completed","score":OVERALL_SCORE,"dimensions":{"teaching_presence":TP,"social_presence":SP,"cognitive_presence":CP}}'
 ```
 
-Replace the JSON above with actual data from this session. Include skill-specific fields
-where available (scores, counts, flags). Log synchronously (no background &).
+Replace OVERALL_SCORE with the actual overall score (0-100), and TP/SP/CP with the
+CoI presence dimension scores (0-10 each). Log synchronously (no background &).
 
 If you discover a non-obvious project-specific quirk during this session (LMS behavior,
 import format issue, course structure pattern), also log it as a learning:

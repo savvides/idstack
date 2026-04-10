@@ -242,13 +242,18 @@ For every learning objective and assessment pair, challenge the alignment:
 - If the objective says "analyze" (Bloom's level 4), does the assessment require
   analysis or just recall (level 1)? Flag Bloom's level mismatches.
   [Alignment-14] [T1] — retrieval practice and Bloom's levels interact.
+  [Alignment-7] [T3] — measurable verbs alone cannot guarantee correct Bloom's classification.
+  [Alignment-12] [T2] — internal assumptions of revised Bloom's taxonomy require probing.
 - Flag any objective with no matching assessment (untested objective).
+  [Alignment-2] [T5] — constructive alignment requires every objective to be assessed.
 - Flag any assessment with no matching objective (orphaned assessment).
+  [Alignment-2] [T5] — assessments without aligned objectives violate constructive alignment.
 
 **Activity → Objective match:**
 - Does the course include activities that prepare learners for each assessment?
 - Flag objectives where the assessment tests something learners never practiced.
   [Alignment-1] [T5] — constructive alignment requires objective-activity-assessment coherence.
+  [Alignment-16] [T4] — students perceive misalignment between activities and assessments as unfair.
 
 **Output:** Table of alignment findings with severity.
 
@@ -266,12 +271,16 @@ Check every evidence citation in the manifest or course design for accuracy.
 
 **Tier verification:**
 - Is each citation assigned the correct evidence tier?
+  [Evaluation-1] [T3] — evaluation rigor in health professions education requires method-matched evidence claims.
 - Flag any citation where the tier seems too high for the study type.
+  [Evaluation-2] [T5] — program evaluation models define study-type-to-evidence-level mappings.
 - Flag T4/T5 citations used to support high-stakes design decisions.
+  [Evaluation-5] [T5] — overreliance on low-tier evidence undermines evaluation validity.
 
 **Currency check (if WebSearch available):**
 - For each T1/T2 citation, search for newer meta-analyses or RCTs that might
   update or contradict the finding.
+  [Assessment-18] [T3] — systematic reviews of meta-analyses reveal how evidence evolves over time.
 - Only flag contradictions from clearly relevant papers. Ignore tangential matches.
 - Check for retractions of cited papers.
 - If WebSearch is unavailable, note: "Evidence verification running in limited mode
@@ -298,17 +307,23 @@ measurements of element interactivity. Flag this limitation in the output.
 **Proxy indicators:**
 - Number of new concepts introduced per module (flag if >7, per Miller's capacity limits)
   [CogLoad-4] [T5] — intrinsic load increases with element interactivity.
+  [CogLoad-5] [T5] — working memory load must be actively managed; capacity limits are real design constraints.
+  [CogLoad-6] [T1] — working memory resource depletion compounds across tasks in a module.
 - Number of prerequisite concepts required (flag if prerequisites span >3 prior modules)
+  [CogLoad-1] [T1] — problem-solving support interacts with instructional sequence to affect load.
 - Assessment complexity relative to objective Bloom's level
   [CogLoad-16] [T1] — format affects cognitive load independently of content.
 - Module sequencing: are related concepts spaced or massed?
   [CogLoad-17] [T1] — sequencing significantly affects learning outcomes.
+  [CogLoad-13] [T3] — five strategies for optimizing instructional materials include sequencing considerations.
 
 **Expertise reversal check:**
 - Are scaffolds present that would hurt expert learners?
   [CogLoad-19] [T5] — expertise reversal effect.
+  [CogLoad-11] [T3] — digital/online learning contexts amplify cognitive load design concerns.
 - Are there adaptive elements that adjust based on learner expertise?
   [Learner-16] [T1] — differentiated instruction produces measurable gains.
+  [Learner-18] [T5] — personalized adaptive learning framework for expertise-based adjustment.
 
 **Output:** Per-module cognitive load estimate with flags.
 
@@ -333,34 +348,48 @@ limitation in the output.
 
 **Persona A: Complete Novice** (no prior knowledge in domain)
 - Can they access the content without assumed background?
+  [Learner-14] [T5] — personalized education must account for starting knowledge state.
 - Do early modules build sufficient foundation for later ones?
+  [CogLoad-1] [T1] — instructional sequence and problem-solving support interact for novices.
 - Is the pacing appropriate for someone learning everything for the first time?
+  [Learner-6] [T1] — differentiated pacing produces measurable gains for lower-performing learners.
 
 **Persona B: Expert Learner** (expertise reversal risk)
 - Are there unnecessary scaffolds that would frustrate an expert?
+  [CogLoad-19] [T5] — expertise reversal effect: scaffolds that help novices hurt experts.
 - Can experts skip introductory content or are they forced through it?
+  [Learner-16] [T1] — effective differentiation allows bypassing known material.
 - Does the course adapt to prior knowledge or treat everyone as novice?
-  [CogLoad-19] [T5]
+  [Learner-11] [T2] — data-based differentiation responds to individual learner state.
 
 **Persona C: ESL Learner** (language complexity, cultural references)
 - Are key terms defined when first introduced?
+  [Access-4] [T3] — universal instructional design principles include clear vocabulary introduction.
 - Are instructions clear without relying on idiomatic expressions?
+  [CogLoad-11] [T3] — extraneous cognitive load from language complexity compounds in online contexts.
 - Are cultural references universal or region-specific?
+  [Learner-13] [T4] — responding to diverse student needs requires culturally responsive design.
 - Is reading level appropriate? (Flag if above Flesch-Kincaid grade 10 for
   courses with ESL learners in the target audience)
+  [Learner-2] [T2] — differentiated instruction effectiveness varies with language proficiency.
 
 **Persona D: Learner with Accessibility Needs**
 - Do assessments offer alternative formats (extended time, alternative submission)?
+  [Access-3] [T5] — UDL 3.0 guidelines require multiple means of action and expression.
+  [Access-6] [T2] — universal design for instruction in postsecondary education supports flexible assessment.
 - Are multimedia elements accessible (captions, transcripts, alt text)?
+  [Access-1] [T5] — WCAG 2.1 requires text alternatives for non-text content.
+  [Access-5] [T3] — universal design in higher education includes multimedia accessibility.
 - Can the course be navigated with keyboard only?
-  [Access-1] [T5], [Access-6] [T2]
+  [Access-1] [T5] — WCAG 2.1 keyboard accessibility requirement.
+  [Access-2] [T5] — WCAG 2.2 extends keyboard navigation standards.
 
 **Per-persona checklist (evaluate for every module):**
-1. Can this persona access the content?
-2. Does this persona have the prerequisite knowledge?
-3. Is the cognitive load appropriate for this persona's expertise level?
-4. Does the assessment format work for this persona?
-5. Is the feedback actionable for this persona?
+1. Can this persona access the content? [Access-4] [T3]
+2. Does this persona have the prerequisite knowledge? [CogLoad-1] [T1]
+3. Is the cognitive load appropriate for this persona's expertise level? [CogLoad-19] [T5]
+4. Does the assessment format work for this persona? [Assessment-8] [T1]
+5. Is the feedback actionable for this persona? [Assessment-9] [T5]
 
 **Output:** Per-persona findings.
 
@@ -379,9 +408,15 @@ Trace prerequisite dependencies across all modules.
 
 **Check for:**
 - Circular dependencies (Module A requires Module B requires Module A)
+  [CogLoad-17] [T1] — instructional sequencing methods directly affect learning outcomes; circular paths make valid sequencing impossible.
 - Missing prerequisites (module assumes knowledge not taught in any prior module)
+  [CogLoad-1] [T1] — problem-solving support must match the learner's prerequisite state.
+  [Alignment-10] [T2] — high challenge without high support (missing prerequisites) undermines learning.
 - Orphaned content (modules that nothing depends on and nothing leads to)
+  [Alignment-1] [T5] — constructive alignment requires every component to serve the objective chain.
 - Ordering violations (prerequisite module appears after the module that needs it)
+  [CogLoad-17] [T1] — sequencing violations create impossible learning paths.
+  [CogLoad-4] [T5] — intrinsic load becomes unmanageable when prerequisite knowledge is unavailable.
 
 **Output:** Dependency graph and findings.
 
@@ -394,7 +429,9 @@ Module 7 requires Module 8 (ORDERING VIOLATION — Module 8 comes after Module 7
 
 ### Step 7: Confidence Score
 
-Calculate the confidence score (0-100):
+Calculate the confidence score (0-100). Severity weights reflect the evidence that
+structural misalignment and cognitive overload are the strongest predictors of
+learner failure [Alignment-14] [T1], [CogLoad-6] [T1]:
 
 - Start at 100
 - Deduct per finding:
@@ -423,9 +460,24 @@ Present the adversarial audit report:
    or `/assessment-design` to fix alignment issues. If confidence is 60+, recommend
    `/course-export` to ship.
 
-### Step 9: Save to Manifest
+## Write Manifest
 
-If the user wants to save results, write to the `red_team_audit` section of the manifest.
+After completing the audit, save results to the project manifest at `.idstack/project.json`.
+
+**CRITICAL — Manifest Integrity Rules:**
+1. If a manifest already exists, READ it first with the Read tool.
+2. Modify ONLY the `red_team_audit` section. Preserve all other sections
+   unchanged — `context`, `needs_analysis`, `learning_objectives`, `assessment_design`,
+   `course_builder`, `quality_review`, `accessibility_review`, and any other sections
+   must remain exactly as they were.
+3. Before writing, verify the JSON is valid: matching braces, proper commas,
+   quoted strings, no trailing commas.
+4. Update the top-level `updated` timestamp to reflect the current time.
+5. If this is a new manifest, initialize ALL sections (including `context`,
+   `needs_analysis`, and `learning_objectives`) with empty/default values so
+   downstream skills find the expected structure.
+
+Populate the `red_team_audit` section with:
 
 ```json
 {
@@ -440,7 +492,13 @@ If the user wants to save results, write to the `red_team_audit` section of the 
     "dimensions": {
       "alignment": {
         "score": "pass|warning|critical",
-        "findings": []
+        "findings": [
+          {
+            "description": "...",
+            "module": "Module 3",
+            "severity": "critical|warning|info"
+          }
+        ]
       },
       "evidence": {
         "score": "pass|warning|critical",
@@ -466,8 +524,14 @@ If the user wants to save results, write to the `red_team_audit` section of the 
 }
 ```
 
-Read the full manifest, modify only `red_team_audit`, preserve everything else.
-Update the `updated` timestamp. Write the complete structure.
+- `confidence_score`: The 0-100 score from Step 7.
+- `findings_summary`: Counts of critical, warning, and info findings across all dimensions.
+- `dimensions`: Per-dimension score and detailed findings. Each finding includes a
+  description, the affected module (if applicable), and severity level.
+- `dimensions.evidence.mode`: `"full"` if WebSearch was available for currency checks,
+  `"limited"` if offline.
+- `top_actions`: The top 3 recommended actions from Step 8.
+- `limitations`: What the audit could not assess (from Step 8).
 
 ## Feedback
 

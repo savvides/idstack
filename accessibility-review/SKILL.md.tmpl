@@ -106,32 +106,119 @@ Review the course design against these WCAG-derived accessibility requirements.
 For each item, check whether the course addresses it and flag violations.
 
 **Perceivable:**
-- Alternative text: Do all images, charts, and diagrams have descriptive alt text?
-- Captions: Do all video and audio elements have captions or transcripts?
-- Adaptable: Can content be presented in different ways without losing meaning?
-- Distinguishable: Is there sufficient contrast? Is color NOT the only way to convey information?
+- **1.1.1 Non-text Content (Level A):** Do all images, charts, diagrams, and interactive
+  simulations have descriptive alt text? [Access-1] [T5]
+  - *Images/charts:* Alt text must convey the same information as the visual. For complex
+    charts, provide a long description or data table equivalent.
+  - *Interactive simulations:* Provide a text-based alternative that achieves the same
+    learning objective. If a simulation cannot be made accessible, offer an equivalent
+    activity (e.g., guided walkthrough, annotated screenshot sequence). [Access-5] [T3]
+- **1.2.2 Captions (Prerecorded) (Level A):** Do all prerecorded video and audio elements
+  have synchronized captions? [Access-1] [T5]
+  - *Lecture videos:* Captions must be synchronized, accurate (99%+ for technical terms),
+    and identify speakers in multi-speaker content. Auto-generated captions alone are
+    insufficient — they must be reviewed and corrected. [Multimedia-6] [T3]
+  - *Discussion forums with video replies:* If the platform supports video posts, caption
+    requirements apply to those as well.
+- **1.2.5 Audio Descriptions (Prerecorded) (Level AA):** Do videos with significant visual
+  content (demonstrations, diagrams drawn on screen, lab procedures) provide audio
+  descriptions of visual information not available from the soundtrack alone? [Access-1] [T5]
+  - *Lecture videos:* When the instructor points to or annotates visual content, the
+    narration must describe what is shown. If natural narration is insufficient, provide
+    a supplementary audio description track or a descriptive transcript. [Multimedia-16] [T3]
+- **1.3.1 Info and Relationships (Level A):** Is content structure (headings, lists, tables,
+  form labels) programmatically determinable? [Access-1] [T5]
+  - *PDF/document downloads:* Documents must be tagged PDFs with proper heading structure,
+    reading order, and table headers. Scanned image-only PDFs are a Level A violation.
+  - *Course pages:* Use semantic HTML headings (h1-h6), not just bold/large text.
+- **1.3.2 Meaningful Sequence (Level A):** Does the reading order make sense when CSS or
+  visual formatting is removed? [Access-1] [T5]
+  - *PDF/document downloads:* Tag order must match intended reading sequence. Multi-column
+    layouts need explicit reading order tags.
+- **1.4.3 Contrast (Minimum) (Level AA):** Is there at least 4.5:1 contrast ratio for normal
+  text and 3:1 for large text? [Access-1] [T5]
+- **1.4.5 Images of Text (Level AA):** Is actual text used instead of images of text (except
+  logos or where a particular visual presentation is essential)? [Access-1] [T5]
 
 **Operable:**
-- Keyboard accessible: Can all interactive elements be operated without a mouse?
-- Enough time: Are timed activities adjustable or removable? [Access-1] [T5]
-- Seizures: Do any elements flash more than 3 times per second?
-- Navigable: Is there a clear, consistent navigation structure?
+- **2.1.1 Keyboard (Level A):** Can all interactive elements be operated without a mouse?
+  [Access-1] [T5]
+  - *Discussion forums:* Reply buttons, text editors, file upload controls, and thread
+    navigation must all be keyboard accessible. Rich text editors must support keyboard
+    shortcuts for formatting.
+  - *Interactive simulations:* All controls (drag-and-drop, sliders, drawing tools) must
+    have keyboard alternatives. [Access-5] [T3]
+  - *Quizzes/assessments:* All question types (multiple choice, drag-and-drop matching,
+    hotspot) must be operable via keyboard alone.
+- **2.2.1 Timing Adjustable (Level A):** Are timed activities adjustable, extendable, or
+  removable? [Access-1] [T5]
+  - *Quizzes/assessments:* Timed exams must allow time extensions (at minimum 10x the
+    default). The LMS accommodation settings must be configured. Document how instructors
+    grant extensions. [Access-5] [T3]
+  - If a time limit is essential to the learning objective (e.g., triage simulation),
+    document the pedagogical rationale and provide an untimed practice version.
+- **2.3.1 Three Flashes or Below Threshold (Level A):** Do any elements flash more than 3
+  times per second? [Access-1] [T5]
+- **2.4.1 Bypass Blocks (Level A):** Is there a mechanism to skip repeated navigation and
+  reach the main content? [Access-1] [T5]
+- **2.4.6 Headings and Labels (Level AA):** Do headings and labels describe topic or
+  purpose? [Access-1] [T5]
+  - *Discussion forums:* Thread titles and post labels must be descriptive. Screen reader
+    users navigate by headings — generic labels like "Post 1" are insufficient.
 
 **Understandable:**
-- Readable: What is the reading level? (Flag if above grade 12 for general audiences,
-  above grade 10 for introductory courses) Use Flesch-Kincaid or similar readability measure.
-- Predictable: Is the course layout consistent across modules?
-- Input assistance: Do forms and assessments provide clear error messages and instructions?
+- **3.1.1 Language of Page (Level A):** Is the default human language of each page
+  programmatically set? [Access-1] [T5]
+- **3.1.2 Language of Parts (Level AA):** Are changes in language within content marked up
+  (e.g., foreign terms, quotations in another language)? [Access-1] [T5]
+- **3.2.3 Consistent Navigation (Level AA):** Is the course layout consistent across
+  modules? Do navigation elements appear in the same relative order? [Access-1] [T5]
+- **3.2.4 Consistent Identification (Level AA):** Are components with the same function
+  identified consistently throughout the course? [Access-1] [T5]
+- **3.3.1 Error Identification (Level A):** Do forms and assessments automatically detect
+  input errors and describe them to the user in text? [Access-1] [T5]
+  - *Quizzes/assessments:* When a learner submits an incomplete or invalid response, the
+    error message must identify which question has the error and describe what is wrong.
+    Color alone must not be the error indicator. [Access-5] [T3]
+- **3.3.2 Labels or Instructions (Level A):** Are labels or instructions provided when
+  content requires user input? [Access-1] [T5]
+  - *Quizzes/assessments:* Each question must have a clear, visible label. Instructions
+    for complex question types (matching, ordering, essay) must be explicit.
+- **3.3.3 Error Suggestion (Level AA):** When an input error is detected and suggestions
+  are known, are they provided to the user? [Access-1] [T5]
+- **Readability:** What is the reading level? (Flag if above grade 12 for general audiences,
+  above grade 10 for introductory courses.) Use Flesch-Kincaid or similar readability
+  measure. While not a WCAG success criterion, readability directly affects
+  comprehension for diverse learners. [Access-4] [T3]
 
 **Robust:**
-- Compatible: Are materials provided in standard formats accessible by assistive technologies?
-- Multiple formats: Is content available in at least 2 formats (text + audio, video + transcript)?
+- **4.1.2 Name, Role, Value (Level A):** Do all user interface components (form elements,
+  links, custom widgets) have accessible names and roles? [Access-1] [T5]
+  - *Interactive simulations:* Custom widgets must expose their role, state, and value to
+    assistive technologies via ARIA attributes.
+- **Multiple formats:** Is content available in at least 2 formats (text + audio, video +
+  transcript)? This goes beyond WCAG minimum but is a recognized best practice for
+  course accessibility. [Access-5] [T3] [Multimedia-9] [T1]
+
+#### Content-Type Checklist
+
+Use this checklist to audit each content type present in the course:
+
+| Content Type | Key WCAG Criteria | What to Check |
+|---|---|---|
+| **Lecture videos** | 1.2.2, 1.2.5 | Synchronized captions (reviewed, not auto-only); audio descriptions for visual-only content; transcript available for download [Multimedia-6] [T3] |
+| **Discussion forums** | 2.1.1, 2.4.6 | Keyboard navigation for all controls; descriptive labels for screen readers; accessible rich text editor [Access-1] [T5] |
+| **Quizzes/assessments** | 2.2.1, 3.3.1, 3.3.2, 3.3.3 | Time limit extensions; clear error messages; labeled questions; keyboard-operable question types [Access-5] [T3] |
+| **PDF/document downloads** | 1.3.1, 1.3.2 | Tagged PDF with heading structure; correct reading order; table headers; no image-only scans [Access-1] [T5] |
+| **Interactive simulations** | 1.1.1, 2.1.1, 4.1.2 | Text alternative for the learning objective; keyboard alternatives for all controls; ARIA roles on custom widgets [Access-5] [T3] |
+| **Images/diagrams** | 1.1.1, 1.4.5 | Descriptive alt text; long descriptions for complex visuals; real text not images of text [Access-1] [T5] |
 
 For each violation found, provide:
+- The WCAG success criterion number and level (e.g., "1.2.2 Level A")
 - What the violation is
 - Where it occurs (which module, assessment, or content element)
 - Specific remediation with an example
-- Evidence citation [Access-1] or [Access-2] [T5]
+- Evidence citation
 
 ### Step 3: UDL Guidelines 3.0 Enhancement Review (Tier 2: Should Improve)
 
@@ -140,27 +227,27 @@ evaluate whether the course addresses it and recommend improvements.
 
 **Principle 1: Multiple Means of Engagement** [Access-3] [T5]
 
-| Checkpoint | Question | Status |
-|------------|----------|--------|
-| Recruiting interest | Are learners offered choices in how they engage? | |
-| Sustaining effort | Are there varied levels of challenge? | |
-| Self-regulation | Are learners supported in setting goals and monitoring progress? | |
+| Checkpoint | Question | Evidence | Status |
+|------------|----------|----------|--------|
+| Recruiting interest | Are learners offered choices in how they engage? (e.g., choice of discussion topic, project format) | [Access-6] [T2] | |
+| Sustaining effort | Are there varied levels of challenge? Are goals clear with scaffolded difficulty? | [Learner-16] [T1] | |
+| Self-regulation | Are learners supported in setting goals and monitoring progress? (e.g., progress dashboards, self-assessment checklists) | [Assessment-9] [T5] | |
 
 **Principle 2: Multiple Means of Representation** [Access-3] [T5]
 
-| Checkpoint | Question | Status |
-|------------|----------|--------|
-| Perception | Is content available in multiple sensory modalities? | |
-| Language & symbols | Are key terms defined? Are notations explained? | |
-| Comprehension | Are background knowledge activators provided? Are big ideas highlighted? | |
+| Checkpoint | Question | Evidence | Status |
+|------------|----------|----------|--------|
+| Perception | Is content available in multiple sensory modalities? (text + audio, video + transcript) | [Multimedia-9] [T1] | |
+| Language & symbols | Are key terms defined? Are notations explained? Are glossaries or vocabulary supports provided? | [Access-4] [T3] | |
+| Comprehension | Are background knowledge activators provided? Are big ideas highlighted? Are worked examples or graphic organizers used? | [CogLoad-13] [T3] | |
 
 **Principle 3: Multiple Means of Action & Expression** [Access-3] [T5]
 
-| Checkpoint | Question | Status |
-|------------|----------|--------|
-| Physical action | Can learners interact through multiple methods? | |
-| Expression & communication | Can learners demonstrate knowledge in multiple ways? | |
-| Executive functions | Are planning tools, checklists, or scaffolds provided? | |
+| Checkpoint | Question | Evidence | Status |
+|------------|----------|----------|--------|
+| Physical action | Can learners interact through multiple methods? (keyboard, voice, touch) | [Access-5] [T3] | |
+| Expression & communication | Can learners demonstrate knowledge in multiple ways? (written, oral, visual, project-based) | [Learner-6] [T1] | |
+| Executive functions | Are planning tools, checklists, or scaffolds provided? (rubrics shared upfront, milestone tracking) | [Access-8] [T3] | |
 
 For each checkpoint not met, provide:
 - What's missing
@@ -168,9 +255,14 @@ For each checkpoint not met, provide:
 - Evidence citation from Domain 11 or cross-domain principles
 - Why this matters for specific learner populations (not just compliance)
 
-[Access-4] [T3] — UDL in online courses improves outcomes across diverse learner populations.
-[Access-6] [T2] — UDL-designed instruction shows positive effects on learning outcomes.
-[Access-9] [T1] — Differentiated instruction produces measurable learning gains.
+**Key UDL evidence base:**
+- [Access-4] [T3] — UDL in online courses improves outcomes across diverse learner populations.
+- [Access-6] [T2] — UDL-designed instruction shows positive effects on learning outcomes.
+- [Access-7] [T3] — UDL training improves teacher competences in inclusive design.
+- [Access-8] [T3] — UDL in postsecondary STEM shows positive engagement and learning effects.
+- [Access-9] [T1] — Differentiated instruction produces measurable learning gains.
+- [Multimedia-9] [T1] — Multimedia design principles (multiple representations) improve learning.
+- [Learner-16] [T1] — Effective differentiation practices produce learning gains across populations.
 
 ### Step 4: Accessibility Score
 
@@ -206,9 +298,24 @@ Present the report using AskUserQuestion to walk through findings:
 5. **Next step:** Recommend `/red-team` for adversarial testing, or `/course-quality-review`
    if not yet run.
 
-### Step 6: Save to Manifest
+## Write Manifest
 
-If the user wants to save results, write to the `accessibility_review` section of the manifest.
+After completing the review, save results to the project manifest.
+
+**CRITICAL — Manifest Integrity Rules:**
+1. If a manifest already exists, READ it first with the Read tool.
+2. Modify ONLY the `accessibility_review` section. Preserve all other sections
+   unchanged — `context`, `needs_analysis`, `learning_objectives`, `assessment_design`,
+   `course_builder`, `quality_review`, and any other sections must remain exactly
+   as they were.
+3. Before writing, verify the JSON is valid: matching braces, proper commas,
+   quoted strings, no trailing commas.
+4. Update the top-level `updated` timestamp to reflect the current time.
+5. If this is a new manifest, initialize ALL sections (including `context`,
+   `needs_analysis`, and `learning_objectives`) with empty/default values so
+   downstream skills find the expected structure.
+
+Populate the `accessibility_review` section with:
 
 ```json
 {
@@ -222,18 +329,19 @@ If the user wants to save results, write to the `accessibility_review` section o
     "wcag_violations": [
       {
         "principle": "perceivable|operable|understandable|robust",
-        "description": "what the violation is",
-        "location": "where it occurs",
+        "success_criterion": "1.2.2",
+        "description": "...",
+        "location": "Module 3",
         "severity": "A|AA",
-        "remediation": "how to fix it"
+        "remediation": "..."
       }
     ],
     "udl_recommendations": [
       {
         "principle": "engagement|representation|action_expression",
-        "checkpoint": "which checkpoint",
+        "checkpoint": "...",
         "status": "met|partial|not_met",
-        "recommendation": "what to do",
+        "recommendation": "...",
         "evidence": "citation"
       }
     ],
@@ -241,9 +349,6 @@ If the user wants to save results, write to the `accessibility_review` section o
   }
 }
 ```
-
-Read the full manifest, modify only `accessibility_review`, preserve everything else.
-Update the `updated` timestamp. Write the complete structure.
 
 ## Feedback
 

@@ -838,13 +838,32 @@ metadata.
    ALL sections with empty/default values so downstream skills find the
    expected structure.
 
+### Readiness Info
+
+Before starting the export, check the manifest for prior review data. If any of
+these sections exist, show a brief readiness summary as context (not a gate):
+
+```
+Export readiness:
+  Quality review:       78/100 ✓ (reviewed 2026-04-08)
+  Red-team audit:       2 critical, 3 warning
+  Accessibility review: WCAG score 70/100, 1 AA violation
+```
+
+If a section doesn't exist, show: "Not reviewed — run /[skill-name] for analysis."
+
+This is informational. Export proceeds regardless. The user can choose to address
+findings first or export now, no AskUserQuestion needed, just show the info and continue.
+
+### Write Export Metadata
+
 Add or update the `export_metadata` field at the root level:
 
 ```json
 {
   "export_metadata": {
     "exported_at": "ISO-8601 timestamp",
-    "format": "imscc|canvas-api",
+    "format": "imscc|canvas-api|scorm",
     "destination": "file path (.idstack/course-export.imscc) or Canvas URL",
     "items_exported": {
       "modules": 0,
@@ -853,11 +872,28 @@ Add or update the `export_metadata` field at the root level:
       "quizzes": 0,
       "discussions": 0
     },
-    "failed_items": 0,
-    "notes": ""
+    "failed_items": [],
+    "notes": "",
+    "readiness_check": {
+      "quality_score": 0,
+      "quality_reviewed": true,
+      "red_team_critical": 0,
+      "red_team_reviewed": false,
+      "accessibility_critical": 0,
+      "accessibility_reviewed": false,
+      "verdict": "export_clean|export_with_warnings|export_blocked"
+    }
   }
 }
 ```
+
+The `readiness_check` section captures the state of prior reviews at export time.
+Populate it by reading the `quality_review`, `red_team_audit`, and `accessibility_review`
+sections from the manifest (if they exist). The `verdict` is:
+- `export_clean`: all reviewed, no critical findings
+- `export_with_warnings`: reviewed but has critical/warning findings
+- `export_blocked`: not used (export never blocks, advisory only)
+- Empty string if no reviews exist
 
 Write the manifest, then confirm:
 
@@ -879,7 +915,7 @@ validating the manifest. All fields shown below must exist in the JSON.
 
 ```json
 {
-  "version": "1.0",
+  "version": "1.2",
   "project_name": "",
   "created": "",
   "updated": "",
@@ -907,8 +943,17 @@ validating the manifest. All fields shown below must exist in the JSON.
       "quizzes": 0,
       "discussions": 0
     },
-    "failed_items": 0,
-    "notes": ""
+    "failed_items": [],
+    "notes": "",
+    "readiness_check": {
+      "quality_score": 0,
+      "quality_reviewed": false,
+      "red_team_critical": 0,
+      "red_team_reviewed": false,
+      "accessibility_critical": 0,
+      "accessibility_reviewed": false,
+      "verdict": ""
+    }
   },
   "context": {
     "modality": "",
