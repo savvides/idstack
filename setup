@@ -21,7 +21,6 @@ LEGACY_SKILLS="needs-analysis learning-objectives course-quality-review course-i
 for skill in $LEGACY_SKILLS; do
   target="$SKILLS_DIR/$skill"
   if [ -L "$target" ]; then
-    # Only remove if it points into idstack (don't remove other packages' skills)
     link_target=$(readlink "$target" 2>/dev/null || true)
     if echo "$link_target" | grep -q "idstack"; then
       rm "$target"
@@ -31,8 +30,8 @@ for skill in $LEGACY_SKILLS; do
 done
 
 # Single symlink: ~/.claude/skills/idstack → repo root
-# The dispatcher SKILL.md at the repo root handles routing to sub-skills.
-# Users invoke: /idstack <subcommand> (e.g., /idstack needs-analysis)
+# Claude Code discovers skills at skills/<name>/SKILL.md under the symlink.
+# Users invoke: /idstack:<skill> (e.g., /idstack:needs-analysis)
 ln -snf "$IDSTACK_DIR" "$SKILLS_DIR/idstack"
 echo "  linked: /idstack → $IDSTACK_DIR"
 
@@ -42,19 +41,22 @@ echo "  Skills directory: $SKILLS_DIR/idstack"
 echo ""
 echo "  If Claude Code is already running, restart it (skills load at session start)."
 echo ""
-echo "  Usage: /idstack <skill>"
+echo "  Usage: /idstack:<skill>"
 echo ""
 echo "  Have an existing course?"
-echo "    /idstack course-import → /idstack course-quality-review"
+echo "    /idstack:course-import → /idstack:course-quality-review"
 echo ""
 echo "  Starting fresh?"
-echo "    /idstack needs-analysis"
+echo "    /idstack:needs-analysis"
 echo ""
 echo "  Run the full pipeline:"
-echo "    /idstack pipeline"
+echo "    /idstack:pipeline"
 echo ""
 echo "  All skills: needs-analysis, learning-objectives, assessment-design,"
 echo "    course-builder, course-quality-review, accessibility-review,"
-echo "    red-team, course-export, course-import, pipeline, learn, status"
+echo "    red-team, course-export, course-import, pipeline, learn"
+echo ""
+echo "  Or install as a Claude Code plugin:"
+echo "    claude plugin install idstack"
 echo ""
 echo "  More info: https://idstack.org"

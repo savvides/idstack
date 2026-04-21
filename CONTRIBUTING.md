@@ -40,8 +40,6 @@ allowed-tools:
 ---
 ```
 
-Note: All skill names are prefixed with `idstack-` to avoid collisions with other skill packages. Users invoke via `/idstack your-skill`.
-
 **2. `{{PREAMBLE}}` placeholder** — this is replaced by `bin/idstack-gen-skills` with the shared preamble (update check, manifest check, context recovery).
 
 **3. Skill implementation** — the rest of the file is Markdown that defines the skill's workflow, decision trees, and outputs.
@@ -96,7 +94,7 @@ Use domain codes from `evidence/references.md` (e.g., `[Alignment-14] [T1]`). St
 ./test/smoke-test.sh # Verify installation
 ```
 
-Then test manually in Claude Code by running `/idstack your-skill`.
+Then test manually in Claude Code by running `/idstack:your-skill`.
 
 ## What makes a good PR
 

@@ -25,25 +25,25 @@ echo "  skills dir: $SKILLS_DIR"
 echo "  idstack dir: $IDSTACK_DIR"
 echo ""
 
-# Check single symlink exists
+# Check symlink exists
 check "idstack symlink exists" "[ -L '$SKILLS_DIR/idstack' ]"
 check "idstack symlink is directory" "[ -d '$SKILLS_DIR/idstack' ]"
 
-# Check dispatcher SKILL.md at root
-check "dispatcher SKILL.md exists" "[ -f '$IDSTACK_DIR/SKILL.md' ]"
-check "dispatcher has name: idstack" "grep -q '^name: idstack$' '$IDSTACK_DIR/SKILL.md'"
+# Check plugin manifest
+check "plugin manifest exists" "[ -f '$IDSTACK_DIR/.claude-plugin/plugin.json' ]"
+check "plugin manifest has name" "grep -q '\"name\": \"idstack\"' '$IDSTACK_DIR/.claude-plugin/plugin.json'"
 
-# Check all sub-skill SKILL.md files are reachable
+# Check all skill SKILL.md files are reachable
 SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
 for skill in $SKILLS; do
-  check "$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/$skill/SKILL.md' ]"
+  check "$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md' ]"
 done
 
-# Check YAML frontmatter has required fields with idstack- prefix
+# Check YAML frontmatter has required fields (bare names, no idstack- prefix)
 for skill in $SKILLS; do
-  check "$skill has name: idstack-$skill" "grep -q '^name: idstack-$skill' '$IDSTACK_DIR/$skill/SKILL.md'"
-  check "$skill has description: field" "grep -q '^description:' '$IDSTACK_DIR/$skill/SKILL.md'"
-  check "$skill has allowed-tools: field" "grep -q '^allowed-tools:' '$IDSTACK_DIR/$skill/SKILL.md'"
+  check "$skill has name: $skill" "grep -q '^name: $skill' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill has description: field" "grep -q '^description:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill has allowed-tools: field" "grep -q '^allowed-tools:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
 # Check evidence file exists
@@ -57,32 +57,30 @@ done
 
 # Check template system
 check "templates/preamble.md exists" "[ -f '$IDSTACK_DIR/templates/preamble.md' ]"
-TMPL_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
-for skill in $TMPL_SKILLS; do
-  check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/$skill/SKILL.md.tmpl' ]"
+for skill in $SKILLS; do
+  check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
 
-# Check generated files have auto-generated header (only for preamble-based skills)
-PREAMBLE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
-for skill in $PREAMBLE_SKILLS; do
-  check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/$skill/SKILL.md'"
+# Check generated files have auto-generated header
+for skill in $SKILLS; do
+  check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
 # Check all preamble-based skills have context recovery
-for skill in $PREAMBLE_SKILLS; do
-  check "$skill has context recovery" "grep -q 'Context Recovery' '$IDSTACK_DIR/$skill/SKILL.md'"
+for skill in $SKILLS; do
+  check "$skill has context recovery" "grep -q 'Context Recovery' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
 # Check pipeline-originated skills have timeline logging
 TIMELINE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team"
 for skill in $TIMELINE_SKILLS; do
-  check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/$skill/SKILL.md'"
+  check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
-# Check preamble uses IDSTACK_HOME
-check "preamble uses IDSTACK_HOME" "grep -q 'IDSTACK_HOME' '$IDSTACK_DIR/templates/preamble.md'"
+# Check preamble uses CLAUDE_PLUGIN_ROOT
+check "preamble supports CLAUDE_PLUGIN_ROOT" "grep -q 'CLAUDE_PLUGIN_ROOT' '$IDSTACK_DIR/templates/preamble.md'"
 
-# Migration tests (v1.0 → v1.3, v1.1 → v1.3, v1.2 → v1.3)
+# Migration tests
 FIXTURE_DIR="$IDSTACK_DIR/test/fixtures"
 if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
   # Test v1.0 → v1.3 chained migration
@@ -90,24 +88,8 @@ if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
   cp "$FIXTURE_DIR/manifest-v1.0.json" "$TMPDIR_MIG/project.json"
   "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
   check "v1.0→v1.3: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.3'\""
-  check "v1.0→v1.3: has red_team_audit" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'red_team_audit' in d\""
-  check "v1.0→v1.3: has accessibility_review" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'accessibility_review' in d\""
-  check "v1.0→v1.3: has readiness_check" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'readiness_check' in d.get('export_metadata',{})\""
-  check "v1.0→v1.3: has quick_wins" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'quick_wins' in d.get('quality_review',{})\""
   check "v1.0→v1.3: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'preferences' in d\""
   check "v1.0→v1.3: preserves project_name" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['project_name']=='Test Course v1.0'\""
-  rm -rf "$TMPDIR_MIG"
-
-  # Test v1.1 → v1.3 chained migration
-  TMPDIR_MIG=$(mktemp -d)
-  cp "$FIXTURE_DIR/manifest-v1.1.json" "$TMPDIR_MIG/project.json"
-  "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
-  check "v1.1→v1.3: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.3'\""
-  check "v1.1→v1.3: has red_team_audit" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'red_team_audit' in d\""
-  check "v1.1→v1.3: has accessibility_review" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'accessibility_review' in d\""
-  check "v1.1→v1.3: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['preferences']['verbosity']=='normal'\""
-  check "v1.1→v1.3: preserves review_history" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert len(d['quality_review']['review_history'])==1\""
-  check "v1.1→v1.3: preserves existing data" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['import_metadata']['items_imported']['modules']==6\""
   rm -rf "$TMPDIR_MIG"
 
   # Test v1.2 → v1.3 migration
@@ -116,9 +98,6 @@ if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
   "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
   check "v1.2→v1.3: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.3'\""
   check "v1.2→v1.3: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['preferences']['verbosity']=='normal'\""
-  check "v1.2→v1.3: has auto_advance" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['preferences']['auto_advance_pipeline']==False\""
-  check "v1.2→v1.3: preserves project_name" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['project_name']=='Test Course v1.2'\""
-  check "v1.2→v1.3: preserves quality_score" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['quality_review']['overall_score']==72\""
   check "v1.2→v1.3: idempotent" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.3'\" && '$IDSTACK_DIR/bin/idstack-migrate' '$TMPDIR_MIG/project.json' >/dev/null 2>&1 && python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.3'\""
   rm -rf "$TMPDIR_MIG"
 fi

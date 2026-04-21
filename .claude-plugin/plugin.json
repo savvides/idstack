@@ -1,0 +1,24 @@
+{
+  "name": "idstack",
+  "version": "2.0.0.0",
+  "description": "Evidence-based instructional design pipeline. 11 skills backed by peer-reviewed research across 11 domains. Analyze, design, build, review, and export courses with every recommendation citing its evidence tier.",
+  "author": {
+    "name": "Philippos Savvides",
+    "url": "https://github.com/savvides"
+  },
+  "homepage": "https://idstack.org",
+  "repository": "https://github.com/savvides/idstack",
+  "license": "MIT",
+  "keywords": [
+    "instructional-design",
+    "education",
+    "course-design",
+    "edtech",
+    "learning",
+    "quality-matters",
+    "blooms-taxonomy",
+    "accessibility",
+    "wcag",
+    "udl"
+  ]
+}
