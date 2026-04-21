@@ -58,21 +58,37 @@ _IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
 ```
 
 **If no args or unrecognized args:**
-Show the user a menu using AskUserQuestion with options:
-- Pipeline (run the full design pipeline)
-- Needs Analysis (start a new course)
-- Course Import (bring in an existing course)
-- Learning Objectives
-- Assessment Design
-- Course Builder
-- Course Quality Review
-- Accessibility Review
-- Red Team
-- Course Export
-- Learn (manage learnings)
-- Status (course health dashboard)
+Print this help guide exactly as shown (do not use AskUserQuestion):
 
-Then invoke the selected skill.
+```
+idstack — Evidence-based instructional design pipeline
+
+Usage: /idstack <skill>
+
+Skills:
+  needs-analysis         Three-level needs assessment (org, task, learner)
+  learning-objectives    Measurable ILOs with Bloom's taxonomy + alignment check
+  assessment-design      Rubrics, feedback strategies, formative checkpoints
+  course-builder         Generate syllabus, modules, assignments, rubrics
+  course-quality-review  Quality Matters audit + Community of Inquiry analysis
+  accessibility-review   WCAG 2.1 AA + Universal Design for Learning review
+  red-team               Adversarial audit across 5 dimensions
+  course-export          Package for Canvas, Blackboard, Moodle (IMSCC/SCORM)
+  course-import          Import from any LMS or authoring tool
+  pipeline               Run all 8 skills in order (auto-skips completed)
+  learn                  Search, promote, delete project learnings
+  status                 Course health dashboard
+
+Examples:
+  /idstack pipeline              Run the full design pipeline
+  /idstack needs-analysis        Start a new course
+  /idstack course-import         Bring in an existing course
+  /idstack status                See course health dashboard
+
+More info: https://idstack.org
+```
+
+Stop after printing. Do not invoke any skill.
 
 ## Important Rules
 
