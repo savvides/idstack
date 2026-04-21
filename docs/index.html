@@ -632,7 +632,7 @@
         <span class="demo-title">claude code</span>
       </div>
       <div class="demo-body" aria-label="Example of idstack course review session">
-        <div><span class="prompt">You:</span> <span class="command">/course-import</span></div>
+        <div><span class="prompt">You:</span> <span class="command">/idstack course-import</span></div>
         <br>
         <div><span class="output">How do you want to import your course?</span></div>
         <div><span class="dim">  A) IMS Common Cartridge file (.imscc)</span></div>
@@ -645,7 +645,7 @@
         <br>
         <div><span class="output">Analyzing... Found 12 modules, 8 assignments, 4 discussions.</span></div>
         <br>
-        <div><span class="prompt">You:</span> <span class="command">/course-quality-review</span></div>
+        <div><span class="prompt">You:</span> <span class="command">/idstack course-quality-review</span></div>
         <br>
         <div><span class="score">Overall Score: 62/100</span></div>
         <br>
@@ -695,12 +695,12 @@
       </li>
       <li>
         <div class="step-content">
-          <strong>Import your course.</strong> Type <code>/course-import</code> and paste your syllabus, upload a Common Cartridge file, or connect your Canvas API.
+          <strong>Import your course.</strong> Type <code>/idstack course-import</code> and paste your syllabus, upload a Common Cartridge file, or connect your Canvas API.
         </div>
       </li>
       <li>
         <div class="step-content">
-          <strong>Get your review.</strong> Type <code>/course-quality-review</code> to see your evidence-based course audit. You'll know in 5 minutes if this is for you.
+          <strong>Get your review.</strong> Type <code>/idstack course-quality-review</code> to see your evidence-based course audit. Or type <code>/idstack pipeline</code> to run the full design pipeline automatically.
         </div>
       </li>
     </ol>
@@ -711,54 +711,64 @@
   <!-- Your design team -->
   <section class="section" id="how-it-works">
     <div class="section-label">Your design team</div>
-    <h2>9 specialists. One workflow.</h2>
-    <p>Each skill is a specialist on your team. Import your course and they get to work.</p>
+    <h2>11 specialists. One command.</h2>
+    <p>Each skill is a specialist on your team. Run <code>/idstack pipeline</code> and they work in sequence, or invoke any one directly.</p>
 
     <div class="team-grid">
       <div class="team-card">
         <div class="team-title">Needs Analyst</div>
-        <div class="team-skill">/needs-analysis</div>
+        <div class="team-skill">/idstack needs-analysis</div>
         <div class="team-desc">Three-level assessment before you build anything. Is training the right intervention? Task analysis and learner profiling.</div>
       </div>
       <div class="team-card">
         <div class="team-title">Curriculum Designer</div>
-        <div class="team-skill">/learning-objectives</div>
+        <div class="team-skill">/idstack learning-objectives</div>
         <div class="team-desc">Measurable objectives with Bloom's taxonomy. Bidirectional alignment check: does each objective have a matching activity AND assessment?</div>
       </div>
       <div class="team-card">
         <div class="team-title">Assessment Architect</div>
-        <div class="team-skill">/assessment-design</div>
+        <div class="team-skill">/idstack assessment-design</div>
         <div class="team-desc">Evidence-based rubrics and feedback strategies. Formative checkpoints before summative assessments. Nicol's 7 principles of good feedback.</div>
       </div>
       <div class="team-card">
         <div class="team-title">LMS Bridge</div>
-        <div class="team-skill">/course-import</div>
+        <div class="team-skill">/idstack course-import</div>
         <div class="team-desc">Import from Common Cartridge, Canvas API, SCORM, PDF, or paste. Quick-scan quality flags and Bloom's pre-classification on import.</div>
       </div>
       <div class="team-card">
         <div class="team-title">Content Generator</div>
-        <div class="team-skill">/course-builder</div>
+        <div class="team-skill">/idstack course-builder</div>
         <div class="team-desc">Generates syllabus, module pages, assignments, and rubrics from your manifest. Content adapts to learner expertise level.</div>
       </div>
       <div class="team-card">
         <div class="team-title">Quality Auditor</div>
-        <div class="team-skill">/course-quality-review</div>
+        <div class="team-skill">/idstack course-quality-review</div>
         <div class="team-desc">Full Quality Matters audit plus Community of Inquiry presence analysis. 8 structural standards, 3 presence dimensions. Every finding cites its evidence.</div>
       </div>
       <div class="team-card">
         <div class="team-title">Accessibility Reviewer</div>
-        <div class="team-skill">/accessibility-review</div>
+        <div class="team-skill">/idstack accessibility-review</div>
         <div class="team-desc">WCAG 2.1 AA compliance audit plus Universal Design for Learning review. Scores accessibility 0-100 with "Must Fix" and "Should Improve" tiers.</div>
       </div>
       <div class="team-card">
         <div class="team-title">Adversarial Auditor</div>
-        <div class="team-skill">/red-team</div>
+        <div class="team-skill">/idstack red-team</div>
         <div class="team-desc">Assumes your course is broken and tries to prove it. Alignment stress test, persona simulation, prerequisite chain integrity. Confidence score.</div>
       </div>
       <div class="team-card">
         <div class="team-title">LMS Publisher</div>
-        <div class="team-skill">/course-export</div>
-        <div class="team-desc">Exports to IMS Common Cartridge, SCORM 1.2, or pushes directly to Canvas via API. The output is the course.</div>
+        <div class="team-skill">/idstack course-export</div>
+        <div class="team-desc">Exports to IMS Common Cartridge, SCORM 1.2, or pushes directly to Canvas via API. Shows readiness dashboard before export.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Pipeline Orchestrator</div>
+        <div class="team-skill">/idstack pipeline</div>
+        <div class="team-desc">Chains all 8 skills automatically in order. Auto-skips completed skills. Pause anytime, resume later. One command for the full design cycle.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Memory Manager</div>
+        <div class="team-skill">/idstack learn</div>
+        <div class="team-desc">Search, delete, promote, and export learnings. Cross-project intelligence means discoveries from one course help design the next.</div>
       </div>
     </div>
 
@@ -856,6 +866,14 @@
         <div class="timeline-dot coming-soon-dot"></div>
         <div class="timeline-content coming-soon-card">
           <div class="timeline-date">Coming soon</div>
+          <div class="timeline-title">Multi-platform support</div>
+          <div class="timeline-desc">Run idstack skills in Gemini CLI with <code>./setup --host gemini</code>. Same skills, same evidence, different AI. Gated on a spike test before full rollout.</div>
+        </div>
+      </div>
+      <div class="timeline-item coming-soon">
+        <div class="timeline-dot coming-soon-dot"></div>
+        <div class="timeline-content coming-soon-card">
+          <div class="timeline-date">Coming soon</div>
           <div class="timeline-title">More specialist skills</div>
           <div class="timeline-desc">Content sequencing that manages cognitive load. Media selection that flags multimedia principle violations. Evaluation design using Kirkpatrick's four levels. Each backed by the same evidence base.</div>
         </div>
@@ -873,7 +891,15 @@
       <div class="timeline-item">
         <div class="timeline-dot shipped-dot"></div>
         <div class="timeline-content">
-          <div class="timeline-date">April 10 <span class="version-tag">v1.5.1</span> <span class="latest-badge">Latest</span></div>
+          <div class="timeline-date">April 20 <span class="version-tag">v2.0.0</span> <span class="latest-badge">Latest</span></div>
+          <div class="timeline-title">Pipeline orchestrator, cross-course intelligence, sub-agents</div>
+          <div class="timeline-desc"><code>/idstack pipeline</code> chains all skills automatically. Cross-course learnings transfer knowledge between projects. Parallel sub-agents speed up reviews on Claude Code. Designer profile adapts to your expertise level. All skills now namespaced under <code>/idstack</code>.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">April 10 <span class="version-tag">v1.5.1</span></div>
           <div class="timeline-title">Bidirectional pipeline + evidence depth</div>
           <div class="timeline-desc">All 9 skills now write back to the manifest, so every step in the pipeline makes the next one smarter. Score trending shows your course improving across reviews. Accessibility review upgraded to full WCAG 2.1 AA with course-specific guidance. Red-team audit now cites research evidence for every adversarial check.</div>
         </div>
