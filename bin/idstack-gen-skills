@@ -24,7 +24,7 @@ fi
 HEADER="<!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->"
 HEADER2="<!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->"
 
-for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
+for tmpl in "$IDSTACK_DIR"/*/SKILL.md.tmpl; do
   [ -f "$tmpl" ] || continue
   skill_dir="$(dirname "$tmpl")"
   skill_name="$(basename "$skill_dir")"

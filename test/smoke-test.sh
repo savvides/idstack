@@ -36,14 +36,14 @@ check "plugin manifest has name" "grep -q '\"name\": \"idstack\"' '$IDSTACK_DIR/
 # Check all skill SKILL.md files are reachable
 SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
 for skill in $SKILLS; do
-  check "$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md' ]"
+  check "$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/$skill/SKILL.md' ]"
 done
 
 # Check YAML frontmatter has required fields (bare names, no idstack- prefix)
 for skill in $SKILLS; do
-  check "$skill has name: $skill" "grep -q '^name: $skill' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
-  check "$skill has description: field" "grep -q '^description:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
-  check "$skill has allowed-tools: field" "grep -q '^allowed-tools:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill has name: $skill" "grep -q '^name: $skill' '$IDSTACK_DIR/$skill/SKILL.md'"
+  check "$skill has description: field" "grep -q '^description:' '$IDSTACK_DIR/$skill/SKILL.md'"
+  check "$skill has allowed-tools: field" "grep -q '^allowed-tools:' '$IDSTACK_DIR/$skill/SKILL.md'"
 done
 
 # Check evidence file exists
@@ -58,23 +58,23 @@ done
 # Check template system
 check "templates/preamble.md exists" "[ -f '$IDSTACK_DIR/templates/preamble.md' ]"
 for skill in $SKILLS; do
-  check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
+  check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/$skill/SKILL.md.tmpl' ]"
 done
 
 # Check generated files have auto-generated header
 for skill in $SKILLS; do
-  check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/$skill/SKILL.md'"
 done
 
 # Check all preamble-based skills have context recovery
 for skill in $SKILLS; do
-  check "$skill has context recovery" "grep -q 'Context Recovery' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill has context recovery" "grep -q 'Context Recovery' '$IDSTACK_DIR/$skill/SKILL.md'"
 done
 
 # Check pipeline-originated skills have timeline logging
 TIMELINE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team"
 for skill in $TIMELINE_SKILLS; do
-  check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/$skill/SKILL.md'"
 done
 
 # Check preamble uses CLAUDE_PLUGIN_ROOT

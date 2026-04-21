@@ -6,3 +6,4 @@
 *.swo
 *~
 idstack/
+.gstack/
