@@ -26,9 +26,9 @@ That's the entire skill. No backend, no config files, no registration step beyon
 
 ```yaml
 ---
-name: your-skill
+name: idstack-your-skill
 description: |
-  What this skill does, in 2-3 lines.
+  What this skill does, in 2-3 lines. (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -39,6 +39,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 ```
+
+Note: All skill names are prefixed with `idstack-` to avoid collisions with other skill packages. Users invoke via `/idstack your-skill`.
 
 **2. `{{PREAMBLE}}` placeholder** — this is replaced by `bin/idstack-gen-skills` with the shared preamble (update check, manifest check, context recovery).
 
@@ -94,7 +96,7 @@ Use domain codes from `evidence/references.md` (e.g., `[Alignment-14] [T1]`). St
 ./test/smoke-test.sh # Verify installation
 ```
 
-Then test manually in Claude Code by running `/your-skill`.
+Then test manually in Claude Code by running `/idstack your-skill`.
 
 ## What makes a good PR
 

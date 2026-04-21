@@ -4,12 +4,24 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### idstack v2 — Pipeline orchestrator, intelligence, sub-agents
+- **`/idstack pipeline`** — chains all 8 skills automatically. Auto-skips completed skills, shows pipeline status, pause and resume anytime.
+- **Namespace refactor** — all skills now invoked via `/idstack <skill>` (e.g., `/idstack needs-analysis`). No more name collisions with other skill packages.
+- **Cross-course intelligence** — learnings from one course appear in another. Global store at `~/.idstack/global/learnings.jsonl` with keyword search.
+- **`/idstack learn`** — search, delete, promote, and export learnings.
+- **Course readiness dashboard** — pre-export gate showing quality/red-team/accessibility status. Integrated into `/idstack course-export`.
+- **Designer profile** — `~/.idstack/profile.yaml` with experience level. Skills adapt explanation depth (novice/intermediate/expert).
+- **Manifest preferences** — schema v1.3 adds verbosity, export format, preferred LMS settings.
+- **Sub-agent architecture** — `/idstack red-team` (5 parallel agents), `/idstack accessibility-review` (2 parallel), `/idstack course-quality-review` (3 parallel). Claude Code only, graceful degradation elsewhere.
+- **Spec review loop** — `/idstack course-builder` validates alignment via adversarial subagent after generating content.
+- **IDSTACK_HOME** — all paths portable via env var. Foundation for multi-platform support.
+
 ### Bidirectional pipeline + evidence depth (v1.5.1)
 - All 9 skills now write back to the manifest, closing the feedback loop. Downstream skills get richer input from upstream analysis.
-- Score trending: run `/course-quality-review` multiple times and see your score improve over sessions.
-- `/accessibility-review` expanded to full WCAG 2.1 AA coverage with course-specific guidance for videos, quizzes, forums, PDFs, and simulations.
-- `/red-team` all 5 adversarial dimensions now cite their research evidence.
-- `/course-export` shows readiness info (quality, accessibility, red-team scores) before export.
+- Score trending: run `/idstack course-quality-review` multiple times and see your score improve over sessions.
+- `/idstack accessibility-review` expanded to full WCAG 2.1 AA coverage with course-specific guidance for videos, quizzes, forums, PDFs, and simulations.
+- `/idstack red-team` all 5 adversarial dimensions now cite their research evidence.
+- `/idstack course-export` shows readiness info (quality, accessibility, red-team scores) before export.
 - Schema migration v1.2 with chained upgrades (any version → latest in one pass).
 
 ### Course memory (v1.5.0)
@@ -33,6 +45,9 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Coming soon
 
+### Multi-platform support (v2.5)
+Run idstack skills in Gemini CLI. `./setup --host gemini` installs to `~/.gemini/skills/`. Gated on a spike test. Codex CLI support after Gemini proves out.
+
 ### More skills
 Four more skills based on the research synthesis:
 
@@ -44,9 +59,6 @@ Four more skills based on the research synthesis:
 ## Exploring
 
 These depend on user demand. If any of these would change your workflow, [let us know](https://forms.gle/6LDgDD1M6WWyYvME8).
-
-### Multi-platform support
-Run idstack skills in Gemini CLI and Codex CLI, not just Claude Code. All three platforms use the same skill format. We're waiting for feedback before investing here.
 
 ### More LMS integrations
 Direct API connections to Blackboard, Moodle, and D2L (beyond the IMS Common Cartridge format that already works). This would unlock richer data like rubrics, analytics, and student engagement metrics.

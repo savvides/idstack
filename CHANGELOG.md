@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.0.0.0 (2026-04-20)
+
+### Added
+- **Pipeline orchestrator.** `/idstack pipeline` chains all 8 design skills automatically, auto-skipping completed ones. Pause anytime, resume later. Your progress is saved in timeline.jsonl.
+- **Cross-course intelligence.** Learnings from one course now appear in another via `~/.idstack/global/learnings.jsonl`. Keyword search with `--keyword` and `--cross-project` flags.
+- **`/idstack learn` skill.** Search, list, delete, promote, and export project learnings. Promote local discoveries to the global store for cross-project reuse.
+- **Course readiness dashboard.** `bin/idstack-status --readiness` shows a pre-export gate: quality score, red-team critical findings, accessibility score, with pass/fail verdict. Integrated into `/idstack course-export`.
+- **Designer profile.** Create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`. Skills adapt explanation depth to your expertise.
+- **Manifest preferences.** Schema v1.3 adds `preferences` section: verbosity, export_format, preferred_lms, auto_advance_pipeline.
+- **Sub-agent architecture.** On Claude Code, review skills dispatch parallel sub-agents for speed: `/idstack red-team` (5 agents), `/idstack accessibility-review` (2 agents), `/idstack course-quality-review` (3 agents). Graceful sequential fallback on other platforms.
+- **Spec review loop.** `/idstack course-builder` validates alignment via adversarial sub-agent after generating content. Reports "Review: N issues found, M fixed."
+- **`IDSTACK_HOME` env var.** All internal paths now use `${IDSTACK_HOME:-~/.claude/skills/idstack}`. Set this to install anywhere.
+- **New bin scripts.** `bin/idstack-learnings-delete`, `bin/idstack-learnings-promote` for managing learnings programmatically.
+
+### Changed
+- **Namespace refactor.** All skills now invoked via `/idstack <skill>` instead of `/<skill>`. Avoids name collisions with other skill packages (e.g., gstack's `/learn`).
+- **Setup creates single symlink.** `./setup` now creates only `~/.claude/skills/idstack` (cleans up legacy individual symlinks automatically).
+- **Manifest schema v1.3.** Adds preferences section. Chained migration from v1.0/v1.1/v1.2 in one pass.
+- **Preamble reads designer profile and preferences** on every skill start.
+
 ## v1.5.1.0 (2026-04-10)
 
 ### Added
