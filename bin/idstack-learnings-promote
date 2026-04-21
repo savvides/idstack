@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Promote a local learning to the global store.
+# Usage: idstack-learnings-promote <key>
+# Copies the matching learning from .idstack/learnings.jsonl to ~/.idstack/global/learnings.jsonl
+# Tags it with the source project. Exit 0 always.
+
+set -e
+
+KEY="${1:-}"
+[ -z "$KEY" ] && { echo "Usage: idstack-learnings-promote <key>" >&2; exit 1; }
+
+LOCAL_LEARNINGS=".idstack/learnings.jsonl"
+GLOBAL_DIR="$HOME/.idstack/global"
+GLOBAL_LEARNINGS="$GLOBAL_DIR/learnings.jsonl"
+
+[ -f "$LOCAL_LEARNINGS" ] || { echo "No local learnings found." >&2; exit 1; }
+
+if ! command -v python3 &>/dev/null; then
+  echo "python3 required for promote." >&2
+  exit 1
+fi
+
+python3 -c "
+import json, sys, os
+
+key = sys.argv[1]
+local_file = '$LOCAL_LEARNINGS'
+global_dir = '$GLOBAL_DIR'
+global_file = '$GLOBAL_LEARNINGS'
+
+# Find matching learning
+match = None
+for line in open(local_file):
+    try:
+        d = json.loads(line)
+        if d.get('key') == key:
+            match = d
+    except:
+        pass
+
+if not match:
+    print(f'No learning found with key: {key}', file=sys.stderr)
+    sys.exit(1)
+
+# Tag with source project
+project_name = 'unknown'
+if os.path.exists('.idstack/project.json'):
+    try:
+        proj = json.load(open('.idstack/project.json'))
+        project_name = proj.get('project_name', 'unknown')
+    except:
+        pass
+match['_source_project'] = project_name
+match['_promoted'] = True
+
+# Write to global store
+os.makedirs(global_dir, exist_ok=True)
+with open(global_file, 'a') as f:
+    f.write(json.dumps(match) + '\n')
+
+print(f'Promoted \"{key}\" to global learnings (source: {project_name})')
+" "$KEY"

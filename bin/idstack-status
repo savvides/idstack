@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # Course health dashboard. Reads .idstack/timeline.jsonl and prints a summary.
 # Usage: idstack-status
+#        idstack-status --readiness    (pre-export readiness table only)
 # Shows: project name, skills completed, quality score trend, dimensions, next step.
+
+READINESS_ONLY=0
+[ "$1" = "--readiness" ] && READINESS_ONLY=1
 
 TIMELINE=".idstack/timeline.jsonl"
 LEARNINGS=".idstack/learnings.jsonl"
@@ -19,14 +23,20 @@ except: print('unknown')
 " 2>/dev/null) || PROJECT_NAME="unknown"
 fi
 
-echo "=============================="
-echo "  idstack course status"
-echo "=============================="
-echo ""
+if [ "$READINESS_ONLY" -eq 0 ]; then
+  echo "=============================="
+  echo "  idstack course status"
+  echo "=============================="
+  echo ""
+fi
 
 if [ ! -f "$TIMELINE" ]; then
-  echo "No course data yet."
-  echo "Run /needs-analysis to start a new course, or /course-import to bring in an existing one."
+  if [ "$READINESS_ONLY" -eq 1 ]; then
+    echo "No timeline data. Run pipeline skills first."
+  else
+    echo "No course data yet."
+    echo "Run /needs-analysis to start a new course, or /course-import to bring in an existing one."
+  fi
   exit 0
 fi
 
@@ -39,6 +49,7 @@ if ! command -v python3 &>/dev/null; then
   exit 0
 fi
 
+if [ "$READINESS_ONLY" -eq 0 ]; then
 python3 -c "
 import json, sys
 
@@ -117,9 +128,84 @@ if next_skill:
     print(f'Suggested next: /{next_skill}')
     print()
 " 2>/dev/null || echo "Error reading timeline."
+fi
 
 # Learnings count
-if [ -f "$LEARNINGS" ]; then
+if [ -f "$LEARNINGS" ] && [ "$READINESS_ONLY" -eq 0 ]; then
   LEARN_COUNT=$(wc -l < "$LEARNINGS" 2>/dev/null | tr -d ' ')
   [ "$LEARN_COUNT" -gt 0 ] 2>/dev/null && echo "Learnings: $LEARN_COUNT discoveries stored"
+fi
+
+# Readiness table (shown with --readiness flag or appended to full output)
+if [ "$READINESS_ONLY" -eq 1 ] || [ -f "$MANIFEST" ]; then
+  python3 -c "
+import json, sys, os
+
+manifest_file = '$MANIFEST'
+timeline_file = '$TIMELINE'
+readiness_only = $READINESS_ONLY
+
+if not os.path.exists(timeline_file):
+    if readiness_only:
+        print('No timeline data. Run pipeline skills first.')
+    sys.exit(0)
+
+# Read timeline for completed skills
+events = []
+for line in open(timeline_file):
+    try: events.append(json.loads(line))
+    except: pass
+
+completed = set()
+for e in events:
+    if e.get('event') == 'completed':
+        completed.add(e.get('skill', ''))
+
+# Read manifest for scores
+manifest = {}
+if os.path.exists(manifest_file):
+    try: manifest = json.load(open(manifest_file))
+    except: pass
+
+# Build readiness table
+quality_score = manifest.get('quality_review', {}).get('overall_score', 0)
+quality_reviewed = 'course-quality-review' in completed
+red_team = manifest.get('red_team_audit', {})
+red_critical = red_team.get('findings_summary', {}).get('critical', 0)
+red_reviewed = 'red-team' in completed
+access = manifest.get('accessibility_review', {})
+access_score = access.get('score', {}).get('overall', 0)
+access_reviewed = 'accessibility-review' in completed
+
+if readiness_only:
+    print()
+print('─── Course Readiness ───')
+print()
+q_status = 'PASS' if quality_reviewed else 'NOT RUN'
+r_status = 'PASS' if red_reviewed and red_critical == 0 else 'WARN' if red_reviewed else 'NOT RUN'
+a_status = 'PASS' if access_reviewed else 'NOT RUN'
+print(f'  Quality Review:       {q_status:<10} Score: {quality_score}/100')
+print(f'  Red Team Audit:       {r_status:<10} Critical: {red_critical}')
+print(f'  Accessibility Review: {a_status:<10} Score: {access_score}/100')
+print()
+
+# Overall verdict
+if quality_reviewed and red_reviewed and access_reviewed:
+    if red_critical == 0 and quality_score >= 60:
+        print('  Verdict: READY TO EXPORT')
+    else:
+        issues = []
+        if red_critical > 0: issues.append(f'{red_critical} critical red-team findings')
+        if quality_score < 60: issues.append(f'quality score {quality_score} < 60')
+        joined = ', '.join(issues)
+        print(f'  Verdict: ISSUES ({joined})')
+else:
+    missing = []
+    if not quality_reviewed: missing.append('/course-quality-review')
+    if not red_reviewed: missing.append('/red-team')
+    if not access_reviewed: missing.append('/accessibility-review')
+    joined = ', '.join(missing)
+    print(f'  Verdict: INCOMPLETE (run {joined})')
+print()
+" 2>/dev/null || true
 fi

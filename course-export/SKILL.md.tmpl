@@ -1,5 +1,5 @@
 ---
-name: course-export
+name: idstack-course-export
 description: |
   Export course content to any LMS. Generates IMS Common Cartridge files (.imscc)
   compatible with Canvas, Blackboard, Moodle, and D2L, or pushes directly to
@@ -20,6 +20,22 @@ allowed-tools:
 
 **Skill-specific manifest check:** If the manifest `course_export` section already has data,
 ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+
+## Pre-Export Readiness Check
+
+Before starting the export workflow, run the readiness dashboard:
+
+```bash
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+"$_IDSTACK/bin/idstack-status" --readiness
+```
+
+Show the readiness table to the user. If the verdict is:
+- **READY TO EXPORT:** Proceed normally.
+- **ISSUES:** Show the issues and ask: "There are unresolved issues. Continue with export anyway?"
+- **INCOMPLETE:** Show what's missing and ask: "Some review skills haven't run yet. Continue with export anyway, or run the missing skills first?"
+
+This is advisory — the user can always choose to export regardless.
 
 # Course Export — IMS Common Cartridge & Canvas API
 
@@ -69,7 +85,7 @@ Before starting the export, verify that generated course content exists.
 ```bash
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  ~/.claude/skills/idstack/bin/idstack-migrate .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -1041,7 +1057,7 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
-~/.claude/skills/idstack/bin/idstack-timeline-log '{"skill":"course-export","event":"completed"}'
+"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"course-export","event":"completed"}'
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -1051,5 +1067,5 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
-~/.claude/skills/idstack/bin/idstack-learnings-log '{"skill":"course-export","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"course-export","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

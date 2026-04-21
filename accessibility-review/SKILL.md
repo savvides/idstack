@@ -1,5 +1,5 @@
 ---
-name: accessibility-review
+name: idstack-accessibility-review
 description: |
   WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0)
   enhancement review for course designs. Two-tier output: "Must Fix" for
@@ -13,6 +13,7 @@ allowed-tools:
   - Glob
   - Grep
   - AskUserQuestion
+  - Agent
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->
@@ -21,11 +22,12 @@ allowed-tools:
 ## Preamble: Update Check
 
 ```bash
-_UPD=$(~/.claude/skills/idstack/bin/idstack-update-check 2>/dev/null || true)
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ~/.claude/skills/idstack && git pull && ./setup` to update." Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ${IDSTACK_HOME:-~/.claude/skills/idstack} && git pull && ./setup` to update. (The `./setup` step is required — it cleans up old symlinks.)" Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -34,7 +36,7 @@ Before starting, check for an existing project manifest.
 ```bash
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  ~/.claude/skills/idstack/bin/idstack-migrate .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -47,6 +49,53 @@ fi
 
 **If NO_MANIFEST:**
 - This skill will create or update the manifest during its workflow.
+
+## Preamble: Preferences
+
+```bash
+if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
+  python3 -c "
+import json, sys
+try:
+    data = json.load(open('.idstack/project.json'))
+    prefs = data.get('preferences', {})
+    v = prefs.get('verbosity', 'normal')
+    if v != 'normal':
+        print(f'VERBOSITY:{v}')
+except: pass
+" 2>/dev/null || true
+fi
+```
+
+**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
+(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
+considered, and rationale for each recommendation.
+**If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
+explain key decisions, skip exhaustive alternatives.
+
+## Preamble: Designer Profile
+
+```bash
+_PROFILE="$HOME/.idstack/profile.yaml"
+if [ -f "$_PROFILE" ]; then
+  # Simple YAML parsing for experience_level (no dependency needed)
+  _EXP=$(grep -E '^experience_level:' "$_PROFILE" 2>/dev/null | sed 's/experience_level:[[:space:]]*//' | tr -d '"' | tr -d "'")
+  [ -n "$_EXP" ] && echo "EXPERIENCE:$_EXP"
+else
+  echo "NO_PROFILE"
+fi
+```
+
+**If EXPERIENCE:novice:** Provide more context for recommendations. Explain WHY each
+step matters, not just what to do. Define jargon on first use. Offer examples.
+**If EXPERIENCE:intermediate:** Standard explanations. Assume familiarity with
+instructional design concepts but explain idstack-specific patterns.
+**If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
+tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
+**If NO_PROFILE:** On first run, after the main workflow is underway (not before),
+mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
+to adjust how much detail idstack provides."
 
 ## Preamble: Context Recovery
 
@@ -120,7 +169,7 @@ if [ -f ".idstack/learnings.jsonl" ]; then
   _LEARN_COUNT=$(wc -l < .idstack/learnings.jsonl 2>/dev/null | tr -d ' ')
   echo "LEARNINGS: $_LEARN_COUNT"
   if [ "$_LEARN_COUNT" -gt 0 ] 2>/dev/null; then
-    ~/.claude/skills/idstack/bin/idstack-learnings-search --limit 3 2>/dev/null || true
+    "$_IDSTACK/bin/idstack-learnings-search" --limit 3 2>/dev/null || true
   fi
 fi
 ```
@@ -182,7 +231,7 @@ Before starting the review, check for an existing project manifest.
 ```bash
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  ~/.claude/skills/idstack/bin/idstack-migrate .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -223,6 +272,23 @@ fi
 5. "Do you have stated learning objectives for each module?"
 
 Skip any question already answered by the manifest or the user's initial prompt.
+
+### Step 1b: Parallel Dispatch (Claude Code only)
+
+If you have access to the **Agent tool**, dispatch the WCAG audit and UDL review as
+2 parallel subagents instead of running Steps 2-3 sequentially.
+
+**Launch 2 agents in a single message:**
+
+1. **WCAG 2.1 AA Audit** — "You are an accessibility compliance auditor. Given this course data: [paste course info from Step 1]. Audit against WCAG 2.1 AA: Perceivable (1.1.1 alt text, 1.2 time-based media, 1.3 adaptable structure, 1.4 distinguishable color/contrast), Operable (2.1 keyboard, 2.2 timing, 2.3 seizures, 2.4 navigation), Understandable (3.1 readable, 3.2 predictable, 3.3 input assistance), Robust (4.1 compatibility). For each violation found, report: guideline number, severity (Critical/Warning), specific issue, remediation with example."
+
+2. **UDL 3.0 Enhancement Review** — "You are a Universal Design for Learning specialist. Given this course data: [paste course info from Step 1]. Review against UDL 3.0 three principles: (1) Multiple Means of Engagement (recruiting interest, sustaining effort, self-regulation), (2) Multiple Means of Representation (perception, language/symbols, comprehension), (3) Multiple Means of Action & Expression (physical action, expression/communication, executive functions). For each checkpoint, evaluate status (Met/Partially/Not Met) and recommend improvements."
+
+**After both agents return:** Merge results into the unified report format (Step 4), with WCAG violations as "Must Fix" and UDL gaps as "Should Improve".
+
+**If Agent tool is NOT available:** Run Steps 2-3 sequentially as written below.
+
+---
 
 ### Step 2: WCAG 2.1 AA Compliance Audit (Tier 1: Must Fix)
 
@@ -485,7 +551,7 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
-~/.claude/skills/idstack/bin/idstack-timeline-log '{"skill":"accessibility-review","event":"completed"}'
+"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"accessibility-review","event":"completed"}'
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -495,5 +561,5 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
-~/.claude/skills/idstack/bin/idstack-learnings-log '{"skill":"accessibility-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"accessibility-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

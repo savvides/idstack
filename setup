@@ -16,33 +16,45 @@ echo "  source: $IDSTACK_DIR"
 echo "  target: $SKILLS_DIR"
 echo ""
 
-# Link repo root so skill symlinks can resolve relatively
-ln -snf "$IDSTACK_DIR" "$SKILLS_DIR/idstack"
-
-# Link each skill directory that contains a SKILL.md
-for skill_dir in "$IDSTACK_DIR"/*/; do
-  if [ -f "$skill_dir/SKILL.md" ]; then
-    skill_name="$(basename "$skill_dir")"
-    target="$SKILLS_DIR/$skill_name"
-    if [ -L "$target" ] || [ ! -e "$target" ]; then
-      ln -snf "idstack/$skill_name" "$target"
-      echo "  linked: /$skill_name"
-    else
-      echo "  skipped: $skill_name (non-symlink already exists at $target)"
+# Clean up legacy individual skill symlinks (pre-v2)
+LEGACY_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
+for skill in $LEGACY_SKILLS; do
+  target="$SKILLS_DIR/$skill"
+  if [ -L "$target" ]; then
+    # Only remove if it points into idstack (don't remove other packages' skills)
+    link_target=$(readlink "$target" 2>/dev/null || true)
+    if echo "$link_target" | grep -q "idstack"; then
+      rm "$target"
+      echo "  cleaned up legacy: /$skill"
     fi
   fi
 done
 
+# Single symlink: ~/.claude/skills/idstack → repo root
+# The dispatcher SKILL.md at the repo root handles routing to sub-skills.
+# Users invoke: /idstack <subcommand> (e.g., /idstack needs-analysis)
+ln -snf "$IDSTACK_DIR" "$SKILLS_DIR/idstack"
+echo "  linked: /idstack → $IDSTACK_DIR"
+
 echo ""
 echo "idstack installed successfully."
-echo "  Skills directory: $SKILLS_DIR"
+echo "  Skills directory: $SKILLS_DIR/idstack"
 echo ""
 echo "  If Claude Code is already running, restart it (skills load at session start)."
 echo ""
+echo "  Usage: /idstack <skill>"
+echo ""
 echo "  Have an existing course?"
-echo "    /course-import → /course-quality-review"
+echo "    /idstack course-import → /idstack course-quality-review"
 echo ""
 echo "  Starting fresh?"
-echo "    /needs-analysis"
+echo "    /idstack needs-analysis"
 echo ""
-echo "  All 9 skills: https://idstack.org"
+echo "  Run the full pipeline:"
+echo "    /idstack pipeline"
+echo ""
+echo "  All skills: needs-analysis, learning-objectives, assessment-design,"
+echo "    course-builder, course-quality-review, accessibility-review,"
+echo "    red-team, course-export, course-import, pipeline, learn, status"
+echo ""
+echo "  More info: https://idstack.org"

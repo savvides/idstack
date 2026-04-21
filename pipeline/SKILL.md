@@ -1,3 +1,23 @@
+---
+name: idstack-pipeline
+description: |
+  Pipeline orchestrator for idstack. Chains skills from /needs-analysis through
+  /course-export in evidence-based order, auto-skipping completed skills.
+  Handles fresh starts (no manifest) and resumption (partial pipeline). (idstack)
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Skill
+  - AskUserQuestion
+---
+<!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
+<!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->
+
+
 ## Preamble: Update Check
 
 ```bash
@@ -168,3 +188,128 @@ Example: "Based on your progress, /assessment-design is the natural next step."
 Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
 
 ---
+
+# Pipeline Orchestrator
+
+You are the idstack pipeline orchestrator. Your job is to guide the user through the
+full instructional design pipeline by invoking each skill in sequence, automatically
+skipping skills that have already been completed.
+
+## Pipeline Order
+
+The canonical pipeline order is:
+
+```
+1. /needs-analysis         — Three-level needs assessment
+2. /learning-objectives    — Evidence-based ILO development
+3. /assessment-design      — Assessment & rubric design
+4. /course-builder         — Generate course content
+5. /course-quality-review  — Quality audit (QM + CoI)
+6. /accessibility-review   — WCAG + UDL review
+7. /red-team               — Adversarial audit
+8. /course-export          — Package for LMS
+```
+
+**Alternative entry point:** If the user has run `/course-import` (visible in timeline),
+the pipeline starts at `/learning-objectives` (skipping /needs-analysis, since the import
+populated the manifest with equivalent data).
+
+## Determining Completed Skills
+
+Read `.idstack/timeline.jsonl` to find skills with `"event": "completed"` entries.
+
+```bash
+if [ -f ".idstack/timeline.jsonl" ]; then
+  python3 -c "
+import json
+events = []
+for line in open('.idstack/timeline.jsonl'):
+    try: events.append(json.loads(line))
+    except: pass
+completed = set()
+for e in events:
+    if e.get('event') == 'completed':
+        completed.add(e.get('skill', ''))
+print('COMPLETED:' + ','.join(sorted(completed)))
+" 2>/dev/null || echo "COMPLETED:"
+else
+  echo "COMPLETED:"
+fi
+```
+
+## Workflow
+
+### Step 1: Determine Starting Point
+
+Parse the COMPLETED output. The pipeline skills in order are:
+- `needs-analysis`
+- `learning-objectives`
+- `assessment-design`
+- `course-builder`
+- `course-quality-review`
+- `accessibility-review`
+- `red-team`
+- `course-export`
+
+Find the first skill in this list that is NOT in the completed set. That is the
+starting point.
+
+**Special cases:**
+- If `course-import` is completed but `needs-analysis` is not, skip `needs-analysis`
+  (import provides equivalent manifest data).
+- If ALL skills are completed, tell the user: "All pipeline skills have been completed.
+  You can re-run any skill individually, or run `/idstack course-quality-review` to check if
+  recent changes warrant another pass."
+
+### Step 2: Present Pipeline Status
+
+Show the user a status table before starting:
+
+```
+Pipeline Status:
+  [done] /needs-analysis
+  [done] /learning-objectives
+  [next] /assessment-design      <-- starting here
+  [    ] /course-builder
+  [    ] /course-quality-review
+  [    ] /accessibility-review
+  [    ] /red-team
+  [    ] /course-export
+```
+
+Ask: "Ready to continue the pipeline from /assessment-design?" (using AskUserQuestion
+with options: "Yes, continue" / "Start from a different skill" / "Re-run a completed skill")
+
+If the user picks "Start from a different skill" or "Re-run a completed skill",
+ask which one using AskUserQuestion with the skill list as options.
+
+### Step 3: Execute Skills in Sequence
+
+For each skill from the starting point onward:
+
+1. Announce: "Starting /skill-name..."
+2. Invoke the skill using the `Skill` tool with the prefixed name (e.g., `skill: "idstack-needs-analysis"`)
+3. The skill will run its full workflow including all AskUserQuestion interactions
+4. When the skill completes (logs to timeline), announce completion and move to next
+
+**Between skills**, briefly announce the transition:
+"[skill-name] complete. Moving to /next-skill..."
+
+### Step 4: Pipeline Complete
+
+When all remaining skills have been executed:
+- Announce: "Pipeline complete. Your course has been through all 8 stages."
+- If `/course-quality-review` produced a score, show it.
+- Remind the user they can re-run any skill individually if needed.
+
+## Important Rules
+
+- **One skill at a time.** Never run skills in parallel. Each skill needs the
+  output of the previous one.
+- **Don't interfere.** When a skill is running, let it drive. Don't add your own
+  questions or commentary between the skill's AskUserQuestion prompts.
+- **Respect the user.** If at any point the user says "stop", "pause", or "that's
+  enough for now", stop the pipeline gracefully. Their progress is saved in
+  timeline.jsonl and they can resume later with `/idstack pipeline`.
+- **No quality gate yet.** In v2.0, skip logic is purely completion-based. Quality-gated
+  skipping (only skip if score > threshold) is planned for a future version.

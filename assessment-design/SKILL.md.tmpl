@@ -1,5 +1,5 @@
 ---
-name: assessment-design
+name: idstack-assessment-design
 description: |
   Evidence-based assessment design with rubrics, feedback strategies, and formative
   checkpoints. Aligns each assessment to learning objectives using Bloom's taxonomy.
@@ -113,7 +113,7 @@ Before starting assessment design, check for an existing project manifest.
 ```bash
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  ~/.claude/skills/idstack/bin/idstack-migrate .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -612,7 +612,7 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
-~/.claude/skills/idstack/bin/idstack-timeline-log '{"skill":"assessment-design","event":"completed"}'
+"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"assessment-design","event":"completed"}'
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -622,5 +622,5 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
-~/.claude/skills/idstack/bin/idstack-learnings-log '{"skill":"assessment-design","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"assessment-design","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

@@ -1,5 +1,5 @@
 ---
-name: course-export
+name: idstack-course-export
 description: |
   Export course content to any LMS. Generates IMS Common Cartridge files (.imscc)
   compatible with Canvas, Blackboard, Moodle, and D2L, or pushes directly to
@@ -22,11 +22,12 @@ allowed-tools:
 ## Preamble: Update Check
 
 ```bash
-_UPD=$(~/.claude/skills/idstack/bin/idstack-update-check 2>/dev/null || true)
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ~/.claude/skills/idstack && git pull && ./setup` to update." Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ${IDSTACK_HOME:-~/.claude/skills/idstack} && git pull && ./setup` to update. (The `./setup` step is required — it cleans up old symlinks.)" Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -35,7 +36,7 @@ Before starting, check for an existing project manifest.
 ```bash
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  ~/.claude/skills/idstack/bin/idstack-migrate .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -48,6 +49,53 @@ fi
 
 **If NO_MANIFEST:**
 - This skill will create or update the manifest during its workflow.
+
+## Preamble: Preferences
+
+```bash
+if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
+  python3 -c "
+import json, sys
+try:
+    data = json.load(open('.idstack/project.json'))
+    prefs = data.get('preferences', {})
+    v = prefs.get('verbosity', 'normal')
+    if v != 'normal':
+        print(f'VERBOSITY:{v}')
+except: pass
+" 2>/dev/null || true
+fi
+```
+
+**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
+(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
+considered, and rationale for each recommendation.
+**If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
+explain key decisions, skip exhaustive alternatives.
+
+## Preamble: Designer Profile
+
+```bash
+_PROFILE="$HOME/.idstack/profile.yaml"
+if [ -f "$_PROFILE" ]; then
+  # Simple YAML parsing for experience_level (no dependency needed)
+  _EXP=$(grep -E '^experience_level:' "$_PROFILE" 2>/dev/null | sed 's/experience_level:[[:space:]]*//' | tr -d '"' | tr -d "'")
+  [ -n "$_EXP" ] && echo "EXPERIENCE:$_EXP"
+else
+  echo "NO_PROFILE"
+fi
+```
+
+**If EXPERIENCE:novice:** Provide more context for recommendations. Explain WHY each
+step matters, not just what to do. Define jargon on first use. Offer examples.
+**If EXPERIENCE:intermediate:** Standard explanations. Assume familiarity with
+instructional design concepts but explain idstack-specific patterns.
+**If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
+tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
+**If NO_PROFILE:** On first run, after the main workflow is underway (not before),
+mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
+to adjust how much detail idstack provides."
 
 ## Preamble: Context Recovery
 
@@ -121,7 +169,7 @@ if [ -f ".idstack/learnings.jsonl" ]; then
   _LEARN_COUNT=$(wc -l < .idstack/learnings.jsonl 2>/dev/null | tr -d ' ')
   echo "LEARNINGS: $_LEARN_COUNT"
   if [ "$_LEARN_COUNT" -gt 0 ] 2>/dev/null; then
-    ~/.claude/skills/idstack/bin/idstack-learnings-search --limit 3 2>/dev/null || true
+    "$_IDSTACK/bin/idstack-learnings-search" --limit 3 2>/dev/null || true
   fi
 fi
 ```
@@ -144,6 +192,22 @@ Example: "Reminder: this Canvas instance uses custom rubric formatting (discover
 
 **Skill-specific manifest check:** If the manifest `course_export` section already has data,
 ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+
+## Pre-Export Readiness Check
+
+Before starting the export workflow, run the readiness dashboard:
+
+```bash
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+"$_IDSTACK/bin/idstack-status" --readiness
+```
+
+Show the readiness table to the user. If the verdict is:
+- **READY TO EXPORT:** Proceed normally.
+- **ISSUES:** Show the issues and ask: "There are unresolved issues. Continue with export anyway?"
+- **INCOMPLETE:** Show what's missing and ask: "Some review skills haven't run yet. Continue with export anyway, or run the missing skills first?"
+
+This is advisory — the user can always choose to export regardless.
 
 # Course Export — IMS Common Cartridge & Canvas API
 
@@ -193,7 +257,7 @@ Before starting the export, verify that generated course content exists.
 ```bash
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  ~/.claude/skills/idstack/bin/idstack-migrate .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -1165,7 +1229,7 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
-~/.claude/skills/idstack/bin/idstack-timeline-log '{"skill":"course-export","event":"completed"}'
+"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"course-export","event":"completed"}'
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -1175,5 +1239,5 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
-~/.claude/skills/idstack/bin/idstack-learnings-log '{"skill":"course-export","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"course-export","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

@@ -1,0 +1,67 @@
+{
+  "version": "1.2",
+  "project_name": "Test Course v1.2",
+  "created": "2026-03-01T00:00:00Z",
+  "updated": "2026-03-01T00:00:00Z",
+  "context": {
+    "modality": "online",
+    "timeline": "semester",
+    "class_size": "45",
+    "institution_type": "university",
+    "available_tech": ["canvas", "zoom"]
+  },
+  "needs_analysis": {
+    "organizational_context": {
+      "problem_statement": "Test v1.2",
+      "stakeholders": ["dept_head"],
+      "current_state": "",
+      "desired_state": "",
+      "performance_gap": ""
+    },
+    "task_analysis": {
+      "job_tasks": [],
+      "prerequisite_knowledge": [],
+      "tools_and_resources": []
+    },
+    "learner_profile": {
+      "prior_knowledge_level": "intermediate",
+      "motivation_factors": [],
+      "demographics": "",
+      "access_constraints": [],
+      "learning_preferences_note": ""
+    },
+    "training_justification": {
+      "justified": true,
+      "confidence": 8,
+      "rationale": "Test v1.2",
+      "alternatives_considered": []
+    }
+  },
+  "learning_objectives": {
+    "ilos": [],
+    "alignment_matrix": {
+      "ilo_to_activity": {},
+      "ilo_to_assessment": {},
+      "gaps": []
+    },
+    "expertise_reversal_flags": []
+  },
+  "quality_review": {
+    "last_reviewed": "2026-03-01T00:00:00Z",
+    "qm_standards": {},
+    "coi_presence": {},
+    "alignment_audit": {"findings": []},
+    "cross_domain_checks": {},
+    "review_history": [{"date": "2026-03-01", "score": 72, "version": "1.2"}],
+    "quick_wins": ["Add rubric to Discussion 1"],
+    "recommendations": [],
+    "overall_score": 72,
+    "score_breakdown": {"qm_structural": 7, "coi_presence": 6, "constructive_alignment": 8, "cross_domain_evidence": 7}
+  },
+  "assessments": {"items": [], "formative_checkpoints": [], "feedback_quality_score": 0},
+  "course_content": {"modules": [], "generated_files": [], "build_timestamp": ""},
+  "import_metadata": {"source": "", "imported_at": "", "source_lms": "", "items_imported": {"modules": 0, "objectives": 0, "assessments": 0, "activities": 0, "pages": 0}, "quality_flags": 0},
+  "export_metadata": {"exported_at": "", "format": "", "destination": "", "items_exported": {"modules": 0, "pages": 0, "assignments": 0, "quizzes": 0, "discussions": 0}, "failed_items": [], "notes": "", "readiness_check": {"quality_score": 72, "quality_reviewed": true, "red_team_critical": 0, "red_team_reviewed": false, "accessibility_critical": 0, "accessibility_reviewed": false, "verdict": ""}},
+  "red_team_audit": {"updated": "", "confidence_score": 0, "findings_summary": {"critical": 0, "warning": 0, "info": 0}, "dimensions": {}, "top_actions": [], "limitations": []},
+  "accessibility_review": {"updated": "", "score": {"overall": 0, "wcag": 0, "udl": 0}, "wcag_violations": [], "udl_recommendations": [], "quick_wins": []}
+}

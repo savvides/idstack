@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Delete a learning by key from .idstack/learnings.jsonl.
+# Usage: idstack-learnings-delete <key>
+# Removes exactly one entry (the most recent with that key). Exit 0 always.
+
+set -e
+
+KEY="${1:-}"
+[ -z "$KEY" ] && { echo "Usage: idstack-learnings-delete <key>" >&2; exit 1; }
+
+LEARNINGS=".idstack/learnings.jsonl"
+[ -f "$LEARNINGS" ] || { echo "No learnings file found." >&2; exit 1; }
+
+if ! command -v python3 &>/dev/null; then
+  echo "python3 required for delete." >&2
+  exit 1
+fi
+
+python3 -c "
+import json, sys
+
+key = sys.argv[1]
+learnings_file = '$LEARNINGS'
+
+lines = open(learnings_file).readlines()
+# Find the last line with this key and remove it
+found_idx = -1
+for i, line in enumerate(lines):
+    try:
+        d = json.loads(line)
+        if d.get('key') == key:
+            found_idx = i
+    except:
+        pass
+
+if found_idx == -1:
+    print(f'No learning found with key: {key}', file=sys.stderr)
+    sys.exit(1)
+
+# Remove that line
+lines.pop(found_idx)
+with open(learnings_file, 'w') as f:
+    f.writelines(lines)
+
+print(f'Deleted learning: {key}')
+" "$KEY"
