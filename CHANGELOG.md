@@ -15,7 +15,7 @@
 - **New bin scripts.** `bin/idstack-learnings-delete`, `bin/idstack-learnings-promote` for managing learnings programmatically.
 
 ### Changed
-- **Namespace refactor.** All skills now invoked via `/idstack <skill>` instead of `/<skill>`. Avoids name collisions with other skill packages (e.g., gstack's `/learn`).
+- **Namespace refactor.** All skills now invoked via `/idstack <skill>` instead of `/<skill>`. Avoids name collisions with other skill packages.
 - **Setup creates single symlink.** `./setup` now creates only `~/.claude/skills/idstack` (cleans up legacy individual symlinks automatically).
 - **Manifest schema v1.3.** Adds preferences section. Chained migration from v1.0/v1.1/v1.2 in one pass.
 - **Preamble reads designer profile and preferences** on every skill start.
