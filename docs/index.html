@@ -556,7 +556,10 @@
       color: var(--text-muted);
       text-align: center;
       margin-top: 0.6rem;
+      transition: color 0.3s;
     }
+    .signup-note.success { color: var(--terminal-green); }
+    .signup-note.error { color: #ef4444; }
 
     /* Builder note */
     .builder-note {
@@ -633,12 +636,11 @@
       <span class="gradient">Design better courses.</span>
     </h1>
     <p>Open source instructional design skills for Claude Code. Every recommendation is backed by peer-reviewed research, so you always know how strong the evidence is.</p>
-    <form action="https://formspree.io/f/xkokkzyy" method="POST" class="signup-form">
+    <form id="signup-form" class="signup-form">
       <input type="email" name="email" placeholder="your@email.com" required aria-label="Email address">
       <button type="submit">Get updates</button>
-      <input type="hidden" name="_next" value="https://idstack.org/">
     </form>
-    <p class="signup-note">No spam. Just releases.</p>
+    <p class="signup-note" id="signup-note">No spam. Just releases.</p>
   </header>
 
   <hr class="section-divider" style="margin-top: 3rem;">
@@ -1040,6 +1042,35 @@
         document.body.removeChild(textarea);
       }
     }
+
+    document.getElementById('signup-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var form = this;
+      var btn = form.querySelector('button');
+      var note = document.getElementById('signup-note');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      fetch('https://formspree.io/f/xkokkzyy', {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      }).then(function(res) {
+        if (res.ok) {
+          note.textContent = 'You\u2019re in! We\u2019ll keep you posted.';
+          note.className = 'signup-note success';
+          form.reset();
+        } else {
+          note.textContent = 'Something went wrong. Try again.';
+          note.className = 'signup-note error';
+        }
+      }).catch(function() {
+        note.textContent = 'Something went wrong. Try again.';
+        note.className = 'signup-note error';
+      }).finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Get updates';
+      });
+    });
   </script>
 
 </body>
