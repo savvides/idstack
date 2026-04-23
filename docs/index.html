@@ -514,6 +514,50 @@
       line-height: 1.6;
     }
 
+    /* Signup form */
+    .signup-form {
+      display: flex;
+      gap: 0;
+      max-width: 420px;
+      margin: 2rem auto 0;
+    }
+    .signup-form input[type="email"] {
+      flex: 1;
+      padding: 0.7rem 1rem;
+      font-size: 0.95rem;
+      font-family: var(--font);
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-right: none;
+      border-radius: 8px 0 0 8px;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .signup-form input[type="email"]::placeholder { color: var(--text-muted); }
+    .signup-form input[type="email"]:focus { border-color: var(--accent-start); }
+    .signup-form button {
+      padding: 0.7rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: var(--font);
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      color: white;
+      border: none;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+    .signup-form button:hover { opacity: 0.9; }
+    .signup-form button:focus-visible { outline: 2px solid var(--accent-start); outline-offset: 2px; }
+    .signup-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 0.6rem;
+    }
+
     /* Builder note */
     .builder-note {
       margin-top: 3rem;
@@ -557,6 +601,9 @@
       .tier-legend { flex-direction: column; }
       .steps li { gap: 0.75rem; }
       .steps li::before { width: 24px; height: 24px; font-size: 0.7rem; }
+      .signup-form { flex-direction: column; gap: 0.5rem; }
+      .signup-form input[type="email"] { border-right: 1px solid var(--border); border-radius: 8px; }
+      .signup-form button { border-radius: 8px; }
     }
 
     /* Terminal typing animation */
@@ -586,6 +633,12 @@
       <span class="gradient">Design better courses.</span>
     </h1>
     <p>Open source instructional design skills for Claude Code. Every recommendation is backed by peer-reviewed research, so you always know how strong the evidence is.</p>
+    <form action="https://formspree.io/f/updates" method="POST" class="signup-form">
+      <input type="email" name="email" placeholder="your@email.com" required aria-label="Email address">
+      <button type="submit">Get updates</button>
+      <input type="hidden" name="_next" value="https://idstack.org/">
+    </form>
+    <p class="signup-note">No spam. Just releases.</p>
   </header>
 
   <hr class="section-divider" style="margin-top: 3rem;">

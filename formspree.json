@@ -1,0 +1,14 @@
+{
+  "project": "2986414584262294657",
+  "forms": {
+    "updates": {
+      "name": "Email Updates",
+      "actions": [
+        {
+          "type": "email",
+          "to": "savvides1@gmail.com"
+        }
+      ]
+    }
+  }
+}
