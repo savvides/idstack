@@ -1048,6 +1048,12 @@
       var form = this;
       var btn = form.querySelector('button');
       var note = document.getElementById('signup-note');
+      var originalLabel = btn.textContent;
+      function showError() {
+        note.textContent = 'Something went wrong. Try again.';
+        note.classList.remove('success');
+        note.classList.add('error');
+      }
       btn.disabled = true;
       btn.textContent = 'Sending...';
       fetch('https://formspree.io/f/xkokkzyy', {
@@ -1057,18 +1063,15 @@
       }).then(function(res) {
         if (res.ok) {
           note.textContent = 'You\u2019re in! We\u2019ll keep you posted.';
-          note.className = 'signup-note success';
+          note.classList.remove('error');
+          note.classList.add('success');
           form.reset();
         } else {
-          note.textContent = 'Something went wrong. Try again.';
-          note.className = 'signup-note error';
+          showError();
         }
-      }).catch(function() {
-        note.textContent = 'Something went wrong. Try again.';
-        note.className = 'signup-note error';
-      }).finally(function() {
+      }).catch(showError).finally(function() {
         btn.disabled = false;
-        btn.textContent = 'Get updates';
+        btn.textContent = originalLabel;
       });
     });
   </script>
