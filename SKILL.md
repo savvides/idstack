@@ -58,13 +58,103 @@ _IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
 ```
 
 **If no args or unrecognized args:**
-Print this help guide exactly as shown (do not use AskUserQuestion):
+
+First, run this context detection block:
+
+```bash
+# Context detection for welcome message
+if [ -f ".idstack/project.json" ]; then
+  echo "MANIFEST:yes"
+fi
+
+if [ -f ".idstack/timeline.jsonl" ]; then
+  if command -v python3 &>/dev/null; then
+    python3 -c "
+import json, sys
+lines = open('.idstack/timeline.jsonl').readlines()
+events = []
+for line in lines:
+    try: events.append(json.loads(line))
+    except: pass
+if not events:
+    sys.exit(0)
+completed = set()
+for e in events:
+    if e.get('event') == 'completed':
+        completed.add(e.get('skill', ''))
+if completed:
+    print('STATE:returning')
+    print('COMPLETED:' + ','.join(sorted(completed)))
+    print('COMPLETED_COUNT:' + str(len(completed)))
+scores = [e for e in events if e.get('skill') == 'course-quality-review' and 'score' in e]
+if scores:
+    trend = ' -> '.join(str(s['score']) for s in scores[-5:])
+    print('QUALITY:' + trend)
+last_completed = [e for e in events if e.get('event') == 'completed']
+if last_completed:
+    last = last_completed[-1]
+    print('LAST:' + last.get('skill', '?'))
+pipeline = [
+    ('needs-analysis', 'learning-objectives'),
+    ('learning-objectives', 'assessment-design'),
+    ('assessment-design', 'course-builder'),
+    ('course-builder', 'course-quality-review'),
+    ('course-quality-review', 'accessibility-review'),
+    ('accessibility-review', 'red-team'),
+    ('red-team', 'course-export'),
+]
+for prev, nxt in pipeline:
+    if prev in completed and nxt not in completed:
+        print('NEXT:' + nxt)
+        break
+" 2>/dev/null || true
+  else
+    # Bash fallback: check if timeline has completed events
+    if grep -q '"completed"' .idstack/timeline.jsonl 2>/dev/null; then
+      echo "STATE:returning"
+    fi
+  fi
+fi
+
+if [ -f ".idstack/learnings.jsonl" ]; then
+  _LC=$(wc -l < .idstack/learnings.jsonl 2>/dev/null | tr -d ' ')
+  [ "$_LC" -gt 0 ] 2>/dev/null && echo "LEARNINGS:$_LC"
+fi
+```
+
+Then print the welcome message based on the output. Do not use AskUserQuestion.
+
+**If output contains `STATE:returning` (returning user):**
+
+Print a warm welcome back message. Include:
+- "Welcome back to idstack."
+- If `QUALITY:` is shown, include the quality score trend (e.g., "Quality score trend: 62 -> 68 -> 72")
+- If `COMPLETED_COUNT:` is shown, mention how many skills they've run
+- If `NEXT:` is shown, suggest it (e.g., "Next up in your pipeline: `/idstack <skill>`")
+- If `LEARNINGS:` is shown, mention their learnings count
+- Then print the full command listing below
+
+**If output contains `MANIFEST:yes` but NOT `STATE:returning` (started user):**
+
+Print:
+- "You have a course started but haven't completed any pipeline steps yet."
+- "Pick up where you left off with `/idstack pipeline`, or run a specific skill below."
+- Then print the full command listing below
+
+**If neither `MANIFEST:yes` nor `STATE:returning` appears (new user):**
+
+Print:
+- "idstack — Evidence-based instructional design skills for Claude Code."
+- "Every recommendation cites peer-reviewed research across 11 domains, so you always know how strong the evidence is."
+- A "Getting started" section:
+  - "Have an existing course? `/idstack course-import`"
+  - "Designing from scratch? `/idstack needs-analysis`"
+  - "Run the full pipeline: `/idstack pipeline`"
+- Then print the full command listing below
+
+**Always end with this command listing** (after the welcome message):
 
 ```
-idstack — Evidence-based instructional design pipeline
-
-Usage: /idstack <skill>
-
 Skills:
   needs-analysis         Three-level needs assessment (org, task, learner)
   learning-objectives    Measurable ILOs with Bloom's taxonomy + alignment check
@@ -78,12 +168,6 @@ Skills:
   pipeline               Run all 8 skills in order (auto-skips completed)
   learn                  Search, promote, delete project learnings
   status                 Course health dashboard
-
-Examples:
-  /idstack pipeline              Run the full design pipeline
-  /idstack needs-analysis        Start a new course
-  /idstack course-import         Bring in an existing course
-  /idstack status                See course health dashboard
 
 More info: https://idstack.org
 ```
