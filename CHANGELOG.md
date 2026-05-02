@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.2.0.0 (2026-05-02)
+
+### Changed
+- **Red team now runs in a clean-context sub-agent.** Previously the audit's per-dimension scans ran as parallel sub-agents but the synthesis layer (which decides "is this course actually good?") ran in the parent's context — inheriting whatever build-bias the parent had accumulated. The skill now spawns a single `general-purpose` orchestrator with a self-contained brief; the orchestrator sees the manifest and course files fresh, runs the 5 dimensions (still parallel where Agent tool is available), writes `.idstack/red-team-report.md`, and returns a short executive summary. The parent never sees the audit reasoning, only the report — same view a real student gets.
+
+### Added
+- **Pre-spawn focus question.** The skill asks one question before invoking the orchestrator: full sweep (default) vs. a specific angle (assessment gaming, cognitive overload, persona accessibility, evidence accuracy). Lets reviewers steer depth without forcing it.
+- **Triage-and-fix loop in the parent.** After the orchestrator returns, the parent surfaces the summary and asks one AskUserQuestion: which severity bucket to address (Critical only / Critical+High / All / Skip). Selected fixes are applied in-context (parent already knows the course structure), with each finding tracked as `fixes_applied` or `fixes_deferred` in the manifest. No automatic re-verification — re-running `/idstack:red-team` is opt-in.
+- **Stable finding ids.** Each finding now has a `<dimension>-<n>` id (e.g., `alignment-1`) so the parent can reference findings deterministically when applying fixes and when re-running for verification.
+- **`.idstack/red-team-report.md`.** Durable, user-readable artifact with the full finding list, per-dimension summaries, top 3 actions, and limitations. Manifest's `red_team_audit` section now also stores `report_path` pointing at it.
+- **Red-team uses `bin/idstack-manifest-merge`.** Step 6 (update manifest) now calls the merge tool introduced in v2.1.0.0 instead of inlining the full manifest in an `Edit` operation. Atomic, foreign-section-preserving, schema-validated write. Falls back to inline write if the tool is unavailable.
+
+### Manifest schema
+- No further version bump. v2.1.0.0 already raised the schema to 1.4 and added the optional `red_team_audit.focus`, `report_path`, `fixes_applied`, `fixes_deferred` fields that this PR consumes.
+
 ## v2.1.0.0 (2026-05-02)
 
 ### Changed
