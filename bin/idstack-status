@@ -146,6 +146,23 @@ if [ -f "$LEARNINGS" ] && [ "$READINESS_ONLY" -eq 0 ]; then
   [ "$LEARN_COUNT" -gt 0 ] 2>/dev/null && echo "Learnings: $LEARN_COUNT discoveries stored"
 fi
 
+# Reports — list every per-skill markdown report present, plus the pipeline
+# aggregate. The pointer is what the designer reads; the manifest is for the system.
+if [ -d ".idstack/reports" ] && [ "$READINESS_ONLY" -eq 0 ]; then
+  REPORT_COUNT=$(find .idstack/reports -maxdepth 1 -name '*.md' -type f 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$REPORT_COUNT" -gt 0 ] 2>/dev/null; then
+    echo ""
+    echo "Reports (read these for the human view):"
+    if [ -f ".idstack/reports/pipeline.md" ]; then
+      echo "  .idstack/reports/pipeline.md  <-- aggregate, start here"
+    fi
+    for f in .idstack/reports/*.md; do
+      [ "$f" = ".idstack/reports/pipeline.md" ] && continue
+      [ -f "$f" ] && echo "  $f"
+    done
+  fi
+fi
+
 # Readiness table (shown with --readiness flag or appended to full output)
 if [ "$READINESS_ONLY" -eq 1 ] || [ -f "$MANIFEST" ]; then
   python3 -c "

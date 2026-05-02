@@ -55,6 +55,8 @@ Every skill that produces findings writes **both**:
 
 The Markdown is what the instructional designer reads. The JSON is for the system. The two stay in sync: every finding in the report corresponds to a finding in the manifest's structured arrays.
 
+`/idstack:pipeline` additionally produces `.idstack/reports/pipeline.md` — the cross-cutting aggregate over per-skill reports. It surfaces the top issues that recur across multiple skills, evidence themes, and where to start. Regenerated on every pipeline run (including partial runs and explicit re-runs when all skills are already complete).
+
 Rules for writing the manifest:
 
 - Validate JSON on read. If malformed, report and stop. Never silently overwrite.

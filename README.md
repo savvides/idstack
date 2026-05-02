@@ -280,6 +280,8 @@ idstack is a collaborator, not a course builder. When a skill finishes, it produ
 
 The canonical structure is documented in [`templates/report-format.md`](templates/report-format.md). Re-running a skill overwrites its report; the timeline at `.idstack/timeline.jsonl` carries the run history.
 
+When you run `/idstack:pipeline`, it also produces an aggregate at `.idstack/reports/pipeline.md` — the cross-cutting view across all skills' reports, with the top issues that recur across multiple stages, evidence themes, and where to start. Read this first if you've run multiple skills and want one document that synthesizes the whole audit.
+
 ### Course memory
 idstack remembers your design sessions. Each skill logs what it did to `.idstack/timeline.jsonl`, and project-specific discoveries (LMS quirks, format issues, course patterns) are stored in `.idstack/learnings.jsonl`. When you start a new session, idstack tells you where you left off: quality score trends, which skills have been completed, and what the next step is. Run `bin/idstack-status` anytime to see your course health dashboard.
 
