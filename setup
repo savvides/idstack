@@ -9,10 +9,12 @@ IDSTACK_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 # Default install: global plugin so /idstack:<skill> is discovered.
 PLUGINS_DIR="$HOME/.claude/plugins"
+LEGACY_SKILLS_DIR="$HOME/.claude/skills"
 SCOPE="global"
 
 if [ "$1" = "--local" ]; then
   PLUGINS_DIR="$(pwd)/.claude/plugins"
+  LEGACY_SKILLS_DIR="$(pwd)/.claude/skills"
   SCOPE="local"
 fi
 
@@ -33,44 +35,44 @@ if [ ! -f "$IDSTACK_DIR/.claude-plugin/plugin.json" ]; then
   exit 1
 fi
 
-# Clean up legacy v2.0 + pre-v2 installs under ~/.claude/skills/. Only run for
-# global installs — a --local install touches one project's .claude/plugins/
-# and must never mutate the user's global skills directory.
-if [ "$SCOPE" = "global" ]; then
-  # v2.0 install (single dispatcher symlink). Only registered /idstack, never
-  # exposed the 11 namespaced sub-skills.
-  LEGACY_SKILLS_LINK="$HOME/.claude/skills/idstack"
-  if [ -L "$LEGACY_SKILLS_LINK" ]; then
-    legacy_target=$(readlink "$LEGACY_SKILLS_LINK" 2>/dev/null || true)
-    legacy_resolved=$(cd "$LEGACY_SKILLS_LINK" 2>/dev/null && pwd -P || true)
-    if [ "$legacy_resolved" = "$IDSTACK_DIR" ]; then
-      # The legacy symlink points at the same physical repo we're installing
-      # from. Removing it is fine — the new plugin symlink replaces it.
-      rm "$LEGACY_SKILLS_LINK"
-      echo "  removed legacy symlink: ~/.claude/skills/idstack (was -> $legacy_target)"
-    else
-      rm "$LEGACY_SKILLS_LINK"
-      echo "  removed legacy symlink: ~/.claude/skills/idstack"
-    fi
-  elif [ -d "$LEGACY_SKILLS_LINK" ] && [ "$LEGACY_SKILLS_LINK" != "$IDSTACK_DIR" ]; then
-    echo "  WARNING: legacy install dir at ~/.claude/skills/idstack (not a symlink)."
-    echo "           Leaving it in place. Remove manually if no longer needed:"
-    echo "             rm -rf ~/.claude/skills/idstack"
-  fi
+# Clean up legacy v2.0 + pre-v2 installs under $LEGACY_SKILLS_DIR. Each scope
+# only touches its own scope's legacy path: a --local install cleans up legacy
+# entries under ./.claude/skills/, and never mutates the user's global skills
+# directory.
 
-  # Pre-v2 individual skill symlinks. Only remove ones that point into idstack.
-  LEGACY_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
-  for skill in $LEGACY_SKILLS; do
-    legacy="$HOME/.claude/skills/$skill"
-    if [ -L "$legacy" ]; then
-      link_target=$(readlink "$legacy" 2>/dev/null || true)
-      if echo "$link_target" | grep -q "idstack"; then
-        rm "$legacy"
-        echo "  cleaned up legacy: ~/.claude/skills/$skill"
-      fi
-    fi
-  done
+# v2.0 install (single dispatcher symlink). Only registered /idstack, never
+# exposed the 11 namespaced sub-skills.
+LEGACY_SKILLS_LINK="$LEGACY_SKILLS_DIR/idstack"
+if [ -L "$LEGACY_SKILLS_LINK" ]; then
+  legacy_target=$(readlink "$LEGACY_SKILLS_LINK" 2>/dev/null || true)
+  legacy_resolved=$(cd "$LEGACY_SKILLS_LINK" 2>/dev/null && pwd -P || true)
+  if [ "$legacy_resolved" = "$IDSTACK_DIR" ]; then
+    # The legacy symlink points at the same physical repo we're installing
+    # from. Removing it is fine — the new plugin symlink replaces it.
+    rm "$LEGACY_SKILLS_LINK"
+    echo "  removed legacy symlink: $LEGACY_SKILLS_LINK (was -> $legacy_target)"
+  else
+    rm "$LEGACY_SKILLS_LINK"
+    echo "  removed legacy symlink: $LEGACY_SKILLS_LINK"
+  fi
+elif [ -d "$LEGACY_SKILLS_LINK" ] && [ "$LEGACY_SKILLS_LINK" != "$IDSTACK_DIR" ]; then
+  echo "  WARNING: legacy install dir at $LEGACY_SKILLS_LINK (not a symlink)."
+  echo "           Leaving it in place. Remove manually if no longer needed:"
+  echo "             rm -rf $LEGACY_SKILLS_LINK"
 fi
+
+# Pre-v2 individual skill symlinks. Only remove ones that point into idstack.
+LEGACY_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
+for skill in $LEGACY_SKILLS; do
+  legacy="$LEGACY_SKILLS_DIR/$skill"
+  if [ -L "$legacy" ]; then
+    link_target=$(readlink "$legacy" 2>/dev/null || true)
+    if echo "$link_target" | grep -q "idstack"; then
+      rm "$legacy"
+      echo "  cleaned up legacy: $legacy"
+    fi
+  fi
+done
 
 # If $TARGET is the same path as $IDSTACK_DIR (user cloned directly into
 # the plugins dir), there's nothing to symlink — the plugin is already there.

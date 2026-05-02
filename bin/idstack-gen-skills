@@ -48,9 +48,9 @@ for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
   # Read preamble content
   preamble_content=$(cat "$PREAMBLE")
 
-  # Build output: extract YAML frontmatter, inject header after it, then replace placeholder
-  # The frontmatter is everything between the first --- and second ---
-  frontmatter=$(echo "$tmpl_content" | sed -n '1,/^---$/p' | head -1)
+  # Build output: extract YAML frontmatter, inject header after it, then replace placeholder.
+  # The awk pass below handles frontmatter detection and header injection independently —
+  # no need to pre-extract the frontmatter text.
 
   # Use awk to do the replacement properly
   result=$(awk -v header="$HEADER" -v header2="$HEADER2" -v preamble_file="$PREAMBLE" -v schema_file="$MANIFEST_SCHEMA" '

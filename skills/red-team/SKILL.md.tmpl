@@ -406,6 +406,10 @@ PAYLOAD
 
 Each finding object: `{"id": "alignment-1", "description": "...", "module": "Module 3", "severity": "critical|warning|info"}`.
 
+`fixes_applied[]` — each item: `{"id": "alignment-1", "description": "Optional one-line summary of the change applied"}`.
+
+`fixes_deferred[]` — each item: `{"id": "alignment-3", "reason": "One-line reason — e.g., requires re-running /idstack:assessment-design"}`.
+
 The merge tool exits non-zero (and prints a diagnostic on stderr) if the payload is malformed,
 the manifest is corrupt, or the section name is misspelled — never silently overwriting. If
 `.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json`

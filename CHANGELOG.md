@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.2.0.1 (2026-05-02)
+
+### Fixed
+- **`bin/idstack-manifest-merge` validates manifest root is a JSON object.** A manifest containing a JSON list, string, or other non-object at the root previously crashed with `TypeError` on `manifest[args.section] = payload`. Now exits 2 with a clear "manifest root must be a JSON object" message. Two new unit tests (list root, string root) cover this. (Gemini code review of PR #8.)
+- **`setup` legacy-cleanup paths now respect the `--local` scope.** Cleanup of legacy v2.0 dispatcher symlinks and pre-v2 per-skill symlinks previously hardcoded `$HOME/.claude/skills`, which meant `--local` installs never had their own `./.claude/skills/` cleaned up. Introduced a `LEGACY_SKILLS_DIR` variable that defaults to `$HOME/.claude/skills` and switches to `$(pwd)/.claude/skills` for `--local` — each scope only touches its own legacy path. (Gemini code review of PR #6.)
+- **`fixes_applied` and `fixes_deferred` shapes documented** in `red-team` skill. The skill mentioned recording "a one-line reason" for deferred fixes but didn't show the JSON shape. Now documents `{id, description}` for applied and `{id, reason}` for deferred fixes — same convention used by other findings arrays. (Gemini code review of PR #7.)
+
+### Changed
+- **`bin/idstack-gen-skills` removed dead `frontmatter` variable.** Variable was extracted but never used (the awk pass below it handles frontmatter detection independently). (Gemini code review of PR #8.)
+- **`test/test-manifest-merge.sh` simplified Test 1 assertion.** Removed a redundant `||` clause whose first half (`d["red_team_audit"] == ""`) could never be true given the dict payload — only the second half ever ran. Replaced with the single dict-equality check. (Gemini code review of PR #8.)
+
 ## v2.2.0.0 (2026-05-02)
 
 ### Changed
