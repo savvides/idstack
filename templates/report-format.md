@@ -43,7 +43,7 @@ e.g., "Quality 62/100. Accessibility 71/100. Confidence 4/5."}}
 {{One block per finding. Order by severity (critical → warning → info)
 then by impact within severity. Use the structure below.}}
 
-### Finding {{id}}: {{short title}}                        [severity] [tier]
+### Finding {{id}}: {{short title}} [{{severity}}] [{{tier}}]
 
 **What we saw.** {{Observation grounded in the designer's course or manifest:
 "Module 4 has no rubric." / "Of 8 ILOs, 3 have no matching assessment."

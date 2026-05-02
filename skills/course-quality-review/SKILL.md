@@ -321,11 +321,11 @@ first."
 
 Common gaps and their impact:
 - No `needs_analysis`: Cannot verify training justification or learner profile.
-  Flag this as a moderate concern.
+  Flag this as a warning.
 - No `learning_objectives`: Cannot perform constructive alignment audit.
   Flag this as a critical concern.
 - No `learner_profile`: Cannot check expertise reversal. Flag this as a
-  moderate concern.
+  warning.
 
 ### Mode 3: No Manifest
 
@@ -612,7 +612,7 @@ misalignment patterns listed above.
 ## Cross-Domain Evidence Checks
 
 Run all four checks below. Each check produces a list of flags with severity
-(critical / moderate / minor) and a fix-link pointing to the idstack skill that
+(critical / warning / info) and a fix-link pointing to the idstack skill that
 resolves the issue. When a check has no findings, record "No flags."
 
 ### Check 1: Cognitive Load Flags
@@ -623,14 +623,14 @@ Scan the course design for these cognitive load violations:
 
 - **Split attention:** Content explanation is separated from the diagram, example,
   or visual it references. Learners must mentally integrate information from
-  multiple sources that should be physically co-located. Flag as moderate.
+  multiple sources that should be physically co-located. Flag as warning.
   Fix: run /course-builder to regenerate module with integrated content.
 - **Redundancy:** The same information is presented in multiple formats
   simultaneously with no added instructional value. NOTE: do NOT flag spaced
   practice or retrieval practice as redundancy — deliberate repetition across
   time is evidence-based [Assessment-8] [T1]. Only flag identical information
   presented simultaneously (e.g., reading aloud on-screen text verbatim).
-  Flag as minor.
+  Flag as info.
   Fix: run /course-builder to consolidate redundant presentations.
 - **Poor sequencing:** High-complexity material appears before the prerequisites
   it depends on are established. Look for modules that reference concepts not
@@ -640,7 +640,7 @@ Scan the course design for these cognitive load violations:
 - **Overloaded modules:** A single module introduces more than 6-8 new concepts
   without interleaved practice breaks. Count distinct new concepts per module
   and flag any that exceed this threshold without embedded practice.
-  Flag as moderate.
+  Flag as warning.
   Fix: run /course-builder to split module or add practice checkpoints.
 
 ### Check 2: Multimedia Principle Violations
@@ -651,22 +651,22 @@ Scan for violations of Mayer's multimedia learning principles:
 
 - **Spatial contiguity:** Text and related visuals are physically separated
   (e.g., figure on one page, explanation on another; caption far from image).
-  Flag as moderate.
+  Flag as warning.
   Fix: run /course-builder to co-locate text and visuals.
 - **Temporal contiguity:** Narration and visuals are not synchronized (e.g.,
-  a video describes a diagram that appears 30 seconds later). Flag as moderate.
+  a video describes a diagram that appears 30 seconds later). Flag as warning.
   Fix: run /course-builder to synchronize narration with visual presentation.
 - **Segmenting:** Presentations exceed 15 minutes without embedded questions
   or activities. Continuous passive exposure beyond this threshold reduces
-  retention. Flag as moderate.
+  retention. Flag as warning.
   Fix: run /course-builder to segment long presentations with embedded activities.
 - **Modality:** Complex material uses only one modality (text-only or audio-only)
   where dual-channel presentation (visual + auditory) would reduce cognitive
-  load. Flag as minor.
+  load. Flag as info.
   Fix: run /course-builder to add complementary modality.
 - **Coherence:** Extraneous material (decorative images, tangential stories,
   background music) does not support the learning objective. Seductive details
-  hurt learning. Flag as minor.
+  hurt learning. Flag as info.
   Fix: run /course-builder to remove extraneous elements.
 
 ### Check 3: Feedback Quality
@@ -683,15 +683,15 @@ Scan the assessment design for feedback quality issues:
   Fix: run /assessment-design to add elaborated feedback for higher-order assessments.
 - **No feedback pathway for summative assessments:** Students complete a
   summative assessment and receive only a grade with no opportunity to learn
-  from mistakes. Flag as moderate.
+  from mistakes. Flag as warning.
   Fix: run /assessment-design to add post-submission feedback or reflection activity.
 - **Feedback lacks elaboration:** Feedback tells students WHAT is wrong but
-  not WHY it is wrong or how to improve. Flag as moderate.
+  not WHY it is wrong or how to improve. Flag as warning.
   Fix: run /assessment-design to add elaborated feedback with explanations.
 - **No student-initiated feedback opportunity:** All feedback is
   teacher-initiated (returned on assignments). There is no mechanism for
   students to seek feedback when they need it (e.g., self-check quizzes,
-  rubric previews, peer review). Flag as minor.
+  rubric previews, peer review). Flag as info.
   Fix: run /assessment-design to add formative self-check opportunities.
 
 ### Check 4: Expertise Reversal
@@ -701,7 +701,7 @@ Scan the assessment design for feedback quality issues:
 If a learner profile is available (from manifest `needs_analysis.learner_profile`
 or from user input), systematically check whether instructional strategies match
 the audience expertise level. If no learner profile exists, flag the absence as
-a moderate concern and recommend running /needs-analysis.
+a warning and recommend running /needs-analysis.
 
 - **Novice + minimal scaffolding:** Novice learners face open-ended
   problem-solving, minimal worked examples, or discovery learning without
@@ -711,18 +711,18 @@ a moderate concern and recommend running /needs-analysis.
 - **Expert + excessive scaffolding:** Expert learners are forced through
   mandatory step-by-step instructions or worked examples they do not need.
   Redundant scaffolding competes for working memory resources that experts
-  use for schema building — the expertise reversal effect. Flag as moderate.
+  use for schema building — the expertise reversal effect. Flag as warning.
   Fix: run /course-builder to offer advanced-track options that skip scaffolding.
 - **Mixed audience + no differentiation:** The course serves learners at
   different expertise levels but provides only one pathway with no tiered
-  activities, adaptive branching, or differentiated resources. Flag as moderate.
+  activities, adaptive branching, or differentiated resources. Flag as warning.
   Fix: run /needs-analysis to establish a detailed learner profile, then
   run /course-builder to create differentiated pathways.
 - **Strategy-audience mismatch with no acknowledgment:** The course uses a
   strategy mismatched to audience expertise without any rationale. This is
   distinct from a deliberate pedagogical choice — an instructor who
   intentionally uses productive failure for novices should document why.
-  Undocumented mismatches are flags. Flag as minor.
+  Undocumented mismatches are flags. Flag as info.
   Fix: run /course-builder to add instructor rationale or adjust strategy.
 
 ---
@@ -737,7 +737,7 @@ and Cross-Domain Evidence), rank every finding by impact using this formula:
 | Factor | Values |
 |--------|--------|
 | Evidence tier | T1=5, T2=4, T3=3, T4=2, T5=1 |
-| Severity | critical=3, moderate=2, minor=1 |
+| Severity | critical=3, warning=2, info=1 |
 | Ease of fix | S (small, <1 hour)=3, M (medium, 1-4 hours)=2, L (large, >4 hours)=1 |
 
 Present the **Top 3 fixes for maximum impact**:
@@ -760,7 +760,7 @@ reworking one module or assessment, L = requires rethinking course structure.
 
 Present your review in this exact structure. Every finding must include: what
 is wrong, why it matters (with evidence tier), how to fix it, and severity
-(critical / moderate / minor).
+(critical / warning / info).
 
 ```
 ## Course Quality Review Summary
@@ -830,10 +830,10 @@ Calculate the overall score from these components (total: 100 points):
 - **CoI Presence Layer (25 points):** Each dimension scored 0-10, summed
   to a raw score out of 30, then scaled to 25 (raw_sum / 30 * 25).
 - **Constructive Alignment (15 points):** Full points if alignment verified.
-  Deduct 5 points per critical misalignment, 2 per moderate.
+  Deduct 5 points per critical misalignment, 2 per warning.
 - **Cross-Domain Evidence Checks (20 points):** 5 points per check. Full
-  points if no flags. Deduct per flag: critical = -3, moderate = -2,
-  minor = -1. Minimum 0 per check.
+  points if no flags. Deduct per flag: critical = -3, warning = -2,
+  info = -1. Minimum 0 per check.
 
 ### Cross-Referencing Other idstack Skills
 
@@ -907,7 +907,7 @@ Populate the `quality_review` section with:
         "finding": "...",
         "impact_score": 0,
         "evidence_tier": "T1-T5",
-        "severity": "critical|moderate|minor",
+        "severity": "critical|warning|info",
         "ease": "S|M|L",
         "fix_skill": "/skill-name"
       }
@@ -916,7 +916,7 @@ Populate the `quality_review` section with:
       {
         "finding": "...",
         "evidence_tier": "T1-T5",
-        "severity": "critical|moderate|minor",
+        "severity": "critical|warning|info",
         "fix": "..."
       }
     ]

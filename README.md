@@ -255,11 +255,11 @@ Any skill works independently. Run `/idstack:pipeline` to chain them all, or inv
 |  | per templates/report-format.md|                    |
 |  +-------------------------------+                    |
 |                                                        |
-|  templates/preamble.md  templates/report-format.md      |
-|  bin/idstack-gen-skills  bin/idstack-manifest-merge     |
-|  bin/idstack-migrate  bin/idstack-timeline-log          |
-|  bin/idstack-learnings-log  bin/idstack-status          |
-|  bin/idstack-update-check                                |
+|  templates/preamble.md  templates/report-format.md    |
+|  bin/idstack-gen-skills  bin/idstack-manifest-merge   |
+|  bin/idstack-migrate  bin/idstack-timeline-log        |
+|  bin/idstack-learnings-log  bin/idstack-status        |
+|  bin/idstack-update-check                             |
 +-------------------------------------------------------+
 ```
 
