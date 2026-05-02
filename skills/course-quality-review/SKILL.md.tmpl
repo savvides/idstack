@@ -693,6 +693,7 @@ Populate the `quality_review` section with:
 ```json
 {
   "quality_review": {
+    "report_path": ".idstack/reports/course-quality-review.md",
     "last_reviewed": "ISO-8601 timestamp",
     "qm_standards": {
       "course_overview": {"status": "pass|flag|na", "findings": ["..."]},
@@ -764,8 +765,15 @@ One source of truth per data point.
 
 ### Generate Quality Report
 
-After writing the manifest, generate a shareable quality report at
-`.idstack/quality-report.md` using the Write tool. The report must contain:
+After writing the manifest, generate a shareable quality report. The Markdown report follows the canonical structure documented in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The structure below is the quality-review-specific shape; treat the canonical format as the contract for tone and per-finding fields.
+
+Before writing the report, ensure the directory exists:
+
+```bash
+mkdir -p .idstack/reports
+```
+
+Then write `.idstack/reports/course-quality-review.md` using the Write tool. The report must contain:
 
 ```markdown
 # Course Quality Report
@@ -831,7 +839,7 @@ Previous score: X/100 (reviewed YYYY-MM-DD). Delta: +/-Z.
 After writing both the manifest and the quality report, confirm to the user:
 
 "Your quality review has been saved to `.idstack/project.json` and a shareable
-report generated at `.idstack/quality-report.md`. This captures the QM
+report generated at `.idstack/reports/course-quality-review.md`. This captures the QM
 structural review, CoI presence scores, alignment audit, cross-domain evidence
 checks, and prioritized recommendations.
 

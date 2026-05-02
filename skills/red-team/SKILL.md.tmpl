@@ -42,7 +42,7 @@ The output is a confidence score (0-100): "How confident are we this course work
 
 If the same Claude session helped build the course, it has sunk-cost bias toward its own design choices. Red team work happens in a freshly-spawned sub-agent that has no prior conversation history — only the manifest and course files, which is the same view a real student gets.
 
-The sub-agent (the **orchestrator**) runs the full audit, writes a structured report to `.idstack/red-team-report.md`, and returns a short executive summary. The parent (this skill) then offers to apply fixes in-context, since the parent already knows the course structure and is good at editing.
+The sub-agent (the **orchestrator**) runs the full audit, writes a structured report to `.idstack/reports/red-team.md`, and returns a short executive summary. The parent (this skill) then offers to apply fixes in-context, since the parent already knows the course structure and is good at editing.
 
 ---
 
@@ -287,7 +287,15 @@ Contextualize:
 
 ## Output
 
-Write `.idstack/red-team-report.md` with this structure (Markdown):
+The Markdown report follows the canonical structure documented in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The structure below is the red-team-specific shape; treat the canonical format as the contract for tone and per-finding fields.
+
+Before writing the report, ensure the directory exists:
+
+```bash
+mkdir -p .idstack/reports
+```
+
+Then write `.idstack/reports/red-team.md` with this structure (Markdown):
 
 ```markdown
 # Red Team Audit Report
@@ -333,7 +341,7 @@ After writing the report, return ONLY a short executive summary (≤200 words) t
 - Confidence score and band ("Moderate, needs work")
 - Severity counts
 - Top 1 critical finding (one line)
-- Path: `.idstack/red-team-report.md`
+- Path: `.idstack/reports/red-team.md`
 
 Do NOT return the full report inline. The parent will read the file.
 
@@ -342,9 +350,9 @@ Do NOT return the full report inline. The parent will read the file.
 ### Step 3: Surface the summary
 
 After the orchestrator returns:
-1. Read `.idstack/red-team-report.md` (full report).
+1. Read `.idstack/reports/red-team.md` (full report).
 2. Show the user the executive summary in your own words: confidence score, severity counts, top critical finding, and the report path.
-3. Mention: "Full report at `.idstack/red-team-report.md` — open it for the complete finding list."
+3. Mention: "Full report at `.idstack/reports/red-team.md` — open it for the complete finding list."
 
 ### Step 4: Triage — choose fix scope
 
@@ -378,7 +386,7 @@ If the user pushes back on any specific fix, mark it deferred and continue.
 Save results to `.idstack/project.json` via `bin/idstack-manifest-merge`, which replaces only
 the `red_team_audit` section, preserves every other section verbatim, validates JSON, and
 atomically updates the top-level `updated` timestamp. Pull the score and findings from
-`.idstack/red-team-report.md` (the report is the source of truth — do not re-derive from
+`.idstack/reports/red-team.md` (the report is the source of truth — do not re-derive from
 the orchestrator's return summary, which is lossy).
 
 ```bash
@@ -387,7 +395,7 @@ the orchestrator's return summary, which is lossy).
   "updated": "<ISO-8601 timestamp>",
   "confidence_score": 0,
   "focus": "Full sweep",
-  "report_path": ".idstack/red-team-report.md",
+  "report_path": ".idstack/reports/red-team.md",
   "findings_summary": {"critical": 0, "warning": 0, "info": 0},
   "dimensions": {
     "alignment":      {"score": "pass|warning|critical", "findings": []},
@@ -422,7 +430,7 @@ canonical schema for reference is in `templates/manifest-schema.md`.
 ### Step 7: Final summary to user
 
 Two sentences:
-- "Confidence: X/100. Applied N fixes (M deferred). Report at `.idstack/red-team-report.md`."
+- "Confidence: X/100. Applied N fixes (M deferred). Report at `.idstack/reports/red-team.md`."
 - If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
 
 If the user wants to verify fixes hold, they can re-run `/idstack:red-team` — that's deliberately manual to avoid token costs of automatic re-verification.
