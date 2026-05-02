@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.3.0.0 (2026-05-02)
+
+### Added
+- **Imported-course mode for `needs-analysis`, `assessment-design`, and `course-builder`.** The TMC-430 test report flagged that these skills assume net-new course design and break down for imported courses. Each now branches early on `import_metadata.source`:
+  - `needs-analysis` skips the "is training the right intervention?" decision gate for credit-bearing imports (the registrar can't be told to remove the course); records the rationale and confidence automatically and runs a "design-fit" check instead.
+  - `assessment-design` adds **Mode 3: Audit Existing Assessments** alongside the existing Mode 1/Mode 2 split. Reads the existing rubrics from the cartridge, classifies criteria on Bloom's, compares to ILOs, and surfaces alignment gaps — does NOT propose new assessments unless the user explicitly asks. Mode 3 takes precedence over Mode 1.
+  - `course-builder` adds **gap-fill mode** triggered when `import_metadata.source` is set and `course_content.modules` is non-empty. Generates ONLY the artifacts upstream skills flagged as missing (e.g., a missing rubric, a formative practice quiz set), instead of regenerating the syllabus, modules, and rubrics that already exist in the cartridge.
+  - All three skills announce the chosen mode at the start of the conversation so the user can override if the auto-detection is wrong.
+  - Resolves test-report issues #7, #13, #14.
+- **Canonical schema additions** (additive, no version bump): optional `needs_analysis.mode`, `assessments.mode`, `course_content.mode` (record which mode the skill ran in); `assessments.audit_notes[]` (Mode 3 outputs); `course_content.recommended_generation_targets[]` (gap-fill mode outputs). Per-section item shapes documented in `templates/manifest-schema.md`.
+- **`assessment-design` switches to `bin/idstack-manifest-merge`.** Replaces the inline-write pattern (with its misleading "Include the COMPLETE schema structure" instruction) with two scoped merge calls — one for `assessments`, one for `learning_objectives`. Same atomic-write benefits introduced in v2.1.0.0.
+
+### Changed
+- Smoke test now runs 153 assertions (was 150). New: each of the 3 mode-aware skill templates must reference `import_metadata.source` (drift guard against accidental removal of the mode-detection branch).
+
 ## v2.2.0.1 (2026-05-02)
 
 ### Fixed

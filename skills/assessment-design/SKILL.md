@@ -317,7 +317,7 @@ fi
 
 ## Pipeline Context Check
 
-Determine your operating mode based on available data.
+Determine your operating mode based on available data. **Check Mode 3 first** — it's the more specific case (imported course with existing assessments) and takes precedence over Mode 1 even when both conditions hold.
 
 ### Mode 1: Full Upstream Data
 
@@ -354,6 +354,38 @@ For each objective provided, classify on both Bloom's dimensions (knowledge and
 cognitive process) before proceeding to assessment design. Use the same classification
 approach as the `/learning-objectives` skill: ask for clarification when verbs are
 ambiguous [Alignment-12] [T2].
+
+### Mode 3: Audit Existing Assessments
+
+**Condition (BOTH must be true):**
+- `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
+- `assessments.items` is non-empty (course-import populated it) OR `course_content.assessments` is non-empty (cartridge has assessment artifacts)
+
+**Announce the chosen mode to the user as the first sentence:**
+
+> "Mode 3: audit-existing. The imported course already contains [N] assessments and [M] rubrics — I'll audit them against your ILOs rather than designing new ones from scratch. If you want to add new assessments, say 'design more' at any point."
+
+**What audit-existing does (and doesn't do):**
+
+- ✅ Reads existing rubrics from the manifest (`assessments.rubrics`) or from the cartridge files referenced by `course_content.rubrics`.
+- ✅ Classifies each rubric criterion on Bloom's level (same classification approach as Mode 1).
+- ✅ Compares to the course ILOs from `learning_objectives.ilos`. Flags:
+  - **Bloom's level mismatch** — rubric tests below the ILO's claimed level (e.g., ILO says "analyze" but rubric criteria are "list/describe").
+  - **Untested ILOs** — an ILO has no rubric criterion measuring it.
+  - **Orphaned criteria** — a rubric criterion doesn't measure any stated ILO.
+  - **Missing rubric** — an assessment has weight ≥10% but no rubric.
+  - **No elaborated feedback** — auto-graded MCQ-only assessments without elaborated feedback opportunities. [Assessment-8] [T1]
+- ✅ Output: an audit table per assessment, plus 1-3 rubric-improvement recommendations.
+- ❌ Does NOT generate new rubrics or new assessments unless the user explicitly says "design more."
+
+**Audit workflow steps (replaces Steps 1-4 of the design workflow below):**
+
+1. **Inventory.** List every assessment from `assessments.items` (or derived from cartridge if items is empty). Note type, title, weight, ILOs claimed.
+2. **Per-assessment Bloom's mapping.** For each assessment, examine its rubric criteria and classify each on Bloom's. Record in `assessments.items[].alignment_status` (`"weak" | "moderate" | "strong"` per the canonical schema) based on whether the criteria collectively reach the ILO's claimed level.
+3. **Cross-walk.** Build a `learning_objectives.alignment_matrix.gaps[]` entries for each Bloom-mismatch, untested ILO, or orphaned criterion. Use the canonical `gaps[]` shape: `{ilo, type, description, severity}`.
+4. **Recommendations.** Surface the top 1-3 fixes — usually rubric criterion edits, not new assessments. If the user wants to act on them, propose specific edits and apply via `Edit`. Track applied/deferred fixes in a new optional `assessments.audit_notes` array.
+
+When done, write the manifest using `bin/idstack-manifest-merge` (see "Write Manifest" below). Skip the rest of this skill (Steps 1-4 of the design workflow are for design-new mode only).
 
 ---
 
@@ -593,19 +625,29 @@ Consider adding a formative peer review checkpoint to partially address the gap.
 
 ## Write Manifest
 
-Create or update the project manifest at `.idstack/project.json`.
+Save results to `.idstack/project.json` via `bin/idstack-manifest-merge`. The merge tool
+replaces only the named section, preserves every other section verbatim, validates JSON,
+and atomically updates the top-level `updated` timestamp. **This skill writes two
+sections** — `assessments` and `learning_objectives.alignment_matrix.ilo_to_assessment` —
+so call the merge tool twice (once per top-level section).
 
-**CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first with the Read tool. Then modify ONLY
-   the `assessments` section and the `learning_objectives.alignment_matrix.ilo_to_assessment`
-   mapping. Preserve all other sections unchanged.
-2. Include the COMPLETE schema structure. Do not omit fields.
-3. Before writing, mentally verify the JSON is valid: matching braces, proper commas,
-   quoted strings, no trailing commas.
-4. The `updated` timestamp must reflect the current time.
-5. If this is a new manifest (no needs analysis or learning objectives were run),
-   initialize ALL sections with empty/default values so downstream skills find the
-   expected structure.
+```bash
+# Section 1: assessments
+"$_IDSTACK/bin/idstack-manifest-merge" --section assessments --payload - <<'PAYLOAD'
+<the assessments payload — see field shape below>
+PAYLOAD
+
+# Section 2: learning_objectives (with the updated alignment_matrix)
+# Read existing learning_objectives first, merge in the new ilo_to_assessment mapping,
+# pass the full updated section to the merge tool.
+"$_IDSTACK/bin/idstack-manifest-merge" --section learning_objectives --payload - <<'PAYLOAD'
+<the merged learning_objectives payload>
+PAYLOAD
+```
+
+If `bin/idstack-manifest-merge` is unavailable: fall back to manual write (Read manifest, modify only the two sections, Write back, preserve all others).
+
+If `.idstack/project.json` does not exist yet, run `bin/idstack-migrate .idstack/project.json` first — that creates a fresh canonical manifest. The merge tool then merges into it.
 
 **Populate the `assessments` section:**
 
@@ -746,6 +788,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     "available_tech": []
   },
   "needs_analysis": {
+    "mode": "",
     "organizational_context": {
       "problem_statement": "",
       "stakeholders": [],
@@ -782,6 +825,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     "expertise_reversal_flags": []
   },
   "assessments": {
+    "mode": "",
     "assessment_strategy": "",
     "items": [],
     "formative_checkpoints": [],
@@ -791,9 +835,11 @@ The merge tool replaces only the named top-level section, preserves every other 
       "peer_review": false
     },
     "feedback_quality_score": 0,
-    "rubrics": []
+    "rubrics": [],
+    "audit_notes": []
   },
   "course_content": {
+    "mode": "",
     "generated_at": "",
     "expertise_adaptation": "",
     "syllabus": "",
@@ -803,7 +849,8 @@ The merge tool replaces only the named top-level section, preserves every other 
     "content_dir": ".idstack/course-content/",
     "generated_files": [],
     "build_timestamp": "",
-    "placeholders_used": []
+    "placeholders_used": [],
+    "recommended_generation_targets": []
   },
   "import_metadata": {
     "source": "",
@@ -1022,6 +1069,37 @@ These document the **shape of array elements and dictionary values** that the ca
   "description": "...",
   "evidence": "[Domain-N] [TX]",
   "severity": "critical|warning|info"
+}
+```
+
+### Mode field — design-new vs audit-existing
+
+`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
+
+Allowed values per skill:
+- `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
+- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
+- `course_content.mode`: `"build-new"` or `"gap-fill"`
+
+Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).
+
+**`assessments.audit_notes[]`** — only populated in Mode 3. Records which audit findings the user chose to act on:
+```json
+{
+  "target_id": "A-3",
+  "action": "applied|deferred|declined",
+  "description": "Rubric criterion for ILO-2 added: 'Synthesis depth (1-4 scale)'.",
+  "reason": "Optional — only meaningful for deferred/declined."
+}
+```
+
+**`course_content.recommended_generation_targets[]`** — populated in `gap-fill` mode. Lists artifacts upstream skills flagged as missing, with status:
+```json
+{
+  "description": "Discussion rubric for Module 5",
+  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
+  "status": "generated|deferred|declined",
+  "output_path": "Optional — set when status=generated, points to the generated file."
 }
 ```
 

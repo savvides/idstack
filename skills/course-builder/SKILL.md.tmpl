@@ -181,7 +181,35 @@ Then present the scope (see Step 1 below).
 
 ---
 
+## Mode detection (build-new vs gap-fill)
+
+Decide which mode this skill is operating in **before** running the content generation workflow.
+
+- **Gap-fill mode** — both of these must be true:
+  - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
+  - `course_content.modules` is non-empty (the imported course actually has content; not a half-import)
+- **Build-new mode** — anything else (no manifest, no import_metadata, manual source, or zero modules in course_content).
+
+**Announce the chosen mode to the user as the first sentence:**
+- "Mode: build-new. I'll generate the syllabus, module pages, and assessment documents from scratch."
+- "Mode: gap-fill (cartridge import detected). The course already exists; I'll generate ONLY the artifacts that upstream skills flagged as missing — not a fresh syllabus or modules. Say 'rebuild' if you want a full regeneration anyway."
+
+In gap-fill mode, **skip Steps 2–7 entirely** (instructor info, syllabus, module pages, assessments, rubrics, content review). Instead:
+
+1. **Identify gaps.** Read `red_team_audit.top_actions` and `quality_review.recommendations` from the manifest (if those skills already ran) plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
+2. **Confirm with user.** Show the list of generation targets ("I'll generate: discussion rubric for Module 5, vision/mission framework module, formative practice quiz set"). Ask via `AskUserQuestion` which to generate (all / specific / skip).
+3. **Generate only what's missing.** For each confirmed target, follow the relevant sub-step from Steps 4–6 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration.
+4. **Record outputs.** Update `course_content.generated_files` (additive) and `course_builder_notes.recommended_generation_targets` (the list, with status `generated | deferred | declined`).
+
+When done, write the manifest via `bin/idstack-manifest-merge` (see Write Manifest below) and skip directly to the final summary.
+
+Save the chosen mode under `course_builder_notes.mode` (`"build-new"` or `"gap-fill"`).
+
+---
+
 ## Content Generation Workflow
+
+The steps below describe **build-new mode**. In gap-fill mode (see "Mode detection" above), most of these steps are skipped — invoke individual sub-steps only for the specific artifacts the user confirmed as targets.
 
 Walk through content generation step by step. Ask questions using AskUserQuestion.
 Do not batch multiple questions.

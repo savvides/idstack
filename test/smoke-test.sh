@@ -81,6 +81,13 @@ for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl free of drifted field names" "! grep -E '$DRIFT_FIELDS' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
+# Imported-course mode regression (issues #7, #13, #14): each affected skill must
+# branch on import_metadata.source and announce the chosen mode.
+MODE_AWARE_SKILLS="needs-analysis assessment-design course-builder"
+for skill in $MODE_AWARE_SKILLS; do
+  check "$skill branches on import_metadata.source" "grep -q 'import_metadata.source' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+
 # Manifest-merge tool must exist and be executable, and its unit tests must pass.
 check "bin/idstack-manifest-merge exists" "[ -f '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
 check "bin/idstack-manifest-merge is executable" "[ -x '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
