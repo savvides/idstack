@@ -3,6 +3,16 @@
 # Usage: idstack-status
 #        idstack-status --readiness    (pre-export readiness table only)
 # Shows: project name, skills completed, quality score trend, dimensions, next step.
+#
+# Readiness thresholds (the bar a course must clear to be reported READY):
+#   READY_QUALITY_MIN          = 70   (quality_review.overall_score must be >=)
+#   READY_ACCESS_MIN           = 80   (accessibility_review.score.overall must be >=)
+#   READY_RED_CRITICAL_MAX     = 0    (red_team_audit.findings_summary.critical must be <=)
+#   READY_LEVEL_A_VIOLATIONS_OK = false (any WCAG Level-A violation forces NOT-READY)
+# Tune by editing the constants in the readiness python block below.
+READY_QUALITY_MIN=70
+READY_ACCESS_MIN=80
+READY_RED_CRITICAL_MAX=0
 
 READINESS_ONLY=0
 [ "$1" = "--readiness" ] && READINESS_ONLY=1
@@ -144,6 +154,9 @@ import json, sys, os
 manifest_file = '$MANIFEST'
 timeline_file = '$TIMELINE'
 readiness_only = $READINESS_ONLY
+READY_QUALITY_MIN     = $READY_QUALITY_MIN
+READY_ACCESS_MIN      = $READY_ACCESS_MIN
+READY_RED_CRITICAL_MAX = $READY_RED_CRITICAL_MAX
 
 if not os.path.exists(timeline_file):
     if readiness_only:
@@ -176,36 +189,62 @@ red_reviewed = 'red-team' in completed
 access = manifest.get('accessibility_review', {})
 access_score = access.get('score', {}).get('overall', 0)
 access_reviewed = 'accessibility-review' in completed
+# Level-A WCAG violations force NOT-READY regardless of overall score.
+wcag_violations = access.get('wcag_violations', []) or []
+level_a_violations = [v for v in wcag_violations if isinstance(v, dict) and v.get('level') == 'A']
+
+# Per-skill tier: NOT RUN / NEEDS-WORK / READY
+def quality_tier():
+    if not quality_reviewed: return 'NOT RUN'
+    return 'READY' if quality_score >= READY_QUALITY_MIN else 'NEEDS-WORK'
+
+def red_tier():
+    if not red_reviewed: return 'NOT RUN'
+    return 'READY' if red_critical <= READY_RED_CRITICAL_MAX else 'NEEDS-WORK'
+
+def access_tier():
+    if not access_reviewed: return 'NOT RUN'
+    if access_score >= READY_ACCESS_MIN and not level_a_violations:
+        return 'READY'
+    return 'NEEDS-WORK'
 
 if readiness_only:
     print()
 print('─── Course Readiness ───')
 print()
-q_status = 'PASS' if quality_reviewed else 'NOT RUN'
-r_status = 'PASS' if red_reviewed and red_critical == 0 else 'WARN' if red_reviewed else 'NOT RUN'
-a_status = 'PASS' if access_reviewed else 'NOT RUN'
-print(f'  Quality Review:       {q_status:<10} Score: {quality_score}/100')
-print(f'  Red Team Audit:       {r_status:<10} Critical: {red_critical}')
-print(f'  Accessibility Review: {a_status:<10} Score: {access_score}/100')
+q_status = quality_tier()
+r_status = red_tier()
+a_status = access_tier()
+print(f'  Quality Review:       {q_status:<11} Score: {quality_score}/100  (READY threshold: {READY_QUALITY_MIN})')
+print(f'  Red Team Audit:       {r_status:<11} Critical: {red_critical}  (READY threshold: <= {READY_RED_CRITICAL_MAX})')
+a_extra = f'  WCAG Level-A violations: {len(level_a_violations)}' if level_a_violations else ''
+print(f'  Accessibility Review: {a_status:<11} Score: {access_score}/100  (READY threshold: {READY_ACCESS_MIN}{a_extra})')
 print()
 
-# Overall verdict
-if quality_reviewed and red_reviewed and access_reviewed:
-    if red_critical == 0 and quality_score >= 60:
-        print('  Verdict: READY TO EXPORT')
-    else:
-        issues = []
-        if red_critical > 0: issues.append(f'{red_critical} critical red-team findings')
-        if quality_score < 60: issues.append(f'quality score {quality_score} < 60')
-        joined = ', '.join(issues)
-        print(f'  Verdict: ISSUES ({joined})')
-else:
+# Overall verdict — strict gate. Any unmet condition produces NOT-READY,
+# with itemized reasons. Missing reviews produce INCOMPLETE.
+def verdict():
     missing = []
     if not quality_reviewed: missing.append('/course-quality-review')
-    if not red_reviewed: missing.append('/red-team')
-    if not access_reviewed: missing.append('/accessibility-review')
-    joined = ', '.join(missing)
-    print(f'  Verdict: INCOMPLETE (run {joined})')
+    if not red_reviewed:     missing.append('/red-team')
+    if not access_reviewed:  missing.append('/accessibility-review')
+    if missing:
+        return f\"INCOMPLETE (run {', '.join(missing)})\"
+
+    issues = []
+    if quality_score < READY_QUALITY_MIN:
+        issues.append(f'quality score {quality_score} < {READY_QUALITY_MIN}')
+    if red_critical > READY_RED_CRITICAL_MAX:
+        issues.append(f'{red_critical} critical red-team finding(s)')
+    if access_score < READY_ACCESS_MIN:
+        issues.append(f'accessibility score {access_score} < {READY_ACCESS_MIN}')
+    if level_a_violations:
+        issues.append(f'{len(level_a_violations)} WCAG Level-A violation(s)')
+    if not issues:
+        return 'READY TO EXPORT'
+    return f\"NOT-READY ({', '.join(issues)})\"
+
+print(f'  Verdict: {verdict()}')
 print()
 " 2>/dev/null || true
 fi

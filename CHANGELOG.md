@@ -1,5 +1,27 @@
 # Changelog
 
+## v2.1.0.0 (2026-05-02)
+
+### Changed
+- **Manifest schema centralized into one canonical source.** Each skill's SKILL.md.tmpl previously inlined its own copy of the manifest schema; the copies had drifted apart, and bin scripts had hardcoded paths that didn't always match. Now `templates/manifest-schema.md` is the single source of truth, substituted into skill templates via the existing `{{MANIFEST_SCHEMA}}` mechanism (mirroring `{{PREAMBLE}}`). Adds explicit per-section item shapes (`assessments.items`, `learning_objectives.alignment_matrix.ilo_to_activity`, `red_team_audit.dimensions.*.findings`, `accessibility_review.wcag_violations`, etc.) so downstream skills can rely on them. Resolves issues #5, #6, #9, #11, #12, #15, #19, #23 from the TMC-430 test report.
+- **`bin/idstack-status` verdict logic now stricter.** Previously a course with quality 60+ and zero critical red-team findings reported `READY TO EXPORT` even when accessibility was 0 or had unaddressed Level-A WCAG violations. New gate: `READY` requires `quality_score >= 70` AND `accessibility_score >= 80` AND zero critical red-team findings AND zero WCAG Level-A violations. Per-skill rows now use a 3-tier `NOT RUN / NEEDS-WORK / READY` rating (was binary `PASS/WARN/NOT RUN`). Thresholds are named constants near the top of the script. Courses that previously reported READY may now report NEEDS-WORK or NOT-READY — re-run the relevant skills to address gaps. Resolves issues #17, #20, #24.
+- **Manifest schema bumped 1.3 → 1.4.** Additive plus drift-cleanup. New optional fields under `red_team_audit` (`focus`, `report_path`, `fixes_applied`, `fixes_deferred`) and `import_metadata` (`quality_flag_details`). The 1.3 → 1.4 migration in `bin/idstack-migrate` renames `red_team_audit.summary.{critical_count,warning_count,info_count}` to `red_team_audit.findings_summary.{critical,warning,info}` (the names `bin/idstack-status` reads), and moves any legacy root `_import_quality_flags` field into `import_metadata.quality_flag_details`.
+
+### Added
+- **`bin/idstack-manifest-merge`** — Python tool that atomically replaces one top-level section of the manifest, preserving every other section and the top-level `version`/`project_name`/`created` fields. Section-level replacement (not recursive deep-merge), whitelisted section names, atomic via tempfile+rename, structured exit codes (1/2/3/4/5 for malformed payload / malformed manifest / unknown section / missing manifest / missing payload). Skills should use this in preference to inlining the full manifest in `Edit` operations. Partially resolves issue #21 (Edit-driven JSON manipulation fragility at scale).
+- **`templates/manifest-schema.md`** — canonical schema reference. Documents top-level fields, ownership per skill, and per-section item shapes.
+- **`test/test-manifest-merge.sh`** — 13-case unit suite for the merge tool (replace, preserve foreign sections, reject malformed input, reject unknown sections, atomic timestamp bump, etc.). Invoked from `test/smoke-test.sh`.
+- **Schema-drift regression guards in smoke-test.** New assertions: every skill template that previously had an inline schema now uses `{{MANIFEST_SCHEMA}}`; no SKILL.md.tmpl mentions historically-drifted field names like `red_team_audit.summary.critical_count` or `_import_quality_flags`; every generated SKILL.md inlines the canonical v1.4 schema. Smoke test now runs 150 assertions (was 115).
+
+### Fixed
+- **`bin/idstack-timeline-log` no longer overwrites caller-supplied `ts` field.** Now uses `setdefault` semantics: if the caller passes `"ts": "..."`, it's preserved; only when absent does the script mint one. Documented in the script header. Resolves issue #2.
+- **`course-import` documents the macOS `mktemp -d` portability gotcha.** The `-t` flag on macOS treats its argument as a literal prefix instead of substituting `XXXXXX` — producing a broken path. Template now states the bare `mktemp -d` form is portable and must be used. Resolves issue #3.
+
+### Out of scope (deferred — see TMC-430 test report)
+- "Imported-course mode" branching for needs-analysis, assessment-design, course-builder (issues #7, #13, #14). Substantive scope work, deserves its own PR.
+- Per-skill scope improvements (#10, #16, #18, #22, #25): coverage cross-walk, scoring methodology, parallel-dispatch payload size, accessibility tooling, evidence currency check.
+- Minor docs/UX polish (#4, #8). Issue #1 (sub-skill routing) was already resolved in v2.0.1.0.
+
 ## v2.0.1.0 (2026-05-02)
 
 ### Fixed

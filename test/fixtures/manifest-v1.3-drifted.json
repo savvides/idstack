@@ -1,0 +1,30 @@
+{
+  "version": "1.3",
+  "project_name": "Drifted Test Course",
+  "created": "2026-04-01T00:00:00Z",
+  "updated": "2026-04-15T00:00:00Z",
+  "context": {
+    "modality": "online",
+    "timeline": "16 weeks",
+    "class_size": "30",
+    "institution_type": "university",
+    "available_tech": ["Canvas", "Zoom"]
+  },
+  "needs_analysis": {},
+  "learning_objectives": {},
+  "quality_review": {"overall_score": 65},
+  "red_team_audit": {
+    "confidence_score": 4,
+    "summary": {"critical_count": 3, "warning_count": 5, "info_count": 2}
+  },
+  "_import_quality_flags": [
+    {"key": "orphan_module_8", "description": "Module 8 wiki content not in active organization"},
+    {"key": "duplicate_overview_pages", "description": "Two Module 4 overview pages exist"}
+  ],
+  "preferences": {
+    "verbosity": "normal",
+    "export_format": "",
+    "preferred_lms": "",
+    "auto_advance_pipeline": false
+  }
+}

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Append one timeline event to .idstack/timeline.jsonl.
 # Usage: idstack-timeline-log '{"skill":"course-quality-review","event":"completed","score":72}'
-# Injects "ts" field automatically. Creates .idstack/ if needed.
-# Exit 0 always — never blocks the calling skill.
+# Injects "ts" field automatically IF the caller did not already supply one.
+# A caller-supplied "ts" is preserved verbatim — useful when logging an event
+# that occurred at a specific in-conversation moment, not when bash ran.
+# Creates .idstack/ if needed. Exit 0 always — never blocks the calling skill.
 
 set -e
 
@@ -16,20 +18,21 @@ mkdir -p "$IDSTACK_DIR" 2>/dev/null || exit 0
 
 TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# Use python3 for safe JSON serialization (injects ts field)
+# Use python3 for safe JSON serialization (injects ts field if absent)
 if command -v python3 &>/dev/null; then
   LINE=$(python3 -c "
 import json, sys
 try:
     d = json.loads(sys.argv[1])
-    d['ts'] = '$TS'
+    # Preserve a caller-supplied ts; only mint one if absent.
+    d.setdefault('ts', '$TS')
     print(json.dumps(d))
 except Exception:
     # Fallback: wrap raw input with timestamp
     print(json.dumps({'raw': sys.argv[1], 'ts': '$TS'}))
 " "$JSON_ARG" 2>/dev/null) || LINE="{\"raw\":\"error\",\"ts\":\"$TS\"}"
 else
-  # No python3: best-effort bash append (no JSON validation)
+  # No python3: best-effort bash append (no JSON validation, no ts preservation).
   LINE=$(echo "$JSON_ARG" | sed "s/}$/,\"ts\":\"$TS\"}/")
 fi
 

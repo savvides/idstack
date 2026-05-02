@@ -133,7 +133,10 @@ If FILE_NOT_FOUND: "File not found at that path. Check the path and try again."
 If not a ZIP: "This doesn't look like a Common Cartridge file. It should be a
 .imscc file exported from your LMS."
 
-Extract the cartridge:
+Extract the cartridge. **Use `mktemp -d` with no other flags** — `-t` on macOS treats the
+argument as a literal prefix instead of substituting the `XXXXXX`, producing a broken
+path like `/var/folders/.../idstack-import.XXXXXX.suffix`. The bare `mktemp -d` form is
+portable across macOS and Linux:
 
 ```bash
 IMPORT_DIR=$(mktemp -d)
@@ -794,96 +797,7 @@ Write the manifest, then confirm:
 
 ---
 
-## Manifest Schema Reference
-
-The complete manifest schema. Use this as the template when creating or validating
-the manifest. All fields shown below must exist in the JSON.
-
-```json
-{
-  "version": "1.0",
-  "project_name": "",
-  "created": "",
-  "updated": "",
-  "import_metadata": {
-    "source": "",
-    "imported_at": "",
-    "source_lms": "",
-    "items_imported": {
-      "modules": 0,
-      "objectives": 0,
-      "assessments": 0,
-      "activities": 0,
-      "pages": 0
-    },
-    "quality_flags": 0
-  },
-  "context": {
-    "modality": "",
-    "timeline": "",
-    "class_size": "",
-    "institution_type": "",
-    "available_tech": []
-  },
-  "needs_analysis": {
-    "organizational_context": {
-      "problem_statement": "",
-      "stakeholders": [],
-      "current_state": "",
-      "desired_state": "",
-      "performance_gap": ""
-    },
-    "task_analysis": {
-      "job_tasks": [],
-      "prerequisite_knowledge": [],
-      "tools_and_resources": []
-    },
-    "learner_profile": {
-      "prior_knowledge_level": "",
-      "motivation_factors": [],
-      "demographics": "",
-      "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
-    },
-    "training_justification": {
-      "justified": true,
-      "confidence": 0,
-      "rationale": "",
-      "alternatives_considered": []
-    }
-  },
-  "learning_objectives": {
-    "ilos": [],
-    "alignment_matrix": {
-      "ilo_to_activity": {},
-      "ilo_to_assessment": {},
-      "gaps": []
-    },
-    "expertise_reversal_flags": []
-  },
-  "quality_review": {
-    "last_reviewed": "",
-    "qm_standards": {
-      "course_overview": {"status": "", "findings": []},
-      "learning_objectives": {"status": "", "findings": []},
-      "assessment": {"status": "", "findings": []},
-      "instructional_materials": {"status": "", "findings": []},
-      "learning_activities": {"status": "", "findings": []},
-      "course_technology": {"status": "", "findings": []},
-      "learner_support": {"status": "", "findings": []},
-      "accessibility": {"status": "", "findings": []}
-    },
-    "coi_presence": {
-      "teaching_presence": {"score": 0, "findings": []},
-      "social_presence": {"score": 0, "findings": []},
-      "cognitive_presence": {"score": 0, "findings": []}
-    },
-    "alignment_audit": {"findings": []},
-    "overall_score": 0,
-    "recommendations": []
-  }
-}
-```
+{{MANIFEST_SCHEMA}}
 
 ## Feedback
 

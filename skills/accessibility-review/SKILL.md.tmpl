@@ -318,55 +318,53 @@ Present the report using AskUserQuestion to walk through findings:
 
 ## Write Manifest
 
-After completing the review, save results to the project manifest.
+Save results to `.idstack/project.json` via the merge tool, which replaces only the
+`accessibility_review` section, preserves every other section verbatim, validates JSON,
+and atomically updates the top-level `updated` timestamp:
 
-**CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first with the Read tool.
-2. Modify ONLY the `accessibility_review` section. Preserve all other sections
-   unchanged — `context`, `needs_analysis`, `learning_objectives`, `assessment_design`,
-   `course_builder`, `quality_review`, and any other sections must remain exactly
-   as they were.
-3. Before writing, verify the JSON is valid: matching braces, proper commas,
-   quoted strings, no trailing commas.
-4. Update the top-level `updated` timestamp to reflect the current time.
-5. If this is a new manifest, initialize ALL sections (including `context`,
-   `needs_analysis`, and `learning_objectives`) with empty/default values so
-   downstream skills find the expected structure.
-
-Populate the `accessibility_review` section with:
-
-```json
+```bash
+"$_IDSTACK/bin/idstack-manifest-merge" --section accessibility_review --payload - <<'PAYLOAD'
 {
-  "accessibility_review": {
-    "updated": "ISO-8601 timestamp",
-    "score": {
-      "overall": 0,
-      "wcag": 0,
-      "udl": 0
-    },
-    "wcag_violations": [
-      {
-        "principle": "perceivable|operable|understandable|robust",
-        "success_criterion": "1.2.2",
-        "description": "...",
-        "location": "Module 3",
-        "severity": "A|AA",
-        "remediation": "..."
-      }
-    ],
-    "udl_recommendations": [
-      {
-        "principle": "engagement|representation|action_expression",
-        "checkpoint": "...",
-        "status": "met|partial|not_met",
-        "recommendation": "...",
-        "evidence": "citation"
-      }
-    ],
-    "quick_wins": []
-  }
+  "updated": "<ISO-8601 timestamp>",
+  "score": {"overall": 0, "wcag": 0, "udl": 0},
+  "wcag_violations": [
+    {
+      "id": "wcag-1",
+      "criterion": "1.2.2 Captions",
+      "level": "A",
+      "description": "...",
+      "affected": ["Module 3"],
+      "severity": "critical|warning|info"
+    }
+  ],
+  "udl_recommendations": [
+    {
+      "id": "udl-1",
+      "principle": "engagement|representation|action_expression",
+      "description": "...",
+      "status": "fully_met|partial|not_met"
+    }
+  ],
+  "quick_wins": []
 }
+PAYLOAD
 ```
+
+If `.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json`
+first — that creates a fresh canonical manifest. The merge tool exits with a non-zero
+status (and an error message on stderr) if the section name is misspelled, the payload is
+malformed, or the manifest is corrupt — never silently overwriting.
+
+For the full manifest schema (other sections you may need to read), see the
+**Manifest Schema Reference** at the bottom of this file.
+
+**Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest,
+modify only the `accessibility_review` section, Write back. Preserve all other sections
+verbatim.
+
+---
+
+{{MANIFEST_SCHEMA}}
 
 ## Feedback
 
