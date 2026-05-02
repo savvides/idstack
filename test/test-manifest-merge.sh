@@ -59,7 +59,7 @@ seed_manifest
 echo '{"confidence_score": 75}' > "$WORK/payload.json"
 "$MERGE" --section red_team_audit --payload "$WORK/payload.json" --manifest "$WORK/project.json" --quiet
 assert "section replaced" \
-  "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"red_team_audit\"]==\"\"' || python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"red_team_audit\"]=={\"confidence_score\": 75}'"
+  "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"red_team_audit\"]=={\"confidence_score\": 75}'"
 
 # --- Test 2: foreign sections preserved ---
 assert "context preserved" "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"context\"]=={\"modality\": \"online\"}'"
@@ -118,6 +118,22 @@ set +e
 EC=$?
 set -e
 assert "missing payload file exits 5" "[ $EC -eq 5 ]"
+
+# --- Test 11: manifest with non-dict root (list) rejected with exit 2 ---
+echo '[]' > "$WORK/project.json"
+set +e
+echo '{}' | "$MERGE" --section red_team_audit --payload - --manifest "$WORK/project.json" --quiet 2>/dev/null
+EC=$?
+set -e
+assert "manifest with list root exits 2" "[ $EC -eq 2 ]"
+
+# --- Test 12: manifest with non-dict root (string) rejected with exit 2 ---
+echo '"a string"' > "$WORK/project.json"
+set +e
+echo '{}' | "$MERGE" --section red_team_audit --payload - --manifest "$WORK/project.json" --quiet 2>/dev/null
+EC=$?
+set -e
+assert "manifest with string root exits 2" "[ $EC -eq 2 ]"
 
 echo ""
 echo "manifest-merge: $PASS/$TOTAL passed, $FAIL failed"

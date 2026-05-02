@@ -112,9 +112,12 @@ def load_manifest(manifest_path):
     except Exception as exc:
         die(6, f"failed to read manifest {manifest_path!r}: {exc}")
     try:
-        return json.loads(text)
+        data = json.loads(text)
     except json.JSONDecodeError as exc:
         die(2, f"manifest is not valid JSON ({manifest_path}): {exc}")
+    if not isinstance(data, dict):
+        die(2, f"manifest root must be a JSON object ({manifest_path}): got {type(data).__name__}")
+    return data
 
 
 def write_atomic(manifest_path, data):
