@@ -298,19 +298,20 @@ For each skill from the starting point onward:
 1. Announce: "Starting /skill-name..."
 2. Invoke the skill using the `Skill` tool with the skill name (e.g., `skill: "needs-analysis"`)
 3. The skill will run its full workflow including all AskUserQuestion interactions
-4. When the skill completes (logs to timeline), announce completion and move to next
+4. When the skill completes (logs to timeline), **execute Step 4 (Generate Pipeline Report) inline** to refresh `.idstack/reports/pipeline.md` against the new per-skill report. This keeps the aggregate fresh if the designer pauses partway through.
+5. Announce completion and move to next.
 
 **Between skills**, briefly announce the transition:
-"[skill-name] complete. Moving to /next-skill..."
+"[skill-name] complete. Pipeline report refreshed. Moving to /next-skill..."
 
 ### Step 4: Generate Pipeline Report
 
 After each skill completes (or after the orchestrator finishes the run, including partial runs), aggregate the per-skill reports into a single `.idstack/reports/pipeline.md` so the designer can read the full picture in one document.
 
-**When to regenerate this file:**
+**When this step runs:**
 
-- After every skill the orchestrator completes during this run (so a partial pipeline still leaves a useful aggregate behind if the designer pauses).
-- When the user invokes `/idstack:pipeline` and all skills are already complete — treat that as "rebuild the pipeline report" and offer to do so via AskUserQuestion before exiting.
+- Inline after each skill completes during the orchestrator's main loop (Step 3, item 4) — so a partial pipeline still leaves a useful aggregate behind if the designer pauses.
+- As a one-shot regeneration when the "Regenerate the pipeline report" branch from Step 1 is selected (no skills are re-run; this step is the entire body of that branch).
 
 **Inputs.** Read each per-skill report file if it exists:
 
@@ -321,6 +322,7 @@ After each skill completes (or after the orchestrator finishes the run, includin
 - `.idstack/reports/course-quality-review.md`
 - `.idstack/reports/accessibility-review.md`
 - `.idstack/reports/red-team.md`
+- `.idstack/reports/course-export.md` (if present)
 - `.idstack/reports/course-import.md` (if present)
 
 Also read `.idstack/project.json` for project_name, scores, and the `report_path` fields.
