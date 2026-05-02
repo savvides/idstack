@@ -377,11 +377,11 @@ In gap-fill mode, **skip Steps 2–7 entirely** (instructor info, syllabus, modu
 1. **Identify gaps.** Read `red_team_audit.top_actions` and `quality_review.recommendations` from the manifest (if those skills already ran) plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
 2. **Confirm with user.** Show the list of generation targets ("I'll generate: discussion rubric for Module 5, vision/mission framework module, formative practice quiz set"). Ask via `AskUserQuestion` which to generate (all / specific / skip).
 3. **Generate only what's missing.** For each confirmed target, follow the relevant sub-step from Steps 4–6 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration.
-4. **Record outputs.** Update `course_content.generated_files` (additive) and `course_builder_notes.recommended_generation_targets` (the list, with status `generated | deferred | declined`).
+4. **Record outputs.** Update `course_content.generated_files` (additive) and `course_content.recommended_generation_targets` (the list, with status `generated | deferred | declined`).
 
 When done, write the manifest via `bin/idstack-manifest-merge` (see Write Manifest below) and skip directly to the final summary.
 
-Save the chosen mode under `course_builder_notes.mode` (`"build-new"` or `"gap-fill"`).
+Save the chosen mode under `course_content.mode` (`"build-new"` or `"gap-fill"`).
 
 ---
 

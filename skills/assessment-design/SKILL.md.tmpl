@@ -450,8 +450,11 @@ Consider adding a formative peer review checkpoint to partially address the gap.
 Save results to `.idstack/project.json` via `bin/idstack-manifest-merge`. The merge tool
 replaces only the named section, preserves every other section verbatim, validates JSON,
 and atomically updates the top-level `updated` timestamp. **This skill writes two
-sections** — `assessments` and `learning_objectives.alignment_matrix.ilo_to_assessment` —
-so call the merge tool twice (once per top-level section).
+top-level sections** — `assessments` and `learning_objectives` — so call the merge tool
+twice (once per section). The `learning_objectives` write needs to update the
+`alignment_matrix.ilo_to_assessment` mapping (and in Mode 3, the
+`alignment_matrix.gaps` array as well). Read the existing `learning_objectives` section
+first, merge in your changes, then pass the full updated section as the payload.
 
 ```bash
 # Section 1: assessments
@@ -459,9 +462,9 @@ so call the merge tool twice (once per top-level section).
 <the assessments payload — see field shape below>
 PAYLOAD
 
-# Section 2: learning_objectives (with the updated alignment_matrix)
-# Read existing learning_objectives first, merge in the new ilo_to_assessment mapping,
-# pass the full updated section to the merge tool.
+# Section 2: learning_objectives (full section, with updated alignment_matrix)
+# Read existing learning_objectives, merge in the new ilo_to_assessment mapping
+# (and in Mode 3, the new gaps[] entries), then pass the full updated section here.
 "$_IDSTACK/bin/idstack-manifest-merge" --section learning_objectives --payload - <<'PAYLOAD'
 <the merged learning_objectives payload>
 PAYLOAD
