@@ -847,6 +847,17 @@ The idstack manifest lives at `.idstack/project.json`. Schema version: **1.4**.
 
 This is the canonical schema. Every skill writes to its own section using the shapes documented here; **all other sections must be preserved verbatim**. There is one source of truth — this file. If the schema ever needs to change, edit `templates/manifest-schema.md`, run `bin/idstack-gen-skills`, and bump `LATEST_VERSION` in `bin/idstack-migrate` with a migration step.
 
+### Two outputs per skill: JSON manifest + Markdown report
+
+Every skill that produces findings emits **both**:
+
+- a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
+- a **Markdown report** at `.idstack/reports/<skill>.md` (the human view — read by the instructional designer).
+
+The Markdown report follows the canonical structure in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the Markdown report path back into its own section's `report_path` field so other skills and tools can find it.
+
+`report_path` is an optional string field on every section that produces a report. Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report.
+
 ### Two ways to write to the manifest
 
 **1. Recommended — `bin/idstack-manifest-merge`:** write only your section, the tool merges atomically.
@@ -897,6 +908,7 @@ The merge tool replaces only the named top-level section, preserves every other 
   },
   "needs_analysis": {
     "mode": "",
+    "report_path": "",
     "organizational_context": {
       "problem_statement": "",
       "stakeholders": [],
@@ -924,6 +936,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     }
   },
   "learning_objectives": {
+    "report_path": "",
     "ilos": [],
     "alignment_matrix": {
       "ilo_to_activity": {},
@@ -934,6 +947,7 @@ The merge tool replaces only the named top-level section, preserves every other 
   },
   "assessments": {
     "mode": "",
+    "report_path": "",
     "assessment_strategy": "",
     "items": [],
     "formative_checkpoints": [],
@@ -948,6 +962,7 @@ The merge tool replaces only the named top-level section, preserves every other 
   },
   "course_content": {
     "mode": "",
+    "report_path": "",
     "generated_at": "",
     "expertise_adaptation": "",
     "syllabus": "",
@@ -962,6 +977,7 @@ The merge tool replaces only the named top-level section, preserves every other 
   },
   "import_metadata": {
     "source": "",
+    "report_path": "",
     "imported_at": "",
     "source_lms": "",
     "source_cartridge": "",
@@ -982,6 +998,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     "quality_flag_details": []
   },
   "export_metadata": {
+    "report_path": "",
     "exported_at": "",
     "format": "",
     "destination": "",
@@ -1005,6 +1022,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     }
   },
   "quality_review": {
+    "report_path": "",
     "last_reviewed": "",
     "qm_standards": {
       "course_overview":         {"status": "", "findings": []},
@@ -1059,6 +1077,7 @@ The merge tool replaces only the named top-level section, preserves every other 
   },
   "accessibility_review": {
     "updated": "",
+    "report_path": "",
     "score": {"overall": 0, "wcag": 0, "udl": 0},
     "wcag_violations": [],
     "udl_recommendations": [],

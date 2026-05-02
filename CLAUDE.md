@@ -46,14 +46,27 @@ The 11 skills form a pipeline, each reading/extending the shared manifest. All i
 
 Any skill also works standalone (asks questions directly if no manifest exists).
 
-### Project manifest
+### Project manifest and reports — the dual-output contract
 
-Skills share state through `.idstack/project.json`. Rules when writing skills that touch the manifest:
+Every skill that produces findings writes **both**:
+
+1. **JSON section** in `.idstack/project.json` — system state for downstream skills, the pipeline orchestrator, and `bin/idstack-status`.
+2. **Markdown report** at `.idstack/reports/<skill>.md` — the human view, structured per `templates/report-format.md`. The skill writes the relative path back into its section's `report_path` field.
+
+The Markdown is what the instructional designer reads. The JSON is for the system. The two stay in sync: every finding in the report corresponds to a finding in the manifest's structured arrays.
+
+Rules for writing the manifest:
 
 - Validate JSON on read. If malformed, report and stop. Never silently overwrite.
 - Own your section only. Read full manifest, modify only your skill's section, preserve everything else.
 - Update the `updated` timestamp on every write.
-- Write the complete schema structure (no partial writes).
+- Use `bin/idstack-manifest-merge` for the write path: it's section-scoped, atomic (tempfile + rename), preserves foreign sections, and validates against the canonical schema in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback only.
+
+Rules for writing the report:
+
+- Follow the canonical structure in `templates/report-format.md` — observation → evidence → why-it-matters → suggestion, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding.
+- Phrase recommendations as suggestions ("consider…"), not directives. idstack is a collaborator.
+- Cite every recommendation. Findings without a `[Domain-N] [Tier]` citation belong in *Limitations* or *Notes*, not *Findings*.
 
 ### SKILL.md.tmpl structure
 

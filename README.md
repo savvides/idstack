@@ -248,9 +248,18 @@ Any skill works independently. Run `/idstack:pipeline` to chain them all, or inv
 |  | (manifest)  |  | learnings.jsonl  | (T1-T5)    |  |
 |  +-------------+  +---------------+  +------------+  |
 |                                                        |
-|  templates/preamble.md  bin/idstack-gen-skills          |
-|  bin/idstack-timeline-log  bin/idstack-learnings-log    |
-|  bin/idstack-status  bin/idstack-update-check           |
+|  +-------------------------------+                    |
+|  | .idstack/reports/<skill>.md   |  (the human view)  |
+|  | written by every skill that   |                    |
+|  | produces findings; structured |                    |
+|  | per templates/report-format.md|                    |
+|  +-------------------------------+                    |
+|                                                        |
+|  templates/preamble.md  templates/report-format.md    |
+|  bin/idstack-gen-skills  bin/idstack-manifest-merge   |
+|  bin/idstack-migrate  bin/idstack-timeline-log        |
+|  bin/idstack-learnings-log  bin/idstack-status        |
+|  bin/idstack-update-check                             |
 +-------------------------------------------------------+
 ```
 
@@ -262,6 +271,14 @@ Skills are plain Markdown files generated from templates. No build step for user
 idstack saves your design decisions in `.idstack/project.json` so each skill remembers your course context. You never edit this file directly. The skills manage it.
 
 When you run `/idstack:course-import`, it creates the manifest with your course structure. When you run `/idstack:learning-objectives`, it reads the manifest and extends it with objectives and alignment data. `/idstack:assessment-design` adds rubrics and feedback strategies. `/idstack:course-builder` generates the actual content. `/idstack:course-quality-review` audits the full chain. `/idstack:course-export` packages it for your LMS. Each skill reads what came before and adds its layer. Or run `/idstack:pipeline` and it chains them all automatically.
+
+### How idstack reports back to you
+idstack is a collaborator, not a course builder. When a skill finishes, it produces two artifacts:
+
+- **Markdown report** at `.idstack/reports/<skill>.md` — the human view. Designed to be opened by the instructional designer. Every finding follows the same structure: *what we saw* in your course, *what the evidence says* (with a citation tag like `[Assessment-8] [T1]`), *why it matters* for learners, and *what to consider* changing. Suggestions, not directives — the designer owns the course; idstack offers the read.
+- **Manifest section** at `.idstack/project.json` — the system view. Same findings in JSON so other skills can read and act on them.
+
+The canonical structure is documented in [`templates/report-format.md`](templates/report-format.md). Re-running a skill overwrites its report; the timeline at `.idstack/timeline.jsonl` carries the run history.
 
 ### Course memory
 idstack remembers your design sessions. Each skill logs what it did to `.idstack/timeline.jsonl`, and project-specific discoveries (LMS quirks, format issues, course patterns) are stored in `.idstack/learnings.jsonl`. When you start a new session, idstack tells you where you left off: quality score trends, which skills have been completed, and what the next step is. Run `bin/idstack-status` anytime to see your course health dashboard.
