@@ -359,7 +359,35 @@ Then present the scope (see Step 1 below).
 
 ---
 
+## Mode detection (build-new vs gap-fill)
+
+Decide which mode this skill is operating in **before** running the content generation workflow.
+
+- **Gap-fill mode** — both of these must be true:
+  - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
+  - `course_content.modules` is non-empty (the imported course actually has content; not a half-import)
+- **Build-new mode** — anything else (no manifest, no import_metadata, manual source, or zero modules in course_content).
+
+**Announce the chosen mode to the user as the first sentence:**
+- "Mode: build-new. I'll generate the syllabus, module pages, and assessment documents from scratch."
+- "Mode: gap-fill (cartridge import detected). The course already exists; I'll generate ONLY the artifacts that upstream skills flagged as missing — not a fresh syllabus or modules. Say 'rebuild' if you want a full regeneration anyway."
+
+In gap-fill mode, **skip Steps 2–7 entirely** (instructor info, syllabus, module pages, assessments, rubrics, content review). Instead:
+
+1. **Identify gaps.** Read `red_team_audit.top_actions` and `quality_review.recommendations` from the manifest (if those skills already ran) plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
+2. **Confirm with user.** Show the list of generation targets ("I'll generate: discussion rubric for Module 5, vision/mission framework module, formative practice quiz set"). Ask via `AskUserQuestion` which to generate (all / specific / skip).
+3. **Generate only what's missing.** For each confirmed target, follow the relevant sub-step from Steps 4–6 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration.
+4. **Record outputs.** Update `course_content.generated_files` (additive) and `course_content.recommended_generation_targets` (the list, with status `generated | deferred | declined`).
+
+When done, write the manifest via `bin/idstack-manifest-merge` (see Write Manifest below) and skip directly to the final summary.
+
+Save the chosen mode under `course_content.mode` (`"build-new"` or `"gap-fill"`).
+
+---
+
 ## Content Generation Workflow
+
+The steps below describe **build-new mode**. In gap-fill mode (see "Mode detection" above), most of these steps are skipped — invoke individual sub-steps only for the specific artifacts the user confirmed as targets.
 
 Walk through content generation step by step. Ask questions using AskUserQuestion.
 Do not batch multiple questions.
@@ -868,6 +896,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     "available_tech": []
   },
   "needs_analysis": {
+    "mode": "",
     "organizational_context": {
       "problem_statement": "",
       "stakeholders": [],
@@ -904,6 +933,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     "expertise_reversal_flags": []
   },
   "assessments": {
+    "mode": "",
     "assessment_strategy": "",
     "items": [],
     "formative_checkpoints": [],
@@ -913,9 +943,11 @@ The merge tool replaces only the named top-level section, preserves every other 
       "peer_review": false
     },
     "feedback_quality_score": 0,
-    "rubrics": []
+    "rubrics": [],
+    "audit_notes": []
   },
   "course_content": {
+    "mode": "",
     "generated_at": "",
     "expertise_adaptation": "",
     "syllabus": "",
@@ -925,7 +957,8 @@ The merge tool replaces only the named top-level section, preserves every other 
     "content_dir": ".idstack/course-content/",
     "generated_files": [],
     "build_timestamp": "",
-    "placeholders_used": []
+    "placeholders_used": [],
+    "recommended_generation_targets": []
   },
   "import_metadata": {
     "source": "",
@@ -1144,6 +1177,37 @@ These document the **shape of array elements and dictionary values** that the ca
   "description": "...",
   "evidence": "[Domain-N] [TX]",
   "severity": "critical|warning|info"
+}
+```
+
+### Mode field — design-new vs audit-existing
+
+`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
+
+Allowed values per skill:
+- `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
+- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
+- `course_content.mode`: `"build-new"` or `"gap-fill"`
+
+Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).
+
+**`assessments.audit_notes[]`** — only populated in Mode 3. Records which audit findings the user chose to act on:
+```json
+{
+  "target_id": "A-3",
+  "action": "applied|deferred|declined",
+  "description": "Rubric criterion for ILO-2 added: 'Synthesis depth (1-4 scale)'.",
+  "reason": "Optional — only meaningful for deferred/declined."
+}
+```
+
+**`course_content.recommended_generation_targets[]`** — populated in `gap-fill` mode. Lists artifacts upstream skills flagged as missing, with status:
+```json
+{
+  "description": "Discussion rubric for Module 5",
+  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
+  "status": "generated|deferred|declined",
+  "output_path": "Optional — set when status=generated, points to the generated file."
 }
 ```
 

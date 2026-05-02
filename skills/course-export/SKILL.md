@@ -1157,6 +1157,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     "available_tech": []
   },
   "needs_analysis": {
+    "mode": "",
     "organizational_context": {
       "problem_statement": "",
       "stakeholders": [],
@@ -1193,6 +1194,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     "expertise_reversal_flags": []
   },
   "assessments": {
+    "mode": "",
     "assessment_strategy": "",
     "items": [],
     "formative_checkpoints": [],
@@ -1202,9 +1204,11 @@ The merge tool replaces only the named top-level section, preserves every other 
       "peer_review": false
     },
     "feedback_quality_score": 0,
-    "rubrics": []
+    "rubrics": [],
+    "audit_notes": []
   },
   "course_content": {
+    "mode": "",
     "generated_at": "",
     "expertise_adaptation": "",
     "syllabus": "",
@@ -1214,7 +1218,8 @@ The merge tool replaces only the named top-level section, preserves every other 
     "content_dir": ".idstack/course-content/",
     "generated_files": [],
     "build_timestamp": "",
-    "placeholders_used": []
+    "placeholders_used": [],
+    "recommended_generation_targets": []
   },
   "import_metadata": {
     "source": "",
@@ -1433,6 +1438,37 @@ These document the **shape of array elements and dictionary values** that the ca
   "description": "...",
   "evidence": "[Domain-N] [TX]",
   "severity": "critical|warning|info"
+}
+```
+
+### Mode field — design-new vs audit-existing
+
+`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
+
+Allowed values per skill:
+- `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
+- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
+- `course_content.mode`: `"build-new"` or `"gap-fill"`
+
+Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).
+
+**`assessments.audit_notes[]`** — only populated in Mode 3. Records which audit findings the user chose to act on:
+```json
+{
+  "target_id": "A-3",
+  "action": "applied|deferred|declined",
+  "description": "Rubric criterion for ILO-2 added: 'Synthesis depth (1-4 scale)'.",
+  "reason": "Optional — only meaningful for deferred/declined."
+}
+```
+
+**`course_content.recommended_generation_targets[]`** — populated in `gap-fill` mode. Lists artifacts upstream skills flagged as missing, with status:
+```json
+{
+  "description": "Discussion rubric for Module 5",
+  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
+  "status": "generated|deferred|declined",
+  "output_path": "Optional — set when status=generated, points to the generated file."
 }
 ```
 

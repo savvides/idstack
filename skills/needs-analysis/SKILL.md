@@ -262,9 +262,32 @@ fi
 Walk the user through three sequential levels. Ask questions ONE AT A TIME using
 AskUserQuestion. Do not batch multiple questions.
 
+### Step 0.5: Mode detection (imported course vs net-new design)
+
+Before gathering context, decide which mode this skill is operating in. Read
+`import_metadata` from the manifest:
+
+- **Audit-existing mode** — both of these must be true:
+  - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
+  - `import_metadata.items_imported.modules > 0` (i.e., the import actually produced content)
+- **Design-new mode** — anything else (no manifest, no import_metadata, manual source, or zero modules imported).
+
+**Announce the chosen mode to the user as the first sentence of the conversation.**
+Examples:
+- "Mode: design-new (no import detected). I'll walk you through fresh needs analysis."
+- "Mode: audit-existing (cartridge import from Canvas). The course already exists; I'll skip the 'is training justified?' gate and assess design-fit instead."
+
+If the user says they meant a different mode (e.g., they imported but want to redesign from scratch), accept and switch. The mode determines the rest of the workflow.
+
+Save the chosen mode under `needs_analysis.mode` (`"design-new"` or `"audit-existing"`) when you write the manifest.
+
+---
+
 ### Step 1: Project Context
 
-Before diving into the three levels, establish the project context. Ask the user:
+Before diving into the three levels, establish the project context.
+
+**In design-new mode**, ask the user:
 
 "What course or training program are we designing? Give me the basics: title, subject
 area, and who requested it."
@@ -276,11 +299,34 @@ Then establish the delivery context. Ask about:
 - **Institution type:** Higher ed, corporate, K-12?
 - **Available technology:** What tools do you have? (LMS, video platform, discussion forums, interactive tools, etc.)
 
+**In audit-existing mode**, much of this is already in the manifest from `course-import`. Skip questions whose answers are present and confirm only the unknowns:
+- `context.modality` — usually inferable from the LMS (Canvas/Moodle/etc. = online or hybrid). Confirm with the user if ambiguous.
+- `context.timeline` — sometimes in `course_settings.xml` (e.g., the syllabus dates from the cartridge). Use it if found; ask only if absent.
+- `context.class_size` — typically not in the cartridge; ask.
+- `context.institution_type` — usually inferable from `import_metadata.source_lms` (Canvas in higher-ed, etc.). Confirm with the user if ambiguous.
+- `context.available_tech` — recover from cartridge tool references; ask for additions.
+
+Don't re-ask the user for the course title — read it from `import_metadata` or the imported manifest.
+
 Store these in the `context` section of the manifest.
 
 ---
 
 ### Step 2: Level 1 — Organizational/Context Analysis
+
+**In audit-existing mode, the "is training justified?" question is moot.** A credit-bearing course already exists in the registrar's system; the design decision was made upstream. Skip the decision-gate logic below and instead ask one design-fit question:
+
+> "Given the course as imported (from `import_metadata.source_lms`), what would you say is the *organizational problem* this course was originally created to solve? (e.g., 'undergraduates lack synthesis skills before entering capstone'). Be specific — this anchors the rest of the design audit."
+
+Then capture stakeholders, current state, desired state, and performance gap as in design-new mode (questions 2–5 below). Set `needs_analysis.training_justification` to:
+```json
+{"justified": true, "confidence": 10, "rationale": "Existing credit-bearing course; design audit only — training-fit decision is upstream of this skill.", "alternatives_considered": []}
+```
+Then proceed to Step 3.
+
+---
+
+**In design-new mode**, run the full decision gate below.
 
 **Purpose:** Determine whether training is the right intervention.
 
@@ -545,6 +591,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     "available_tech": []
   },
   "needs_analysis": {
+    "mode": "",
     "organizational_context": {
       "problem_statement": "",
       "stakeholders": [],
@@ -581,6 +628,7 @@ The merge tool replaces only the named top-level section, preserves every other 
     "expertise_reversal_flags": []
   },
   "assessments": {
+    "mode": "",
     "assessment_strategy": "",
     "items": [],
     "formative_checkpoints": [],
@@ -590,9 +638,11 @@ The merge tool replaces only the named top-level section, preserves every other 
       "peer_review": false
     },
     "feedback_quality_score": 0,
-    "rubrics": []
+    "rubrics": [],
+    "audit_notes": []
   },
   "course_content": {
+    "mode": "",
     "generated_at": "",
     "expertise_adaptation": "",
     "syllabus": "",
@@ -602,7 +652,8 @@ The merge tool replaces only the named top-level section, preserves every other 
     "content_dir": ".idstack/course-content/",
     "generated_files": [],
     "build_timestamp": "",
-    "placeholders_used": []
+    "placeholders_used": [],
+    "recommended_generation_targets": []
   },
   "import_metadata": {
     "source": "",
@@ -821,6 +872,37 @@ These document the **shape of array elements and dictionary values** that the ca
   "description": "...",
   "evidence": "[Domain-N] [TX]",
   "severity": "critical|warning|info"
+}
+```
+
+### Mode field — design-new vs audit-existing
+
+`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
+
+Allowed values per skill:
+- `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
+- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
+- `course_content.mode`: `"build-new"` or `"gap-fill"`
+
+Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).
+
+**`assessments.audit_notes[]`** — only populated in Mode 3. Records which audit findings the user chose to act on:
+```json
+{
+  "target_id": "A-3",
+  "action": "applied|deferred|declined",
+  "description": "Rubric criterion for ILO-2 added: 'Synthesis depth (1-4 scale)'.",
+  "reason": "Optional — only meaningful for deferred/declined."
+}
+```
+
+**`course_content.recommended_generation_targets[]`** — populated in `gap-fill` mode. Lists artifacts upstream skills flagged as missing, with status:
+```json
+{
+  "description": "Discussion rubric for Module 5",
+  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
+  "status": "generated|deferred|declined",
+  "output_path": "Optional — set when status=generated, points to the generated file."
 }
 ```
 
