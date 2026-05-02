@@ -109,7 +109,7 @@ check "dry-run passes when fresh" \
   "$IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
 
 check "dry-run detects stale SKILL.md" \
-  "echo 'stale content' >> $IDSTACK_DIR/needs-analysis/SKILL.md && ! $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+  "echo 'stale content' >> $IDSTACK_DIR/skills/needs-analysis/SKILL.md && ! $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
 
 check "regenerate fixes staleness" \
   "$IDSTACK_DIR/bin/idstack-gen-skills && $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"

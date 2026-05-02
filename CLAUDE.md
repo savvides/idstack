@@ -9,7 +9,7 @@ An open source set of Claude Code skills that bring peer-reviewed instructional 
 ## Commands
 
 ```bash
-./setup              # Install idstack (single symlink to ~/.claude/skills/idstack)
+./setup              # Install idstack (registers plugin at ~/.claude/plugins/idstack)
 ./setup --local      # Install to .claude/skills/ in current project only
 ./test/smoke-test.sh # Verify installation, SKILL.md files, YAML frontmatter, migrations
 bin/idstack-gen-skills          # Regenerate SKILL.md from .tmpl templates

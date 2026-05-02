@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.0.1.0 (2026-05-02)
+
+### Fixed
+- **Plugin install actually exposes namespaced sub-skills.** v2.0.0 promised `/idstack:<skill>` but `./setup` symlinked the repo into `~/.claude/skills/idstack`, where Claude Code only discovers the top-level dispatcher SKILL.md (one level deep). The 11 sub-skills under nested directories were never registered. Setup now installs to `~/.claude/plugins/idstack` (the plugin discovery path), and the 11 skills live under `skills/` per the plugin layout — so `/idstack:needs-analysis`, `/idstack:pipeline`, etc. show up in the slash command picker.
+- **Circular self-symlink when cloning into the install target.** The README's recommended one-liner clones into the install path, then runs `./setup`. The script unconditionally ran `ln -snf $REPO $TARGET` even when `$REPO == $TARGET`, producing a broken self-symlink (`~/.claude/skills/idstack/idstack -> ~/.claude/skills/idstack`) inside the repo. Setup now detects the same-path case and skips the symlink step (the install is already in place).
+- **Removed root dispatcher SKILL.md.** The dispatcher only existed as a workaround for the broken symlink discovery — once the plugin install works, the namespaced skills replace it. The welcome-message logic moves into the slash command picker, where users see all 11 sub-skills directly.
+- **Setup migrates legacy v2.0 installs.** If `~/.claude/skills/idstack` is a symlink, setup removes it. If it's a real directory (i.e., the v2.0 README had users clone there), setup leaves it in place but warns and tells the user how to remove it manually.
+
+### Changed
+- Repo layout: skill directories moved from repo root into `skills/` subdirectory (required by the plugin format).
+- `bin/idstack-gen-skills` now reads templates from `skills/*/SKILL.md.tmpl`.
+- Default install path in preamble fallback, README, and CLAUDE.md updated to `~/.claude/plugins/idstack`.
+
 ## v2.0.0.0 (2026-04-20)
 
 ### Added

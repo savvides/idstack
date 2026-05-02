@@ -26,13 +26,13 @@ if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
 elif [ -n "${IDSTACK_HOME:-}" ]; then
   _IDSTACK="$IDSTACK_HOME"
 else
-  _IDSTACK="$HOME/.claude/skills/idstack"
+  _IDSTACK="$HOME/.claude/plugins/idstack"
 fi
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ${IDSTACK_HOME:-~/.claude/skills/idstack} && git pull && ./setup` to update. (The `./setup` step is required — it cleans up old symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ${IDSTACK_HOME:-~/.claude/plugins/idstack} && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
 
 ## Preamble: Project Manifest
 
