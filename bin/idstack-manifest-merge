@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""
+idstack-manifest-merge — atomically replace one section of .idstack/project.json.
+
+Contract:
+  Reads the manifest, validates it parses as JSON, replaces ONLY the named
+  top-level section with the supplied payload, updates the top-level "updated"
+  timestamp, and writes back. All other sections (version, project_name,
+  created, foreign skill sections) are preserved verbatim.
+
+  This is section-level REPLACEMENT, not recursive deep-merge — the contract
+  is intentionally simple. If you need to merge values within your section,
+  read the existing section first and merge in your own code, then pass the
+  merged payload here.
+
+Usage:
+  idstack-manifest-merge --section <name> --payload <path|->
+                         [--manifest <path>] [--quiet]
+
+  --section   Top-level section name. Must be one of the whitelisted sections
+              defined in the canonical schema. Unknown names exit 3.
+  --payload   Path to a JSON file containing the section payload, or "-" to
+              read from stdin.
+  --manifest  Path to the manifest. Default: .idstack/project.json
+  --quiet     Suppress progress output. Errors still go to stderr.
+
+Exit codes:
+  0  success
+  1  malformed payload JSON
+  2  malformed manifest JSON
+  3  unknown section name
+  4  manifest file not found
+  5  payload file not found
+  6  i/o error
+"""
+
+import argparse
+import json
+import os
+import sys
+import tempfile
+from datetime import datetime, timezone
+
+# Whitelisted top-level sections — must match the canonical schema in
+# templates/manifest-schema.md. Adding a new section requires updating both.
+ALLOWED_SECTIONS = {
+    "context",
+    "needs_analysis",
+    "learning_objectives",
+    "assessments",
+    "course_content",
+    "import_metadata",
+    "export_metadata",
+    "quality_review",
+    "red_team_audit",
+    "accessibility_review",
+    "preferences",
+}
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Atomically replace one section of an idstack manifest.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--section", required=True, help="Section name to replace.")
+    parser.add_argument(
+        "--payload",
+        required=True,
+        help='Path to JSON payload file, or "-" for stdin.',
+    )
+    parser.add_argument(
+        "--manifest",
+        default=".idstack/project.json",
+        help="Path to manifest. Default: .idstack/project.json",
+    )
+    parser.add_argument("--quiet", action="store_true", help="Suppress progress output.")
+    return parser.parse_args()
+
+
+def die(code, message):
+    print(f"idstack-manifest-merge: error: {message}", file=sys.stderr)
+    sys.exit(code)
+
+
+def load_payload(payload_arg):
+    if payload_arg == "-":
+        try:
+            text = sys.stdin.read()
+        except Exception as exc:
+            die(6, f"failed to read payload from stdin: {exc}")
+    else:
+        if not os.path.isfile(payload_arg):
+            die(5, f"payload file not found: {payload_arg}")
+        try:
+            with open(payload_arg, "r", encoding="utf-8") as handle:
+                text = handle.read()
+        except Exception as exc:
+            die(6, f"failed to read payload file {payload_arg!r}: {exc}")
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        die(1, f"payload is not valid JSON: {exc}")
+
+
+def load_manifest(manifest_path):
+    if not os.path.isfile(manifest_path):
+        die(4, f"manifest not found: {manifest_path}")
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as handle:
+            text = handle.read()
+    except Exception as exc:
+        die(6, f"failed to read manifest {manifest_path!r}: {exc}")
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        die(2, f"manifest is not valid JSON ({manifest_path}): {exc}")
+
+
+def write_atomic(manifest_path, data):
+    """Write JSON atomically via tempfile + rename, so a crash mid-write
+    cannot leave the manifest truncated or partially overwritten."""
+    directory = os.path.dirname(os.path.abspath(manifest_path)) or "."
+    fd, tmp_path = tempfile.mkstemp(prefix=".manifest-merge.", dir=directory, suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(data, handle, indent=2)
+            handle.write("\n")
+        os.replace(tmp_path, manifest_path)
+    except Exception as exc:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        die(6, f"failed to write manifest {manifest_path!r}: {exc}")
+
+
+def main():
+    args = parse_args()
+
+    if args.section not in ALLOWED_SECTIONS:
+        allowed = ", ".join(sorted(ALLOWED_SECTIONS))
+        die(3, f"unknown section {args.section!r}. Allowed: {allowed}")
+
+    payload = load_payload(args.payload)
+    manifest = load_manifest(args.manifest)
+
+    manifest[args.section] = payload
+    manifest["updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    write_atomic(args.manifest, manifest)
+
+    if not args.quiet:
+        print(f"merged section {args.section!r} into {args.manifest}")
+
+
+if __name__ == "__main__":
+    main()

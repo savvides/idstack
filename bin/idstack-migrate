@@ -8,7 +8,7 @@
 
 set -e
 
-LATEST_VERSION="1.3"
+LATEST_VERSION="1.4"
 
 MANIFEST="${1:-.idstack/project.json}"
 
@@ -119,6 +119,44 @@ def migrate_1_2_to_1_3(data):
     data['version'] = '1.3'
     return data
 
+def migrate_1_3_to_1_4(data):
+    # Schema drift cleanup: rename fields that some pre-v1.4 manifests in the wild
+    # used inconsistently (the canonical names live in templates/manifest-schema.md).
+    rt = data.get('red_team_audit', {})
+    if isinstance(rt, dict):
+        # Old shape: red_team_audit.summary.{critical_count, warning_count, info_count}
+        # New shape: red_team_audit.findings_summary.{critical, warning, info}
+        old_summary = rt.pop('summary', None)
+        if isinstance(old_summary, dict):
+            fs = rt.setdefault('findings_summary', {'critical': 0, 'warning': 0, 'info': 0})
+            for old, new in (('critical_count', 'critical'),
+                             ('warning_count',  'warning'),
+                             ('info_count',     'info')):
+                if old in old_summary and not fs.get(new):
+                    fs[new] = old_summary[old]
+        # Add the new optional fields introduced in v1.4 (preserve existing values).
+        rt.setdefault('focus', '')
+        rt.setdefault('report_path', '')
+        rt.setdefault('fixes_applied', [])
+        rt.setdefault('fixes_deferred', [])
+    # Move any legacy _import_quality_flags root field into import_metadata.quality_flag_details.
+    legacy_flags = data.pop('_import_quality_flags', None)
+    if legacy_flags is not None:
+        im = data.setdefault('import_metadata', {})
+        # Coerce into list-of-dicts; drop anything that isn't list-shaped.
+        details = im.setdefault('quality_flag_details', [])
+        if isinstance(legacy_flags, list):
+            for item in legacy_flags:
+                if isinstance(item, dict):
+                    details.append(item)
+                else:
+                    details.append({'description': str(item)})
+    # Ensure quality_flag_details key exists for forward-compat reads.
+    im = data.setdefault('import_metadata', {})
+    im.setdefault('quality_flag_details', [])
+    data['version'] = '1.4'
+    return data
+
 # Apply migrations in order
 if version == '1.0':
     data = migrate_1_0_to_1_1(data)
@@ -131,6 +169,10 @@ if version == '1.1':
 if version == '1.2':
     data = migrate_1_2_to_1_3(data)
     version = '1.3'
+
+if version == '1.3':
+    data = migrate_1_3_to_1_4(data)
+    version = '1.4'
 
 if version != '$LATEST_VERSION':
     # Unknown version — output unchanged

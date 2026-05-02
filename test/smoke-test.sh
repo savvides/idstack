@@ -60,9 +60,33 @@ done
 
 # Check template system
 check "templates/preamble.md exists" "[ -f '$IDSTACK_DIR/templates/preamble.md' ]"
+check "templates/manifest-schema.md exists" "[ -f '$IDSTACK_DIR/templates/manifest-schema.md' ]"
+check "templates/manifest-schema.md is non-empty" "[ -s '$IDSTACK_DIR/templates/manifest-schema.md' ]"
 for skill in $SKILLS; do
   check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
+
+# Schema-drift regression: skills that share the canonical schema must use the
+# {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy.
+SCHEMA_HOST_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review"
+for skill in $SCHEMA_HOST_SKILLS; do
+  check "$skill SKILL.md.tmpl uses {{MANIFEST_SCHEMA}}" "grep -q '{{MANIFEST_SCHEMA}}' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill generated SKILL.md inlines canonical schema (version 1.4)" "grep -q '\"version\": \"1.4\"' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+done
+
+# Schema-drift regression: drifted field names must NOT appear in any SKILL.md.tmpl
+# (they were the source of issues #19, #23, etc. in the TMC-430 test report).
+DRIFT_FIELDS='red_team_audit\.summary\.critical_count\|accessibility\.score\.overall_pct\|_import_quality_flags'
+for skill in $SKILLS; do
+  check "$skill SKILL.md.tmpl free of drifted field names" "! grep -E '$DRIFT_FIELDS' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+
+# Manifest-merge tool must exist and be executable, and its unit tests must pass.
+check "bin/idstack-manifest-merge exists" "[ -f '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
+check "bin/idstack-manifest-merge is executable" "[ -x '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
+if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
+  check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
+fi
 
 # Check generated files have auto-generated header
 for skill in $SKILLS; do
@@ -86,23 +110,36 @@ check "preamble supports CLAUDE_PLUGIN_ROOT" "grep -q 'CLAUDE_PLUGIN_ROOT' '$IDS
 # Migration tests
 FIXTURE_DIR="$IDSTACK_DIR/test/fixtures"
 if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
-  # Test v1.0 → v1.3 chained migration
+  # Test v1.0 → v1.4 chained migration
   TMPDIR_MIG=$(mktemp -d)
   cp "$FIXTURE_DIR/manifest-v1.0.json" "$TMPDIR_MIG/project.json"
   "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
-  check "v1.0→v1.3: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.3'\""
-  check "v1.0→v1.3: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'preferences' in d\""
-  check "v1.0→v1.3: preserves project_name" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['project_name']=='Test Course v1.0'\""
+  check "v1.0→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
+  check "v1.0→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'preferences' in d\""
+  check "v1.0→v1.4: preserves project_name" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['project_name']=='Test Course v1.0'\""
   rm -rf "$TMPDIR_MIG"
 
-  # Test v1.2 → v1.3 migration
+  # Test v1.2 → v1.4 migration
   TMPDIR_MIG=$(mktemp -d)
   cp "$FIXTURE_DIR/manifest-v1.2.json" "$TMPDIR_MIG/project.json"
   "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
-  check "v1.2→v1.3: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.3'\""
-  check "v1.2→v1.3: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['preferences']['verbosity']=='normal'\""
-  check "v1.2→v1.3: idempotent" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.3'\" && '$IDSTACK_DIR/bin/idstack-migrate' '$TMPDIR_MIG/project.json' >/dev/null 2>&1 && python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.3'\""
+  check "v1.2→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
+  check "v1.2→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['preferences']['verbosity']=='normal'\""
+  check "v1.2→v1.4: idempotent" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\" && '$IDSTACK_DIR/bin/idstack-migrate' '$TMPDIR_MIG/project.json' >/dev/null 2>&1 && python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
   rm -rf "$TMPDIR_MIG"
+
+  # Test v1.3-drifted → v1.4 cleanup migration (renames red_team_audit.summary.*_count
+  # to red_team_audit.findings_summary.*, moves _import_quality_flags into
+  # import_metadata.quality_flag_details).
+  if [ -f "$FIXTURE_DIR/manifest-v1.3-drifted.json" ]; then
+    TMPDIR_MIG=$(mktemp -d)
+    cp "$FIXTURE_DIR/manifest-v1.3-drifted.json" "$TMPDIR_MIG/project.json"
+    "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
+    check "v1.3-drifted→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
+    check "v1.3-drifted→v1.4: red_team summary renamed to findings_summary" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); rt=d['red_team_audit']; assert 'summary' not in rt; assert rt['findings_summary']=={'critical': 3, 'warning': 5, 'info': 2}\""
+    check "v1.3-drifted→v1.4: _import_quality_flags moved into import_metadata" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert '_import_quality_flags' not in d; details=d['import_metadata']['quality_flag_details']; assert len(details)==2 and details[0]['key']=='orphan_module_8'\""
+    rm -rf "$TMPDIR_MIG"
+  fi
 fi
 
 # Template freshness check
