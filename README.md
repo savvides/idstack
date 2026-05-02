@@ -96,7 +96,7 @@ You had a course in Canvas. Now you have an evidence-based audit with specific r
 
 ### Paste this into Claude Code. Claude does the rest.
 
-> Install idstack: run **`git clone https://github.com/savvides/idstack.git ~/.claude/skills/idstack && cd ~/.claude/skills/idstack && ./setup`** then tell me it's installed and show me the available skills.
+> Install idstack: run **`git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup`** then tell me it's installed and show me the available skills.
 
 That's it. Claude clones the repo, runs setup, and confirms the skills are registered. No terminal knowledge required.
 
@@ -254,7 +254,7 @@ Any skill works independently. Run `/idstack:pipeline` to chain them all, or inv
 +-------------------------------------------------------+
 ```
 
-Skills are plain Markdown files generated from templates. No build step for users, no dependencies. `./setup` creates a single symlink (`~/.claude/skills/idstack`) so Claude Code discovers the dispatcher. Users invoke skills via `/idstack:<skill>`. Each skill reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
+Skills are plain Markdown files generated from templates. No build step for users, no dependencies. `./setup` registers the repo as a Claude Code plugin at `~/.claude/plugins/idstack`, which is what gives the namespaced `/idstack:<skill>` commands. Users invoke skills via `/idstack:<skill>`. Each skill reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
 
 ## How it works
 
@@ -329,7 +329,7 @@ idstack runs locally on your machine. Course data stays in your project folder (
 You can, but let the skills manage it. If you do edit it, keep the JSON valid.
 
 **How do I update idstack?**
-idstack checks for updates when you run any skill. If a newer version is available, you'll see a notification. Update manually: `cd ~/.claude/skills/idstack && git pull && ./setup`
+idstack checks for updates when you run any skill. If a newer version is available, you'll see a notification. Update manually: `cd ~/.claude/plugins/idstack && git pull && ./setup`
 If you downloaded ZIP: download the latest version and run `./setup` again.
 
 **How do I request a feature or report a bug?**
@@ -342,14 +342,16 @@ idstack itself is just text files. But it runs inside Claude Code, which require
 
 **Skill not showing up?** Claude Code loads skills at session start. If you installed while Claude Code was running, restart it (close and reopen). If that doesn't help, run setup again:
 ```bash
-cd ~/.claude/skills/idstack && ./setup
+cd ~/.claude/plugins/idstack && ./setup
 ```
 
 **Can't import a .imscc cartridge?** Make sure the file is a valid ZIP. Try re-exporting from your LMS with "Course" selected (not just content).
 
 **Canvas API says "token rejected"?** Generate a fresh token: Canvas -> Account -> Settings -> New Access Token. Tokens expire.
 
-**Claude says it can't find idstack skills?** Make sure you've run `./setup` after cloning. The setup script creates the symlinks Claude Code needs to discover the skills.
+**Claude says it can't find idstack skills?** Make sure you've run `./setup` after cloning. Setup registers the repo as a plugin at `~/.claude/plugins/idstack` so Claude Code discovers the namespaced `/idstack:<skill>` commands. Restart Claude Code after install — plugins load at session start.
+
+**Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Re-clone to the new location: `git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup`. Setup will detect and remove the old `~/.claude/skills/idstack` symlink for you. If the old install was a real directory (not a symlink), remove it manually.
 
 ## Contributing
 

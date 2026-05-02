@@ -2,8 +2,8 @@
 # Generate SKILL.md files from .tmpl templates.
 # Usage: idstack-gen-skills [--dry-run]
 #
-# Reads each {skill}/SKILL.md.tmpl, replaces {{PREAMBLE}} with
-# templates/preamble.md contents, writes {skill}/SKILL.md.
+# Reads each skills/{skill}/SKILL.md.tmpl, replaces {{PREAMBLE}} with
+# templates/preamble.md contents, writes skills/{skill}/SKILL.md.
 # Adds auto-generated header to each output file.
 
 set -e
@@ -24,7 +24,7 @@ fi
 HEADER="<!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->"
 HEADER2="<!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->"
 
-for tmpl in "$IDSTACK_DIR"/*/SKILL.md.tmpl; do
+for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
   [ -f "$tmpl" ] || continue
   skill_dir="$(dirname "$tmpl")"
   skill_name="$(basename "$skill_dir")"

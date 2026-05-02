@@ -6,8 +6,10 @@ PASS=0
 FAIL=0
 TOTAL=0
 
-SKILLS_DIR="${1:-$HOME/.claude/skills}"
-IDSTACK_DIR="$SKILLS_DIR/idstack"
+# Default to the plugin install location. Override by passing the parent dir
+# as $1 (e.g., for --local installs into a project's .claude/plugins/).
+PLUGINS_DIR="${1:-$HOME/.claude/plugins}"
+IDSTACK_DIR="$PLUGINS_DIR/idstack"
 
 check() {
   TOTAL=$((TOTAL + 1))
@@ -21,29 +23,30 @@ check() {
 }
 
 echo "idstack smoke test"
-echo "  skills dir: $SKILLS_DIR"
+echo "  plugins dir: $PLUGINS_DIR"
 echo "  idstack dir: $IDSTACK_DIR"
 echo ""
 
-# Check symlink exists
-check "idstack symlink exists" "[ -L '$SKILLS_DIR/idstack' ]"
-check "idstack symlink is directory" "[ -d '$SKILLS_DIR/idstack' ]"
+# Plugin install can be either a symlink (setup created it) OR a real directory
+# (user cloned directly into the plugin location, the README's recommended flow).
+# Both are valid — Claude Code only cares that SKILL.md files are reachable.
+check "idstack plugin path is reachable" "[ -d '$IDSTACK_DIR' ]"
 
 # Check plugin manifest
 check "plugin manifest exists" "[ -f '$IDSTACK_DIR/.claude-plugin/plugin.json' ]"
 check "plugin manifest has name" "grep -q '\"name\": \"idstack\"' '$IDSTACK_DIR/.claude-plugin/plugin.json'"
 
-# Check all skill SKILL.md files are reachable
+# Check all skill SKILL.md files are reachable under skills/
 SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
 for skill in $SKILLS; do
-  check "$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/$skill/SKILL.md' ]"
+  check "skills/$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md' ]"
 done
 
 # Check YAML frontmatter has required fields (bare names, no idstack- prefix)
 for skill in $SKILLS; do
-  check "$skill has name: $skill" "grep -q '^name: $skill' '$IDSTACK_DIR/$skill/SKILL.md'"
-  check "$skill has description: field" "grep -q '^description:' '$IDSTACK_DIR/$skill/SKILL.md'"
-  check "$skill has allowed-tools: field" "grep -q '^allowed-tools:' '$IDSTACK_DIR/$skill/SKILL.md'"
+  check "$skill has name: $skill" "grep -q '^name: $skill' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill has description: field" "grep -q '^description:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill has allowed-tools: field" "grep -q '^allowed-tools:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
 # Check evidence file exists
@@ -58,23 +61,23 @@ done
 # Check template system
 check "templates/preamble.md exists" "[ -f '$IDSTACK_DIR/templates/preamble.md' ]"
 for skill in $SKILLS; do
-  check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/$skill/SKILL.md.tmpl' ]"
+  check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
 
 # Check generated files have auto-generated header
 for skill in $SKILLS; do
-  check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/$skill/SKILL.md'"
+  check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
 # Check all preamble-based skills have context recovery
 for skill in $SKILLS; do
-  check "$skill has context recovery" "grep -q 'Context Recovery' '$IDSTACK_DIR/$skill/SKILL.md'"
+  check "$skill has context recovery" "grep -q 'Context Recovery' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
 # Check pipeline-originated skills have timeline logging
 TIMELINE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team"
 for skill in $TIMELINE_SKILLS; do
-  check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/$skill/SKILL.md'"
+  check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
 # Check preamble uses CLAUDE_PLUGIN_ROOT

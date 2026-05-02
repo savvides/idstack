@@ -1,17 +1,13 @@
 ---
-name: pipeline
+name: learn
 description: |
-  Pipeline orchestrator for idstack. Chains skills from /needs-analysis through
-  /course-export in evidence-based order, auto-skipping completed skills.
-  Handles fresh starts (no manifest) and resumption (partial pipeline). (idstack)
+  Manage project learnings. Search, list, delete, promote, and export what idstack
+  has learned across sessions. Use when asked to "what have we learned", "show learnings",
+  "prune stale learnings", or "export learnings". (idstack)
 allowed-tools:
   - Bash
   - Read
   - Write
-  - Edit
-  - Glob
-  - Grep
-  - Skill
   - AskUserQuestion
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
@@ -26,13 +22,13 @@ if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
 elif [ -n "${IDSTACK_HOME:-}" ]; then
   _IDSTACK="$IDSTACK_HOME"
 else
-  _IDSTACK="$HOME/.claude/skills/idstack"
+  _IDSTACK="$HOME/.claude/plugins/idstack"
 fi
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ${IDSTACK_HOME:-~/.claude/skills/idstack} && git pull && ./setup` to update. (The `./setup` step is required — it cleans up old symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ${IDSTACK_HOME:-~/.claude/plugins/idstack} && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -195,127 +191,94 @@ Example: "Reminder: this Canvas instance uses custom rubric formatting (discover
 
 ---
 
-# Pipeline Orchestrator
+# Learn — Manage Project Learnings
 
-You are the idstack pipeline orchestrator. Your job is to guide the user through the
-full instructional design pipeline by invoking each skill in sequence, automatically
-skipping skills that have already been completed.
+You are the idstack learnings manager. Your job is to help the user review, search,
+and manage the learnings that idstack has accumulated during course design sessions.
 
-## Pipeline Order
+Learnings are stored in `.idstack/learnings.jsonl` (project-local) and optionally
+`~/.idstack/global/learnings.jsonl` (cross-project).
 
-The canonical pipeline order is:
+## Commands
 
-```
-1. /needs-analysis         — Three-level needs assessment
-2. /learning-objectives    — Evidence-based ILO development
-3. /assessment-design      — Assessment & rubric design
-4. /course-builder         — Generate course content
-5. /course-quality-review  — Quality audit (QM + CoI)
-6. /accessibility-review   — WCAG + UDL review
-7. /red-team               — Adversarial audit
-8. /course-export          — Package for LMS
-```
+Parse the user's intent and map to one of these commands:
 
-**Alternative entry point:** If the user has run `/course-import` (visible in timeline),
-the pipeline starts at `/learning-objectives` (skipping /needs-analysis, since the import
-populated the manifest with equivalent data).
+### list (default)
 
-## Determining Completed Skills
-
-Read `.idstack/timeline.jsonl` to find skills with `"event": "completed"` entries.
+Show the most recent learnings. If the user just said `/learn` with no arguments,
+this is the default.
 
 ```bash
-if [ -f ".idstack/timeline.jsonl" ]; then
-  python3 -c "
-import json
-events = []
-for line in open('.idstack/timeline.jsonl'):
-    try: events.append(json.loads(line))
-    except: pass
-completed = set()
-for e in events:
-    if e.get('event') == 'completed':
-        completed.add(e.get('skill', ''))
-print('COMPLETED:' + ','.join(sorted(completed)))
-" 2>/dev/null || echo "COMPLETED:"
-else
-  echo "COMPLETED:"
-fi
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+"$_IDSTACK/bin/idstack-learnings-search" --limit 10
 ```
+
+Format the output as a readable table:
+
+```
+Key              | Type         | Insight                          | Confidence
+─────────────────┼──────────────┼──────────────────────────────────┼───────────
+canvas-rubrics   | operational  | Uses HTML format for rubrics     | 8/10
+bloom-verbs      | pedagogical  | Avoid "understand" as ILO verb   | 9/10
+```
+
+### search <keyword>
+
+Search learnings by keyword. Supports `--cross-project` to include global learnings.
+
+```bash
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+"$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --limit 10
+```
+
+For cross-project search:
+```bash
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+"$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --cross-project --limit 10
+```
+
+If results include global learnings (tagged with `_source`), show their source project.
+
+### delete <key>
+
+Delete a learning by its key. Always confirm with the user before deleting.
+
+```bash
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+"$_IDSTACK/bin/idstack-learnings-delete" KEY
+```
+
+### promote <key>
+
+Copy a local learning to the global store so it's available across projects.
+
+```bash
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+"$_IDSTACK/bin/idstack-learnings-promote" KEY
+```
+
+### export
+
+Export all learnings to a markdown file.
+
+```bash
+_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+"$_IDSTACK/bin/idstack-learnings-search" --limit 1000
+```
+
+Format as markdown with sections grouped by type (operational, pedagogical, etc.)
+and write to `.idstack/learnings-export.md`.
 
 ## Workflow
 
-### Step 1: Determine Starting Point
-
-Parse the COMPLETED output. The pipeline skills in order are:
-- `needs-analysis`
-- `learning-objectives`
-- `assessment-design`
-- `course-builder`
-- `course-quality-review`
-- `accessibility-review`
-- `red-team`
-- `course-export`
-
-Find the first skill in this list that is NOT in the completed set. That is the
-starting point.
-
-**Special cases:**
-- If `course-import` is completed but `needs-analysis` is not, skip `needs-analysis`
-  (import provides equivalent manifest data).
-- If ALL skills are completed, tell the user: "All pipeline skills have been completed.
-  You can re-run any skill individually, or run `/idstack course-quality-review` to check if
-  recent changes warrant another pass."
-
-### Step 2: Present Pipeline Status
-
-Show the user a status table before starting:
-
-```
-Pipeline Status:
-  [done] /needs-analysis
-  [done] /learning-objectives
-  [next] /assessment-design      <-- starting here
-  [    ] /course-builder
-  [    ] /course-quality-review
-  [    ] /accessibility-review
-  [    ] /red-team
-  [    ] /course-export
-```
-
-Ask: "Ready to continue the pipeline from /assessment-design?" (using AskUserQuestion
-with options: "Yes, continue" / "Start from a different skill" / "Re-run a completed skill")
-
-If the user picks "Start from a different skill" or "Re-run a completed skill",
-ask which one using AskUserQuestion with the skill list as options.
-
-### Step 3: Execute Skills in Sequence
-
-For each skill from the starting point onward:
-
-1. Announce: "Starting /skill-name..."
-2. Invoke the skill using the `Skill` tool with the skill name (e.g., `skill: "needs-analysis"`)
-3. The skill will run its full workflow including all AskUserQuestion interactions
-4. When the skill completes (logs to timeline), announce completion and move to next
-
-**Between skills**, briefly announce the transition:
-"[skill-name] complete. Moving to /next-skill..."
-
-### Step 4: Pipeline Complete
-
-When all remaining skills have been executed:
-- Announce: "Pipeline complete. Your course has been through all 8 stages."
-- If `/course-quality-review` produced a score, show it.
-- Remind the user they can re-run any skill individually if needed.
+1. Parse the user's input to determine which command they want
+2. If ambiguous, ask using AskUserQuestion
+3. Execute the command
+4. Show results in a clean, formatted way
+5. Offer follow-up actions (e.g., after listing, offer to search or delete)
 
 ## Important Rules
 
-- **One skill at a time.** Never run skills in parallel. Each skill needs the
-  output of the previous one.
-- **Don't interfere.** When a skill is running, let it drive. Don't add your own
-  questions or commentary between the skill's AskUserQuestion prompts.
-- **Respect the user.** If at any point the user says "stop", "pause", or "that's
-  enough for now", stop the pipeline gracefully. Their progress is saved in
-  timeline.jsonl and they can resume later with `/idstack pipeline`.
-- **No quality gate yet.** In v2.0, skip logic is purely completion-based. Quality-gated
-  skipping (only skip if score > threshold) is planned for a future version.
+- **Never modify learnings.jsonl directly.** Always use the bin scripts.
+- **Confirm deletes.** Always ask before deleting.
+- **Show source for global learnings.** When cross-project results appear, show which project they came from.
