@@ -1007,6 +1007,8 @@ have been parsed loosely.]
 
 Create or update the project manifest.
 
+**Why this skill uses the Write-tool fallback (not `bin/idstack-manifest-merge`):** course-import writes a top-level field (`project_name`), partial fields inside `context` (`modality`, `timeline`, `available_tech`), nested entries under `needs_analysis.task_analysis.job_tasks`, additions inside `learning_objectives.ilos` and `learning_objectives.alignment_matrix`, AND the `import_metadata` section. The merge tool only does whole-section replacement, which would clobber co-owned sections. So this skill goes through the Read-modify-Write fallback path described in `templates/manifest-schema.md`.
+
 **CRITICAL — Manifest Integrity Rules:**
 1. If a manifest already exists, READ it first.
 2. PRESERVE sections populated by other skills (especially needs_analysis from
@@ -1028,7 +1030,7 @@ Create or update the project manifest.
 - `learning_objectives.ilos` — from Bloom's inference (Step 4)
 - `learning_objectives.alignment_matrix` — partial, from detected objective-assessment links
 
-**Import metadata:** Add an `import_metadata` field at the root level:
+**Import metadata:** Set the top-level `import_metadata` section. Shown here in the context of the full manifest the Write tool will produce (the outer `import_metadata` key is the section's slot in the manifest, not a wrapper to nest inside the section itself):
 
 ```json
 {

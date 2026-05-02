@@ -642,53 +642,50 @@ standards and CoI presence.
 
 ### Step 8: Update Manifest
 
-Read the existing manifest, then add or update the `course_content` section.
+Save the `course_content` section to `.idstack/project.json` via `bin/idstack-manifest-merge`. The merge tool replaces only the named section, preserves every other section verbatim, validates JSON, and atomically updates the top-level `updated` timestamp.
 
-**CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first with the Read tool.
-2. Modify ONLY the `course_content` section and the top-level `updated` timestamp.
-   Preserve all other sections unchanged — `context`, `needs_analysis`,
-   `learning_objectives`, `assessments`, `quality_review`, `import_metadata`, and
-   any other sections must remain exactly as they were.
-3. Before writing, verify the JSON is valid: matching braces, proper commas,
-   quoted strings, no trailing commas.
-4. Update the top-level `updated` timestamp to reflect the current time.
-5. If this is a new manifest, initialize ALL sections with empty/default values
-   so downstream skills find the expected structure.
-
-**Populate the `course_content` section** (set `report_path` to the report you just wrote):
-
-```json
+```bash
+"$_IDSTACK/bin/idstack-manifest-merge" --section course_content --payload - <<'PAYLOAD'
 {
-  "course_content": {
-    "report_path": ".idstack/reports/course-builder.md",
-    "generated_at": "ISO-8601 timestamp",
-    "expertise_adaptation": "novice|intermediate|advanced|mixed",
-    "syllabus": "syllabus.md",
-    "modules": [
-      "module-01-introduction-to-topic.md",
-      "module-02-core-concepts.md"
-    ],
-    "assessments": [
-      "assessment-01-analysis-essay.md",
-      "assessment-02-project-proposal.md"
-    ],
-    "rubrics": [
-      "rubric-01-analysis-essay.md",
-      "rubric-02-project-proposal.md"
-    ],
-    "content_dir": ".idstack/course-content/",
-    "placeholders_used": [
-      "instructor_name",
-      "due_dates"
-    ]
-  }
+  "report_path": ".idstack/reports/course-builder.md",
+  "mode": "build-new",
+  "generated_at": "ISO-8601 timestamp",
+  "expertise_adaptation": "novice|intermediate|advanced|mixed",
+  "syllabus": "syllabus.md",
+  "modules": [
+    "module-01-introduction-to-topic.md",
+    "module-02-core-concepts.md"
+  ],
+  "assessments": [
+    "assessment-01-analysis-essay.md",
+    "assessment-02-project-proposal.md"
+  ],
+  "rubrics": [
+    "rubric-01-analysis-essay.md",
+    "rubric-02-project-proposal.md"
+  ],
+  "content_dir": ".idstack/course-content/",
+  "generated_files": [
+    ".idstack/course-content/syllabus.md",
+    ".idstack/course-content/modules/module-01-introduction-to-topic.md"
+  ],
+  "build_timestamp": "ISO-8601 timestamp",
+  "placeholders_used": [
+    "instructor_name",
+    "due_dates"
+  ],
+  "recommended_generation_targets": []
 }
+PAYLOAD
 ```
 
-The `placeholders_used` array lists any fields where placeholder text was used
-because the user chose to skip or defer those details. This helps downstream
-skills (like `/course-export`) know what still needs to be filled in.
+The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. If `.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json` first to create a fresh canonical manifest.
+
+**Mode field.** Set `mode` to `"build-new"` for a from-scratch generation or `"gap-fill"` when this run was triggered by upstream skills flagging missing artifacts. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
+
+The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. This helps downstream skills (like `/course-export`) know what still needs to be filled in.
+
+**Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify only the `course_content` section, Write back. Preserve all other sections verbatim.
 
 After writing the manifest, confirm:
 

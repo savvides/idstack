@@ -553,9 +553,11 @@ phrasing should reflect that.]
 
 [Repeat per UDL recommendation.]
 
-## Quick wins
+## Top recommendations
 
-[The 3 changes with the highest impact-to-effort ratio. Cite each.]
+[The 3 changes with the highest impact-to-effort ratio. Cite each. Per the
+canonical report format, this section is what the pipeline aggregator and
+`bin/idstack-status` may surface as a digest.]
 
 1. **[Action]** [Domain-N] [Tier] — [one-line why; pointer to finding id]
 2. ...
