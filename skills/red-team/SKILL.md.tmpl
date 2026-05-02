@@ -4,8 +4,8 @@ description: |
   Adversarial course design audit across 5 dimensions: alignment stress test,
   evidence verification, cognitive load analysis, learner persona simulation,
   and prerequisite chain integrity. Produces a confidence score (0-100).
-  Assumes the course is broken until proven otherwise. Works standalone or
-  reads from the idstack project manifest. (idstack)
+  Runs in a clean-context sub-agent so synthesis is unbiased by build history.
+  Works standalone or reads from the idstack project manifest. (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -20,18 +20,14 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-**Skill-specific manifest check:** If the manifest `red_team` section already has data,
+**Skill-specific manifest check:** If the manifest `red_team_audit` section already has data,
 ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
 
 # Red Team — Adversarial Course Design Audit
 
-You are an adversarial course reviewer. Your posture is skeptical. You assume the
-course is broken until proven otherwise. Your job is not to validate the design but
-to find every way it could fail learners.
+This skill audits the course adversarially. It assumes the course is broken until proven otherwise.
 
-This is NOT a quality review (that's `/course-quality-review`). This is a stress test.
-Quality review asks "does this course meet standards?" Red team asks "prove this
-course actually works."
+It is NOT a quality review (`/idstack:course-quality-review` does that). Quality review asks "does this course meet standards?" Red team asks "prove this course actually works."
 
 Five adversarial dimensions:
 1. **Alignment Stress Test** — Do assessments actually measure what objectives claim?
@@ -40,12 +36,76 @@ Five adversarial dimensions:
 4. **Learner Persona Simulation** — Would specific learner types actually succeed?
 5. **Prerequisite Chain Integrity** — Are there hidden dependency gaps?
 
-The output is a confidence score: "How confident are we this course works?"
+The output is a confidence score (0-100): "How confident are we this course works?"
+
+## Why a clean-context sub-agent
+
+If the same Claude session helped build the course, it has sunk-cost bias toward its own design choices. Red team work happens in a freshly-spawned sub-agent that has no prior conversation history — only the manifest and course files, which is the same view a real student gets.
+
+The sub-agent (the **orchestrator**) runs the full audit, writes a structured report to `.idstack/red-team-report.md`, and returns a short executive summary. The parent (this skill) then offers to apply fixes in-context, since the parent already knows the course structure and is good at editing.
+
+---
+
+## Workflow
+
+1. **Pre-flight**: confirm scope and focus
+2. **Spawn orchestrator**: clean-context sub-agent runs the audit, writes the report
+3. **Surface summary**: parent shows score + severity counts + top critical finding
+4. **Triage**: ask which severity bucket to address
+5. **Apply fixes**: parent edits course files in-context
+6. **Update manifest**: parent writes `red_team_audit` section from the report file
+
+No automatic re-verification. If the user wants to confirm fixes hold, they re-run `/idstack:red-team`.
+
+---
+
+### Step 1: Pre-flight
+
+The preamble above already ran the manifest check. Now confirm scope.
+
+**Determine course inputs:**
+- If `MANIFEST_EXISTS`: the orchestrator will read all sections (`needs_analysis`, `learning_objectives`, `assessment_design`, `course_builder`, `quality_review`, `accessibility_review`).
+- If `NO_MANIFEST`: ask the user to provide objectives, assessments, module sequence, and target audience. Capture answers as a brief block to pass to the orchestrator. Standalone mode reduces precision on Dimensions 1 (alignment) and 5 (prerequisites).
+
+**Ask one focus question** via AskUserQuestion:
+
+> "Any specific angle to red-team, or a full sweep?"
+
+Options:
+- **Full sweep (recommended)** — all 5 dimensions at equal depth
+- **Assessment gaming** — bias depth toward Dimension 1 (alignment)
+- **Cognitive overload** — bias depth toward Dimension 3 (cognitive load)
+- **Persona accessibility** — bias depth toward Dimension 4 (personas)
+- **Evidence accuracy** — bias depth toward Dimension 2 (evidence)
+
+Save the user's choice as `FOCUS` for the orchestrator brief.
+
+### Step 2: Spawn the red-team orchestrator
+
+Use the **Agent tool** with `subagent_type=general-purpose`. The prompt is the full contents of the `<orchestrator-brief>` block below, with these substitutions performed before invoking:
+
+- `{{FOCUS}}` → the user's choice from Step 1 (or `Full sweep` by default)
+- `{{MANIFEST_INFO}}` → either `Manifest at .idstack/project.json — read it directly.` or, in standalone mode, the captured course information from Step 1
+- `{{COURSE_FILES_HINT}}` → if the manifest has `course_builder.output_path`, set this to that path; otherwise `Look under ./course/ or ./modules/ for generated course files.`
+
+Then call Agent. Block on its return.
+
+<orchestrator-brief>
+
+You are an adversarial course design auditor. You have NO context from prior sessions. You did not help build this course; you are seeing it fresh. Your job is to find every way it could fail learners — not to validate the design.
+
+This is a stress test, not a quality review. Assume the course is broken until proven otherwise.
+
+**Inputs:**
+- {{MANIFEST_INFO}}
+- Course files: {{COURSE_FILES_HINT}}
+- Focus area: {{FOCUS}}
+
+**Manifest integrity:** if the manifest JSON is malformed, stop and return an error message naming the parse error. Never silently overwrite.
 
 ## Evidence Tiers
 
 Every challenge cites its evidence tier:
-
 - [T1] RCTs, meta-analyses with learning outcome measures
 - [T2] Quasi-experimental with appropriate controls
 - [T3] Systematic reviews (synthesis of mixed evidence)
@@ -54,93 +114,28 @@ Every challenge cites its evidence tier:
 
 When multiple tiers apply, cite the strongest.
 
----
+## Focus handling
 
-## Preamble: Project Manifest
+If `{{FOCUS}}` is `Full sweep`, audit all 5 dimensions at equal depth.
+Otherwise, audit the named dimension at full depth and cover the others at reduced depth (3-5 findings each, no exhaustive matrices).
 
-Before starting the audit, check for an existing project manifest.
+## Dispatch
 
-```bash
-if [ -f ".idstack/project.json" ]; then
-  echo "MANIFEST_EXISTS"
-  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
-else
-  echo "NO_MANIFEST"
-fi
-```
+If you have access to the **Agent tool**, dispatch the 5 dimensions in parallel as nested sub-agents using the briefs in "Dimension Briefs" below. Wait for all 5 to return, then deduplicate findings.
 
-**If MANIFEST_EXISTS:**
-- Read the full manifest. This skill reads ALL sections (needs_analysis,
-  learning_objectives, assessment_design, course_builder, quality_review,
-  accessibility_review) to build the most complete adversarial picture.
-- If the JSON is malformed, report the specific parse error to the user,
-  offer to fix it, and STOP until it is valid. Never silently overwrite.
-- If `red_team_audit` section already has data, ask: "I see a previous red team
-  audit. Want to update it or start fresh?"
-- Preserve all existing sections when writing back.
-
-**If NO_MANIFEST:**
-- This skill works standalone but is less precise without manifest data.
-- Dimensions 1 (alignment) and 5 (prerequisites) require structured data about
-  objectives, assessments, and module sequence. In standalone mode, ask the user
-  to provide this information via AskUserQuestion.
-- Dimensions 2 (evidence), 3 (cognitive load), and 4 (personas) work from
-  whatever course information is available.
+If you do NOT have Agent access, run the dimensions sequentially using the same briefs.
 
 ---
 
-## Audit Workflow
+## Dimension Briefs
 
-### Step 1: Gather Course Information
+### Dimension 1 — Alignment Stress Test
 
-**With manifest:** Read all available sections. Summarize what you know and what's
-missing. Tell the user which dimensions will be fully powered vs limited.
-
-**Without manifest:** Ask the user via AskUserQuestion (one question at a time):
-
-1. "List your learning objectives for this course. For each one, include the Bloom's
-   level if you know it (remember, understand, apply, analyze, evaluate, create)."
-2. "For each objective, what assessment measures it? Describe the assessment type
-   and what it asks learners to do."
-3. "Describe your module sequence. What order do learners encounter topics? Are there
-   prerequisites between modules?"
-4. "Who is your target audience? Prior knowledge level, background, any specific
-   accessibility needs or language considerations?"
-
-Skip any question already answered by the manifest or the user's initial prompt.
-
-### Step 1b: Parallel Dispatch (Claude Code only)
-
-If you have access to the **Agent tool**, dispatch all 5 dimensions as parallel subagents
-instead of running Steps 2-6 sequentially. This dramatically reduces total audit time.
-
-**Launch 5 agents in a single message** with these prompts:
-
-1. **Alignment Stress Test** — "You are an adversarial alignment auditor. Given this course data: [paste objectives, assessments, activities from Step 1]. For every ILO-assessment pair, challenge whether the assessment actually measures the stated objective at the claimed Bloom's level. Report findings as Critical/Warning/Info with evidence."
-
-2. **Evidence Verification** — "You are an evidence auditor. Given this course data: [paste evidence citations from Step 1]. For each evidence claim, verify: (a) is the tier assignment correct? (b) is the source recent enough? (c) do any citations contradict each other? Report findings as Critical/Warning/Info."
-
-3. **Cognitive Load Analysis** — "You are a cognitive load analyst. Given this course data: [paste module sequence, prerequisites, content volume from Step 1]. Check: new concepts per module (flag >7), prerequisite chains, Bloom's level jumps between adjacent modules, expertise reversal risks. Report findings as Critical/Warning/Info."
-
-4. **Learner Persona Simulation** — "You are simulating 4 learner personas through this course: [paste module sequence from Step 1]. Personas: (a) Anxious Novice (low confidence, no prerequisites), (b) Bored Expert (high prior knowledge), (c) ESL Learner (reading speed 60% of native), (d) Accessibility-First (screen reader user). For each persona × module, rate accessibility on 5-point scale. Report blockers as Critical."
-
-5. **Prerequisite Chain Integrity** — "You are a prerequisite chain auditor. Given this course data: [paste module sequence and prerequisites from Step 1]. Check for: circular dependencies, missing prerequisites, orphaned content, ordering violations. Report findings as Critical/Warning/Info with a dependency diagram."
-
-**After all 5 agents return:** Collect their findings, deduplicate, then proceed to Step 7 (Confidence Score).
-
-**If Agent tool is NOT available** (e.g., Gemini CLI, Codex): Run Steps 2-6 sequentially as written below. The results are identical; only execution time differs.
-
----
-
-### Step 2: Dimension 1 — Alignment Stress Test
-
-For every learning objective and assessment pair, challenge the alignment:
+For every learning objective and assessment pair, challenge the alignment.
 
 **Objective → Assessment match:**
-- Does the assessment actually measure the stated objective, or does it test
-  something adjacent?
-- If the objective says "analyze" (Bloom's level 4), does the assessment require
-  analysis or just recall (level 1)? Flag Bloom's level mismatches.
+- Does the assessment actually measure the stated objective, or does it test something adjacent?
+- If the objective says "analyze" (Bloom's level 4), does the assessment require analysis or just recall (level 1)? Flag Bloom's level mismatches.
   [Alignment-14] [T1] — retrieval practice and Bloom's levels interact.
   [Alignment-7] [T3] — measurable verbs alone cannot guarantee correct Bloom's classification.
   [Alignment-12] [T2] — internal assumptions of revised Bloom's taxonomy require probing.
@@ -155,133 +150,93 @@ For every learning objective and assessment pair, challenge the alignment:
   [Alignment-1] [T5] — constructive alignment requires objective-activity-assessment coherence.
   [Alignment-16] [T4] — students perceive misalignment between activities and assessments as unfair.
 
-**Output:** Table of alignment findings with severity.
-
-```
-OBJECTIVE              | ASSESSMENT          | BLOOM'S MATCH? | ACTIVITY? | SEVERITY
------------------------|---------------------|----------------|-----------|----------
-"Analyze X"            | Multiple choice     | NO (tests recall)| Yes     | Critical
-"Evaluate Y"           | Essay rubric        | YES            | No activity| Warning
-"Apply Z"              | Project             | YES            | Yes       | OK
-```
-
-### Step 3: Dimension 2 — Evidence Verification
+### Dimension 2 — Evidence Verification
 
 Check every evidence citation in the manifest or course design for accuracy.
 
 **Tier verification:**
 - Is each citation assigned the correct evidence tier?
-  [Evaluation-1] [T3] — evaluation rigor in health professions education requires method-matched evidence claims.
+  [Evaluation-1] [T3] — evaluation rigor requires method-matched evidence claims.
 - Flag any citation where the tier seems too high for the study type.
   [Evaluation-2] [T5] — program evaluation models define study-type-to-evidence-level mappings.
 - Flag T4/T5 citations used to support high-stakes design decisions.
-  [Evaluation-5] [T5] — overreliance on low-tier evidence undermines evaluation validity.
+  [Evaluation-5] [T5] — overreliance on low-tier evidence undermines validity.
 
 **Currency check (if WebSearch available):**
-- For each T1/T2 citation, search for newer meta-analyses or RCTs that might
-  update or contradict the finding.
-  [Assessment-18] [T3] — systematic reviews of meta-analyses reveal how evidence evolves over time.
+- For each T1/T2 citation, search for newer meta-analyses or RCTs that might update or contradict the finding.
+  [Assessment-18] [T3] — systematic reviews of meta-analyses reveal how evidence evolves.
 - Only flag contradictions from clearly relevant papers. Ignore tangential matches.
 - Check for retractions of cited papers.
-- If WebSearch is unavailable, note: "Evidence verification running in limited mode
-  (offline). Tier assignment checked, but currency verification requires internet."
+- If WebSearch is unavailable, set `mode: limited` in the report and note: "currency verification requires internet."
 
-**Output:** Table of evidence findings.
+### Dimension 3 — Cognitive Load Analysis
 
-```
-CITATION               | ASSIGNED TIER | CORRECT? | CURRENCY | SEVERITY
------------------------|---------------|----------|----------|----------
-[Assessment-8] T1      | T1            | YES      | Current  | OK
-[Online-15] T2         | T2            | YES      | Current  | OK
-[Custom-1] T1          | T1            | NO (T4)  | N/A      | Critical
-```
+Estimate cognitive load per module using proxy measures.
 
-### Step 4: Dimension 3 — Cognitive Load Analysis
-
-Estimate cognitive load per module using proxy measures from the manifest.
-
-**Limitation:** The manifest contains objectives and structure, not the actual content
-learners see. These estimates are proxies based on structural indicators, not direct
-measurements of element interactivity. Flag this limitation in the output.
+**Limitation:** the manifest contains structure, not the actual content learners see. These are proxies based on structural indicators. Note this limitation in the report.
 
 **Proxy indicators:**
-- Number of new concepts introduced per module (flag if >7, per Miller's capacity limits)
+- Number of new concepts introduced per module (flag if >7).
   [CogLoad-4] [T5] — intrinsic load increases with element interactivity.
-  [CogLoad-5] [T5] — working memory load must be actively managed; capacity limits are real design constraints.
-  [CogLoad-6] [T1] — working memory resource depletion compounds across tasks in a module.
-- Number of prerequisite concepts required (flag if prerequisites span >3 prior modules)
-  [CogLoad-1] [T1] — problem-solving support interacts with instructional sequence to affect load.
-- Assessment complexity relative to objective Bloom's level
+  [CogLoad-5] [T5] — working memory capacity limits are real design constraints.
+  [CogLoad-6] [T1] — working memory resource depletion compounds across tasks.
+- Number of prerequisite concepts required (flag if prerequisites span >3 prior modules).
+  [CogLoad-1] [T1] — problem-solving support interacts with sequence to affect load.
+- Assessment complexity relative to objective Bloom's level.
   [CogLoad-16] [T1] — format affects cognitive load independently of content.
 - Module sequencing: are related concepts spaced or massed?
   [CogLoad-17] [T1] — sequencing significantly affects learning outcomes.
-  [CogLoad-13] [T3] — five strategies for optimizing instructional materials include sequencing considerations.
+  [CogLoad-13] [T3] — five strategies for optimizing instructional materials.
 
 **Expertise reversal check:**
 - Are scaffolds present that would hurt expert learners?
   [CogLoad-19] [T5] — expertise reversal effect.
-  [CogLoad-11] [T3] — digital/online learning contexts amplify cognitive load design concerns.
+  [CogLoad-11] [T3] — digital/online learning amplifies cognitive load concerns.
 - Are there adaptive elements that adjust based on learner expertise?
   [Learner-16] [T1] — differentiated instruction produces measurable gains.
-  [Learner-18] [T5] — personalized adaptive learning framework for expertise-based adjustment.
+  [Learner-18] [T5] — personalized adaptive learning framework.
 
-**Output:** Per-module cognitive load estimate with flags.
+### Dimension 4 — Learner Persona Simulation
 
-```
-MODULE                 | NEW CONCEPTS | PREREQS | BLOOM'S GAP | LOAD ESTIMATE | SEVERITY
------------------------|--------------|---------|-------------|---------------|----------
-Module 1: Intro        | 5            | 0       | None        | Moderate      | OK
-Module 3: Advanced     | 12           | 4       | Analyze→Recall| High        | Critical
-Module 7: Integration  | 3            | 6       | None        | High (prereqs)| Warning
-```
+Simulate 4 learner personas walking through the course.
 
-### Step 5: Dimension 4 — Learner Persona Simulation
+**Limitation:** simulation operates on structural/metadata signals, not actual content text. Content-level analysis (e.g., detecting idioms that challenge ESL learners) requires the actual course materials. Note this in the report.
 
-Simulate 4 learner personas walking through the course. For each persona, evaluate
-every module using a structured 5-point checklist.
-
-**Limitation:** This simulation operates on structural/metadata signals from the
-manifest (objectives, assessment types, module sequencing, prerequisite chains),
-not the actual course content text. Content-level analysis (e.g., detecting idioms
-that challenge ESL learners) requires the actual course materials. Flag this
-limitation in the output.
-
-**Persona A: Complete Novice** (no prior knowledge in domain)
+**Persona A — Complete Novice** (no prior knowledge in domain)
 - Can they access the content without assumed background?
-  [Learner-14] [T5] — personalized education must account for starting knowledge state.
+  [Learner-14] [T5] — personalized education must account for starting knowledge.
 - Do early modules build sufficient foundation for later ones?
   [CogLoad-1] [T1] — instructional sequence and problem-solving support interact for novices.
 - Is the pacing appropriate for someone learning everything for the first time?
-  [Learner-6] [T1] — differentiated pacing produces measurable gains for lower-performing learners.
+  [Learner-6] [T1] — differentiated pacing produces measurable gains.
 
-**Persona B: Expert Learner** (expertise reversal risk)
+**Persona B — Expert Learner** (expertise reversal risk)
 - Are there unnecessary scaffolds that would frustrate an expert?
-  [CogLoad-19] [T5] — expertise reversal effect: scaffolds that help novices hurt experts.
+  [CogLoad-19] [T5] — expertise reversal effect.
 - Can experts skip introductory content or are they forced through it?
   [Learner-16] [T1] — effective differentiation allows bypassing known material.
 - Does the course adapt to prior knowledge or treat everyone as novice?
   [Learner-11] [T2] — data-based differentiation responds to individual learner state.
 
-**Persona C: ESL Learner** (language complexity, cultural references)
+**Persona C — ESL Learner** (language complexity, cultural references)
 - Are key terms defined when first introduced?
-  [Access-4] [T3] — universal instructional design principles include clear vocabulary introduction.
-- Are instructions clear without relying on idiomatic expressions?
-  [CogLoad-11] [T3] — extraneous cognitive load from language complexity compounds in online contexts.
+  [Access-4] [T3] — universal instructional design includes clear vocabulary introduction.
+- Are instructions clear without idiomatic expressions?
+  [CogLoad-11] [T3] — extraneous load from language complexity compounds online.
 - Are cultural references universal or region-specific?
-  [Learner-13] [T4] — responding to diverse student needs requires culturally responsive design.
-- Is reading level appropriate? (Flag if above Flesch-Kincaid grade 10 for
-  courses with ESL learners in the target audience)
-  [Learner-2] [T2] — differentiated instruction effectiveness varies with language proficiency.
+  [Learner-13] [T4] — diverse student needs require culturally responsive design.
+- Is reading level appropriate? (Flag if above Flesch-Kincaid grade 10 for ESL audiences.)
+  [Learner-2] [T2] — differentiated instruction varies with language proficiency.
 
-**Persona D: Learner with Accessibility Needs**
+**Persona D — Learner with Accessibility Needs**
 - Do assessments offer alternative formats (extended time, alternative submission)?
-  [Access-3] [T5] — UDL 3.0 guidelines require multiple means of action and expression.
-  [Access-6] [T2] — universal design for instruction in postsecondary education supports flexible assessment.
+  [Access-3] [T5] — UDL 3.0 requires multiple means of action and expression.
+  [Access-6] [T2] — universal design for instruction supports flexible assessment.
 - Are multimedia elements accessible (captions, transcripts, alt text)?
   [Access-1] [T5] — WCAG 2.1 requires text alternatives for non-text content.
-  [Access-5] [T3] — universal design in higher education includes multimedia accessibility.
+  [Access-5] [T3] — universal design includes multimedia accessibility.
 - Can the course be navigated with keyboard only?
-  [Access-1] [T5] — WCAG 2.1 keyboard accessibility requirement.
+  [Access-1] [T5] — WCAG 2.1 keyboard accessibility.
   [Access-2] [T5] — WCAG 2.2 extends keyboard navigation standards.
 
 **Per-persona checklist (evaluate for every module):**
@@ -291,47 +246,27 @@ limitation in the output.
 4. Does the assessment format work for this persona? [Assessment-8] [T1]
 5. Is the feedback actionable for this persona? [Assessment-9] [T5]
 
-**Output:** Per-persona findings.
-
-```
-PERSONA    | MODULES OK | STRUGGLE POINTS              | DROP-OFF RISK | SEVERITY
------------|------------|------------------------------|---------------|----------
-Novice     | 8/10       | Module 3 (assumed background)| Module 3      | Warning
-Expert     | 10/10      | None                         | None          | OK
-ESL        | 6/10       | Modules 2,4,7,8 (jargon)    | Module 4      | Critical
-Access.    | 7/10       | Modules 5,6,9 (timed assess) | Module 5     | Critical
-```
-
-### Step 6: Dimension 5 — Prerequisite Chain Integrity
+### Dimension 5 — Prerequisite Chain Integrity
 
 Trace prerequisite dependencies across all modules.
 
 **Check for:**
-- Circular dependencies (Module A requires Module B requires Module A)
-  [CogLoad-17] [T1] — instructional sequencing methods directly affect learning outcomes; circular paths make valid sequencing impossible.
-- Missing prerequisites (module assumes knowledge not taught in any prior module)
-  [CogLoad-1] [T1] — problem-solving support must match the learner's prerequisite state.
-  [Alignment-10] [T2] — high challenge without high support (missing prerequisites) undermines learning.
-- Orphaned content (modules that nothing depends on and nothing leads to)
-  [Alignment-1] [T5] — constructive alignment requires every component to serve the objective chain.
-- Ordering violations (prerequisite module appears after the module that needs it)
+- Circular dependencies (A requires B requires A).
+  [CogLoad-17] [T1] — circular paths make valid sequencing impossible.
+- Missing prerequisites (module assumes knowledge not taught earlier).
+  [CogLoad-1] [T1] — problem-solving support must match prerequisite state.
+  [Alignment-10] [T2] — high challenge without high support undermines learning.
+- Orphaned content (nothing depends on it, no prerequisites).
+  [Alignment-1] [T5] — every component must serve the objective chain.
+- Ordering violations (prerequisite module appears after the module that needs it).
   [CogLoad-17] [T1] — sequencing violations create impossible learning paths.
-  [CogLoad-4] [T5] — intrinsic load becomes unmanageable when prerequisite knowledge is unavailable.
+  [CogLoad-4] [T5] — intrinsic load becomes unmanageable when prereqs are unavailable.
 
-**Output:** Dependency graph and findings.
+---
 
-```
-Module 1 → Module 2 → Module 3
-                    → Module 4 → Module 6
-           Module 5 (ORPHANED — nothing depends on it, no prerequisites)
-Module 7 requires Module 8 (ORDERING VIOLATION — Module 8 comes after Module 7)
-```
+## Confidence Score
 
-### Step 7: Confidence Score
-
-Calculate the confidence score (0-100). Severity weights reflect the evidence that
-structural misalignment and cognitive overload are the strongest predictors of
-learner failure [Alignment-14] [T1], [CogLoad-6] [T1]:
+After all dimensions return, compute the confidence score:
 
 - Start at 100
 - Deduct per finding:
@@ -340,98 +275,153 @@ learner failure [Alignment-14] [T1], [CogLoad-6] [T1]:
   - Info = -1
 - Floor at 0
 
-**Contextualize:**
-- 80+ "High confidence" — course design is sound, minor issues only
-- 60-79 "Moderate, needs work" — several design gaps that could affect learning
-- 40-59 "Low confidence, significant gaps" — multiple dimensions show problems
+Severity weights reflect that structural misalignment and cognitive overload are the strongest predictors of learner failure: [Alignment-14] [T1], [CogLoad-6] [T1].
+
+Contextualize:
+- 80+ "High confidence" — minor issues only
+- 60-79 "Moderate, needs work" — several design gaps
+- 40-59 "Low confidence, significant gaps" — multiple problem dimensions
 - <40 "Course needs redesign" — structural issues across most dimensions
 
-### Step 8: Output Report
+---
 
-Present the adversarial audit report:
+## Output
 
-1. **Confidence Score** with per-dimension breakdown
-2. **Critical findings** (anything that would cause a learner to fail)
-3. **Per-dimension summaries** (highlight the most important finding per dimension)
-4. **Top 3 actions** — the three changes that would most improve the confidence score
-5. **Limitations** — what this audit cannot assess (content-level analysis, actual
-   learner behavior, LMS-specific implementation details)
-6. **Next step:** If confidence is <60, recommend re-running `/learning-objectives`
-   or `/assessment-design` to fix alignment issues. If confidence is 60+, recommend
-   `/course-export` to ship.
+Write `.idstack/red-team-report.md` with this structure (Markdown):
 
-## Write Manifest
+```markdown
+# Red Team Audit Report
 
-After completing the audit, save results to the project manifest at `.idstack/project.json`.
+**Date:** <ISO-8601 timestamp>
+**Confidence Score:** <0-100>
+**Focus:** <{{FOCUS}}>
+**Mode:** <full | limited>
 
-**CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first with the Read tool.
-2. Modify ONLY the `red_team_audit` section. Preserve all other sections
-   unchanged — `context`, `needs_analysis`, `learning_objectives`, `assessment_design`,
-   `course_builder`, `quality_review`, `accessibility_review`, and any other sections
-   must remain exactly as they were.
-3. Before writing, verify the JSON is valid: matching braces, proper commas,
-   quoted strings, no trailing commas.
-4. Update the top-level `updated` timestamp to reflect the current time.
-5. If this is a new manifest, initialize ALL sections (including `context`,
-   `needs_analysis`, and `learning_objectives`) with empty/default values so
-   downstream skills find the expected structure.
+## Severity Counts
+- Critical: <N>
+- Warning: <N>
+- Info: <N>
 
-Populate the `red_team_audit` section with:
+## Critical Findings
+For each: dimension, description, affected module/objective/assessment, evidence citation, suggested fix direction.
 
-```json
-{
-  "red_team_audit": {
-    "updated": "ISO-8601 timestamp",
-    "confidence_score": 0,
-    "findings_summary": {
-      "critical": 0,
-      "warning": 0,
-      "info": 0
-    },
-    "dimensions": {
-      "alignment": {
-        "score": "pass|warning|critical",
-        "findings": [
-          {
-            "description": "...",
-            "module": "Module 3",
-            "severity": "critical|warning|info"
-          }
-        ]
-      },
-      "evidence": {
-        "score": "pass|warning|critical",
-        "mode": "full|limited",
-        "findings": []
-      },
-      "cognitive_load": {
-        "score": "pass|warning|critical",
-        "findings": []
-      },
-      "personas": {
-        "score": "pass|warning|critical",
-        "findings": []
-      },
-      "prerequisites": {
-        "score": "pass|warning|critical",
-        "findings": []
-      }
-    },
-    "top_actions": [],
-    "limitations": []
-  }
-}
+## Warning Findings
+Same structure.
+
+## Info Findings
+Same structure.
+
+## Per-Dimension Summary
+- Alignment: <pass | warning | critical> — 1-line summary
+- Evidence: <pass | warning | critical> — 1-line summary
+- Cognitive Load: <pass | warning | critical> — 1-line summary
+- Personas: <pass | warning | critical> — 1-line summary
+- Prerequisites: <pass | warning | critical> — 1-line summary
+
+## Top 3 Actions
+The three changes that would most improve the score.
+
+## Limitations
+What this audit could not assess (content-level analysis, actual learner behavior, LMS-specific implementation, etc.).
 ```
 
-- `confidence_score`: The 0-100 score from Step 7.
-- `findings_summary`: Counts of critical, warning, and info findings across all dimensions.
-- `dimensions`: Per-dimension score and detailed findings. Each finding includes a
-  description, the affected module (if applicable), and severity level.
-- `dimensions.evidence.mode`: `"full"` if WebSearch was available for currency checks,
-  `"limited"` if offline.
-- `top_actions`: The top 3 recommended actions from Step 8.
-- `limitations`: What the audit could not assess (from Step 8).
+Each finding **must** have a stable id of the form `<dimension>-<n>` (e.g., `alignment-1`, `cogload-3`) so the parent can reference findings when applying fixes.
+
+## Return value
+
+After writing the report, return ONLY a short executive summary (≤200 words) to the parent:
+- Confidence score and band ("Moderate, needs work")
+- Severity counts
+- Top 1 critical finding (one line)
+- Path: `.idstack/red-team-report.md`
+
+Do NOT return the full report inline. The parent will read the file.
+
+</orchestrator-brief>
+
+### Step 3: Surface the summary
+
+After the orchestrator returns:
+1. Read `.idstack/red-team-report.md` (full report).
+2. Show the user the executive summary in your own words: confidence score, severity counts, top critical finding, and the report path.
+3. Mention: "Full report at `.idstack/red-team-report.md` — open it for the complete finding list."
+
+### Step 4: Triage — choose fix scope
+
+Ask one AskUserQuestion:
+
+> "Which findings would you like to address?"
+
+Options:
+- **Critical only (recommended)** — highest-impact fixes, smallest scope
+- **Critical + Warning** — broader cleanup
+- **All findings** — including Info; can be a lot
+- **Skip — review report manually** — no fixes now; user will read the file themselves
+
+If the user chooses **Skip**, jump straight to Step 6.
+
+### Step 5: Apply fixes in-context
+
+For each finding in the chosen severity bucket, in order of severity:
+
+1. Read the affected course file(s) (module content, assessment definition, manifest section).
+2. Propose the fix in 1-2 sentences. State which file and which finding id you're addressing.
+3. Apply via Edit.
+4. Track the finding id in `fixes_applied`. If you decide a finding is not actionable in-context (e.g., requires re-running `/idstack:assessment-design`), record it in `fixes_deferred` with a one-line reason.
+
+Do not spawn additional sub-agents for fixes. The parent has the relevant context to edit course files directly.
+
+If the user pushes back on any specific fix, mark it deferred and continue.
+
+### Step 6: Update manifest
+
+Save results to `.idstack/project.json` via `bin/idstack-manifest-merge`, which replaces only
+the `red_team_audit` section, preserves every other section verbatim, validates JSON, and
+atomically updates the top-level `updated` timestamp. Pull the score and findings from
+`.idstack/red-team-report.md` (the report is the source of truth — do not re-derive from
+the orchestrator's return summary, which is lossy).
+
+```bash
+"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
+{
+  "updated": "<ISO-8601 timestamp>",
+  "confidence_score": 0,
+  "focus": "Full sweep",
+  "report_path": ".idstack/red-team-report.md",
+  "findings_summary": {"critical": 0, "warning": 0, "info": 0},
+  "dimensions": {
+    "alignment":      {"score": "pass|warning|critical", "findings": []},
+    "evidence":       {"score": "pass|warning|critical", "mode": "full|limited", "findings": []},
+    "cognitive_load": {"score": "pass|warning|critical", "findings": []},
+    "personas":       {"score": "pass|warning|critical", "findings": []},
+    "prerequisites":  {"score": "pass|warning|critical", "findings": []}
+  },
+  "top_actions": [],
+  "limitations": [],
+  "fixes_applied": [],
+  "fixes_deferred": []
+}
+PAYLOAD
+```
+
+Each finding object: `{"id": "alignment-1", "description": "...", "module": "Module 3", "severity": "critical|warning|info"}`.
+
+The merge tool exits non-zero (and prints a diagnostic on stderr) if the payload is malformed,
+the manifest is corrupt, or the section name is misspelled — never silently overwriting. If
+`.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json`
+first (it creates a fresh canonical manifest).
+
+**Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify
+only the `red_team_audit` section, Write back. Preserve all other sections verbatim. The
+canonical schema for reference is in `templates/manifest-schema.md`.
+
+### Step 7: Final summary to user
+
+Two sentences:
+- "Confidence: X/100. Applied N fixes (M deferred). Report at `.idstack/red-team-report.md`."
+- If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
+
+If the user wants to verify fixes hold, they can re-run `/idstack:red-team` — that's deliberately manual to avoid token costs of automatic re-verification.
 
 ## Feedback
 
@@ -447,11 +437,9 @@ After the skill workflow completes successfully, log the session to the timeline
 "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"red-team","event":"completed"}'
 ```
 
-Replace the JSON above with actual data from this session. Include skill-specific fields
-where available (scores, counts, flags). Log synchronously (no background &).
+Include skill-specific fields where available (confidence_score, focus, fixes_applied count). Log synchronously (no background &).
 
-If you discover a non-obvious project-specific quirk during this session (LMS behavior,
-import format issue, course structure pattern), also log it as a learning:
+If you discover a non-obvious project-specific quirk during this session (LMS behavior, import format issue, course structure pattern), also log it as a learning:
 
 ```bash
 "$_IDSTACK/bin/idstack-learnings-log" '{"skill":"red-team","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
