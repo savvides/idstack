@@ -204,7 +204,7 @@ ask the user: "I see you've already run this skill. Want to update the results o
 Before starting the export workflow, run the readiness dashboard:
 
 ```bash
-_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+_IDSTACK="${IDSTACK_HOME:-~/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-status" --readiness
 ```
 

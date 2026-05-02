@@ -209,7 +209,7 @@ Show the most recent learnings. If the user just said `/learn` with no arguments
 this is the default.
 
 ```bash
-_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+_IDSTACK="${IDSTACK_HOME:-~/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-search" --limit 10
 ```
 
@@ -227,13 +227,13 @@ bloom-verbs      | pedagogical  | Avoid "understand" as ILO verb   | 9/10
 Search learnings by keyword. Supports `--cross-project` to include global learnings.
 
 ```bash
-_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+_IDSTACK="${IDSTACK_HOME:-~/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --limit 10
 ```
 
 For cross-project search:
 ```bash
-_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+_IDSTACK="${IDSTACK_HOME:-~/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --cross-project --limit 10
 ```
 
@@ -244,7 +244,7 @@ If results include global learnings (tagged with `_source`), show their source p
 Delete a learning by its key. Always confirm with the user before deleting.
 
 ```bash
-_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+_IDSTACK="${IDSTACK_HOME:-~/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-delete" KEY
 ```
 
@@ -253,7 +253,7 @@ _IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
 Copy a local learning to the global store so it's available across projects.
 
 ```bash
-_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+_IDSTACK="${IDSTACK_HOME:-~/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-promote" KEY
 ```
 
@@ -262,7 +262,7 @@ _IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
 Export all learnings to a markdown file.
 
 ```bash
-_IDSTACK="${IDSTACK_HOME:-~/.claude/skills/idstack}"
+_IDSTACK="${IDSTACK_HOME:-~/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-search" --limit 1000
 ```
 
