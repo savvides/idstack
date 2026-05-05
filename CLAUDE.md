@@ -14,6 +14,7 @@ An open source set of Claude Code skills that bring peer-reviewed instructional 
 ./test/smoke-test.sh # Verify installation, SKILL.md files, YAML frontmatter, migrations
 bin/idstack-gen-skills          # Regenerate SKILL.md from .tmpl templates
 bin/idstack-gen-skills --dry-run  # Check if generated files are up to date
+bin/idstack-doctor              # Diagnose plugin install (presence, manifest version, legacy-install conflicts)
 bin/idstack-status              # Course health dashboard (run in a project dir)
 bin/idstack-status --readiness  # Pre-export readiness check only
 ```

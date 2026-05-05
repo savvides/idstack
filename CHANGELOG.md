@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.4.0.1 (2026-05-05)
+
+### Fixed — install-hygiene follow-ups (Gemini code review)
+
+Two rounds of post-ship Gemini review caught fragility in the install-hygiene code that v2.4.0.0 introduced. All fixes target `setup` and `bin/idstack-doctor`; no skill behavior changes.
+
+- **Multi-digit version classification.** The `case` statement that decides "modern install — leave alone" vs "pre-v2.0.1.0 — flag for cleanup" used literal-dot + single-digit `[1-9]` patterns that broke on multi-digit components like `2.0.10.0`, `2.10.0.0`, and `100.0.0` — a future v2.0.10.0 install at the legacy path would fall through both arms and produce a false "not recognized" warning. Replaced with multi-digit-safe globs (`2.0.[1-9]*|2.[1-9]*|[3-9]*|1[0-9]*`) mirrored across both files. (Gemini code review of PR #19.)
+- **`test/test-version-classifier.sh`.** New unit test pins the version-glob behavior against 20 representative inputs (legacy + modern + multi-digit). Wired into `test/smoke-test.sh`. Second time Gemini caught a version-pattern bug in this code path; the test stops the third.
+- **Argument parsing.** `setup --keep-legacy` and `bin/idstack-doctor --local` now match in any argument position (were: only `$1`/`$2`). Matches typical CLI flag-handling expectations. (Gemini code review of PR #15, #16.)
+- **Doctor robustness.** `bin/idstack-doctor` now: explicitly `-d` checks the plugin dir (catches the rare "exists but isn't a directory or symlink" case), flags silently-failing version parses as a problem instead of swallowing them, and uses bash-native `[[ == ]]` for symlink-target matching (avoids subshell + grep, dodges the leading-dash echo footgun). (Gemini code review of PR #15.)
+- **Voice-consistency in user-facing copy.** README status callout uses 3-digit `v2.4.0` to match the landing-page timeline convention; canonical 4-digit form stays in `CHANGELOG` / `VERSION` / `plugin.json`. `docs/index.html` hero-beta line now says "between minor versions" to match the README phrasing. (Gemini code review of PR #18.)
+
+### Changed
+
+- **Plugin manifest version aligned with `VERSION`.** `.claude-plugin/plugin.json` bumped to `2.4.0.1` to track this patch. Same alignment rule established in v2.4.0.0.
+
 ## v2.4.0.0 (2026-05-05)
 
 ### Fixed — install-hygiene
