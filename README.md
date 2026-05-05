@@ -368,7 +368,9 @@ cd ~/.claude/plugins/idstack && ./setup
 
 **Claude says it can't find idstack skills?** Make sure you've run `./setup` after cloning. Setup registers the repo as a plugin at `~/.claude/plugins/idstack` so Claude Code discovers the namespaced `/idstack:<skill>` commands. Restart Claude Code after install — plugins load at session start.
 
-**Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Re-clone to the new location: `git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup`. Setup will detect and remove the old `~/.claude/skills/idstack` symlink for you. If the old install was a real directory (not a symlink), remove it manually.
+**Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Re-clone to the new location: `git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup`. Setup now detects and removes any pre-v2.0.1.0 install at `~/.claude/skills/idstack` (symlink *or* real directory). If you ran an older setup that only warned, run `./setup` once more — or remove it manually with `rm -rf ~/.claude/skills/idstack`.
+
+**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `bin/idstack-doctor` from the plugin dir (`~/.claude/plugins/idstack`). It checks plugin presence, manifest version, all 11 SKILL.md files, and detects legacy-install conflicts — printing the exact remediation command for whatever it finds.
 
 ## Contributing
 

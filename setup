@@ -56,9 +56,36 @@ if [ -L "$LEGACY_SKILLS_LINK" ]; then
     echo "  removed legacy symlink: $LEGACY_SKILLS_LINK"
   fi
 elif [ -d "$LEGACY_SKILLS_LINK" ] && [ "$LEGACY_SKILLS_LINK" != "$IDSTACK_DIR" ]; then
-  echo "  WARNING: legacy install dir at $LEGACY_SKILLS_LINK (not a symlink)."
-  echo "           Leaving it in place. Remove manually if no longer needed:"
-  echo "             rm -rf $LEGACY_SKILLS_LINK"
+  # Pre-v2.0.1.0 install was a real clone with a top-level dispatcher
+  # SKILL.md. Left in place, it shadows the plugin: Claude Code matches the
+  # dispatcher on /idstack and the dispatcher then tries to invoke bare-name
+  # sub-skills that the plugin-only layout no longer exposes. Detect that
+  # signature and remove it.
+  legacy_is_dispatcher=0
+  if [ -f "$LEGACY_SKILLS_LINK/SKILL.md" ] && \
+     grep -q '^name: idstack' "$LEGACY_SKILLS_LINK/SKILL.md" 2>/dev/null; then
+    legacy_is_dispatcher=1
+  fi
+  legacy_is_old_version=0
+  if [ -f "$LEGACY_SKILLS_LINK/VERSION" ]; then
+    legacy_version=$(tr -d '[:space:]' < "$LEGACY_SKILLS_LINK/VERSION")
+    case "$legacy_version" in
+      2.0.0.0|2.0.0|1.*|0.*) legacy_is_old_version=1 ;;
+    esac
+  fi
+  if [ "$legacy_is_dispatcher" = "1" ] || [ "$legacy_is_old_version" = "1" ]; then
+    if [ "$1" = "--keep-legacy" ] || [ "$2" = "--keep-legacy" ]; then
+      echo "  KEEPING legacy install dir: $LEGACY_SKILLS_LINK (--keep-legacy)"
+      echo "           NOTE: this will shadow the plugin namespace; /idstack:<skill> may fail."
+    else
+      rm -rf "$LEGACY_SKILLS_LINK"
+      echo "  removed legacy install dir: $LEGACY_SKILLS_LINK (pre-v2.0.1.0 dispatcher)"
+    fi
+  else
+    echo "  WARNING: directory at $LEGACY_SKILLS_LINK is not a recognized idstack install."
+    echo "           Leaving it in place. Remove manually if it shouldn't be there:"
+    echo "             rm -rf $LEGACY_SKILLS_LINK"
+  fi
 fi
 
 # Pre-v2 individual skill symlinks. Only remove ones that point into idstack.
