@@ -111,6 +111,13 @@ if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
   check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
 fi
 
+# Version classifier (shared by setup + bin/idstack-doctor) must classify
+# multi-digit versions correctly. Pinned to catch the pattern-fragility
+# regression Gemini flagged twice.
+if [ -x "$IDSTACK_DIR/test/test-version-classifier.sh" ]; then
+  check "version-classifier unit tests pass" "'$IDSTACK_DIR/test/test-version-classifier.sh'"
+fi
+
 # Check generated files have auto-generated header
 for skill in $SKILLS; do
   check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
