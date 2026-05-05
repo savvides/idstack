@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed — install-hygiene
+
+`/idstack:<skill>` was failing with `Unknown skill` on machines that still had a pre-v2.0.1.0 clone at `~/.claude/skills/idstack/`. The legacy clone shipped a top-level dispatcher `SKILL.md` (`name: idstack`); Claude Code matched it on `/idstack <args>`, the dispatcher then asked for bare-name child skills, and the plugin-only layout (post-v2.0.1.0) no longer exposes those names — so resolution failed in both fallbacks.
+
+- **`setup` actively cleans up legacy installs.** The `~/.claude/skills/idstack/` warning branch now deletes the directory when the dispatcher SKILL.md or `VERSION < 2.0.1.0` is present. Pass `--keep-legacy` to opt out. Other contents of `~/.claude/skills/` are left alone.
+- **`test/smoke-test.sh` regression checks.** Fails when `~/.claude/skills/idstack/SKILL.md` declares `name: idstack`, or when any `~/.claude/skills/<skill-name>` is a pre-v2 symlink pointing into the idstack tree. Skipped under `--local` and CI-fixture runs that pass a custom plugins dir.
+- **New `bin/idstack-doctor`.** One-shot diagnostic: plugin presence + manifest version, all 11 SKILL.md files reachable, legacy-install conflicts. Prints exact remediation commands and exits non-zero on any problem.
+
 ## v2.3.0.0 (2026-05-02)
 
 ### Added

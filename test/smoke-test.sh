@@ -53,7 +53,7 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
@@ -87,6 +87,22 @@ MODE_AWARE_SKILLS="needs-analysis assessment-design course-builder"
 for skill in $MODE_AWARE_SKILLS; do
   check "$skill branches on import_metadata.source" "grep -q 'import_metadata.source' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
+
+# Legacy-install conflict regression: a pre-v2.0.1.0 dispatcher install at
+# ~/.claude/skills/idstack/ shadows the plugin namespace and breaks
+# /idstack:<skill> resolution. We only check this when the plugins dir is the
+# global default — CI fixtures and --local installs use their own paths and
+# don't share state with the user's home directory.
+if [ "$PLUGINS_DIR" = "$HOME/.claude/plugins" ]; then
+  LEGACY_CHECK_DIR="$HOME/.claude/skills/idstack"
+  check "no legacy idstack dispatcher at ~/.claude/skills/idstack/SKILL.md (run: rm -rf $LEGACY_CHECK_DIR)" \
+    "[ ! -f '$LEGACY_CHECK_DIR/SKILL.md' ] || ! grep -q '^name: idstack' '$LEGACY_CHECK_DIR/SKILL.md'"
+  for skill in $SKILLS; do
+    legacy_link="$HOME/.claude/skills/$skill"
+    check "no pre-v2 skill symlink at ~/.claude/skills/$skill pointing into idstack" \
+      "[ ! -L '$legacy_link' ] || ! readlink '$legacy_link' 2>/dev/null | grep -q idstack"
+  done
+fi
 
 # Manifest-merge tool must exist and be executable, and its unit tests must pass.
 check "bin/idstack-manifest-merge exists" "[ -f '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"

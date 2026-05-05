@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# idstack install doctor — diagnose plugin / legacy-install conflicts.
+#
+# Answers: "is /idstack:<skill> going to work, and if not, exactly what
+# do I run?" without the user having to know about smoke-test.
+#
+# Usage:
+#   idstack-doctor               # check global install (~/.claude)
+#   idstack-doctor --local       # check local install (./.claude)
+#
+# Exit code: 0 if all green, 1 if any problem is detected.
+
+set -u
+
+SCOPE="global"
+CLAUDE_BASE="$HOME/.claude"
+if [ "${1:-}" = "--local" ]; then
+  SCOPE="local"
+  CLAUDE_BASE="$(pwd)/.claude"
+fi
+
+PLUGINS_DIR="$CLAUDE_BASE/plugins"
+SKILLS_DIR="$CLAUDE_BASE/skills"
+PLUGIN_DIR="$PLUGINS_DIR/idstack"
+LEGACY_DIR="$SKILLS_DIR/idstack"
+
+PROBLEMS=0
+note_problem() { PROBLEMS=$((PROBLEMS + 1)); }
+
+SKILLS="needs-analysis learning-objectives course-quality-review course-import \
+assessment-design course-builder course-export accessibility-review red-team \
+pipeline learn"
+
+echo "idstack doctor ($SCOPE)"
+echo "  claude base: $CLAUDE_BASE"
+echo ""
+
+# 1. Plugin presence
+echo "Plugin install:"
+if [ -e "$PLUGIN_DIR" ]; then
+  if [ -L "$PLUGIN_DIR" ]; then
+    target=$(readlink "$PLUGIN_DIR")
+    resolved=$(cd "$PLUGIN_DIR" 2>/dev/null && pwd -P || echo "BROKEN")
+    echo "  $PLUGIN_DIR -> $target"
+    if [ "$resolved" = "BROKEN" ]; then
+      echo "  PROBLEM: symlink target is missing or unreadable."
+      note_problem
+    fi
+  else
+    echo "  $PLUGIN_DIR (real directory)"
+  fi
+  manifest="$PLUGIN_DIR/.claude-plugin/plugin.json"
+  if [ -f "$manifest" ]; then
+    version=$(grep -o '"version": *"[^"]*"' "$manifest" | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
+    [ -n "$version" ] && echo "  manifest version: $version"
+  else
+    echo "  PROBLEM: missing $manifest"
+    note_problem
+  fi
+else
+  echo "  MISSING: $PLUGIN_DIR"
+  echo "  Run: ./setup   (from the idstack repo)"
+  note_problem
+fi
+echo ""
+
+# 2. Skill files reachable
+echo "Skill files:"
+missing_skills=0
+for skill in $SKILLS; do
+  if [ ! -f "$PLUGIN_DIR/skills/$skill/SKILL.md" ]; then
+    echo "  MISSING: skills/$skill/SKILL.md"
+    missing_skills=$((missing_skills + 1))
+  fi
+done
+if [ "$missing_skills" = "0" ]; then
+  echo "  all 11 SKILL.md files reachable"
+else
+  echo "  PROBLEM: $missing_skills SKILL.md file(s) missing under the plugin"
+  note_problem
+fi
+echo ""
+
+# 3. Legacy install detection — the failure mode that surfaced as
+# "Unknown skill: idstack:course-import" / "Unknown skill: course-import".
+echo "Legacy install conflicts:"
+legacy_problem=0
+if [ -L "$LEGACY_DIR" ]; then
+  target=$(readlink "$LEGACY_DIR")
+  echo "  PROBLEM: legacy symlink at $LEGACY_DIR -> $target"
+  echo "  Fix: rm \"$LEGACY_DIR\""
+  legacy_problem=1
+elif [ -d "$LEGACY_DIR" ]; then
+  signature=""
+  if [ -f "$LEGACY_DIR/SKILL.md" ] && grep -q '^name: idstack' "$LEGACY_DIR/SKILL.md" 2>/dev/null; then
+    signature="dispatcher SKILL.md"
+  fi
+  if [ -f "$LEGACY_DIR/VERSION" ]; then
+    v=$(tr -d '[:space:]' < "$LEGACY_DIR/VERSION")
+    case "$v" in
+      2.0.0.0|2.0.0|1.*|0.*) signature="${signature:+$signature, }VERSION=$v" ;;
+    esac
+  fi
+  if [ -n "$signature" ]; then
+    echo "  PROBLEM: pre-v2.0.1.0 install at $LEGACY_DIR ($signature)"
+    echo "           This shadows /idstack:<skill> namespacing — slash"
+    echo "           commands resolve to a broken dispatcher."
+    echo "  Fix: rm -rf \"$LEGACY_DIR\"   (then restart Claude Code)"
+    legacy_problem=1
+  else
+    echo "  WARNING: directory at $LEGACY_DIR is not a recognized idstack install."
+    echo "           Not auto-removed. Inspect and remove manually if unwanted."
+  fi
+fi
+# Pre-v2 individual skill symlinks pointing into idstack
+for skill in $SKILLS; do
+  link="$SKILLS_DIR/$skill"
+  if [ -L "$link" ]; then
+    t=$(readlink "$link" 2>/dev/null || true)
+    if echo "$t" | grep -q "idstack"; then
+      echo "  PROBLEM: pre-v2 skill symlink $link -> $t"
+      echo "  Fix: rm \"$link\""
+      legacy_problem=1
+    fi
+  fi
+done
+if [ "$legacy_problem" = "0" ]; then
+  echo "  none detected"
+else
+  note_problem
+fi
+echo ""
+
+# 4. Final verdict
+if [ "$PROBLEMS" = "0" ]; then
+  echo "OK"
+  exit 0
+else
+  echo "BROKEN ($PROBLEMS problem group(s) above)"
+  exit 1
+fi
