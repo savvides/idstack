@@ -1,6 +1,6 @@
 # idstack
 
-> **Status: beta.** Skills work end-to-end and ship behind a versioned plugin (`v2.4.0.0`), but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
+> **Status: beta.** Skills work end-to-end and ship behind a versioned plugin (`v2.4.0`), but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 

@@ -14,7 +14,8 @@ set -u
 
 SCOPE="global"
 CLAUDE_BASE="$HOME/.claude"
-if [ "${1:-}" = "--local" ]; then
+# Match --local in any position, not just $1. Robust if other flags get added.
+if [[ " ${*:-} " == *" --local "* ]]; then
   SCOPE="local"
   CLAUDE_BASE="$(pwd)/.claude"
 fi
@@ -46,13 +47,21 @@ if [ -e "$PLUGIN_DIR" ]; then
       echo "  PROBLEM: symlink target is missing or unreadable."
       note_problem
     fi
-  else
+  elif [ -d "$PLUGIN_DIR" ]; then
     echo "  $PLUGIN_DIR (real directory)"
+  else
+    echo "  PROBLEM: $PLUGIN_DIR exists but is not a directory or symlink."
+    note_problem
   fi
   manifest="$PLUGIN_DIR/.claude-plugin/plugin.json"
   if [ -f "$manifest" ]; then
     version=$(grep -o '"version": *"[^"]*"' "$manifest" | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
-    [ -n "$version" ] && echo "  manifest version: $version"
+    if [ -n "$version" ]; then
+      echo "  manifest version: $version"
+    else
+      echo "  PROBLEM: could not parse version from $manifest"
+      note_problem
+    fi
   else
     echo "  PROBLEM: missing $manifest"
     note_problem
@@ -97,8 +106,11 @@ elif [ -d "$LEGACY_DIR" ]; then
   fi
   if [ -f "$LEGACY_DIR/VERSION" ]; then
     v=$(tr -d '[:space:]' < "$LEGACY_DIR/VERSION")
+    # Two arms: explicitly skip modern/future versions first, then flag the
+    # legacy ones. Mirrors setup; future-proof if v3.x or v10.x ever ships.
     case "$v" in
-      2.0.0.0|2.0.0|1.*|0.*) signature="${signature:+$signature, }VERSION=$v" ;;
+      2.0.1.*|2.[1-9].*|[3-9].*|1[0-9].*) ;;
+      0.*|1.*|2.0.0.*|2.0.0) signature="${signature:+$signature, }VERSION=$v" ;;
     esac
   fi
   if [ -n "$signature" ]; then
@@ -117,7 +129,7 @@ for skill in $SKILLS; do
   link="$SKILLS_DIR/$skill"
   if [ -L "$link" ]; then
     t=$(readlink "$link" 2>/dev/null || true)
-    if echo "$t" | grep -q "idstack"; then
+    if [[ "$t" == *"idstack"* ]]; then
       echo "  PROBLEM: pre-v2 skill symlink $link -> $t"
       echo "  Fix: rm \"$link\""
       legacy_problem=1
