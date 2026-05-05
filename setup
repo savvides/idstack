@@ -70,10 +70,11 @@ elif [ -d "$LEGACY_SKILLS_LINK" ] && [ "$LEGACY_SKILLS_LINK" != "$IDSTACK_DIR" ]
   if [ -f "$LEGACY_SKILLS_LINK/VERSION" ]; then
     legacy_version=$(tr -d '[:space:]' < "$LEGACY_SKILLS_LINK/VERSION")
     # Two arms: explicitly skip modern/future versions first, then flag the
-    # legacy ones. Self-documenting and future-proof if a v3.x or v10.x ever
-    # ships through this path.
+    # legacy ones. Patterns avoid literal dots and single-digit ranges so
+    # multi-digit components (2.0.10.0, 2.10.0.0, 100.0.0) work.
+    # Covered by test/test-version-classifier.sh.
     case "$legacy_version" in
-      2.0.1.*|2.[1-9].*|[3-9].*|1[0-9].*) ;;
+      2.0.[1-9]*|2.[1-9]*|[3-9]*|1[0-9]*) ;;
       0.*|1.*|2.0.0.*|2.0.0) legacy_is_old_version=1 ;;
     esac
   fi
