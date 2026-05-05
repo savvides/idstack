@@ -26,7 +26,7 @@ That's the entire skill. No backend, no config files, no registration step beyon
 
 ```yaml
 ---
-name: idstack-your-skill
+name: your-skill
 description: |
   What this skill does, in 2-3 lines. (idstack)
 allowed-tools:
@@ -39,6 +39,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 ```
+
+The bare `name` field becomes the slash-command suffix: `name: course-import` is invoked as `/idstack:course-import`. The plugin layout at `~/.claude/plugins/idstack/` handles the `idstack:` namespace; do not prefix the name yourself.
 
 **2. `{{PREAMBLE}}` placeholder** — this is replaced by `bin/idstack-gen-skills` with the shared preamble (update check, manifest check, context recovery).
 
@@ -58,14 +60,21 @@ bin/idstack-gen-skills
 
 The smoke test includes a freshness check that fails if any `SKILL.md` is stale.
 
-## The project manifest
+## The dual-output contract
 
-Skills share state through `.idstack/project.json`. Rules:
+Every skill that produces findings writes **both**:
+
+1. **JSON section** in `.idstack/project.json` — system state for downstream skills, the pipeline orchestrator, and `bin/idstack-status`.
+2. **Markdown report** at `.idstack/reports/<skill>.md` — the human view. Follow `templates/report-format.md`: observation → evidence → why-it-matters → suggestion, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. The skill writes the relative path back into its section's `report_path` field.
+
+Phrase recommendations as suggestions ("consider…"), not directives. Cite every recommendation with `[DomainCode-N] [Tier]`; uncited claims belong in *Limitations* or *Notes*, not *Findings*.
+
+### Manifest-write rules
 
 - **Validate JSON on read.** If malformed, report the error and stop. Never silently overwrite.
 - **Own your section only.** Read the full manifest, modify only the section your skill owns, preserve everything else.
 - **Update the `updated` timestamp** on every write.
-- **Always write the complete schema structure** — no partial writes or omissions.
+- **Use `bin/idstack-manifest-merge`** for the write path. It's section-scoped, atomic (tempfile + rename), preserves foreign sections, and validates against the canonical schema in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback.
 
 ## Evidence standards
 
