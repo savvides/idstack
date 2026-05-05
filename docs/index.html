@@ -108,6 +108,34 @@
       font-weight: 700;
       color: var(--text-primary);
       letter-spacing: -0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .beta-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-start);
+      background: rgba(99, 102, 241, 0.15);
+      padding: 0.15em 0.55em;
+      border-radius: 3px;
+      vertical-align: middle;
+    }
+    .hero-beta {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      letter-spacing: 0.02em;
+    }
+    .hero-beta strong {
+      color: var(--accent-start);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.7rem;
     }
     .nav-links { display: flex; gap: 1.5rem; align-items: center; }
     .nav-links a {
@@ -623,7 +651,7 @@
 
   <!-- Nav -->
   <nav class="nav" role="navigation" aria-label="Main navigation">
-    <span class="nav-logo">idstack</span>
+    <span class="nav-logo">idstack <span class="beta-badge">beta</span></span>
     <div class="nav-links">
       <a href="https://github.com/savvides/idstack" aria-label="View idstack on GitHub">GitHub</a>
       <a href="https://github.com/savvides/idstack/blob/main/LICENSE">MIT License</a>
@@ -632,6 +660,7 @@
 
   <!-- Hero -->
   <header class="hero">
+    <p class="hero-beta"><strong>Beta</strong> &nbsp;·&nbsp; idstack is in active development. Skills work end-to-end, but expect rough edges and breaking changes between versions.</p>
     <h1>
       <span class="gradient">Design better courses.</span>
     </h1>
@@ -726,7 +755,7 @@
 
     <div class="install-block">
       <span class="dollar" aria-hidden="true">$</span>
-      <code id="install-cmd">git clone https://github.com/savvides/idstack.git && cd idstack && ./setup</code>
+      <code id="install-cmd">git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup</code>
       <button class="copy-btn" onclick="copyInstall()" aria-label="Copy install command to clipboard">Copy</button>
     </div>
 
@@ -742,7 +771,7 @@
       <li>
         <div class="step-content">
           <strong>Install idstack.</strong> Open your terminal and paste the command above, or:<br>
-          <code>git clone https://github.com/savvides/idstack.git && cd idstack && ./setup</code>
+          <code>git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup</code>
         </div>
       </li>
       <li>
@@ -948,7 +977,39 @@
       <div class="timeline-item">
         <div class="timeline-dot shipped-dot"></div>
         <div class="timeline-content">
-          <div class="timeline-date">April 20 <span class="version-tag">v2.0.0</span> <span class="latest-badge">Latest</span></div>
+          <div class="timeline-date">May 5 <span class="version-tag">v2.4.0</span> <span class="latest-badge">Latest</span></div>
+          <div class="timeline-title">Dual-output reports + pipeline aggregator</div>
+          <div class="timeline-desc">Every finding-producing skill now writes both a JSON manifest section (system state) and a Markdown report at <code>.idstack/reports/&lt;skill&gt;.md</code> (the human view), structured as observation → evidence → why it matters → suggestion. <code>/idstack:pipeline</code> produces a cross-cutting <code>pipeline.md</code> aggregate over all per-skill reports — top recurring issues, evidence themes, where to start. Plus install-hygiene fix and new <code>bin/idstack-doctor</code> diagnostic.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">May 2 <span class="version-tag">v2.3.0</span></div>
+          <div class="timeline-title">Imported-course mode</div>
+          <div class="timeline-desc">Needs-analysis, assessment-design, and course-builder now auto-detect imported courses and switch behavior. Needs-analysis runs a design-fit check instead of the training-decision gate. Assessment-design audits existing rubrics against Bloom's instead of designing new ones. Course-builder switches to gap-fill mode — generates only what's missing.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">May 2 <span class="version-tag">v2.2.0</span></div>
+          <div class="timeline-title">Red-team in a clean-context sub-agent + triage-and-fix loop</div>
+          <div class="timeline-desc"><code>/idstack:red-team</code> spawns a clean-context sub-agent so the audit can't inherit build-bias from the parent. After the audit, control returns to the parent with a triage-and-fix prompt: Critical, Critical+High, All, or Skip.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">May 2 <span class="version-tag">v2.1.0</span></div>
+          <div class="timeline-title">Manifest-merge tool + schema cleanup</div>
+          <div class="timeline-desc">New <code>bin/idstack-manifest-merge</code> is the canonical write path: section-scoped, atomic, preserves foreign sections, validates against the canonical schema. Schema migration v1.4 fixes drifted field names from earlier versions.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">April 20 <span class="version-tag">v2.0.0</span></div>
           <div class="timeline-title">Pipeline orchestrator, cross-course intelligence, sub-agents</div>
           <div class="timeline-desc"><code>/idstack:pipeline</code> chains all skills automatically. Cross-course learnings transfer knowledge between projects. Parallel sub-agents speed up reviews on Claude Code. Designer profile adapts to your expertise level. All skills now namespaced under <code>/idstack</code>.</div>
         </div>
