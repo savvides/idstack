@@ -556,66 +556,151 @@ Write files with consistent naming:
 Confirm each file as it is written. If any write fails, report the error and
 continue with remaining files.
 
-### Step 7: Update Manifest
+### Step 7: Generate Build Report
 
-Read the existing manifest, then add or update the `course_content` section.
+Before updating the manifest, generate a human-readable build report at `.idstack/reports/course-builder.md` so the designer can see what was generated and why each design choice was made (or, in gap-fill mode, what was skipped and why). The report follows the canonical structure in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding).
 
-**CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first with the Read tool.
-2. Modify ONLY the `course_content` section and the top-level `updated` timestamp.
-   Preserve all other sections unchanged — `context`, `needs_analysis`,
-   `learning_objectives`, `assessments`, `quality_review`, `import_metadata`, and
-   any other sections must remain exactly as they were.
-3. Before writing, verify the JSON is valid: matching braces, proper commas,
-   quoted strings, no trailing commas.
-4. Update the top-level `updated` timestamp to reflect the current time.
-5. If this is a new manifest, initialize ALL sections with empty/default values
-   so downstream skills find the expected structure.
-
-**Populate the `course_content` section:**
-
-```json
-{
-  "course_content": {
-    "generated_at": "ISO-8601 timestamp",
-    "expertise_adaptation": "novice|intermediate|advanced|mixed",
-    "syllabus": "syllabus.md",
-    "modules": [
-      "module-01-introduction-to-topic.md",
-      "module-02-core-concepts.md"
-    ],
-    "assessments": [
-      "assessment-01-analysis-essay.md",
-      "assessment-02-project-proposal.md"
-    ],
-    "rubrics": [
-      "rubric-01-analysis-essay.md",
-      "rubric-02-project-proposal.md"
-    ],
-    "content_dir": ".idstack/course-content/",
-    "placeholders_used": [
-      "instructor_name",
-      "due_dates"
-    ]
-  }
-}
+```bash
+mkdir -p .idstack/reports
 ```
 
-The `placeholders_used` array lists any fields where placeholder text was used
-because the user chose to skip or defer those details. This helps downstream
-skills (like `/course-export`) know what still needs to be filled in.
+Write `.idstack/reports/course-builder.md` with this structure:
+
+```markdown
+# Course Builder Report
+
+**Course:** [project_name]
+**Generated:** [ISO-8601 timestamp]
+**Skill:** /idstack:course-builder
+**Mode:** [build-new | gap-fill]
+**Expertise adaptation:** [novice | intermediate | advanced | mixed]
+
+## Summary
+
+[2–3 sentences. What was generated, biggest design choice, and any placeholders the
+designer needs to fill in before the course is ready for learners.]
+
+## Generated artifacts
+
+| File | Purpose | Notes |
+|------|---------|-------|
+| syllabus.md | Course-level overview | uses placeholder for due_dates |
+| modules/module-01-... | Module 1 content | scaffolding for novices |
+
+## Findings
+
+[One block per finding. Stable ids: `cogload-1`, `multimedia-1`, `placeholder-1`, etc.
+Findings come from: cognitive-load decisions made during generation, multimedia-principle
+applications and their tradeoffs, places where placeholders were inserted, expertise-
+reversal flags from the learner profile that shaped the build.]
+
+### Finding cogload-1: [short title]                        [severity] [tier]
+
+**What we saw.** [Concrete observation: "Module 4 introduces three new frameworks
+in the same lesson. Total intrinsic load is high relative to the novice profile."]
+
+**What the evidence says.** [1–2 sentences.] [CogLoad-N] [Tier]
+
+**Why it matters.** [Bridge: working-memory overload during initial schema formation
+slows transfer and increases dropout, especially for novices.]
+
+**Consider.** [Collaborative recommendation: "Sequence the three frameworks across
+two lessons (4a, 4b) with a worked example bridging them. The current single-lesson
+structure is in `module-04-frameworks.md`."]
+
+---
+
+[Repeat per finding. In gap-fill mode, every finding should reference the upstream
+flag (e.g., `red-team:alignment-3`) that triggered the generation.]
+
+## Top recommendations
+
+1. **[Action]** [Domain-N] [Tier] — [one-line why]
+2. ...
+
+## Placeholders used
+
+[List of placeholder fields the designer will need to fill in before the course is
+ready for learners — instructor name, due dates, institutional links, etc.]
+
+## Limitations
+
+[What this report didn't analyze. Examples: content adaptation is structural, not
+voice/style; cognitive-load estimates are heuristic; placeholders are detected by
+template, not by reading the surrounding paragraph.]
+
+## Next steps
+
+Review and edit the generated files to add your voice and institutional details.
+Then run `/idstack:course-quality-review` to audit the complete course against QM
+standards and CoI presence.
+
+---
+
+*Generated by `/idstack:course-builder`. The system-readable manifest section is in `.idstack/project.json` under `course_content`.*
+```
+
+### Step 8: Update Manifest
+
+Save the `course_content` section to `.idstack/project.json` via `bin/idstack-manifest-merge`. The merge tool replaces only the named section, preserves every other section verbatim, validates JSON, and atomically updates the top-level `updated` timestamp.
+
+```bash
+"$_IDSTACK/bin/idstack-manifest-merge" --section course_content --payload - <<'PAYLOAD'
+{
+  "report_path": ".idstack/reports/course-builder.md",
+  "mode": "build-new",
+  "generated_at": "ISO-8601 timestamp",
+  "expertise_adaptation": "novice|intermediate|advanced|mixed",
+  "syllabus": "syllabus.md",
+  "modules": [
+    "module-01-introduction-to-topic.md",
+    "module-02-core-concepts.md"
+  ],
+  "assessments": [
+    "assessment-01-analysis-essay.md",
+    "assessment-02-project-proposal.md"
+  ],
+  "rubrics": [
+    "rubric-01-analysis-essay.md",
+    "rubric-02-project-proposal.md"
+  ],
+  "content_dir": ".idstack/course-content/",
+  "generated_files": [
+    ".idstack/course-content/syllabus.md",
+    ".idstack/course-content/modules/module-01-introduction-to-topic.md"
+  ],
+  "build_timestamp": "ISO-8601 timestamp",
+  "placeholders_used": [
+    "instructor_name",
+    "due_dates"
+  ],
+  "recommended_generation_targets": []
+}
+PAYLOAD
+```
+
+The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. If `.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json` first to create a fresh canonical manifest.
+
+**Mode field.** Set `mode` to `"build-new"` for a from-scratch generation or `"gap-fill"` when this run was triggered by upstream skills flagging missing artifacts. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
+
+The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. This helps downstream skills (like `/course-export`) know what still needs to be filled in.
+
+**Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify only the `course_content` section, Write back. Preserve all other sections verbatim.
 
 After writing the manifest, confirm:
 
-"Your course content has been generated in `.idstack/course-content/`.
+"Your course content is generated. Three artifacts:
 
-**Generated files:**
-[summary table — see Output Format below]
+- **Read this:** `.idstack/reports/course-builder.md` — the build report with
+  evidence-backed design choices, cognitive-load notes, and a placeholders list.
+- Course content: `.idstack/course-content/` (the actual files — review and add
+  your voice and institutional details).
+- System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Next steps:**
-- Review and edit the generated files to add your expertise and institutional voice
-- Run `/course-quality-review` to audit the complete course against QM standards and CoI presence
-- Run `/course-export` to package the content as an IMS Common Cartridge or push to Canvas"
+- Review and edit the generated files to add your expertise and institutional voice.
+- Run `/course-quality-review` to audit the complete course against QM standards and CoI presence.
+- Run `/course-export` to package the content as an IMS Common Cartridge or push to Canvas."
 
 ---
 
