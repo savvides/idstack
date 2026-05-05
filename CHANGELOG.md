@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.4.0.2 (2026-05-05)
+
+### Fixed — version-pattern fragility (Gemini code review, third pass)
+
+Third Gemini-flagged iteration on the same legacy-version classifier (PR #15 → PR #19 → PR #20 → PR #21). The v2.4.0.1 pattern `1[0-9]*` correctly handled multi-digit majors starting with `1` (10–19, 100–199, …) but silently missed any other multi-digit major: `20.x`, `25.x`, `200.x`, etc. fell through both arms of the `case` and ended up classified as `unknown` — meaning a future v20 install at the legacy path would neither be skipped nor flagged for cleanup.
+
+- **Pattern generalized.** Replaced `1[0-9]*` with `[1-9][0-9]*` in `setup`, `bin/idstack-doctor`, and `test/test-version-classifier.sh`. Strictly more general, no false positives against the legacy arm (`0.*|1.*|2.0.0.*|2.0.0`) since `[1-9][0-9]*` requires a second digit and the legacy arm requires a literal `.` or matches the bare `2.0.0`.
+- **Test fixture extended.** Seven new fixtures pin the previously-silent cases: `20.0.0.0`, `21.5.0`, `25.99.0`, `29.0.0`, `30.0.0`, `200.0.0`, `999.0.0`. Total fixture count: 27. Comment header updated to record the third Gemini iteration so the next maintainer can see the history.
+
+### Changed
+
+- **Plugin manifest version aligned with `VERSION`.** `.claude-plugin/plugin.json` bumped to `2.4.0.2`.
+
 ## v2.4.0.1 (2026-05-05)
 
 ### Fixed — install-hygiene follow-ups (Gemini code review)

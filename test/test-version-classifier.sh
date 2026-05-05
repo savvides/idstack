@@ -6,9 +6,11 @@
 # for cleanup" (legacy).
 #
 # Why this test exists: Gemini Code Assist has flagged this case statement
-# twice now. The patterns are subtle (bash globs, not regex) and an off-by-one
-# in a character class silently flips classifications for multi-digit
-# components. This test pins the contract so it can't drift again.
+# three times (PR #15 → PR #19 → PR #20 → PR #21). The patterns are subtle
+# (bash globs, not regex) and an off-by-one in a character class silently
+# flips classifications for multi-digit components. This test pins the
+# contract so it can't drift again. Cases that once silently fell through
+# to "unknown" — notably 20.x and 200.x — are now pinned here explicitly.
 #
 # Run from the repo root or via smoke-test.sh.
 
@@ -22,7 +24,7 @@ TOTAL=0
 # patterns in lockstep with both files — if you change one, change all three.
 classify_version() {
   case "$1" in
-    2.0.[1-9]*|2.[1-9]*|[3-9]*|1[0-9]*) echo "skip" ;;
+    2.0.[1-9]*|2.[1-9]*|[3-9]*|[1-9][0-9]*) echo "skip" ;;
     0.*|1.*|2.0.0.*|2.0.0) echo "legacy" ;;
     *) echo "unknown" ;;
   esac
@@ -70,6 +72,18 @@ check "9.0.0.0"   skip
 check "10.0.0.0"  skip
 check "19.0.0.0"  skip
 check "100.0.0.0" skip
+
+# Future major versions where the major itself is multi-digit but does not
+# start with 1. Caught by Gemini on PR #21 — the previous 1[0-9]* arm
+# missed these and silently fell through to "unknown". Now classified by
+# [1-9][0-9]*.
+check "20.0.0.0"  skip
+check "21.5.0"    skip
+check "25.99.0"   skip
+check "29.0.0"    skip
+check "30.0.0"    skip
+check "200.0.0"   skip
+check "999.0.0"   skip
 
 echo ""
 echo "  $PASS/$TOTAL passed"
