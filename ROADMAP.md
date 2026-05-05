@@ -4,6 +4,22 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Dual-output report contract + pipeline aggregator (v2.4)
+- **Two artifacts per skill.** Every finding-producing skill now writes both `.idstack/project.json` (system state for downstream skills) and `.idstack/reports/<skill>.md` (the human view). Each finding follows observation → evidence → why-it-matters → suggestion, with severity and evidence tier. Recommendations are framed as "consider…", not directives — idstack collaborates on your design, doesn't dictate it.
+- **`/idstack:pipeline` produces `.idstack/reports/pipeline.md`.** A single aggregate document the designer can read for the full audit across all 8 stages: top recurring issues, evidence themes, where to start. Regenerated on every pipeline run, including partial runs and explicit re-runs.
+- **`bin/idstack-status` lists report paths.** New "Reports" block surfaces every Markdown report under `.idstack/reports/` with `pipeline.md` first.
+- **Install hygiene.** `setup` now actively removes legacy pre-v2.0.1.0 installs at `~/.claude/skills/idstack/` that shadowed the plugin namespace. `bin/idstack-doctor` diagnoses install state. `test/smoke-test.sh` regression-catches the conflict.
+
+### Imported-course mode (v2.3)
+- `/idstack:needs-analysis`, `/idstack:assessment-design`, and `/idstack:course-builder` auto-detect imported courses and switch behavior. Needs-analysis runs a design-fit check instead of the training-decision gate. Assessment-design switches to audit mode (classifies existing rubric criteria on Bloom's). Course-builder switches to gap-fill mode (generates only the artifacts upstream skills flagged as missing).
+
+### Red-team in a clean-context sub-agent + triage-and-fix loop (v2.2)
+- `/idstack:red-team` now spawns a clean-context sub-agent so the audit can't inherit build-bias from the parent. After the audit, control returns to the parent with a triage-and-fix prompt (Critical / Critical+High / All / Skip).
+
+### Manifest-merge tool + schema cleanup (v2.1)
+- New `bin/idstack-manifest-merge` is the canonical write path: section-scoped, atomic (tempfile + rename), preserves foreign sections, validates against `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback.
+- Schema migration v1.4 fixes drifted field names (`red_team_audit.summary.*_count` → `findings_summary.*`, `_import_quality_flags` → `import_metadata.quality_flag_details`).
+
 ### idstack v2 — Pipeline orchestrator, intelligence, sub-agents
 - **`/idstack pipeline`** — chains all 8 skills automatically. Auto-skips completed skills, shows pipeline status, pause and resume anytime.
 - **Namespace refactor** — all skills now invoked via `/idstack <skill>` (e.g., `/idstack needs-analysis`). No more name collisions with other skill packages.

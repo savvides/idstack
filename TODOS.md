@@ -1,5 +1,16 @@
 # TODOS
 
+## ~~v2.4: Dual-Output Report Contract + Pipeline Aggregator~~ SHIPPED (v2.4.0.0)
+Shipped in v2.4.0.0. Every finding-producing skill now writes both
+`.idstack/project.json` (system state) and `.idstack/reports/<skill>.md` (human view)
+following the canonical observation → evidence → why-it-matters → suggestion structure
+in `templates/report-format.md`. `/idstack:pipeline` produces `.idstack/reports/pipeline.md`
+— a cross-cutting aggregate over per-skill reports with top recurring issues, evidence
+themes, and where to start. `bin/idstack-status` lists every report under
+`.idstack/reports/` with `pipeline.md` first. Plus install-hygiene fix: setup actively
+removes pre-v2.0.1.0 dispatcher clones, smoke-test catches the regression, new
+`bin/idstack-doctor` for diagnostics.
+
 ## ~~v1.1: Manifest Versioning~~ SHIPPED (v1.2.0)
 Shipped in v1.2.0. `bin/idstack-migrate` handles schema migrations.
 All 7 skill preambles call it automatically.
@@ -55,19 +66,12 @@ frontmatter uses Claude Code tool names, and tool name compatibility needs verif
 one SKILL.md to verify compatibility before full implementation.
 **Priority:** P2
 
-## v2: Sub-Agent Architecture for Context Efficiency
-Skills like /red-team run 5 adversarial dimensions sequentially in the main context.
-Each dimension could dispatch as a sub-agent, keeping the main session lean. Carl
-Vellotti's research shows sub-agents can reduce main session context from 25% to 16.5%
-for equivalent work. For /red-team: dimensions 1-5 as parallel sub-agents, results
-aggregated in the main session for scoring. Same pattern applies to /accessibility-review
-(WCAG + UDL could be parallel sub-agents) and /course-quality-review (QM + CoI).
-**Why:** Context efficiency directly affects session length. A session that compacts
-after 5 messages vs one that lasts 30 is a completely different user experience.
-**Depends on:** Understanding how each AI CLI handles sub-agent dispatching (Claude Code
-Agent tool, Gemini CLI equivalent, Codex subagents). Template system (v2) would make
-this easier to implement consistently across skills.
-**Priority:** P2
+## ~~v2: Sub-Agent Architecture for Context Efficiency~~ SHIPPED (v2.0–v2.2)
+Shipped across v2.0 and v2.2. /accessibility-review runs WCAG and UDL as parallel
+sub-agents; /course-quality-review parallelizes its QM/CoI/alignment dimensions; v2.2
+moved /red-team into a clean-context sub-agent that returns to the parent for a
+triage-and-fix loop (Critical / Critical+High / All / Skip). Claude Code only;
+graceful degradation elsewhere.
 
 ## v2: Config System
 Add `bin/idstack-config` for persistent user preferences (auto-update on/off, default
@@ -91,7 +95,7 @@ Upgrade the "See it work" section on idstack.org from static text to an interact
 pre-install demo. The current section shows a text transcript of /course-import and
 /course-quality-review. A richer version could include: animated terminal replay
 (CSS-only, building on the existing typing animation), clickable pipeline explorer
-showing what each of the 9 skills does, or expanded sample output with evidence
+showing what each of the 11 skills does, or expanded sample output with evidence
 citations. The goal is to let prospective users experience the value before installing.
 **Why:** CEO review killed a post-install /demo command because IDs always have a course.
 The real TTHW problem is pre-install: visitors on idstack.org need to understand the
