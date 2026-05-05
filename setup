@@ -69,12 +69,16 @@ elif [ -d "$LEGACY_SKILLS_LINK" ] && [ "$LEGACY_SKILLS_LINK" != "$IDSTACK_DIR" ]
   legacy_is_old_version=0
   if [ -f "$LEGACY_SKILLS_LINK/VERSION" ]; then
     legacy_version=$(tr -d '[:space:]' < "$LEGACY_SKILLS_LINK/VERSION")
+    # Two arms: explicitly skip modern/future versions first, then flag the
+    # legacy ones. Self-documenting and future-proof if a v3.x or v10.x ever
+    # ships through this path.
     case "$legacy_version" in
-      2.0.0.0|2.0.0|1.*|0.*) legacy_is_old_version=1 ;;
+      2.0.1.*|2.[1-9].*|[3-9].*|1[0-9].*) ;;
+      0.*|1.*|2.0.0.*|2.0.0) legacy_is_old_version=1 ;;
     esac
   fi
   if [ "$legacy_is_dispatcher" = "1" ] || [ "$legacy_is_old_version" = "1" ]; then
-    if [ "$1" = "--keep-legacy" ] || [ "$2" = "--keep-legacy" ]; then
+    if [[ " $* " == *" --keep-legacy "* ]]; then
       echo "  KEEPING legacy install dir: $LEGACY_SKILLS_LINK (--keep-legacy)"
       echo "           NOTE: this will shadow the plugin namespace; /idstack:<skill> may fail."
     else
