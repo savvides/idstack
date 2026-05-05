@@ -88,30 +88,32 @@ idstack: Reading your manifest... I have 12 modules, 6 objectives,
             and technical help resources
 ```
 
-You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains all 8 skills automatically.
+You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses; `learn` is a separate cross-project memory utility — those two sit outside the linear chain, which is why pipeline runs 8 of the 11 skills).
 
 ## Install — 30 seconds
 
-**Requirement:** [Claude Code](https://claude.ai/code) (desktop app, web app, or CLI)
+**Requirement:** [Claude Code](https://claude.ai/code) (desktop app, web app, or CLI).
 
-### Paste this into Claude Code. Claude does the rest.
+Paste this into your terminal:
 
-> Install idstack: run **`git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup`** then tell me it's installed and show me the available skills.
+```bash
+git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack
+cd ~/.claude/plugins/idstack
+./setup
+```
 
-That's it. Claude clones the repo, runs setup, and confirms the skills are registered. No terminal knowledge required.
-
-Or install as a plugin: `claude plugin install idstack`
+Restart Claude Code if it was already running — plugins load at session start. You should see `/idstack:<skill>` commands in the slash picker.
 
 ### Alternative install methods
 
 <details>
-<summary>Manual install with git</summary>
+<summary>Let Claude Code do it for you</summary>
 
-```bash
-git clone https://github.com/savvides/idstack.git
-cd idstack
-./setup
-```
+If you'd rather not touch the terminal, paste this into Claude Code:
+
+> Install idstack: run `git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup`, then tell me it's installed and show me the available skills.
+
+Claude clones the repo, runs setup, and confirms the skills are registered.
 </details>
 
 <details>
@@ -157,16 +159,16 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 
 | Skill | Your specialist | What they do |
 |-------|----------------|--------------|
-| `/idstack:needs-analysis` | **Needs Analyst** | Three-level assessment before you build anything. Organizational analysis (is training even the right intervention?), task analysis (what must learners do?), learner profiling (prior knowledge, not learning styles). Creates the project manifest. |
-| `/idstack:learning-objectives` | **Curriculum Designer** | Writes measurable objectives with revised Bloom's taxonomy. Classifies on two dimensions (knowledge type + cognitive process). Bidirectional alignment check: does each objective have a matching activity AND assessment? Flags gaps. |
-| `/idstack:assessment-design` | **Assessment Architect** | Designs assessments aligned to Bloom's levels with evidence-based rubrics and feedback strategies. Applies Nicol's 7 principles of good feedback. Builds formative checkpoints before summative assessments. |
-| `/idstack:course-import` | **LMS Bridge** | Imports your course from any LMS or authoring tool. Five input methods: IMS Common Cartridge, pasted documents, Canvas API, PDF upload (Articulate Rise, Storyline), or SCORM package. Quick-scan quality flags, auto-maps modules to task analysis, pre-classifies objectives with Bloom's. |
-| `/idstack:course-builder` | **Content Generator** | Generates complete course content from the manifest: syllabus, module pages, assignment descriptions, and rubric documents. Content follows cognitive load principles. Includes adversarial spec review (auto-validates alignment). |
+| `/idstack:needs-analysis` | **Needs Analyst** | Three-level assessment before you build anything. Organizational analysis (is training even the right intervention?), task analysis (what must learners do?), learner profiling (prior knowledge, not learning styles). Creates the project manifest. Auto-detects imported courses and runs a design-fit check instead of the training-decision gate. Writes `.idstack/reports/needs-analysis.md`. |
+| `/idstack:learning-objectives` | **Curriculum Designer** | Writes measurable objectives with revised Bloom's taxonomy. Classifies on two dimensions (knowledge type + cognitive process). Bidirectional alignment check: does each objective have a matching activity AND assessment? Flags gaps. Writes `.idstack/reports/learning-objectives.md`. |
+| `/idstack:assessment-design` | **Assessment Architect** | Designs assessments aligned to Bloom's levels with evidence-based rubrics and feedback strategies. Applies Nicol's 7 principles of good feedback. Builds formative checkpoints before summative assessments. For imported courses, switches to audit mode: classifies existing rubric criteria on Bloom's, compares to ILOs, and surfaces alignment gaps without proposing new assessments. Writes `.idstack/reports/assessment-design.md`. |
+| `/idstack:course-import` | **LMS Bridge** | Imports your course from any LMS or authoring tool. Five input methods: IMS Common Cartridge, pasted documents, Canvas API, PDF upload (Articulate Rise, Storyline), or SCORM package. Quick-scan quality flags, auto-maps modules to task analysis, pre-classifies objectives with Bloom's. Writes `.idstack/reports/course-import.md`. |
+| `/idstack:course-builder` | **Content Generator** | Generates complete course content from the manifest: syllabus, module pages, assignment descriptions, and rubric documents. Content follows cognitive load principles. Includes adversarial spec review (auto-validates alignment). For imported courses, switches to gap-fill mode: generates only the artifacts upstream skills flagged as missing, instead of regenerating what already exists in the cartridge. Writes `.idstack/reports/course-builder.md`. |
 | `/idstack:course-export` | **LMS Publisher** | Exports to any LMS. Generates IMS Common Cartridge (.imscc), SCORM 1.2 packages, or pushes directly to Canvas via API. Shows readiness dashboard before export. The output IS the course. |
-| `/idstack:course-quality-review` | **Quality Auditor** | Full QM-aligned audit plus Community of Inquiry presence layer. 8 structural standards, 3 presence dimensions (teaching, social, cognitive), constructive alignment audit. Parallel sub-agents on Claude Code for speed. |
-| `/idstack:accessibility-review` | **Accessibility Reviewer** | WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) enhancement review. Two-tier output: "Must Fix" for accessibility violations, "Should Improve" for UDL recommendations. Parallel sub-agents for WCAG and UDL. |
-| `/idstack:red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Five dimensions run in parallel: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Produces a confidence score. |
-| `/idstack:pipeline` | **Orchestrator** | Chains all 8 skills automatically. Auto-skips completed skills. Shows pipeline status. Pause anytime, resume later. |
+| `/idstack:course-quality-review` | **Quality Auditor** | Full QM-aligned audit plus Community of Inquiry presence layer. 8 structural standards, 3 presence dimensions (teaching, social, cognitive), constructive alignment audit. Parallel sub-agents on Claude Code for speed. Writes `.idstack/reports/course-quality-review.md`. |
+| `/idstack:accessibility-review` | **Accessibility Reviewer** | WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) enhancement review. Two-tier output: "Must Fix" for accessibility violations, "Should Improve" for UDL recommendations. Parallel sub-agents for WCAG and UDL. Writes `.idstack/reports/accessibility-review.md`. |
+| `/idstack:red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Runs in a clean-context sub-agent so the audit can't inherit build-bias from the parent. Five dimensions in parallel: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Writes `.idstack/reports/red-team.md` and returns to the parent for a triage-and-fix loop (Critical / Critical+High / All / Skip). Produces a confidence score. |
+| `/idstack:pipeline` | **Orchestrator** | Chains the 8-skill linear pipeline automatically. Auto-skips completed skills. Shows pipeline status. Pause anytime, resume later. Produces `.idstack/reports/pipeline.md` — a cross-cutting aggregate over every per-skill report with the top recurring issues, evidence themes, and where to start. |
 | `/idstack:learn` | **Memory Manager** | Search, list, delete, promote, and export project learnings. Supports cross-project intelligence. |
 
 ## The workflow
@@ -280,6 +282,8 @@ idstack is a collaborator, not a course builder. When a skill finishes, it produ
 
 The canonical structure is documented in [`templates/report-format.md`](templates/report-format.md). Re-running a skill overwrites its report; the timeline at `.idstack/timeline.jsonl` carries the run history.
 
+When you run `/idstack:pipeline`, it also produces an aggregate at `.idstack/reports/pipeline.md` — the cross-cutting view across all skills' reports, with the top issues that recur across multiple stages, evidence themes, and where to start. Read this first if you've run multiple skills and want one document that synthesizes the whole audit.
+
 ### Course memory
 idstack remembers your design sessions. Each skill logs what it did to `.idstack/timeline.jsonl`, and project-specific discoveries (LMS quirks, format issues, course patterns) are stored in `.idstack/learnings.jsonl`. When you start a new session, idstack tells you where you left off: quality score trends, which skills have been completed, and what the next step is. Run `bin/idstack-status` anytime to see your course health dashboard.
 
@@ -301,7 +305,7 @@ Any skill works on its own. `/course-quality-review` works without a manifest by
 
 ## The evidence base
 
-idstack encodes findings from a literature synthesis spanning multiple domains of instructional design research. The full citation list is in [evidence/references.md](evidence/references.md).
+idstack encodes findings from a literature synthesis spanning 11 domains of instructional design research. The full citation list (all 11 domains, 5 evidence tiers) is in [evidence/references.md](evidence/references.md). A selection:
 
 | Domain | Evidence Strength | Key Finding |
 |--------|------------------|-------------|
@@ -311,6 +315,7 @@ idstack encodes findings from a literature synthesis spanning multiple domains o
 | Constructive Alignment | Moderate-Strong (T2) | Objectives, activities, and assessments must form a coherent chain |
 | Online Course Quality | Moderate (T2-T4) | QM standards + CoI presence predicts outcomes beyond compliance |
 | Needs Analysis | Weak-Moderate (T3) | Multi-level analysis is necessary but rarely done |
+| Accessibility & UDL | Moderate (T2-T3) | WCAG 2.1 AA compliance is the floor; UDL 3.0 is the ceiling |
 
 **Cross-domain principles** (appear in 3+ domains):
 1. Alignment is non-negotiable
@@ -335,6 +340,9 @@ Yes. Export your Rise course as a PDF (hover over the course card > `...` > Down
 
 **What if I only want to run the quality review?**
 That works. `/idstack:course-quality-review` asks you about your course directly if there's no manifest.
+
+**How do I check my course health without re-running a skill?**
+Run `bin/idstack-status` from your project directory for the dashboard (quality score trends, dimensions, what skills have run, paths to every report under `.idstack/reports/`). Add `--readiness` to get the pre-export readiness gate only (quality ≥ 70, accessibility ≥ 80, zero critical red-team findings, zero WCAG Level-A violations).
 
 **Do I need python3?**
 python3 is recommended but not required. With python3, you get quality score trends, dimension analysis, search filtering, and safe JSON serialization. Without it, basic timeline logging and learnings still work via bash fallback, but score trends and search filtering are unavailable. Most systems have python3 pre-installed.

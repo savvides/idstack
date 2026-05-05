@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v2.4.0.0 (2026-05-05)
 
 ### Fixed — install-hygiene
 
@@ -9,6 +9,42 @@
 - **`setup` actively cleans up legacy installs.** The `~/.claude/skills/idstack/` warning branch now deletes the directory when the dispatcher SKILL.md or `VERSION < 2.0.1.0` is present. Pass `--keep-legacy` to opt out. Other contents of `~/.claude/skills/` are left alone.
 - **`test/smoke-test.sh` regression checks.** Fails when `~/.claude/skills/idstack/SKILL.md` declares `name: idstack`, or when any `~/.claude/skills/<skill-name>` is a pre-v2 symlink pointing into the idstack tree. Skipped under `--local` and CI-fixture runs that pass a custom plugins dir.
 - **New `bin/idstack-doctor`.** One-shot diagnostic: plugin presence + manifest version, all 11 SKILL.md files reachable, legacy-install conflicts. Prints exact remediation commands and exits non-zero on any problem.
+
+### Added — the dual-output report contract
+
+Every skill that produces findings now writes **both** a JSON manifest section (system state) and a human-readable Markdown report at `.idstack/reports/<skill>.md` (the designer's view). idstack is positioned as a collaborator on the designer's work, not a course builder — reports speak in observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding, and recommendations phrased as "consider…", not "you must…".
+
+- **Canonical format.** New `templates/report-format.md` documents the per-finding structure and the voice rules: suggest don't direct, cite every recommendation, uncited claims belong in *Limitations* not *Findings*. Skills reference this file as the contract for tone and per-finding fields.
+- **Schema additions** (additive, no version bump): optional `report_path` field on every section in `templates/manifest-schema.md` that produces findings — `needs_analysis`, `learning_objectives`, `assessments`, `course_content`, `import_metadata`, `export_metadata`, `quality_review`, `accessibility_review`. (`red_team_audit` already had the field from v1.4.) Skills write the relative path of their Markdown report into this field so other skills, the pipeline orchestrator, and `bin/idstack-status` can find it.
+- **Per-skill rollout.** All 8 finding-producing skills now write a Markdown report:
+  - `needs-analysis`, `learning-objectives`, `assessment-design`, `course-builder`, `course-import`, `accessibility-review` — each got a new "Generate Report" step before the manifest write, with stable finding ids per skill (`needs-1`, `align-1`, `assess-1`, `cogload-1`, `import-1`, `wcag-1`, `udl-1`, etc.) so other skills and the aggregator can cross-reference findings deterministically.
+  - `red-team` and `course-quality-review` migrated from flat `.idstack/red-team-report.md` / `.idstack/quality-report.md` onto the new `.idstack/reports/` directory layout. `course-quality-review` now also writes `report_path` into the manifest.
+
+### Added — pipeline cross-cutting aggregate
+
+`/idstack:pipeline` now produces `.idstack/reports/pipeline.md` — a single document the designer can read for the full audit across all 8 stages. Three sections:
+
+- **Across your course** — top cross-cutting issues (findings that recur in multiple per-skill reports), evidence themes (which research domains keep showing up), and where to start. The designer's 30-second read of the whole audit.
+- **Pipeline status** — table of all 8 skills with status, headline score/signal, and report path.
+- **Per-skill summaries** — Summary paragraph from each per-skill report plus the top 2 finding ids, with a link out to the per-skill report for detail.
+
+Re-invoking `/idstack:pipeline` when all skills are already complete now offers **"Regenerate the pipeline report"** as the primary option via `AskUserQuestion`, alongside re-run-a-skill and exit. Useful after the designer edits per-skill outputs by hand and wants the aggregate refreshed without re-running skills. Also regenerated automatically after every skill the orchestrator completes, so a partial pipeline still leaves a useful aggregate behind if the designer pauses.
+
+### Changed
+
+- **`bin/idstack-status` lists report paths.** New "Reports (read these for the human view)" block under the existing readiness verdict surfaces every Markdown report present under `.idstack/reports/`, with `pipeline.md` listed first as the entry point.
+- **Plugin manifest version aligned with `VERSION`.** `.claude-plugin/plugin.json` was stale at `2.0.1.0` (frozen since v2.0.1, never bumped through v2.1, v2.2, v2.3); now matches `VERSION` at `2.4.0.0`.
+- **Outward-facing tone pass across all 8 skills.** Confirmation messages now point the designer at *two artifacts* uniformly: "Read this: `.idstack/reports/<skill>.md`. System state: `.idstack/project.json`." Recommendations across reports framed as suggestions ("consider…", "you may want to…"), citations are mandatory on every recommendation, and uncited claims are moved to *Limitations*.
+
+### Manifest schema
+
+No version bump (still 1.4). The `report_path` additions are optional fields; existing manifests without them continue to read correctly.
+
+### Out of scope (future)
+
+- Pipeline-level fix-application loop. Red-team has a parent-side triage-and-fix flow today; the pipeline aggregator could surface cross-cutting fixes for batch application.
+- `bin/idstack-status` ranks reports lexicographically. Ranking by recency-of-write or severity-of-topmost-finding would be more useful for a designer scanning a long-running course.
+- A smoke-test guard that asserts every skill template both calls the report-write step and writes `report_path` to the manifest. Worth adding once the contract has been live in main for a few releases and is unlikely to change.
 
 ## v2.3.0.0 (2026-05-02)
 
