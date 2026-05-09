@@ -24,25 +24,26 @@ primitives.
   is NOT available" branch — Codex prompts the user to type the next skill name and
   resumes when they re-invoke `$pipeline`. The partial-run report is regenerated
   before stopping.
-- **Codex bundle artifacts.** Top-level `marketplace.json` (Codex plugin manifest,
-  with `skills_dir: "dist/codex/skills"`), top-level `AGENTS.md` (memory file,
-  generated from `templates/agent-context.md`), and 11
-  `dist/codex/skills/idstack-<name>/SKILL.md` files. The marketplace.json + AGENTS.md
-  live at the repo root so the Codex install (which symlinks the whole repo) can find
-  them alongside `bin/`, `templates/`, `evidence/` — same in-skill `$_IDSTACK/bin/...`
-  resolution as Claude. All committed; all freshness-checked by smoke test.
+- **Codex bundle artifacts.** Top-level `AGENTS.md` (memory file generated from
+  `templates/agent-context.md`) and 11 `dist/codex/skills/idstack-<name>/SKILL.md`
+  files. All committed; all freshness-checked by smoke test. Skill discovery in
+  Codex happens at `$CODEX_HOME/skills/<name>/SKILL.md` (Codex auto-discovers
+  skills there) — no marketplace.json or `.codex-plugin/plugin.json` needed for
+  v1 distribution. Marketplace publishing is on the v2.6 roadmap.
 - **Multi-CLI install path detection.** Preamble path resolution and the in-skill
   `_IDSTACK` chain in `course-export` and `learn` now check, in order:
   `$CLAUDE_PLUGIN_ROOT`, `$IDSTACK_HOME`, `~/.claude/plugins/idstack`,
   `~/.agents/plugins/idstack`, `~/.agents/skills/idstack`. One install layout per
   CLI; same code finds either.
-- **`setup` extended.** Auto-detects `codex` on PATH and adds a parallel install at
-  `~/.agents/plugins/idstack` (symlinked to the whole `$IDSTACK_DIR`, mirroring
-  Claude's install pattern). Force on with `--codex`, opt out with `--no-codex`.
-  Existing Claude Code install is unchanged for users who don't have Codex CLI.
-  Setup also detects pre-existing real directories at the install target and
-  removes them before symlinking (avoids the `ln -snf` symlink-inside-dir
-  footgun). Caught in PR review by Gemini bot.
+- **`setup` extended.** Auto-detects `codex` on PATH and creates a two-part Codex
+  install: per-skill symlinks at `$CODEX_HOME/skills/idstack-<name>/` (Codex auto-
+  discovers each skill) plus a whole-repo symlink at `~/.agents/plugins/idstack/`
+  (so the in-skill `$_IDSTACK/bin/idstack-*` resolves via the preamble's path
+  fallback chain). Force on with `--codex`, opt out with `--no-codex`. Existing
+  Claude Code install is unchanged for users who don't have Codex CLI. Setup also
+  detects pre-existing real directories at install targets and removes them before
+  symlinking (avoids the `ln -snf` symlink-inside-dir footgun). Caught in PR
+  review by Gemini bot.
 - **Smoke test extended.** New checks for `dist/codex/` artifacts: bundle directory,
   marketplace.json validity, AGENTS.md presence, all 11 Codex SKILL.md files with
   correct frontmatter and stripped `allowed-tools`. Total: 217 checks (was 161).

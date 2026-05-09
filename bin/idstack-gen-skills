@@ -6,11 +6,13 @@
 #
 # Targets:
 #   claude:           writes skills/<name>/SKILL.md (the existing Claude Code layout)
-#   codex:            writes dist/codex/skills/idstack-<name>/SKILL.md (Codex CLI layout),
-#                     plus repo-root AGENTS.md (memory file) and repo-root marketplace.json
-#                     (Codex plugin manifest, with skills_dir pointing to dist/codex/skills).
-#                     The frontmatter `allowed-tools:` block is stripped — Codex has no
-#                     per-skill allowlist.
+#   codex:            writes dist/codex/skills/idstack-<name>/SKILL.md (Codex CLI layout)
+#                     plus repo-root AGENTS.md (memory file generated from
+#                     templates/agent-context.md). Skills are installed via per-skill
+#                     symlinks into $CODEX_HOME/skills/idstack-<name>/ at setup time —
+#                     Codex auto-discovers skills there. The frontmatter
+#                     `allowed-tools:` block is stripped — Codex has no per-skill
+#                     allowlist.
 #   all (default):    both targets
 #
 # Source of truth is unchanged: skills/<name>/SKILL.md.tmpl with {{PREAMBLE}} and
@@ -175,27 +177,17 @@ render_target() {
   fi
 }
 
-# render_codex_assets — emit AGENTS.md and marketplace.json at the repo root.
-# Both live at the root so the Codex install (which symlinks the whole repo to
-# ~/.agents/plugins/idstack/) can find them alongside bin/, templates/, evidence/.
-# `marketplace.json` points to dist/codex/skills as the skills_dir.
+# render_codex_assets — emit AGENTS.md at the repo root.
+# AGENTS.md describes idstack for Codex sessions running inside the idstack repo
+# itself (devs working on idstack). End-users who install idstack via setup get
+# per-skill symlinks at $CODEX_HOME/skills/idstack-<name>/ which Codex auto-
+# discovers; no marketplace.json or plugin manifest is needed for that path.
 #
-# Honors $DRY_RUN: when set, renders to a tempfile and reports STALE/OK without
-# touching the on-disk file (matches the SKILL.md dry-run contract).
+# Honors $DRY_RUN: renders to a tempfile and reports STALE/OK without touching
+# the on-disk file (matches the SKILL.md dry-run contract).
 render_codex_assets() {
   local agents_src="$IDSTACK_DIR/templates/agent-context.md"
   local agents_dst="$IDSTACK_DIR/AGENTS.md"
-  local marketplace_dst="$IDSTACK_DIR/marketplace.json"
-  local version
-  version=$(cat "$IDSTACK_DIR/VERSION" 2>/dev/null || echo "0.0.0")
-
-  # VERSION sanity: refuse to interpolate anything that isn't [0-9.] —
-  # otherwise a malformed VERSION file produces malformed JSON in
-  # marketplace.json. Repo-controlled but worth the guard.
-  if ! [[ "$version" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
-    echo "ERROR: VERSION file content is not a valid version string: '$version'" >&2
-    exit 1
-  fi
 
   if [ -f "$agents_src" ]; then
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -209,38 +201,6 @@ render_codex_assets() {
       cp "$agents_src" "$agents_dst"
       echo "  GENERATED: AGENTS.md"
     fi
-  fi
-
-  local marketplace_content
-  marketplace_content=$(cat <<MARKETPLACE
-{
-  "name": "idstack",
-  "version": "$version",
-  "description": "Evidence-based instructional design pipeline. 11 skills for needs analysis, learning objectives, assessment design, course building, quality review, accessibility audit, red team, and LMS export.",
-  "author": "Philippos Savvides",
-  "homepage": "https://idstack.org",
-  "repository": "https://github.com/savvides/idstack",
-  "license": "MIT",
-  "plugins": [
-    {
-      "name": "idstack",
-      "description": "All 11 idstack skills as a single Codex plugin.",
-      "skills_dir": "dist/codex/skills"
-    }
-  ]
-}
-MARKETPLACE
-)
-  if [ "$DRY_RUN" -eq 1 ]; then
-    if [ -f "$marketplace_dst" ] && [ "$marketplace_content" = "$(cat "$marketplace_dst")" ]; then
-      echo "  OK: marketplace.json (up to date)"
-    else
-      echo "  STALE: marketplace.json (would be updated)"
-      ERRORS=$((ERRORS + 1))
-    fi
-  else
-    echo "$marketplace_content" > "$marketplace_dst"
-    echo "  GENERATED: marketplace.json"
   fi
 }
 

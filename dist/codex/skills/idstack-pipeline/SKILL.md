@@ -28,6 +28,12 @@ implementation:
 - **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`. In Claude Code this
   invokes a child skill in-process via the `Skill` tool. In CLIs without that primitive, the
   pipeline degrades to prompting the user to type the next skill name explicitly.
+- **Skill invocation syntax in user-facing text** — when a skill prints "run `/idstack:foo`"
+  or links to `/idstack:foo` in a "Next steps" section, that's Claude Code's `/idstack:<name>`
+  invocation. **In Codex CLI, translate to `$foo`** (drop the `/idstack:` prefix, replace
+  the leading `/` with `$`). Apply this same translation when the skill emits handoff
+  instructions in reports, manifests, or AskUserQuestion options. Same body text, two
+  hosts; the model translates per-CLI on output.
 
 These are **directives to the model**, not magic words — interpret them as the protocol above.
 

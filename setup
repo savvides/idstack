@@ -155,39 +155,60 @@ elif command -v codex >/dev/null 2>&1; then
 fi
 
 if [ "$CODEX_INSTALL" = "1" ]; then
-  # Codex install: symlink the whole repo to ~/.agents/plugins/idstack/ so the
-  # in-skill bash blocks can resolve $_IDSTACK/bin/idstack-* (binaries live at
-  # repo root, not under dist/codex/). Codex finds skills via marketplace.json
-  # at the repo root, which points to dist/codex/skills as the skills_dir.
+  # Codex install — two-part:
+  #   1. Per-skill symlinks at $CODEX_HOME/skills/idstack-<name>/ so Codex auto-
+  #      discovers each skill ($needs-analysis, $pipeline, etc.).
+  #   2. A whole-repo symlink at ~/.agents/plugins/idstack/ -> $IDSTACK_DIR so
+  #      the in-skill bash blocks can resolve $_IDSTACK/bin/idstack-*. The
+  #      preamble's path-detection chain finds it via the ~/.agents/plugins/
+  #      fallback.
+  CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
   if [ "$SCOPE" = "local" ]; then
-    CODEX_PLUGINS_DIR="$(pwd)/.agents/plugins"
+    CODEX_HOME_DIR="$(pwd)/.codex"
+    CODEX_BIN_PARENT="$(pwd)/.agents/plugins"
   else
-    CODEX_PLUGINS_DIR="$HOME/.agents/plugins"
+    CODEX_BIN_PARENT="$HOME/.agents/plugins"
   fi
-  CODEX_TARGET="$CODEX_PLUGINS_DIR/idstack"
+  CODEX_SKILLS_DIR="$CODEX_HOME_DIR/skills"
+  CODEX_BIN_TARGET="$CODEX_BIN_PARENT/idstack"
+  CODEX_BUNDLE_SKILLS="$IDSTACK_DIR/dist/codex/skills"
 
-  if [ ! -f "$IDSTACK_DIR/marketplace.json" ]; then
-    echo "  WARNING: marketplace.json missing at $IDSTACK_DIR — generator did not produce it. Skipping Codex install."
+  if [ ! -d "$CODEX_BUNDLE_SKILLS" ]; then
+    echo "  WARNING: Codex skill bundle missing at $CODEX_BUNDLE_SKILLS — generator did not produce it. Skipping Codex install."
   else
-    mkdir -p "$CODEX_PLUGINS_DIR"
-    if [ "$CODEX_TARGET" = "$IDSTACK_DIR" ]; then
-      echo "  in place: $CODEX_TARGET (no symlink needed)"
-    else
-      # If $CODEX_TARGET exists as a real directory (not a symlink), `ln -snf`
-      # would create the symlink INSIDE it instead of replacing it. Remove the
-      # real dir first so the symlink lands at the intended path.
-      # Scope-guard the rm: refuse if $HOME is unset or $CODEX_TARGET doesn't
-      # end with /idstack — defense-in-depth against accidental wide deletes.
-      if [ -d "$CODEX_TARGET" ] && [ ! -L "$CODEX_TARGET" ]; then
-        if [ -z "$HOME" ] || [[ "$CODEX_TARGET" != */idstack ]]; then
-          echo "ERROR: refusing to rm $CODEX_TARGET (HOME=$HOME)" >&2
+    # Part 1: per-skill symlinks for auto-discovery.
+    mkdir -p "$CODEX_SKILLS_DIR"
+    for skill_dir in "$CODEX_BUNDLE_SKILLS"/idstack-*; do
+      [ -d "$skill_dir" ] || continue
+      skill_name=$(basename "$skill_dir")
+      target="$CODEX_SKILLS_DIR/$skill_name"
+      # Replace pre-existing real dir so ln -snf doesn't symlink-into-dir.
+      if [ -d "$target" ] && [ ! -L "$target" ]; then
+        if [ -z "$HOME" ] || [[ "$target" != */idstack-* ]]; then
+          echo "ERROR: refusing to rm $target" >&2
           exit 1
         fi
-        rm -rf "$CODEX_TARGET"
-        echo "  removed pre-existing dir: $CODEX_TARGET"
+        rm -rf "$target"
       fi
-      ln -snf "$IDSTACK_DIR" "$CODEX_TARGET"
-      echo "  linked: $CODEX_TARGET -> $IDSTACK_DIR"
+      ln -snf "$skill_dir" "$target"
+    done
+    echo "  linked 11 skills into: $CODEX_SKILLS_DIR/idstack-*"
+
+    # Part 2: whole-repo symlink so $_IDSTACK/bin/idstack-* resolves in skill bodies.
+    mkdir -p "$CODEX_BIN_PARENT"
+    if [ "$CODEX_BIN_TARGET" = "$IDSTACK_DIR" ]; then
+      echo "  in place: $CODEX_BIN_TARGET (no bin-resolution symlink needed)"
+    else
+      if [ -d "$CODEX_BIN_TARGET" ] && [ ! -L "$CODEX_BIN_TARGET" ]; then
+        if [ -z "$HOME" ] || [[ "$CODEX_BIN_TARGET" != */idstack ]]; then
+          echo "ERROR: refusing to rm $CODEX_BIN_TARGET (HOME=$HOME)" >&2
+          exit 1
+        fi
+        rm -rf "$CODEX_BIN_TARGET"
+        echo "  removed pre-existing dir: $CODEX_BIN_TARGET"
+      fi
+      ln -snf "$IDSTACK_DIR" "$CODEX_BIN_TARGET"
+      echo "  linked: $CODEX_BIN_TARGET -> $IDSTACK_DIR (for in-skill bin/ resolution)"
     fi
     echo ""
     echo "idstack installed (Codex CLI)."
