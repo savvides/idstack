@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>idstack — Evidence-Based Instructional Design Tools for Claude Code</title>
-  <meta name="description" content="Free, open source instructional design skills for Claude Code. Review courses against Quality Matters standards, check alignment with Bloom's taxonomy, flag cognitive load issues. Every recommendation backed by peer-reviewed research across 11 domains.">
-  <meta name="keywords" content="instructional design, course design, Claude Code, evidence-based, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, course review, LMS, Canvas, Moodle, Blackboard, SCORM, Common Cartridge, accessibility, UDL, open source">
+  <title>idstack — Evidence-Based Instructional Design Tools</title>
+  <meta name="description" content="Free, open-source instructional design skills that bring 30 years of peer-reviewed learning research into your course design workflow. Review courses against Quality Matters standards, check alignment with Bloom's taxonomy, flag cognitive load issues. Every recommendation cites its evidence tier. Runs in Claude Code and OpenAI Codex CLI.">
+  <meta name="keywords" content="instructional design, course design, evidence-based, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, course review, LMS, Canvas, Moodle, Blackboard, SCORM, Common Cartridge, accessibility, UDL, open source, Claude Code, OpenAI Codex CLI">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://idstack.org/">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -14,7 +14,7 @@
 
   <!-- Open Graph -->
   <meta property="og:title" content="idstack — Design better courses.">
-  <meta property="og:description" content="Free, open source instructional design skills for Claude Code. Course review, alignment checking, and quality audit backed by peer-reviewed research.">
+  <meta property="og:description" content="Free, open-source instructional design skills backed by peer-reviewed research. Course review, alignment checking, and quality audit with every recommendation citing its evidence tier. Runs in Claude Code and OpenAI Codex CLI.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://idstack.org/">
   <meta property="og:site_name" content="idstack">
@@ -22,12 +22,12 @@
   <meta property="og:image" content="https://idstack.org/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="idstack — Design better courses. Evidence-based instructional design skills for Claude Code.">
+  <meta property="og:image:alt" content="idstack — Design better courses. Evidence-based instructional design skills backed by peer-reviewed research.">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="idstack — Design better courses.">
-  <meta name="twitter:description" content="Free, open source instructional design skills for Claude Code. Evidence-based course review backed by research across 11 domains.">
+  <meta name="twitter:description" content="Free, open-source instructional design skills. Evidence-based course review backed by peer-reviewed research across 11 domains. Runs in Claude Code and OpenAI Codex CLI.">
   <meta name="twitter:image" content="https://idstack.org/og-image.png">
   <meta name="twitter:image:alt" content="idstack — Design better courses.">
 
@@ -37,7 +37,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "idstack",
-    "description": "Open source instructional design skills for Claude Code. Evidence-based course review, alignment checking, cognitive load analysis, and quality audit.",
+    "description": "Open-source instructional design skills backed by peer-reviewed research across 11 domains. Evidence-based course review, alignment checking, cognitive load analysis, and quality audit. Runs in Claude Code and OpenAI Codex CLI.",
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows",
@@ -664,12 +664,13 @@
     <h1>
       <span class="gradient">Design better courses.</span>
     </h1>
-    <p>Open source instructional design skills for Claude Code. Every recommendation is backed by peer-reviewed research, so you always know how strong the evidence is.</p>
+    <p>Open-source skills that bring 30 years of peer-reviewed instructional design research into your course design workflow. Every recommendation cites its evidence tier, from meta-analyses (T1) to expert opinion (T5).</p>
     <form id="signup-form" class="signup-form">
       <input type="email" name="email" placeholder="your@email.com" required aria-label="Email address">
       <button type="submit">Get updates</button>
     </form>
-    <p class="signup-note" id="signup-note">No spam. Just releases.</p>
+    <p class="signup-note" id="signup-note"></p>
+    <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Runs in Claude Code and OpenAI Codex CLI &middot; Gemini CLI coming in v2.6</p>
   </header>
 
   <hr class="section-divider" style="margin-top: 3rem;">
@@ -678,7 +679,7 @@
   <section class="section" id="what-it-does">
     <div class="section-label">What it does</div>
     <h2>Your course, reviewed by research</h2>
-    <p>idstack is a design partner that lives inside Claude Code. Import your course, and it checks your work against peer-reviewed research across 11 domains. No jargon. No guessing. Just evidence.</p>
+    <p>idstack is a design partner for course designers. Import your course, and it checks your work against peer-reviewed research across 11 domains. No jargon. No guessing. Just evidence.</p>
 
     <ul class="features">
       <li>
@@ -715,7 +716,7 @@
         <div class="demo-dot red"></div>
         <div class="demo-dot yellow"></div>
         <div class="demo-dot green"></div>
-        <span class="demo-title">claude code</span>
+        <span class="demo-title">terminal</span>
       </div>
       <div class="demo-body" aria-label="Example of idstack course review session">
         <div><span class="prompt">You:</span> <span class="command">/idstack:course-import</span></div>
@@ -743,123 +744,7 @@
         <div><span class="evidence">learning gains than correctness-only feedback</span></div>
       </div>
     </div>
-
-  </section>
-
-  <hr class="section-divider">
-
-  <!-- Get started -->
-  <section class="section" id="get-started">
-    <div class="section-label">Get started</div>
-    <h2>Up and running in 5 minutes</h2>
-
-    <div class="install-block">
-      <span class="dollar" aria-hidden="true">$</span>
-      <code id="install-cmd">git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup</code>
-      <button class="copy-btn" onclick="copyInstall()" aria-label="Copy install command to clipboard">Copy</button>
-    </div>
-
-    <p style="margin-top: 1.5rem; margin-bottom: 1.5rem;">New to Claude Code? No problem. Here's everything, step by step.</p>
-
-    <ol class="steps">
-      <li>
-        <div class="step-content">
-          <strong>Install Claude Code.</strong> It's a free AI tool that runs in your terminal.<br>
-          Visit <a href="https://claude.ai/download" target="_blank" rel="noopener">claude.ai/download</a> and follow the instructions for your computer.
-        </div>
-      </li>
-      <li>
-        <div class="step-content">
-          <strong>Install idstack.</strong> Open your terminal and paste the command above, or:<br>
-          <code>git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup</code>
-        </div>
-      </li>
-      <li>
-        <div class="step-content">
-          <strong>Start Claude Code</strong> by typing <code>claude</code> in your terminal.
-        </div>
-      </li>
-      <li>
-        <div class="step-content">
-          <strong>Import your course.</strong> Type <code>/idstack:course-import</code> and paste your syllabus, upload a Common Cartridge file, or connect your Canvas API.
-        </div>
-      </li>
-      <li>
-        <div class="step-content">
-          <strong>Get your review.</strong> Type <code>/idstack:course-quality-review</code> to see your evidence-based course audit. Or type <code>/idstack:pipeline</code> to run the full design pipeline automatically.
-        </div>
-      </li>
-    </ol>
-  </section>
-
-  <hr class="section-divider">
-
-  <!-- Your design team -->
-  <section class="section" id="how-it-works">
-    <div class="section-label">Your design team</div>
-    <h2>11 specialists. One command.</h2>
-    <p>Each skill is a specialist on your team. Run <code>/idstack:pipeline</code> and they work in sequence, or invoke any one directly.</p>
-
-    <div class="team-grid">
-      <div class="team-card">
-        <div class="team-title">Needs Analyst</div>
-        <div class="team-skill">/idstack:needs-analysis</div>
-        <div class="team-desc">Three-level assessment before you build anything. Is training the right intervention? Task analysis and learner profiling.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Curriculum Designer</div>
-        <div class="team-skill">/idstack:learning-objectives</div>
-        <div class="team-desc">Measurable objectives with Bloom's taxonomy. Bidirectional alignment check: does each objective have a matching activity AND assessment?</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Assessment Architect</div>
-        <div class="team-skill">/idstack:assessment-design</div>
-        <div class="team-desc">Evidence-based rubrics and feedback strategies. Formative checkpoints before summative assessments. Nicol's 7 principles of good feedback.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">LMS Bridge</div>
-        <div class="team-skill">/idstack:course-import</div>
-        <div class="team-desc">Import from Common Cartridge, Canvas API, SCORM, PDF, or paste. Quick-scan quality flags and Bloom's pre-classification on import.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Content Generator</div>
-        <div class="team-skill">/idstack:course-builder</div>
-        <div class="team-desc">Generates syllabus, module pages, assignments, and rubrics from your manifest. Content adapts to learner expertise level.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Quality Auditor</div>
-        <div class="team-skill">/idstack:course-quality-review</div>
-        <div class="team-desc">Full Quality Matters audit plus Community of Inquiry presence analysis. 8 structural standards, 3 presence dimensions. Every finding cites its evidence.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Accessibility Reviewer</div>
-        <div class="team-skill">/idstack:accessibility-review</div>
-        <div class="team-desc">WCAG 2.1 AA compliance audit plus Universal Design for Learning review. Scores accessibility 0-100 with "Must Fix" and "Should Improve" tiers.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Adversarial Auditor</div>
-        <div class="team-skill">/idstack:red-team</div>
-        <div class="team-desc">Assumes your course is broken and tries to prove it. Alignment stress test, persona simulation, prerequisite chain integrity. Confidence score.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">LMS Publisher</div>
-        <div class="team-skill">/idstack:course-export</div>
-        <div class="team-desc">Exports to IMS Common Cartridge, SCORM 1.2, or pushes directly to Canvas via API. Shows readiness dashboard before export.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Pipeline Orchestrator</div>
-        <div class="team-skill">/idstack:pipeline</div>
-        <div class="team-desc">Chains all 8 skills automatically in order. Auto-skips completed skills. Pause anytime, resume later. One command for the full design cycle.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Memory Manager</div>
-        <div class="team-skill">/idstack:learn</div>
-        <div class="team-desc">Search, delete, promote, and export learnings. Cross-project intelligence means discoveries from one course help design the next.</div>
-      </div>
-    </div>
-
-    <h3 style="font-size: 1.15rem; margin-top: 2.5rem; margin-bottom: 0.5rem;">How they fit together</h3>
-    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Skills are plain Markdown files. No build step, no dependencies. Each skill reads the shared manifest and session history, runs its evidence-based workflow, and logs the result. Your course context builds up over time.</p>
+    <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Shown in Claude Code (<code>/idstack:&lt;skill&gt;</code>). In OpenAI Codex CLI, the same skills are invoked as <code>$&lt;skill&gt;</code>.</p>
 
   </section>
 
@@ -940,6 +825,126 @@
 
   <hr class="section-divider">
 
+  <!-- Get started -->
+  <section class="section" id="get-started">
+    <div class="section-label">Get started</div>
+    <h2>Up and running in 5 minutes</h2>
+
+    <p style="margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary);"><code>./setup</code> auto-detects Claude Code or OpenAI Codex CLI on your <code>PATH</code> and installs to whichever you have. Force one with <code>--codex</code> or <code>--no-codex</code>.</p>
+
+    <div class="install-block">
+      <span class="dollar" aria-hidden="true">$</span>
+      <code id="install-cmd">git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup</code>
+      <button class="copy-btn" onclick="copyInstall()" aria-label="Copy install command to clipboard">Copy</button>
+    </div>
+
+    <p style="margin-top: 1.5rem; margin-bottom: 1.5rem;">New to AI coding tools? No problem. Here's everything, step by step.</p>
+
+    <ol class="steps">
+      <li>
+        <div class="step-content">
+          <strong>Install your AI coding tool.</strong> idstack supports two:<br>
+          &middot; <strong>Claude Code</strong> &mdash; free download at <a href="https://claude.ai/download" target="_blank" rel="noopener">claude.ai/download</a><br>
+          &middot; <strong>OpenAI Codex CLI</strong> &mdash; <code>npm install -g @openai/codex</code>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <strong>Install idstack.</strong> Open your terminal and paste the command above, or:<br>
+          <code>git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup</code>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <strong>Start your AI tool</strong> &mdash; type <code>claude</code> for Claude Code, or <code>codex</code> for Codex CLI.
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <strong>Import your course.</strong> Type <code>/idstack:course-import</code> (or <code>$course-import</code> in Codex) and paste your syllabus, upload a Common Cartridge file, or connect your Canvas API.
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <strong>Get your review.</strong> Type <code>/idstack:course-quality-review</code> to see your evidence-based course audit. Or type <code>/idstack:pipeline</code> to run the full design pipeline automatically.
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Your design team -->
+  <section class="section" id="how-it-works">
+    <div class="section-label">Your design team</div>
+    <h2>11 specialists. One command.</h2>
+    <p>Each skill is a specialist on your team. Run <code>/idstack:pipeline</code> and they work in sequence, or invoke any one directly. Codex CLI users: drop the <code>/idstack:</code> prefix and use <code>$&lt;skill&gt;</code> (e.g., <code>$pipeline</code>, <code>$needs-analysis</code>).</p>
+
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-title">Needs Analyst</div>
+        <div class="team-skill">/idstack:needs-analysis</div>
+        <div class="team-desc">Three-level assessment before you build anything. Is training the right intervention? Task analysis and learner profiling.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Curriculum Designer</div>
+        <div class="team-skill">/idstack:learning-objectives</div>
+        <div class="team-desc">Measurable objectives with Bloom's taxonomy. Bidirectional alignment check: does each objective have a matching activity AND assessment?</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Assessment Architect</div>
+        <div class="team-skill">/idstack:assessment-design</div>
+        <div class="team-desc">Evidence-based rubrics and feedback strategies. Formative checkpoints before summative assessments. Nicol's 7 principles of good feedback.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">LMS Bridge</div>
+        <div class="team-skill">/idstack:course-import</div>
+        <div class="team-desc">Import from Common Cartridge, Canvas API, SCORM, PDF, or paste. Quick-scan quality flags and Bloom's pre-classification on import.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Content Generator</div>
+        <div class="team-skill">/idstack:course-builder</div>
+        <div class="team-desc">Generates syllabus, module pages, assignments, and rubrics from your manifest. Content adapts to learner expertise level.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Quality Auditor</div>
+        <div class="team-skill">/idstack:course-quality-review</div>
+        <div class="team-desc">Full Quality Matters audit plus Community of Inquiry presence analysis. 8 structural standards, 3 presence dimensions. Every finding cites its evidence.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Accessibility Reviewer</div>
+        <div class="team-skill">/idstack:accessibility-review</div>
+        <div class="team-desc">WCAG 2.1 AA compliance audit plus Universal Design for Learning review. Scores accessibility 0-100 with "Must Fix" and "Should Improve" tiers.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Adversarial Auditor</div>
+        <div class="team-skill">/idstack:red-team</div>
+        <div class="team-desc">Assumes your course is broken and tries to prove it. Alignment stress test, persona simulation, prerequisite chain integrity. Confidence score.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">LMS Publisher</div>
+        <div class="team-skill">/idstack:course-export</div>
+        <div class="team-desc">Exports to IMS Common Cartridge, SCORM 1.2, or pushes directly to Canvas via API. Shows readiness dashboard before export.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Pipeline Orchestrator</div>
+        <div class="team-skill">/idstack:pipeline</div>
+        <div class="team-desc">Chains all 8 skills automatically in order. Auto-skips completed skills. Pause anytime, resume later. One command for the full design cycle.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-title">Memory Manager</div>
+        <div class="team-skill">/idstack:learn</div>
+        <div class="team-desc">Search, delete, promote, and export learnings. Cross-project intelligence means discoveries from one course help design the next.</div>
+      </div>
+    </div>
+
+    <h3 style="font-size: 1.15rem; margin-top: 2.5rem; margin-bottom: 0.5rem;">How they fit together</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Skills are plain Markdown files. No build step, no dependencies. Each skill reads the shared manifest and session history, runs its evidence-based workflow, and logs the result. Your course context builds up over time.</p>
+
+  </section>
+
+  <hr class="section-divider">
+
   <!-- Updates & Roadmap -->
   <section class="section" id="updates">
     <div class="section-label">Updates</div>
@@ -951,9 +956,9 @@
       <div class="timeline-item coming-soon">
         <div class="timeline-dot coming-soon-dot"></div>
         <div class="timeline-content coming-soon-card">
-          <div class="timeline-date">Coming soon</div>
-          <div class="timeline-title">Multi-platform support</div>
-          <div class="timeline-desc">Run idstack skills in Gemini CLI with <code>./setup --host gemini</code>. Same skills, same evidence, different AI. Gated on a spike test before full rollout.</div>
+          <div class="timeline-date">Coming soon <span class="version-tag">v2.6</span></div>
+          <div class="timeline-title">Gemini CLI support</div>
+          <div class="timeline-desc"><code>.tmpl</code> &rarr; <code>.toml</code> transform plus a <code>gemini-extension.json</code> manifest. Gemini's built-in <code>ask_user</code> tool maps cleanly to idstack's structured-question protocol. Same skills, same evidence, third runtime.</div>
         </div>
       </div>
       <div class="timeline-item coming-soon">
@@ -977,7 +982,15 @@
       <div class="timeline-item">
         <div class="timeline-dot shipped-dot"></div>
         <div class="timeline-content">
-          <div class="timeline-date">May 5 <span class="version-tag">v2.4.0</span> <span class="latest-badge">Latest</span></div>
+          <div class="timeline-date">May 9 <span class="version-tag">v2.5.0</span> <span class="latest-badge">Latest</span></div>
+          <div class="timeline-title">Native OpenAI Codex CLI support</div>
+          <div class="timeline-desc">Same 11 skills, same evidence base, same <code>.idstack/</code> dual-output contract, same manifest schema &mdash; now running natively in OpenAI Codex CLI alongside Claude Code. <code>./setup</code> auto-detects <code>codex</code> on <code>PATH</code>. New multi-target generator (<code>bin/idstack-gen-skills --target {claude|codex|all}</code>) emits both flavors from a single source. Codex auto-discovers skills at <code>$CODEX_HOME/skills/idstack-&lt;name&gt;/</code>. Skill bodies stay CLI-agnostic via a portable concept-name preamble.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot shipped-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">May 5 <span class="version-tag">v2.4.0</span></div>
           <div class="timeline-title">Dual-output reports + pipeline aggregator</div>
           <div class="timeline-desc">Every finding-producing skill now writes both a JSON manifest section (system state) and a Markdown report at <code>.idstack/reports/&lt;skill&gt;.md</code> (the human view), structured as observation → evidence → why it matters → suggestion. <code>/idstack:pipeline</code> produces a cross-cutting <code>pipeline.md</code> aggregate over all per-skill reports — top recurring issues, evidence themes, where to start. Plus install-hygiene fix and new <code>bin/idstack-doctor</code> diagnostic.</div>
         </div>
@@ -1056,14 +1069,6 @@
       </div>
     </div>
 
-    <!-- From the builder -->
-    <div class="builder-note">
-      <h3>Where we're headed</h3>
-      <p>Right now idstack covers the core loop: analyze needs, write objectives, design assessments, build content, and review quality. That handles most of what you do day to day. But there's more to get to.</p>
-      <p>The next skills will handle the specialized workflows that eat up the rest of your time: sequencing content so it doesn't overload learners, choosing the right media for each objective, and planning how to measure whether your course actually worked.</p>
-      <p>Longer term, the goal is <strong>pushing changes back to your LMS</strong>. You update an objective in idstack, and it updates in Canvas. Every connected assessment and module page updates with it. No more maintaining two copies of your course.</p>
-      <p style="margin-top: 1.5rem;"><a href="https://forms.gle/6LDgDD1M6WWyYvME8">Tell us what matters most to you</a>. Priorities are shaped by what instructional designers actually need.</p>
-    </div>
   </section>
 
   <hr class="section-divider">
