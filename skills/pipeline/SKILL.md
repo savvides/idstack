@@ -18,13 +18,43 @@ allowed-tools:
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->
 
 
+## Preamble: Interaction Conventions
+
+idstack skills are designed to run in multiple CLIs (Claude Code, OpenAI Codex CLI, and
+others). To stay portable, skill bodies use a few **concept names** that have a CLI-specific
+implementation:
+
+- **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
+  it means: present a single numbered multiple-choice question (e.g., "Which of these best
+  describes X? 1) ..., 2) ..., 3) Other") and stop, waiting for the user's next message
+  before proceeding. Ask **one** question at a time, never batch. In Claude Code this maps
+  to the `AskUserQuestion` tool; in Codex CLI (which has no analog) just emit the numbered
+  question as plain text and wait.
+- **Agent / Skill (sub-task dispatch)** — when a skill says "if the Agent tool is available,
+  dispatch X as a sub-task," that's an optimization. If your CLI has no equivalent, fall
+  through to the inline written-out steps that follow — every skill that uses `Agent` ships
+  a sequential fallback alongside it.
+- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`. In Claude Code this
+  invokes a child skill in-process via the `Skill` tool. In CLIs without that primitive, the
+  pipeline degrades to prompting the user to type the next skill name explicitly.
+
+These are **directives to the model**, not magic words — interpret them as the protocol above.
+
 ## Preamble: Update Check
 
 ```bash
+# Locate the idstack install. Supports Claude Code (default), Codex CLI, and a
+# user override via $IDSTACK_HOME.
 if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   _IDSTACK="$CLAUDE_PLUGIN_ROOT"
 elif [ -n "${IDSTACK_HOME:-}" ]; then
   _IDSTACK="$IDSTACK_HOME"
+elif [ -d "$HOME/.claude/plugins/idstack" ]; then
+  _IDSTACK="$HOME/.claude/plugins/idstack"
+elif [ -d "$HOME/.agents/plugins/idstack" ]; then
+  _IDSTACK="$HOME/.agents/plugins/idstack"
+elif [ -d "$HOME/.agents/skills/idstack" ]; then
+  _IDSTACK="$HOME/.agents/skills/idstack"
 else
   _IDSTACK="$HOME/.claude/plugins/idstack"
 fi
@@ -32,7 +62,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd ${IDSTACK_HOME:-~/.claude/plugins/idstack} && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -300,6 +330,14 @@ For each skill from the starting point onward:
 3. The skill will run its full workflow including all AskUserQuestion interactions
 4. When the skill completes (logs to timeline), **execute Step 4 (Generate Pipeline Report) inline** to refresh `.idstack/reports/pipeline.md` against the new per-skill report. This keeps the aggregate fresh if the designer pauses partway through.
 5. Announce completion and move to next.
+
+**If the Skill tool is NOT available** (e.g., on Codex CLI or any host without a primitive
+to invoke a sibling skill in-process), degrade gracefully: after announcing the next skill,
+print exactly what the user should type to invoke it (e.g., "Type `$needs-analysis` to run
+the next stage, then resume the pipeline by typing `$pipeline` again") and STOP. The user
+runs the skill themselves; the pipeline picks up on the next `$pipeline` invocation by re-
+reading the timeline and continuing from the new starting point. Generate the pipeline
+report (Step 4) before stopping so the partial-run aggregate is up to date.
 
 **Between skills**, briefly announce the transition:
 "[skill-name] complete. Pipeline report refreshed. Moving to /next-skill..."

@@ -172,8 +172,28 @@ if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
   fi
 fi
 
-# Template freshness check
-check "generated SKILL.md files are up to date" "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
+# Template freshness check (covers all targets: claude + codex)
+check "generated files are up to date for all targets" "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
+
+# Codex bundle (dist/codex/) — generated artifacts shipped for Codex CLI consumers.
+# These checks pass when the bundle has been generated; bin/idstack-gen-skills
+# regenerates dist/codex/ from the same .tmpl source, so drift is impossible if
+# the freshness check above passed.
+CODEX_BUNDLE="$IDSTACK_DIR/dist/codex"
+check "Codex bundle dir exists" "[ -d '$CODEX_BUNDLE' ]"
+check "Codex marketplace.json exists" "[ -f '$CODEX_BUNDLE/marketplace.json' ]"
+if command -v python3 >/dev/null 2>&1; then
+  check "Codex marketplace.json is valid JSON" "python3 -c 'import json; json.load(open(\"$CODEX_BUNDLE/marketplace.json\"))'"
+  check "Codex marketplace.json declares the idstack plugin" "python3 -c 'import json; d=json.load(open(\"$CODEX_BUNDLE/marketplace.json\")); assert d[\"name\"]==\"idstack\"; assert any(p[\"name\"]==\"idstack\" for p in d[\"plugins\"])'"
+fi
+check "Codex AGENTS.md exists" "[ -f '$CODEX_BUNDLE/AGENTS.md' ]"
+for skill in $SKILLS; do
+  check "Codex skills/idstack-$skill/SKILL.md exists" "[ -f '$CODEX_BUNDLE/skills/idstack-$skill/SKILL.md' ]"
+  check "Codex $skill has name: $skill" "grep -q '^name: $skill' '$CODEX_BUNDLE/skills/idstack-$skill/SKILL.md'"
+  check "Codex $skill has description: field" "grep -q '^description:' '$CODEX_BUNDLE/skills/idstack-$skill/SKILL.md'"
+  # Codex has no per-skill tool allowlist; the field must be stripped.
+  check "Codex $skill has allowed-tools: stripped" "! grep -q '^allowed-tools:' '$CODEX_BUNDLE/skills/idstack-$skill/SKILL.md'"
+done
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

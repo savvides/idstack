@@ -5,15 +5,6 @@ description: |
   pasted course documents, or Canvas REST API. Maps course structure to the
   idstack manifest with quality flags, task analysis, and Bloom's classification.
   Works with Canvas, Blackboard, Moodle, and D2L. (idstack)
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - WebFetch
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->

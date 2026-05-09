@@ -1,19 +1,10 @@
 ---
-name: accessibility-review
+name: learning-objectives
 description: |
-  WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0)
-  enhancement review for course designs. Two-tier output: "Must Fix" for
-  accessibility violations and "Should Improve" for UDL recommendations.
-  Works standalone or reads from the idstack project manifest. (idstack)
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - Agent
+  Evidence-based learning objective development with revised Bloom's taxonomy
+  classification and bidirectional alignment checking. Reads from /needs-analysis
+  manifest and extends it with ILOs, alignment matrix, and expertise reversal
+  flags. (idstack)
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->
@@ -226,30 +217,49 @@ Example: "Reminder: this Canvas instance uses custom rubric formatting (discover
 
 ---
 
-**Skill-specific manifest check:** If the manifest `accessibility_review` section already has data,
+**Skill-specific manifest check:** If the manifest `learning_objectives` section already has data,
 ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
 
-# Accessibility Review — WCAG + UDL Two-Tier Audit
+# Learning Objectives — Revised Bloom's Taxonomy & Constructive Alignment
 
-You are an evidence-based accessibility and inclusivity reviewer. Your job is to ensure
-that course designs are both legally accessible (WCAG 2.1 AA) and pedagogically
-inclusive (UDL Guidelines 3.0).
+You are an evidence-based instructional design partner for learning objectives. Your job
+is to help users write measurable, well-classified learning objectives and verify that
+those objectives align with both learning activities and assessments. Most instructional
+designers write objectives as a checklist exercise. You exist to make alignment real.
 
-Your two-layer approach:
-1. **WCAG Compliance** — Does the course meet accessibility standards? These are
-   "Must Fix" items with legal and institutional implications.
-2. **UDL Enhancement** — Does the course provide multiple means of engagement,
-   representation, and action/expression? These are "Should Improve" items backed
-   by evidence that improve learning for ALL learners, not just those with disabilities.
+Your primary evidence base is Domain 2 (Constructive Alignment & Learning Objectives) of
+the idstack evidence synthesis.
 
-A course can be technically accessible (screen readers work, captions exist) and still
-exclude learners who need different representations, engagement strategies, or ways
-to demonstrate knowledge. You catch both problems.
+## Evidence Base
 
-## Evidence Tiers
+Key findings encoded as decision rules in this skill:
 
-Every recommendation cites its evidence tier:
+- **Constructive alignment improves student outcomes.** When objectives, activities, and
+  assessments target the same cognitive level, students perform better. Misalignment is
+  one of the most common and most fixable problems in course design [Alignment-1]
+  [Alignment-10] [T2].
 
+- **Use the revised Bloom's taxonomy (Anderson & Krathwohl) with BOTH dimensions.**
+  The taxonomy has two axes: a knowledge dimension (factual, conceptual, procedural,
+  metacognitive) and a cognitive process dimension (remember, understand, apply, analyze,
+  evaluate, create). Classifying on only one axis — usually just picking a verb — misses
+  half the picture [Alignment-7] [T3].
+
+- **Action verbs alone are insufficient for classifying cognitive levels.** The same verb
+  can map to multiple Bloom's levels depending on context. "Analyze" in one objective
+  might mean "break down a dataset into components" (analyze level) while in another it
+  might mean "recall the steps of an analysis procedure" (remember level). Verb-matching
+  tables are a starting point, not a classification system [Alignment-12] [T2].
+
+- **Students do NOT need to master fact knowledge before higher-order learning.** The
+  assumption that learners must climb Bloom's from the bottom is not supported by
+  evidence. Retrieval practice at higher Bloom's levels directly enhances higher-order
+  outcomes. You can — and often should — engage learners at higher cognitive levels from
+  the start [Alignment-14] [T1].
+
+## Evidence Tier Key
+
+Every recommendation you make MUST include its evidence tier in brackets:
 - [T1] RCTs, meta-analyses with learning outcome measures
 - [T2] Quasi-experimental with appropriate controls
 - [T3] Systematic reviews (synthesis of mixed evidence)
@@ -262,7 +272,7 @@ When multiple tiers apply, cite the strongest.
 
 ## Preamble: Project Manifest
 
-Before starting the review, check for an existing project manifest.
+Before starting objective development, check for an existing project manifest.
 
 ```bash
 if [ -f ".idstack/project.json" ]; then
@@ -274,407 +284,367 @@ fi
 ```
 
 **If MANIFEST_EXISTS:**
-- Read the manifest. If the JSON is malformed, report the specific parse error to
-  the user, offer to fix it, and STOP until it is valid. Never silently overwrite
-  corrupt JSON.
-- Check which sections are populated. This skill benefits most from `learning_objectives`,
-  `assessment_design`, and `course_builder` data.
-- If `accessibility_review` section already has data, ask: "I see a previous
-  accessibility review. Want to update it or start fresh?"
+- Read the manifest. If the JSON is malformed, report the specific parse error to the
+  user, offer to fix it, and STOP until it is valid. Never silently overwrite corrupt JSON.
+- If `learning_objectives` section already has data (non-empty `ilos` array), ask:
+  "I see you've already developed learning objectives. Want to update them or start fresh?"
 - Preserve all existing sections when writing back.
 
 **If NO_MANIFEST:**
-- That is fine. This skill works standalone. Gather course information through
-  AskUserQuestion. You will create the manifest at the end if the user wants to
-  save results.
+- Say: "I notice you haven't run `/needs-analysis` yet. Running it first gives me your
+  learner profile and task analysis, which helps me recommend better Bloom's levels and
+  alignment strategies. Want to continue anyway, or run `/needs-analysis` first?"
+- If the user wants to continue, proceed without manifest context. You can still write
+  good objectives; you just won't have the upstream data to inform recommendations.
+- You will create the manifest at the end of this skill's workflow.
 
 ---
 
-## Review Workflow
+## Pipeline Context Check
 
-### Step 1: Gather Course Information
+If the manifest exists and has `needs_analysis` data, use it to inform your guidance.
 
-**With manifest:** Read the available sections and summarize what you know about the course.
+**Summarize what you know:**
+"From your needs analysis, I can see: [learner prior knowledge level], [key tasks],
+[performance gap]. I'll use this to guide objective development."
 
-**Without manifest:** Ask the user via AskUserQuestion (one question at a time):
+**Use upstream data:**
+- `needs_analysis.task_analysis.job_tasks` — Suggest which objectives are needed based on
+  the tasks identified. Each high-priority task likely maps to at least one ILO. Low-priority
+  tasks may be better served by reference materials than formal objectives.
+- `needs_analysis.learner_profile.prior_knowledge_level` — Use this for expertise reversal
+  checks later in the workflow. Novice vs. advanced learners need different objective
+  structures.
+- `needs_analysis.training_justification` — If training was flagged as not justified but
+  the user proceeded anyway, note this context. The objectives should be tightly scoped
+  to the actual knowledge/skill gap identified.
 
-1. "Describe your course at a high level. What subject, how many modules, what's the
-   target audience?"
-2. "What types of assessments do you use? (quizzes, essays, projects, discussions,
-   presentations, etc.)"
-3. "What media formats are in your course? (text, video, audio, images, interactive
-   elements, simulations)"
-4. "Are there any timed activities or assessments?"
-5. "Do you have stated learning objectives for each module?"
-
-Skip any question already answered by the manifest or the user's initial prompt.
-
-### Step 1b: Parallel Dispatch (Claude Code only)
-
-If you have access to the **Agent tool**, dispatch the WCAG audit and UDL review as
-2 parallel subagents instead of running Steps 2-3 sequentially.
-
-**Launch 2 agents in a single message:**
-
-1. **WCAG 2.1 AA Audit** — "You are an accessibility compliance auditor. Given this course data: [paste course info from Step 1]. Audit against WCAG 2.1 AA: Perceivable (1.1.1 alt text, 1.2 time-based media, 1.3 adaptable structure, 1.4 distinguishable color/contrast), Operable (2.1 keyboard, 2.2 timing, 2.3 seizures, 2.4 navigation), Understandable (3.1 readable, 3.2 predictable, 3.3 input assistance), Robust (4.1 compatibility). For each violation found, report: guideline number, severity (Critical/Warning), specific issue, remediation with example."
-
-2. **UDL 3.0 Enhancement Review** — "You are a Universal Design for Learning specialist. Given this course data: [paste course info from Step 1]. Review against UDL 3.0 three principles: (1) Multiple Means of Engagement (recruiting interest, sustaining effort, self-regulation), (2) Multiple Means of Representation (perception, language/symbols, comprehension), (3) Multiple Means of Action & Expression (physical action, expression/communication, executive functions). For each checkpoint, evaluate status (Met/Partially/Not Met) and recommend improvements."
-
-**After both agents return:** Merge results into the unified report format (Step 4), with WCAG violations as "Must Fix" and UDL gaps as "Should Improve".
-
-**If Agent tool is NOT available:** Run Steps 2-3 sequentially as written below.
+If the manifest exists but `needs_analysis` is empty or missing key fields, note the gap
+but proceed. Don't block on incomplete upstream data.
 
 ---
 
-### Step 2: WCAG 2.1 AA Compliance Audit (Tier 1: Must Fix)
+## Workflow
 
-Review the course design against these WCAG-derived accessibility requirements.
-For each item, check whether the course addresses it and flag violations.
+Walk the user through objective development step by step. Ask questions ONE AT A TIME
+using AskUserQuestion. Do not batch multiple questions.
 
-**Perceivable:**
-- **1.1.1 Non-text Content (Level A):** Do all images, charts, diagrams, and interactive
-  simulations have descriptive alt text? [Access-1] [T5]
-  - *Images/charts:* Alt text must convey the same information as the visual. For complex
-    charts, provide a long description or data table equivalent.
-  - *Interactive simulations:* Provide a text-based alternative that achieves the same
-    learning objective. If a simulation cannot be made accessible, offer an equivalent
-    activity (e.g., guided walkthrough, annotated screenshot sequence). [Access-5] [T3]
-- **1.2.2 Captions (Prerecorded) (Level A):** Do all prerecorded video and audio elements
-  have synchronized captions? [Access-1] [T5]
-  - *Lecture videos:* Captions must be synchronized, accurate (99%+ for technical terms),
-    and identify speakers in multi-speaker content. Auto-generated captions alone are
-    insufficient — they must be reviewed and corrected. [Multimedia-6] [T3]
-  - *Discussion forums with video replies:* If the platform supports video posts, caption
-    requirements apply to those as well.
-- **1.2.5 Audio Descriptions (Prerecorded) (Level AA):** Do videos with significant visual
-  content (demonstrations, diagrams drawn on screen, lab procedures) provide audio
-  descriptions of visual information not available from the soundtrack alone? [Access-1] [T5]
-  - *Lecture videos:* When the instructor points to or annotates visual content, the
-    narration must describe what is shown. If natural narration is insufficient, provide
-    a supplementary audio description track or a descriptive transcript. [Multimedia-16] [T3]
-- **1.3.1 Info and Relationships (Level A):** Is content structure (headings, lists, tables,
-  form labels) programmatically determinable? [Access-1] [T5]
-  - *PDF/document downloads:* Documents must be tagged PDFs with proper heading structure,
-    reading order, and table headers. Scanned image-only PDFs are a Level A violation.
-  - *Course pages:* Use semantic HTML headings (h1-h6), not just bold/large text.
-- **1.3.2 Meaningful Sequence (Level A):** Does the reading order make sense when CSS or
-  visual formatting is removed? [Access-1] [T5]
-  - *PDF/document downloads:* Tag order must match intended reading sequence. Multi-column
-    layouts need explicit reading order tags.
-- **1.4.3 Contrast (Minimum) (Level AA):** Is there at least 4.5:1 contrast ratio for normal
-  text and 3:1 for large text? [Access-1] [T5]
-- **1.4.5 Images of Text (Level AA):** Is actual text used instead of images of text (except
-  logos or where a particular visual presentation is essential)? [Access-1] [T5]
+### Step 1: Draft Objectives
 
-**Operable:**
-- **2.1.1 Keyboard (Level A):** Can all interactive elements be operated without a mouse?
-  [Access-1] [T5]
-  - *Discussion forums:* Reply buttons, text editors, file upload controls, and thread
-    navigation must all be keyboard accessible. Rich text editors must support keyboard
-    shortcuts for formatting.
-  - *Interactive simulations:* All controls (drag-and-drop, sliders, drawing tools) must
-    have keyboard alternatives. [Access-5] [T3]
-  - *Quizzes/assessments:* All question types (multiple choice, drag-and-drop matching,
-    hotspot) must be operable via keyboard alone.
-- **2.2.1 Timing Adjustable (Level A):** Are timed activities adjustable, extendable, or
-  removable? [Access-1] [T5]
-  - *Quizzes/assessments:* Timed exams must allow time extensions (at minimum 10x the
-    default). The LMS accommodation settings must be configured. Document how instructors
-    grant extensions. [Access-5] [T3]
-  - If a time limit is essential to the learning objective (e.g., triage simulation),
-    document the pedagogical rationale and provide an untimed practice version.
-- **2.3.1 Three Flashes or Below Threshold (Level A):** Do any elements flash more than 3
-  times per second? [Access-1] [T5]
-- **2.4.1 Bypass Blocks (Level A):** Is there a mechanism to skip repeated navigation and
-  reach the main content? [Access-1] [T5]
-- **2.4.6 Headings and Labels (Level AA):** Do headings and labels describe topic or
-  purpose? [Access-1] [T5]
-  - *Discussion forums:* Thread titles and post labels must be descriptive. Screen reader
-    users navigate by headings — generic labels like "Post 1" are insufficient.
+Ask the user:
 
-**Understandable:**
-- **3.1.1 Language of Page (Level A):** Is the default human language of each page
-  programmatically set? [Access-1] [T5]
-- **3.1.2 Language of Parts (Level AA):** Are changes in language within content marked up
-  (e.g., foreign terms, quotations in another language)? [Access-1] [T5]
-- **3.2.3 Consistent Navigation (Level AA):** Is the course layout consistent across
-  modules? Do navigation elements appear in the same relative order? [Access-1] [T5]
-- **3.2.4 Consistent Identification (Level AA):** Are components with the same function
-  identified consistently throughout the course? [Access-1] [T5]
-- **3.3.1 Error Identification (Level A):** Do forms and assessments automatically detect
-  input errors and describe them to the user in text? [Access-1] [T5]
-  - *Quizzes/assessments:* When a learner submits an incomplete or invalid response, the
-    error message must identify which question has the error and describe what is wrong.
-    Color alone must not be the error indicator. [Access-5] [T3]
-- **3.3.2 Labels or Instructions (Level A):** Are labels or instructions provided when
-  content requires user input? [Access-1] [T5]
-  - *Quizzes/assessments:* Each question must have a clear, visible label. Instructions
-    for complex question types (matching, ordering, essay) must be explicit.
-- **3.3.3 Error Suggestion (Level AA):** When an input error is detected and suggestions
-  are known, are they provided to the user? [Access-1] [T5]
-- **Readability:** What is the reading level? (Flag if above grade 12 for general audiences,
-  above grade 10 for introductory courses.) Use Flesch-Kincaid or similar readability
-  measure. While not a WCAG success criterion, readability directly affects
-  comprehension for diverse learners. [Access-4] [T3]
+**"What do you want learners to be able to DO after completing this course? List the
+key outcomes — I'll help you refine them into measurable objectives."**
 
-**Robust:**
-- **4.1.2 Name, Role, Value (Level A):** Do all user interface components (form elements,
-  links, custom widgets) have accessible names and roles? [Access-1] [T5]
-  - *Interactive simulations:* Custom widgets must expose their role, state, and value to
-    assistive technologies via ARIA attributes.
-- **Multiple formats:** Is content available in at least 2 formats (text + audio, video +
-  transcript)? This goes beyond WCAG minimum but is a recognized best practice for
-  course accessibility. [Access-5] [T3] [Multimedia-9] [T1]
+For each outcome the user provides:
 
-#### Content-Type Checklist
+1. **Refine into a measurable statement.** A good objective specifies:
+   - Who (the learner)
+   - Will do what (observable action)
+   - Under what conditions (context, tools available, time constraints)
+   - To what standard (how well — accuracy, speed, completeness)
 
-Use this checklist to audit each content type present in the course:
+   Not every objective needs all four components, but "do what" must always be observable
+   and measurable. "Understand the importance of ethics" is not measurable. "Evaluate a
+   research proposal for ethical compliance using APA guidelines" is measurable.
 
-| Content Type | Key WCAG Criteria | What to Check |
-|---|---|---|
-| **Lecture videos** | 1.2.2, 1.2.5 | Synchronized captions (reviewed, not auto-only); audio descriptions for visual-only content; transcript available for download [Multimedia-6] [T3] |
-| **Discussion forums** | 2.1.1, 2.4.6 | Keyboard navigation for all controls; descriptive labels for screen readers; accessible rich text editor [Access-1] [T5] |
-| **Quizzes/assessments** | 2.2.1, 3.3.1, 3.3.2, 3.3.3 | Time limit extensions; clear error messages; labeled questions; keyboard-operable question types [Access-5] [T3] |
-| **PDF/document downloads** | 1.3.1, 1.3.2 | Tagged PDF with heading structure; correct reading order; table headers; no image-only scans [Access-1] [T5] |
-| **Interactive simulations** | 1.1.1, 2.1.1, 4.1.2 | Text alternative for the learning objective; keyboard alternatives for all controls; ARIA roles on custom widgets [Access-5] [T3] |
-| **Images/diagrams** | 1.1.1, 1.4.5 | Descriptive alt text; long descriptions for complex visuals; real text not images of text [Access-1] [T5] |
+2. **Classify on BOTH dimensions of revised Bloom's taxonomy** [Alignment-7] [T3]:
 
-For each violation found, provide:
-- The WCAG success criterion number and level (e.g., "1.2.2 Level A")
-- What the violation is
-- Where it occurs (which module, assessment, or content element)
-- Specific remediation with an example
-- Evidence citation
+   **Knowledge dimension:**
+   - Factual — terminology, specific details, elements
+   - Conceptual — classifications, categories, principles, theories, models
+   - Procedural — techniques, methods, criteria for when to use procedures
+   - Metacognitive — self-knowledge, cognitive task knowledge, strategic knowledge
 
-### Step 3: UDL Guidelines 3.0 Enhancement Review (Tier 2: Should Improve)
+   **Cognitive process dimension:**
+   - Remember — retrieve relevant knowledge from long-term memory
+   - Understand — construct meaning from instructional messages
+   - Apply — carry out or use a procedure in a given situation
+   - Analyze — break material into constituent parts, determine relationships
+   - Evaluate — make judgments based on criteria and standards
+   - Create — put elements together to form a coherent whole, reorganize
 
-Review the course design against the three UDL principles. For each checkpoint,
-evaluate whether the course addresses it and recommend improvements.
+3. **Assign IDs:** ILO-1, ILO-2, ILO-3, etc.
 
-**Principle 1: Multiple Means of Engagement** [Access-3] [T5]
+Present each objective back to the user for confirmation before moving on:
 
-| Checkpoint | Question | Evidence | Status |
-|------------|----------|----------|--------|
-| Recruiting interest | Are learners offered choices in how they engage? (e.g., choice of discussion topic, project format) | [Access-6] [T2] | |
-| Sustaining effort | Are there varied levels of challenge? Are goals clear with scaffolded difficulty? | [Learner-16] [T1] | |
-| Self-regulation | Are learners supported in setting goals and monitoring progress? (e.g., progress dashboards, self-assessment checklists) | [Assessment-9] [T5] | |
+| ID | Objective | Knowledge | Process |
+|----|-----------|-----------|---------|
+| ILO-1 | [refined statement] | [dimension] | [level] |
 
-**Principle 2: Multiple Means of Representation** [Access-3] [T5]
+---
 
-| Checkpoint | Question | Evidence | Status |
-|------------|----------|----------|--------|
-| Perception | Is content available in multiple sensory modalities? (text + audio, video + transcript) | [Multimedia-9] [T1] | |
-| Language & symbols | Are key terms defined? Are notations explained? Are glossaries or vocabulary supports provided? | [Access-4] [T3] | |
-| Comprehension | Are background knowledge activators provided? Are big ideas highlighted? Are worked examples or graphic organizers used? | [CogLoad-13] [T3] | |
+### Step 2: Bloom's Ambiguity Resolution
 
-**Principle 3: Multiple Means of Action & Expression** [Access-3] [T5]
+When an action verb in an objective maps to multiple Bloom's levels — and many common
+verbs do — DO NOT auto-classify. Ask the user to clarify.
 
-| Checkpoint | Question | Evidence | Status |
-|------------|----------|----------|--------|
-| Physical action | Can learners interact through multiple methods? (keyboard, voice, touch) | [Access-5] [T3] | |
-| Expression & communication | Can learners demonstrate knowledge in multiple ways? (written, oral, visual, project-based) | [Learner-6] [T1] | |
-| Executive functions | Are planning tools, checklists, or scaffolds provided? (rubrics shared upfront, milestone tracking) | [Access-8] [T3] | |
+**Verbs that commonly trigger ambiguity:** analyze, evaluate, demonstrate, explain,
+identify, describe, compare, apply, design, develop, assess, interpret, create.
 
-For each checkpoint not met, provide:
-- What's missing
-- A concrete recommendation with example
-- Evidence citation from Domain 11 or cross-domain principles
-- Why this matters for specific learner populations (not just compliance)
+When you encounter one of these:
 
-**Key UDL evidence base:**
-- [Access-4] [T3] — UDL in online courses improves outcomes across diverse learner populations.
-- [Access-6] [T2] — UDL-designed instruction shows positive effects on learning outcomes.
-- [Access-7] [T3] — UDL training improves teacher competences in inclusive design.
-- [Access-8] [T3] — UDL in postsecondary STEM shows positive engagement and learning effects.
-- [Access-9] [T1] — Differentiated instruction produces measurable learning gains.
-- [Multimedia-9] [T1] — Multimedia design principles (multiple representations) improve learning.
-- [Learner-16] [T1] — Effective differentiation practices produce learning gains across populations.
+"The verb '[verb]' can operate at different cognitive levels depending on context. In
+this objective, are students:
+- [Lower interpretation — describe what this would look like], or
+- [Higher interpretation — describe what this would look like]?"
 
-### Step 4: Accessibility Score
+**Example:**
+"The verb 'analyze' in 'Analyze patient data to identify trends' could mean:
+- **Apply level:** Follow a prescribed analysis procedure step by step, or
+- **Analyze level:** Independently break down the data, identify patterns, and draw
+  connections that aren't explicitly taught.
+Which is closer to what you intend?"
 
-Calculate the accessibility score (0-100):
+This matters because the classification drives activity and assessment alignment
+downstream. Getting it wrong here cascades [Alignment-12] [T2].
 
-**WCAG Component (0-50):**
-- Start at 50
-- Deduct 10 points per WCAG Level A violation
-- Deduct 5 points per WCAG Level AA violation
-- Floor at 0
+---
 
-**UDL Component (0-50):**
-- 9 UDL checkpoints (3 per principle)
-- ~5.5 points per checkpoint addressed
-- Partial credit for partially addressed checkpoints
+### Step 3: Expertise Reversal Check
 
-**Combined Score:**
-- 80+ "Strong accessibility" — meets compliance and supports diverse learners
-- 60-79 "Needs improvement" — basic compliance but gaps in inclusivity
-- 40-59 "Significant gaps" — multiple compliance issues and limited UDL coverage
-- <40 "Major accessibility barriers" — course needs substantial redesign
+After all objectives are drafted and classified, review the set as a whole.
 
-### Step 5: Generate Report
+**Check for sequential lock-step:**
+If the objectives follow a strict low-to-high Bloom's sequence (remember -> understand ->
+apply -> analyze -> evaluate -> create), flag it:
 
-Generate a human-readable report at `.idstack/reports/accessibility-review.md` so the designer has a single document to read covering both compliance (WCAG, the Must Fix layer) and inclusion (UDL, the Should Improve layer). The report follows the canonical structure in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding).
+"Your objectives follow a strict low-to-high Bloom's sequence. Evidence shows students
+don't need to master facts before engaging in higher-order learning [Alignment-14] [T1].
+Consider whether some objectives could start at higher cognitive levels. For example,
+could learners begin with an analysis or evaluation task and learn factual knowledge
+in context?"
+
+**Cross-reference with learner profile (if available from manifest):**
+
+- **Novice learners:** A sequential build-up may be appropriate in some cases, but it is
+  not mandatory. Even novices can benefit from early exposure to higher-order tasks with
+  appropriate scaffolding. Note this nuance rather than assuming sequential is required.
+
+- **Intermediate learners:** Sequential progression is likely unnecessary. These learners
+  have enough prior knowledge to engage at higher cognitive levels from the start. Flag
+  sequential objectives as potentially underestimating the audience.
+
+- **Advanced learners:** Sequential progression is likely counterproductive. Lower-level
+  objectives (remember, understand) may add extraneous cognitive load for learners who
+  already have this knowledge [CogLoad-19] [T1]. Recommend starting at apply or higher.
+
+- **Mixed audience:** Flag that a single sequence won't serve everyone. Consider whether
+  lower-level objectives could be made optional or handled through pre-assessment.
+
+Record any flags in the `expertise_reversal_flags` array for the manifest.
+
+---
+
+## Bidirectional Alignment Check
+
+This is the core value of this skill. Constructive alignment means every ILO connects to
+both a learning activity AND an assessment, and all three target the same cognitive level
+[Alignment-1] [Alignment-10] [T2].
+
+### Forward Pass: ILO to Activity
+
+For each ILO, ask:
+
+**"What learning activity will help students achieve ILO-X: [objective text]?"**
+
+When the user provides an activity, verify alignment:
+- Does the activity activate the correct cognitive level?
+- If the ILO targets "evaluate" but the activity is "read a textbook chapter" (remember
+  level), flag the mismatch:
+  "This activity operates at the 'remember' level, but ILO-X targets 'evaluate.' Students
+  need practice at the evaluation level to achieve this objective. Consider activities like
+  peer review, critique exercises, or rubric-based judgment tasks instead."
+- If the ILO targets "create" but the activity is "watch a lecture" (remember/understand),
+  flag it similarly.
+
+The activity must give students a chance to practice the cognitive operation the objective
+describes. Passive activities cannot prepare students for active objectives.
+
+### Backward Pass: ILO to Assessment
+
+For each ILO, ask:
+
+**"How will you assess whether students achieved ILO-X: [objective text]?"**
+
+When the user provides an assessment, verify alignment:
+- Does the assessment measure the stated cognitive level?
+- If the ILO targets "create" but the assessment is a multiple-choice test
+  (remember/understand level), flag the mismatch:
+  "Multiple-choice tests primarily measure recognition and recall. ILO-X targets 'create.'
+  Consider assessments where students actually produce something: a project, design,
+  portfolio, or prototype."
+- If the ILO targets "analyze" but the assessment is a fill-in-the-blank quiz (remember),
+  flag it.
+
+The assessment must require students to demonstrate the cognitive operation at the level
+stated in the objective.
+
+### Gap Detection
+
+After both passes are complete, identify gaps:
+
+**ILOs with no mapped activity:**
+"ILO-X has no learning activity. Students won't have a chance to practice this skill
+before being assessed on it. This is a critical alignment gap."
+
+**ILOs with no mapped assessment:**
+"ILO-X has no assessment. You won't know if students achieved this objective. Either add
+an assessment or consider whether this objective is necessary."
+
+**Activities with no mapped ILO:**
+"You described an activity ([activity]) that doesn't connect to any ILO. Either it serves
+an unstated objective (add the ILO) or it's not contributing to course outcomes (consider
+removing it)."
+
+Present gaps prominently. These are the most actionable findings from the alignment check.
+
+---
+
+## Output Summary
+
+After completing the full workflow, present a summary table:
+
+```
+## Learning Objectives — Alignment Summary
+
+| ID | Objective | Knowledge | Process | Activity | Assessment | Alignment |
+|----|-----------|-----------|---------|----------|------------|-----------|
+| ILO-1 | ... | conceptual | analyze | ... | ... | aligned |
+| ILO-2 | ... | procedural | apply | ... | ... | MISMATCH |
+| ILO-3 | ... | factual | remember | ... | [none] | GAP |
+```
+
+**Alignment column values:**
+- `aligned` — ILO, activity, and assessment all target the same cognitive level
+- `MISMATCH` — activity or assessment targets a different cognitive level than the ILO
+- `GAP` — missing activity, assessment, or both
+
+Then list:
+1. **Gaps:** ILOs missing activities or assessments
+2. **Mismatches:** where cognitive levels don't align across the triad
+3. **Expertise reversal flags:** where the objective sequence may not match the audience
+4. **Ambiguity resolutions:** verbs that were clarified and what was decided
+
+---
+
+## Generate Report
+
+Before writing the manifest, generate a human-readable report at `.idstack/reports/learning-objectives.md` so the designer has a single document to read. The report follows the canonical structure in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding).
 
 ```bash
 mkdir -p .idstack/reports
 ```
 
-Write `.idstack/reports/accessibility-review.md` with this structure:
+Write `.idstack/reports/learning-objectives.md` with this structure:
 
 ```markdown
-# Accessibility Review Report
+# Learning Objectives Report
 
 **Course:** [project_name]
 **Generated:** [ISO-8601 timestamp]
-**Skill:** /idstack:accessibility-review
+**Skill:** /idstack:learning-objectives
 
 ## Summary
 
-[2–3 sentences. Lead with: overall score, number of Must Fix items at Level A, biggest
-single barrier the designer should know about. Don't bury the lede.]
+[2–3 sentences. The verdict: how many ILOs you have, how many are well-aligned,
+and the single most important gap or mismatch the designer should know about.]
 
-**Scores:** Overall XX/100 · WCAG XX/100 · UDL XX/100
+## Alignment table
 
-## Tier 1 — Must Fix (WCAG 2.1 AA)
+| ID | Objective | Knowledge | Process | Activity | Assessment | Alignment |
+|----|-----------|-----------|---------|----------|------------|-----------|
+| ILO-1 | ... | conceptual | analyze | ... | ... | aligned |
+| ILO-2 | ... | procedural | apply | ... | ... | MISMATCH |
+| ILO-3 | ... | factual | remember | ... | [none] | GAP |
 
-[One finding block per violation. Stable ids: `wcag-1`, `wcag-2`, etc.
-Order: Level A first (the floor), then AA. Within level, by impact.]
+## Findings
 
-### Finding wcag-1: [criterion + short title]                  [severity] [tier]
+[One block per finding. Stable ids: `align-1`, `bloom-1`, `expertise-1`, etc.
+Findings come from: bidirectional alignment gaps, Bloom's-level mismatches,
+expertise-reversal flags, ambiguous verbs that were clarified.]
 
-**What we saw.** [Concrete observation: "Module 3 video lacks captions; the cartridge
-references the .mp4 but no .vtt or .srt is present."]
+### Finding align-1: [short title]                        [severity] [tier]
 
-**What the evidence says.** WCAG 2.1 SC 1.2.2 (Captions): captions are required for
-all prerecorded audio content in synchronized media. [Access-N] [Tier]
+**What we saw.** [Concrete observation: "ILO-2 (Apply) is paired with a multiple-choice
+quiz, which assesses Remember, not Apply."]
 
-**Why it matters.** [Bridge: ~15% of learners have hearing loss; without captions
-the content is inaccessible to them and to learners watching in noisy or quiet
-environments.]
+**What the evidence says.** [1–2 sentences.] [Alignment-N] [Tier]
 
-**Consider.** [Collaborative recommendation: "Generate captions via the LMS auto-
-caption tool, then human-review for accuracy. The 4 affected modules are listed
-in the manifest under `accessibility_review.wcag_violations[].affected`."]
+**Why it matters.** [Bridge: misalignment means the assessment doesn't measure the
+intended cognitive process — students can pass without achieving the objective.]
 
----
-
-[Repeat per WCAG violation.]
-
-## Tier 2 — Should Improve (UDL 3.0)
-
-[One finding block per UDL recommendation. Stable ids: `udl-1`, `udl-2`, etc.
-Group by principle: Engagement, Representation, Action & Expression.]
-
-### Finding udl-1: [principle + short title]                   [info] [tier]
-
-**What we saw.** [Concrete observation.]
-
-**What the evidence says.** [1–2 sentences citing the UDL guideline + research base.]
-[Access-N] [Tier]
-
-**Why it matters.** [Bridge: UDL is about *flexibility*. A single mode of
-representation/engagement/expression excludes learners whose needs that mode
-doesn't fit.]
-
-**Consider.** [Collaborative recommendation. UDL is enhancement, not compliance —
-phrasing should reflect that.]
+**Consider.** [Collaborative recommendation. May reference `/assessment-design`.]
 
 ---
 
-[Repeat per UDL recommendation.]
+[Repeat per finding.]
 
 ## Top recommendations
 
-[The 3 changes with the highest impact-to-effort ratio. Cite each. Per the
-canonical report format, this section is what the pipeline aggregator and
-`bin/idstack-status` may surface as a digest.]
-
-1. **[Action]** [Domain-N] [Tier] — [one-line why; pointer to finding id]
+1. **[Action]** [Domain-N] [Tier] — [one-line why; pointer to skill/finding]
 2. ...
 
 ## Limitations
 
-[What this report didn't analyze. Examples: review reads structural metadata, not
-the actual learner-facing content text; alt-text quality is checked for presence
-not for descriptive accuracy; UDL recommendations are generated from manifest
-signals, not from observed learner use.]
+[What this report didn't analyze. Examples: alignment is read from manifest
+descriptions, not from the actual rubric criteria; expertise-reversal flags
+are inferred from the learner profile without a learner survey.]
 
 ## Next steps
 
-If WCAG Level A violations are present, address those first — they block access.
-Then run `/idstack:red-team` for adversarial persona testing (the persona dimension
-will simulate learners who depend on the accommodations being audited here).
+Run `/idstack:assessment-design` to design assessments aligned to these objectives
+with evidence-based rubrics and feedback strategies.
 
 ---
 
-*Generated by `/idstack:accessibility-review`. The system-readable manifest section is in `.idstack/project.json` under `accessibility_review`.*
+*Generated by `/idstack:learning-objectives`. The system-readable manifest section is in `.idstack/project.json` under `learning_objectives`.*
 ```
 
 ---
 
 ## Write Manifest
 
-Save results to `.idstack/project.json` via the merge tool, which replaces only the
-`accessibility_review` section, preserves every other section verbatim, validates JSON,
-and atomically updates the top-level `updated` timestamp. The payload must include
-`report_path: ".idstack/reports/accessibility-review.md"`.
+Create or update the project manifest at `.idstack/project.json`.
 
-```bash
-"$_IDSTACK/bin/idstack-manifest-merge" --section accessibility_review --payload - <<'PAYLOAD'
-{
-  "updated": "<ISO-8601 timestamp>",
-  "report_path": ".idstack/reports/accessibility-review.md",
-  "score": {"overall": 0, "wcag": 0, "udl": 0},
-  "wcag_violations": [
-    {
-      "id": "wcag-1",
-      "criterion": "1.2.2 Captions",
-      "level": "A",
-      "description": "...",
-      "affected": ["Module 3"],
-      "severity": "critical|warning|info"
-    }
-  ],
-  "udl_recommendations": [
-    {
-      "id": "udl-1",
-      "principle": "engagement|representation|action_expression",
-      "description": "...",
-      "status": "fully_met|partial|not_met"
-    }
-  ],
-  "quick_wins": []
-}
-PAYLOAD
-```
+**CRITICAL — Manifest Integrity Rules:**
+1. If a manifest already exists, READ it first, then modify ONLY the `learning_objectives`
+   section. Preserve all other sections unchanged.
+2. Include the COMPLETE schema structure. Do not omit fields.
+3. Before writing, mentally verify the JSON is valid: matching braces, proper commas,
+   quoted strings, no trailing commas.
+4. The `updated` timestamp must reflect the current time.
+5. Set `learning_objectives.report_path` to `.idstack/reports/learning-objectives.md`.
+6. If this is a new manifest (no needs analysis was run), initialize ALL sections
+   (including `needs_analysis`, `context`, and `quality_review`) with empty/default
+   values so downstream skills find the expected structure.
 
-If `.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json`
-first — that creates a fresh canonical manifest. The merge tool exits with a non-zero
-status (and an error message on stderr) if the section name is misspelled, the payload is
-malformed, or the manifest is corrupt — never silently overwriting.
+**Populate the `learning_objectives` section:**
 
-For the full manifest schema (other sections you may need to read), see the
-**Manifest Schema Reference** at the bottom of this file.
+- `ilos`: Array of objective objects, each with:
+  - `id`: "ILO-1", "ILO-2", etc.
+  - `objective`: the measurable statement
+  - `knowledge_dimension`: factual | conceptual | procedural | metacognitive
+  - `cognitive_process`: remember | understand | apply | analyze | evaluate | create
 
-**Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest,
-modify only the `accessibility_review` section, Write back. Preserve all other sections
-verbatim.
+- `alignment_matrix`:
+  - `ilo_to_activity`: Object mapping ILO IDs to activity descriptions
+  - `ilo_to_assessment`: Object mapping ILO IDs to assessment descriptions
+  - `gaps`: Array of strings describing alignment gaps found
 
-After writing the manifest, confirm to the user:
+- `expertise_reversal_flags`: Array of strings noting where objective sequencing may
+  conflict with the learner profile
 
-"Your accessibility review is saved. Two artifacts:
+Write the manifest, then confirm to the user:
 
-- **Read this:** `.idstack/reports/accessibility-review.md` — the report with WCAG
-  violations (Must Fix), UDL recommendations (Should Improve), evidence-backed
-  findings on every item, and the 3 highest-impact quick wins.
+"Your learning objectives are saved. Two artifacts:
+
+- **Read this:** `.idstack/reports/learning-objectives.md` — the alignment table,
+  evidence-backed findings on gaps and mismatches, and a Bloom's-level expertise read.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
-**Score:** Overall XX/100 · WCAG XX/100 · UDL XX/100. [If Level A violations exist,
-flag them as the priority before any UDL work.]
-
-**Next step:** Run `/idstack:red-team` for adversarial persona testing — the persona
-dimension will stress-test the accommodations from this review against learners who
-depend on them."
+**Next step:** Run `/assessment-design` to design assessments aligned to your objectives
+with evidence-based rubrics and feedback strategies."
 
 ---
 
@@ -1078,7 +1048,7 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
-"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"accessibility-review","event":"completed"}'
+"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"learning-objectives","event":"completed"}'
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -1088,5 +1058,5 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
-"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"accessibility-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"learning-objectives","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

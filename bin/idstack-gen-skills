@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
-# Generate SKILL.md files from .tmpl templates.
-# Usage: idstack-gen-skills [--dry-run]
+# Generate SKILL.md files from .tmpl templates, for one or more CLI targets.
 #
-# Reads each skills/{skill}/SKILL.md.tmpl, replaces {{PREAMBLE}} with
-# templates/preamble.md contents, writes skills/{skill}/SKILL.md.
-# Adds auto-generated header to each output file.
+# Usage:
+#   idstack-gen-skills [--target {claude|codex|all}] [--dry-run]
+#
+# Targets:
+#   claude (default): writes skills/<name>/SKILL.md (the existing Claude Code layout)
+#   codex:            writes dist/codex/skills/idstack-<name>/SKILL.md (Codex CLI layout),
+#                     plus dist/codex/AGENTS.md (memory file) and dist/codex/marketplace.json
+#                     (Codex plugin manifest). The frontmatter `allowed-tools:` block is
+#                     stripped — Codex has no per-skill allowlist.
+#   all:              both targets
+#
+# Source of truth is unchanged: skills/<name>/SKILL.md.tmpl with {{PREAMBLE}} and
+# {{MANIFEST_SCHEMA}} placeholders. The preamble defines the AskUserQuestion / Skill
+# / Agent concepts portably so skill bodies don't need per-target text substitution.
 
 set -e
 
@@ -12,10 +22,26 @@ IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PREAMBLE="$IDSTACK_DIR/templates/preamble.md"
 MANIFEST_SCHEMA="$IDSTACK_DIR/templates/manifest-schema.md"
 DRY_RUN=0
+TARGET="all"
 GENERATED=0
 ERRORS=0
 
-[ "$1" = "--dry-run" ] && DRY_RUN=1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1; shift ;;
+    --target)  TARGET="$2"; shift 2 ;;
+    --target=*) TARGET="${1#--target=}"; shift ;;
+    -h|--help)
+      sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+
+case "$TARGET" in
+  claude|codex|all) ;;
+  *) echo "ERROR: --target must be one of: claude, codex, all (got: $TARGET)" >&2; exit 2 ;;
+esac
 
 if [ ! -f "$PREAMBLE" ]; then
   echo "ERROR: templates/preamble.md not found at $PREAMBLE" >&2
@@ -30,31 +56,30 @@ fi
 HEADER="<!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->"
 HEADER2="<!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->"
 
-for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
-  [ -f "$tmpl" ] || continue
-  skill_dir="$(dirname "$tmpl")"
-  skill_name="$(basename "$skill_dir")"
-  output="$skill_dir/SKILL.md"
+# render_template <tmpl_path> <output_path> <target>
+# Substitutes {{PREAMBLE}} and {{MANIFEST_SCHEMA}}, injects auto-generated header
+# after frontmatter, and (for codex target) strips the `allowed-tools:` block.
+render_template() {
+  local tmpl="$1"
+  local output="$2"
+  local target="$3"
+  local skill_name
+  skill_name="$(basename "$(dirname "$tmpl")")"
 
-  # Read template
-  tmpl_content=$(cat "$tmpl")
-
-  # Check for {{PREAMBLE}} placeholder
-  if ! echo "$tmpl_content" | grep -q '{{PREAMBLE}}'; then
+  if ! grep -q '{{PREAMBLE}}' "$tmpl"; then
     echo "  SKIP: $skill_name/SKILL.md.tmpl (no {{PREAMBLE}} placeholder)"
-    continue
+    return 1
   fi
 
-  # Read preamble content
-  preamble_content=$(cat "$PREAMBLE")
-
-  # Build output: extract YAML frontmatter, inject header after it, then replace placeholder.
-  # The awk pass below handles frontmatter detection and header injection independently —
-  # no need to pre-extract the frontmatter text.
-
-  # Use awk to do the replacement properly
-  result=$(awk -v header="$HEADER" -v header2="$HEADER2" -v preamble_file="$PREAMBLE" -v schema_file="$MANIFEST_SCHEMA" '
-    BEGIN { after_frontmatter = 0; frontmatter_count = 0 }
+  local result
+  result=$(awk -v header="$HEADER" -v header2="$HEADER2" \
+               -v preamble_file="$PREAMBLE" -v schema_file="$MANIFEST_SCHEMA" \
+               -v target="$target" '
+    BEGIN {
+      after_frontmatter = 0
+      frontmatter_count = 0
+      in_allowed_tools = 0
+    }
     /^---$/ {
       frontmatter_count++
       print
@@ -63,7 +88,25 @@ for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
         print header2
         print ""
       }
+      in_allowed_tools = 0
       next
+    }
+    # Strip the `allowed-tools:` block from frontmatter for codex target.
+    # The block runs from `allowed-tools:` until the next non-indented line
+    # (a sibling key or the closing `---`).
+    frontmatter_count == 1 && target == "codex" {
+      if (in_allowed_tools) {
+        if ($0 ~ /^[^ \t-]/) {
+          in_allowed_tools = 0
+          # fall through to print this line
+        } else {
+          next  # still inside allowed-tools, skip
+        }
+      }
+      if ($0 ~ /^allowed-tools:/) {
+        in_allowed_tools = 1
+        next
+      }
     }
     /\{\{PREAMBLE\}\}/ {
       while ((getline line < preamble_file) > 0) print line
@@ -80,23 +123,95 @@ for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
 
   if [ "$DRY_RUN" -eq 1 ]; then
     if [ -f "$output" ]; then
+      local current
       current=$(cat "$output")
       if [ "$result" != "$current" ]; then
-        echo "  STALE: $skill_name/SKILL.md (would be updated)"
+        echo "  STALE: ${output#$IDSTACK_DIR/} (would be updated)"
         ERRORS=$((ERRORS + 1))
       else
-        echo "  OK: $skill_name/SKILL.md (up to date)"
+        echo "  OK: ${output#$IDSTACK_DIR/} (up to date)"
       fi
     else
-      echo "  MISSING: $skill_name/SKILL.md (would be created)"
+      echo "  MISSING: ${output#$IDSTACK_DIR/} (would be created)"
       ERRORS=$((ERRORS + 1))
     fi
   else
+    mkdir -p "$(dirname "$output")"
     echo "$result" > "$output"
-    echo "  GENERATED: $skill_name/SKILL.md"
+    echo "  GENERATED: ${output#$IDSTACK_DIR/}"
   fi
-  GENERATED=$((GENERATED + 1))
-done
+  return 0
+}
+
+# render_target <target> — iterate templates and dispatch render_template
+render_target() {
+  local target="$1"
+  echo "=== target: $target ==="
+  for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
+    [ -f "$tmpl" ] || continue
+    local skill_dir skill_name output
+    skill_dir="$(dirname "$tmpl")"
+    skill_name="$(basename "$skill_dir")"
+
+    case "$target" in
+      claude) output="$skill_dir/SKILL.md" ;;
+      codex)  output="$IDSTACK_DIR/dist/codex/skills/idstack-$skill_name/SKILL.md" ;;
+    esac
+
+    if render_template "$tmpl" "$output" "$target"; then
+      GENERATED=$((GENERATED + 1))
+    fi
+  done
+
+  # Codex target: also emit AGENTS.md (memory file) and marketplace.json (plugin manifest)
+  if [ "$target" = "codex" ] && [ "$DRY_RUN" -eq 0 ]; then
+    render_codex_assets
+  fi
+}
+
+# render_codex_assets — emit AGENTS.md and marketplace.json for the Codex bundle
+render_codex_assets() {
+  local agents_src="$IDSTACK_DIR/templates/agent-context.md"
+  local agents_dst="$IDSTACK_DIR/dist/codex/AGENTS.md"
+  local marketplace_dst="$IDSTACK_DIR/dist/codex/marketplace.json"
+  local version
+  version=$(cat "$IDSTACK_DIR/VERSION" 2>/dev/null || echo "0.0.0")
+
+  mkdir -p "$IDSTACK_DIR/dist/codex"
+
+  if [ -f "$agents_src" ]; then
+    cp "$agents_src" "$agents_dst"
+    echo "  GENERATED: dist/codex/AGENTS.md"
+  fi
+
+  cat > "$marketplace_dst" <<MARKETPLACE
+{
+  "\$schema": "https://developers.openai.com/codex/schemas/marketplace.json",
+  "name": "idstack",
+  "version": "$version",
+  "description": "Evidence-based instructional design pipeline. 11 skills for needs analysis, learning objectives, assessment design, course building, quality review, accessibility audit, red team, and LMS export.",
+  "author": "Philippos Savvides",
+  "homepage": "https://idstack.org",
+  "repository": "https://github.com/savvides/idstack",
+  "license": "MIT",
+  "plugins": [
+    {
+      "name": "idstack",
+      "description": "All 11 idstack skills as a single Codex plugin.",
+      "skills_dir": "skills"
+    }
+  ]
+}
+MARKETPLACE
+  echo "  GENERATED: dist/codex/marketplace.json"
+}
+
+# Dispatch
+case "$TARGET" in
+  claude) render_target claude ;;
+  codex)  render_target codex ;;
+  all)    render_target claude; render_target codex ;;
+esac
 
 if [ "$GENERATED" -eq 0 ]; then
   echo "No .tmpl files found."
@@ -109,5 +224,5 @@ if [ "$DRY_RUN" -eq 1 ]; then
   if [ "$ERRORS" -gt 0 ]; then exit 1; fi
 else
   echo ""
-  echo "$GENERATED skills generated."
+  echo "$GENERATED skill files generated (target: $TARGET)."
 fi

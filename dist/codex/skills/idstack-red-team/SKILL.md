@@ -6,16 +6,6 @@ description: |
   and prerequisite chain integrity. Produces a confidence score (0-100).
   Runs in a clean-context sub-agent so synthesis is unbiased by build history.
   Works standalone or reads from the idstack project manifest. (idstack)
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - WebSearch
-  - Agent
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->

@@ -4,11 +4,6 @@ description: |
   Manage project learnings. Search, list, delete, promote, and export what idstack
   has learned across sessions. Use when asked to "what have we learned", "show learnings",
   "prune stale learnings", or "export learnings". (idstack)
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - AskUserQuestion
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->

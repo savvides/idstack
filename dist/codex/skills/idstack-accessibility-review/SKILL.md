@@ -5,15 +5,6 @@ description: |
   enhancement review for course designs. Two-tier output: "Must Fix" for
   accessibility violations and "Should Improve" for UDL recommendations.
   Works standalone or reads from the idstack project manifest. (idstack)
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - Agent
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->

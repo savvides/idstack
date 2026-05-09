@@ -11,12 +11,25 @@ IDSTACK_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 PLUGINS_DIR="$HOME/.claude/plugins"
 LEGACY_SKILLS_DIR="$HOME/.claude/skills"
 SCOPE="global"
+CODEX_OPT_IN=""  # "" = auto-detect, "yes" = force-install, "no" = skip
 
-if [ "$1" = "--local" ]; then
-  PLUGINS_DIR="$(pwd)/.claude/plugins"
-  LEGACY_SKILLS_DIR="$(pwd)/.claude/skills"
-  SCOPE="local"
-fi
+for arg in "$@"; do
+  case "$arg" in
+    --local)
+      PLUGINS_DIR="$(pwd)/.claude/plugins"
+      LEGACY_SKILLS_DIR="$(pwd)/.claude/skills"
+      SCOPE="local"
+      ;;
+    --codex)    CODEX_OPT_IN="yes" ;;
+    --no-codex) CODEX_OPT_IN="no" ;;
+  esac
+done
+
+# Regenerate skill files for all targets so installs are always fresh against
+# the current .tmpl source. Cheap (<1s); the source-of-truth invariant is
+# worth more than the cost.
+"$IDSTACK_DIR/bin/idstack-gen-skills" --target all >/dev/null
+echo "  regenerated skill files for all targets"
 
 TARGET="$PLUGINS_DIR/idstack"
 
@@ -117,7 +130,46 @@ else
 fi
 
 echo ""
-echo "idstack installed."
+echo "idstack installed (Claude Code)."
+
+# Optional: Codex CLI install. Auto-detect codex on PATH unless the user passed
+# --codex (force) or --no-codex (skip). The Codex bundle lives under
+# dist/codex/ and is regenerated on every setup run.
+CODEX_INSTALL=0
+if [ "$CODEX_OPT_IN" = "yes" ]; then
+  CODEX_INSTALL=1
+elif [ "$CODEX_OPT_IN" = "no" ]; then
+  CODEX_INSTALL=0
+elif command -v codex >/dev/null 2>&1; then
+  CODEX_INSTALL=1
+fi
+
+if [ "$CODEX_INSTALL" = "1" ]; then
+  CODEX_BUNDLE="$IDSTACK_DIR/dist/codex"
+  if [ "$SCOPE" = "local" ]; then
+    CODEX_PLUGINS_DIR="$(pwd)/.agents/plugins"
+  else
+    CODEX_PLUGINS_DIR="$HOME/.agents/plugins"
+  fi
+  CODEX_TARGET="$CODEX_PLUGINS_DIR/idstack"
+
+  if [ ! -d "$CODEX_BUNDLE" ]; then
+    echo "  WARNING: Codex bundle missing at $CODEX_BUNDLE — generator did not produce it. Skipping Codex install."
+  else
+    mkdir -p "$CODEX_PLUGINS_DIR"
+    if [ "$CODEX_TARGET" = "$CODEX_BUNDLE" ]; then
+      echo "  in place: $CODEX_TARGET (no symlink needed)"
+    else
+      ln -snf "$CODEX_BUNDLE" "$CODEX_TARGET"
+      echo "  linked: $CODEX_TARGET -> $CODEX_BUNDLE"
+    fi
+    echo ""
+    echo "idstack installed (Codex CLI)."
+    echo "  If Codex CLI is already running, restart it."
+    echo "  Usage: \$<skill> (e.g., \$needs-analysis, \$pipeline)"
+  fi
+fi
+
 echo ""
 echo "  If Claude Code is already running, restart it (plugins load at session start)."
 echo ""
