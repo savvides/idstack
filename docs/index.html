@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>idstack — Evidence-Based Instructional Design Tools</title>
-  <meta name="description" content="Free, open-source instructional design skills that bring 30 years of peer-reviewed learning research into your course design workflow. Review courses against Quality Matters standards, check alignment with Bloom's taxonomy, flag cognitive load issues. Every recommendation cites its evidence tier. Runs in Claude Code and OpenAI Codex CLI.">
-  <meta name="keywords" content="instructional design, course design, evidence-based, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, course review, LMS, Canvas, Moodle, Blackboard, SCORM, Common Cartridge, accessibility, UDL, open source, Claude Code, OpenAI Codex CLI">
+  <title>idstack — Evidence-based instructional design, transparently cited</title>
+  <meta name="description" content="Open-source skills for evidence-based instructional design. 108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier, T1 (meta-analyses, RCTs) through T5 (expert opinion). Runs in Claude Code, OpenAI Codex CLI, and (soon) Gemini.">
+  <meta name="keywords" content="instructional design, evidence-based, course design, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, WCAG, UDL, open source, Claude Code, Codex CLI">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://idstack.org/">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -13,8 +13,8 @@
   <link rel="apple-touch-icon" href="favicon.png">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="idstack — Design better courses.">
-  <meta property="og:description" content="Free, open-source instructional design skills backed by peer-reviewed research. Course review, alignment checking, and quality audit with every recommendation citing its evidence tier. Runs in Claude Code and OpenAI Codex CLI.">
+  <meta property="og:title" content="idstack — Evidence-based instructional design, transparently cited">
+  <meta property="og:description" content="108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier. Open source, MIT-licensed. Runs in Claude Code and Codex CLI.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://idstack.org/">
   <meta property="og:site_name" content="idstack">
@@ -22,14 +22,14 @@
   <meta property="og:image" content="https://idstack.org/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="idstack — Design better courses. Evidence-based instructional design skills backed by peer-reviewed research.">
+  <meta property="og:image:alt" content="idstack — Evidence-based instructional design, transparently cited.">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="idstack — Design better courses.">
-  <meta name="twitter:description" content="Free, open-source instructional design skills. Evidence-based course review backed by peer-reviewed research across 11 domains. Runs in Claude Code and OpenAI Codex CLI.">
+  <meta name="twitter:title" content="idstack — Evidence-based instructional design, transparently cited">
+  <meta name="twitter:description" content="108 peer-reviewed studies, 11 research domains, evidence tiers on every recommendation. Open source. Runs in Claude Code and OpenAI Codex CLI.">
   <meta name="twitter:image" content="https://idstack.org/og-image.png">
-  <meta name="twitter:image:alt" content="idstack — Design better courses.">
+  <meta name="twitter:image:alt" content="idstack — Evidence-based instructional design, transparently cited.">
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -37,7 +37,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "idstack",
-    "description": "Open-source instructional design skills backed by peer-reviewed research across 11 domains. Evidence-based course review, alignment checking, cognitive load analysis, and quality audit. Runs in Claude Code and OpenAI Codex CLI.",
+    "description": "Open-source instructional design skills backed by peer-reviewed research across 11 domains. Every recommendation cites its evidence tier. Runs in Claude Code and OpenAI Codex CLI.",
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows",
@@ -55,1092 +55,1307 @@
     }
   }
   </script>
+
+  <script>
+    // Theme bootstrap — runs before paint to avoid flash.
+    (function () {
+      try {
+        var saved = localStorage.getItem('idstack:theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = saved || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) { /* localStorage blocked — fall back to default */ }
+    })();
+  </script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a0f;
-      --bg-raised: #111118;
-      --bg-card: #16161f;
-      --text-primary: #e4e4e7;
-      --text-secondary: #c4c4cc;
-      --text-muted: #8b8b96;
-      --accent-start: #6366f1;
-      --accent-end: #a855f7;
-      --border: #1e1e2e;
-      --terminal-green: #4ade80;
-      --terminal-blue: #93c5fd;
-      --tier-t1: #4ade80;
-      --tier-t2: #60a5fa;
-      --tier-t3: #fbbf24;
-      --tier-t4: #fb923c;
-      --tier-t5: #a1a1aa;
-      --max-width: 960px;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      /* Light — parchment scholarly */
+      --bg:           #fbfaf6;
+      --raised:       #ffffff;
+      --ink:          #1a1815;
+      --ink-soft:     #3a352e;
+      --ink-muted:    #6b6358;
+      --rule:         #e6e0d2;
+      --rule-strong:  #d4cdb9;
+      --accent:       #7a1f1f;
+      --accent-soft:  #f4eae8;
+
+      --tier-1: #2f7a4a;
+      --tier-2: #2864a8;
+      --tier-3: #a87726;
+      --tier-4: #b35a1f;
+      --tier-5: #6b6b6b;
+
+      --severity-warning-bg: #fbf0d9;
+      --severity-warning-fg: #7a4f0c;
+      --severity-critical-bg: #f5dcd5;
+      --severity-critical-fg: #8c2515;
+      --severity-info-bg:    #e7eaf1;
+      --severity-info-fg:    #344566;
+
+      --font-display: 'Charter', 'Source Serif Pro', 'Iowan Old Style', 'Sitka Text', Georgia, serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+
+      --max:    1120px;
+      --prose:  62ch;
+      --pad-x:  clamp(1.25rem, 4vw, 2rem);
+      --pad-y:  clamp(3.5rem, 7vw, 6rem);
+    }
+
+    [data-theme="dark"] {
+      --bg:           #16140f;
+      --raised:       #1f1d18;
+      --ink:          #ebe7dd;
+      --ink-soft:     #cfc9bc;
+      --ink-muted:    #968f80;
+      --rule:         #2c2a23;
+      --rule-strong:  #3d3a30;
+      --accent:       #d97461;
+      --accent-soft:  #2a1d1a;
+
+      --tier-1: #5fc185;
+      --tier-2: #6aa6e3;
+      --tier-3: #d6a64c;
+      --tier-4: #e58f53;
+      --tier-5: #a3a3a3;
+
+      --severity-warning-bg: #2e2210;
+      --severity-warning-fg: #e3b25c;
+      --severity-critical-bg: #2e1612;
+      --severity-critical-fg: #e89786;
+      --severity-info-bg:    #1a2030;
+      --severity-info-fg:    #9bafd2;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: var(--font);
       background: var(--bg);
-      color: var(--text-primary);
-      line-height: 1.6;
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 1.0625rem;
+      line-height: 1.65;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
-    a { color: var(--accent-start); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    a:focus-visible { outline: 2px solid var(--accent-start); outline-offset: 2px; border-radius: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      body { transition: none; }
+    }
 
-    /* Nav */
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18em;
+    }
+    a:hover { text-decoration-thickness: 2px; }
+    a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+
+    code, pre, .mono {
+      font-family: var(--font-mono);
+      font-size: 0.95em;
+    }
+
+    code {
+      background: var(--raised);
+      border: 1px solid var(--rule);
+      padding: 0.08em 0.35em;
+      border-radius: 3px;
+      font-size: 0.85em;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      color: var(--ink);
+      letter-spacing: -0.015em;
+      line-height: 1.15;
+    }
+
+    /* ──────────────────────────────────────────────
+       Topbar
+       ────────────────────────────────────────────── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: saturate(160%) blur(10px);
+      -webkit-backdrop-filter: saturate(160%) blur(10px);
+      border-bottom: 1px solid var(--rule);
+    }
     .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      max-width: var(--max-width);
+      max-width: var(--max);
       margin: 0 auto;
-      padding: 1.25rem 1.5rem;
+      padding: 0.85rem var(--pad-x);
+      gap: 1.25rem;
     }
-    .nav-logo {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      letter-spacing: -0.02em;
+    .brand {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--ink);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .brand:hover { text-decoration: none; }
+    .brand-beta {
+      font-family: var(--font-body);
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-left: 0.35rem;
+      vertical-align: super;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .nav-links a {
+      color: var(--ink-soft);
+      text-decoration: none;
+      font-size: 0.93rem;
+    }
+    .nav-links a:hover { color: var(--ink); }
+    .theme-toggle {
+      background: transparent;
+      border: 1px solid var(--rule);
+      color: var(--ink-soft);
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.95rem;
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      line-height: 1;
+      transition: border-color 0.15s, color 0.15s;
     }
-    .beta-badge {
-      font-size: 0.65rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--accent-start);
-      background: rgba(99, 102, 241, 0.15);
-      padding: 0.15em 0.55em;
-      border-radius: 3px;
-      vertical-align: middle;
-    }
-    .hero-beta {
-      display: inline-block;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-bottom: 1rem;
-      letter-spacing: 0.02em;
-    }
-    .hero-beta strong {
-      color: var(--accent-start);
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-size: 0.7rem;
-    }
-    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
-    .nav-links a {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-      transition: color 0.2s;
-    }
-    .nav-links a:hover { color: var(--text-primary); text-decoration: none; }
+    .theme-toggle:hover { color: var(--ink); border-color: var(--rule-strong); }
+    .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .theme-toggle .icon-light { display: none; }
+    .theme-toggle .icon-dark { display: inline; }
+    [data-theme="dark"] .theme-toggle .icon-light { display: inline; }
+    [data-theme="dark"] .theme-toggle .icon-dark { display: none; }
 
-    /* Hero */
-    .hero {
-      text-align: center;
-      padding: 5rem 1.5rem 3rem;
-      max-width: var(--max-width);
-      margin: 0 auto;
-    }
-    .hero h1 {
-      font-size: clamp(2rem, 5vw, 3.25rem);
-      font-weight: 800;
-      line-height: 1.15;
-      letter-spacing: -0.03em;
-      margin-bottom: 1.25rem;
-    }
-    .hero h1 .gradient {
-      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero p {
-      font-size: 1.125rem;
-      color: var(--text-secondary);
-      max-width: 560px;
-      margin: 0 auto;
-      line-height: 1.7;
+    @media (max-width: 720px) {
+      .nav-links { gap: 1rem; font-size: 0.9rem; }
+      .nav-links a:nth-child(2),
+      .nav-links a:nth-child(3) { display: none; }
     }
 
-    /* Sections */
+    /* ──────────────────────────────────────────────
+       Layout primitives
+       ────────────────────────────────────────────── */
     .section {
-      max-width: var(--max-width);
+      max-width: var(--max);
       margin: 0 auto;
-      padding: 4rem 1.5rem;
+      padding: var(--pad-y) var(--pad-x);
     }
-    .section-label {
-      font-size: 0.75rem;
-      font-weight: 700;
+    .section + .section { border-top: 1px solid var(--rule); }
+
+    .eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--accent-start);
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+
+    .section-header { margin-bottom: 2.5rem; }
+    .section-header h2 {
+      font-size: clamp(1.6rem, 3vw, 2.1rem);
+      font-weight: 600;
       margin-bottom: 0.75rem;
     }
-    .section h2 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+    .section-header .lede {
+      font-size: 1.05rem;
+      color: var(--ink-soft);
+      max-width: var(--prose);
+    }
+
+    /* ──────────────────────────────────────────────
+       Hero
+       ────────────────────────────────────────────── */
+    .hero {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: clamp(3rem, 6vw, 5rem) var(--pad-x) clamp(3rem, 5vw, 4.5rem);
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: clamp(2rem, 4vw, 4rem);
+      align-items: center;
+    }
+    @media (max-width: 880px) {
+      .hero { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4.4vw, 3.1rem);
+      font-weight: 600;
+      letter-spacing: -0.022em;
+      line-height: 1.08;
+      margin-bottom: 1.1rem;
+      text-wrap: balance;
+    }
+    .hero .lede {
+      font-size: 1.075rem;
+      color: var(--ink-soft);
+      line-height: 1.6;
+      max-width: var(--prose);
+      margin-bottom: 1.6rem;
+    }
+
+    .hero-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      color: var(--ink-muted);
       margin-bottom: 1.25rem;
     }
-    .section p {
-      color: var(--text-secondary);
-      max-width: 600px;
-      margin-bottom: 1rem;
-    }
-    .section-divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      max-width: var(--max-width);
-      margin: 0 auto;
+    .hero-meta .dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--ink-muted);
+      display: inline-block;
     }
 
-    /* Feature list */
-    .features {
-      list-style: none;
-      display: grid;
-      gap: 1rem;
-      margin: 1.5rem 0;
-    }
-    .features li {
-      display: flex;
-      gap: 0.75rem;
-      align-items: flex-start;
-    }
-    .features .check {
-      color: var(--terminal-green);
-      font-weight: 700;
-      flex-shrink: 0;
-      margin-top: 0.15em;
-    }
-    .features .text { color: var(--text-secondary); }
-    .features .text strong { color: var(--text-primary); font-weight: 600; }
-
-    /* Demo block */
-    .demo-block {
-      background: var(--bg-raised);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-      margin: 2rem 0;
-    }
-    .demo-header {
+    .install-pill {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-card);
+      gap: 0.6rem;
+      background: var(--raised);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 0.55rem 0.55rem 0.55rem 0.85rem;
+      max-width: 100%;
+      overflow: hidden;
     }
-    .demo-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--border);
-    }
-    .demo-dot.red { background: #ef4444; }
-    .demo-dot.yellow { background: #eab308; }
-    .demo-dot.green { background: #22c55e; }
-    .demo-title {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-left: 0.5rem;
+    .install-pill .prompt {
+      color: var(--accent);
       font-family: var(--font-mono);
+      font-weight: 600;
+      flex-shrink: 0;
     }
-    .demo-body {
-      padding: 1.25rem;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      line-height: 1.7;
+    .install-pill code {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: var(--ink);
+      font-size: 0.83rem;
+      flex: 1;
       overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: thin;
     }
-    .demo-body .prompt { color: var(--terminal-green); }
-    .demo-body .command { color: #e4e4e7; font-weight: 600; }
-    .demo-body .output { color: var(--terminal-blue); }
-    .demo-body .dim { color: var(--text-muted); }
-    .demo-body .flag { color: #fbbf24; }
-    .demo-body .score { color: var(--accent-end); font-weight: 700; }
-    .demo-body .evidence { color: var(--tier-t1); font-style: italic; }
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--rule);
+      border-radius: 5px;
+      padding: 0.3rem 0.65rem;
+      color: var(--ink-soft);
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .copy-btn:hover { color: var(--ink); border-color: var(--rule-strong); }
+    .copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .copy-btn[data-copied="true"] { color: var(--tier-1); border-color: var(--tier-1); }
 
-    /* Steps */
-    .steps {
-      list-style: none;
-      counter-reset: step;
-      display: grid;
-      gap: 1.25rem;
-      margin: 1.5rem 0;
-    }
-    .steps li {
-      counter-increment: step;
+    .cta-row {
       display: flex;
-      gap: 1rem;
+      flex-direction: column;
+      gap: 0.85rem;
       align-items: flex-start;
     }
-    .steps li::before {
-      content: counter(step);
+    .cta-secondary {
+      font-size: 0.92rem;
+      color: var(--ink-muted);
+      text-decoration: none;
+    }
+    .cta-secondary:hover { color: var(--ink); text-decoration: underline; }
+
+    /* Hero finding card */
+    .finding {
+      background: var(--raised);
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 1.5rem 1.65rem;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+    }
+    .finding-meta {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px dashed var(--rule);
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+    }
+    .finding-meta .label-strong {
+      color: var(--ink-soft);
+      font-weight: 600;
+    }
+    .finding-observation {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: var(--ink);
+      margin-bottom: 1.1rem;
+    }
+    .finding-cite {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.45rem;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--rule);
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+    }
+    .finding-cite cite {
+      font-family: var(--font-display);
+      font-style: italic;
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+    }
+    .finding-suggestion {
+      font-size: 0.92rem;
+      color: var(--ink-soft);
+      line-height: 1.55;
+    }
+    .finding-suggestion .arrow {
+      color: var(--accent);
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+
+    /* Tier + severity pills */
+    .tier {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-      color: white;
-      font-size: 0.8rem;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-    .steps .step-content { color: var(--text-secondary); }
-    .steps .step-content strong { color: var(--text-primary); }
-    .steps code {
-      background: var(--bg-raised);
-      padding: 0.15em 0.4em;
-      border-radius: 4px;
       font-family: var(--font-mono);
-      font-size: 0.85em;
-      color: var(--text-primary);
-      border: 1px solid var(--border);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.18em 0.5em;
+      border-radius: 3px;
+      border: 1px solid currentColor;
+      line-height: 1;
+    }
+    .tier-1 { color: var(--tier-1); }
+    .tier-2 { color: var(--tier-2); }
+    .tier-3 { color: var(--tier-3); }
+    .tier-4 { color: var(--tier-4); }
+    .tier-5 { color: var(--tier-5); }
+
+    .cite-pill {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+      background: var(--accent-soft);
+      border: 1px solid var(--rule);
+      padding: 0.15em 0.5em;
+      border-radius: 3px;
+      white-space: nowrap;
     }
 
-    /* Install block */
+    .severity {
+      font-family: var(--font-body);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.18em 0.55em;
+      border-radius: 3px;
+      line-height: 1;
+    }
+    .severity-warning { background: var(--severity-warning-bg); color: var(--severity-warning-fg); }
+    .severity-critical { background: var(--severity-critical-bg); color: var(--severity-critical-fg); }
+    .severity-info { background: var(--severity-info-bg); color: var(--severity-info-fg); }
+
+    /* ──────────────────────────────────────────────
+       Evidence spine
+       ────────────────────────────────────────────── */
+    .evidence-spine {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: clamp(2rem, 4vw, 4rem);
+      align-items: start;
+    }
+    @media (max-width: 760px) {
+      .evidence-spine { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+
+    .tier-column { display: grid; gap: 0.75rem; }
+    .tier-row {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.92rem;
+      color: var(--ink-soft);
+    }
+    .tier-row .tier { width: 36px; }
+
+    .domain-column { display: grid; gap: 0.55rem; }
+    .domain-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .domain-row:last-child { border-bottom: none; }
+    .domain-name {
+      font-size: 0.95rem;
+      color: var(--ink);
+    }
+    .domain-bar-wrap {
+      grid-column: 1 / -1;
+      height: 4px;
+      background: transparent;
+      margin-top: 0.4rem;
+      position: relative;
+    }
+    .domain-bar {
+      display: block;
+      height: 100%;
+      width: var(--w);
+      background: var(--accent);
+      opacity: 0.7;
+      border-radius: 2px;
+    }
+    .domain-count {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+      tabular-nums: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .evidence-foot {
+      margin-top: 2rem;
+      font-size: 0.92rem;
+      color: var(--ink-muted);
+      max-width: var(--prose);
+    }
+
+    /* ──────────────────────────────────────────────
+       Pipeline
+       ────────────────────────────────────────────── */
+    .pipeline-canvas {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .pipeline-track-label {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+    }
+    .pipeline-track-label .track-mono {
+      font-family: var(--font-mono);
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--accent);
+    }
+
+    .pipeline-flow {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 0.6rem;
+      counter-reset: step;
+    }
+    @media (max-width: 1080px) {
+      .pipeline-flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .pipeline-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .pipeline-node {
+      counter-increment: step;
+      position: relative;
+      background: var(--raised);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 0.85rem 0.85rem 0.85rem 0.85rem;
+      cursor: default;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .pipeline-node:hover,
+    .pipeline-node:focus-within {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .pipeline-node:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .pipeline-node .node-num {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--ink-muted);
+    }
+    .pipeline-node .node-num::before { content: counter(step); }
+    .pipeline-node .node-label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+      word-break: break-word;
+    }
+    .pipeline-node .node-desc {
+      font-size: 0.78rem;
+      color: var(--ink-muted);
+      line-height: 1.4;
+    }
+
+    .pipeline-aside-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem 2rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed var(--rule);
+      font-size: 0.88rem;
+      color: var(--ink-muted);
+    }
+    .pipeline-aside {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .pipeline-aside .aside-tag {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      border: 1px solid var(--rule);
+      padding: 0.18em 0.5em;
+      border-radius: 4px;
+      background: var(--raised);
+    }
+
+    .pipeline-foot {
+      margin-top: 1.75rem;
+      font-size: 0.95rem;
+      color: var(--ink-soft);
+      max-width: var(--prose);
+    }
+
+    /* ──────────────────────────────────────────────
+       Output pair (markdown / json)
+       ────────────────────────────────────────────── */
+    .output-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 880px) {
+      .output-pair { grid-template-columns: 1fr; }
+    }
+    .output-panel {
+      background: var(--raised);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .output-header {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--rule);
+      background: color-mix(in srgb, var(--bg) 50%, transparent);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--ink-muted);
+      letter-spacing: 0.02em;
+    }
+    .output-body {
+      padding: 1.1rem 1.25rem;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: var(--ink-soft);
+    }
+    .output-body h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      color: var(--ink);
+      margin-bottom: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .output-body p { margin-bottom: 0.7rem; }
+    .output-body p:last-child { margin-bottom: 0; }
+    .output-body strong { color: var(--ink); font-weight: 600; }
+    .output-json {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.55;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--ink-soft);
+      padding: 1.1rem 1.25rem;
+    }
+    .output-json .key   { color: var(--accent); }
+    .output-json .str   { color: var(--tier-2); }
+    .output-json .punct { color: var(--ink-muted); }
+    .output-foot {
+      margin-top: 1.5rem;
+      font-size: 0.92rem;
+      color: var(--ink-muted);
+      max-width: var(--prose);
+    }
+
+    /* ──────────────────────────────────────────────
+       Install
+       ────────────────────────────────────────────── */
     .install-block {
       display: flex;
       align-items: center;
-      background: var(--bg-raised);
-      border: 1px solid var(--border);
+      gap: 0.6rem;
+      background: var(--raised);
+      border: 1px solid var(--rule);
       border-radius: 8px;
-      padding: 0.75rem 1rem;
-      margin: 1.5rem 0;
-      gap: 0.75rem;
-      max-width: 520px;
+      padding: 0.85rem 0.85rem 0.85rem 1.1rem;
+      max-width: 760px;
     }
-    .install-block .dollar {
-      color: var(--terminal-green);
+    .install-block .prompt {
+      color: var(--accent);
       font-family: var(--font-mono);
-      font-weight: 700;
+      font-weight: 600;
       flex-shrink: 0;
     }
     .install-block code {
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      color: var(--text-primary);
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: var(--ink);
+      font-size: 0.88rem;
       flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .copy-btn {
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text-secondary);
-      padding: 0.35rem 0.6rem;
-      cursor: pointer;
-      font-size: 0.75rem;
-      font-family: var(--font);
-      transition: color 0.2s, border-color 0.2s;
-      flex-shrink: 0;
-    }
-    .copy-btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
-    .copy-btn:focus-visible { outline: 2px solid var(--accent-start); outline-offset: 2px; }
-
-    /* Pipeline */
-    .pipeline {
-      background: var(--bg-raised);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.5rem;
-      margin: 1.5rem 0;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      line-height: 1.8;
-      color: var(--text-secondary);
       overflow-x: auto;
-    }
-    .pipeline .skill { color: var(--accent-end); font-weight: 600; }
-    .pipeline .arrow { color: var(--text-muted); }
-
-    /* Evidence grid */
-    .evidence-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.75rem;
-      margin: 1.5rem 0;
-    }
-    .evidence-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-    }
-    .evidence-card h4 {
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-bottom: 0.35rem;
-      color: var(--text-primary);
-    }
-    .evidence-card .count {
-      font-size: 1.5rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .evidence-card .label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      white-space: nowrap;
     }
 
-    /* Team grid */
-    .team-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 0.75rem;
-      margin: 1.5rem 0;
-    }
-    .team-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1.25rem 1.35rem;
-    }
-    .team-title {
-      font-size: 1rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 0.2rem;
-    }
-    .team-skill {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-      margin-bottom: 0.65rem;
-    }
-    .team-desc {
-      font-size: 0.85rem;
-      color: rgba(228, 228, 231, 0.8);
-      line-height: 1.55;
-    }
-
-    /* Tier legend */
-    .tier-legend {
+    .detect-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.75rem;
-      margin: 1.5rem 0;
+      gap: 0.5rem;
+      margin: 0.85rem 0 1.25rem;
     }
-    .tier-badge {
+    .detect-pill {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      font-size: 0.75rem;
-      color: var(--text-secondary);
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      color: var(--ink-soft);
+      background: var(--raised);
     }
-    .tier-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    /* Timeline */
-    .timeline {
-      position: relative;
-      margin: 2rem 0;
-      padding-left: 2rem;
-    }
-    .timeline::before {
-      content: '';
-      position: absolute;
-      left: 7px;
-      top: 8px;
-      bottom: 8px;
-      width: 2px;
-      background: var(--border);
-    }
-    .timeline-item {
-      position: relative;
-      margin-bottom: 1.5rem;
-    }
-    .timeline-dot {
-      position: absolute;
-      left: -2rem;
-      top: 6px;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      background: var(--bg);
-      z-index: 1;
-    }
-    .shipped-dot {
-      background: var(--accent-start);
-      border-color: var(--accent-start);
-    }
-    .coming-soon-dot {
-      background: transparent;
-      border-color: var(--text-muted);
+    .detect-pill .check { color: var(--tier-1); font-weight: 700; }
+    .detect-pill.detect-pending {
+      color: var(--ink-muted);
       border-style: dashed;
     }
-    .timeline-content {
-      padding: 1rem 1.25rem;
-      background: var(--bg-raised);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-    }
-    .coming-soon-card {
-      border-style: dashed;
-      border-color: var(--text-muted);
-      background: transparent;
-    }
-    .timeline-date {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-bottom: 0.25rem;
-    }
-    .version-tag {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-left: 0.5rem;
-    }
-    .latest-badge {
-      font-size: 0.65rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--accent-start);
-      background: rgba(99, 102, 241, 0.15);
-      padding: 0.1em 0.5em;
-      border-radius: 3px;
-      margin-left: 0.5rem;
-    }
-    .timeline-title {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-    }
-    .timeline-desc {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
+    .detect-pill.detect-pending .check { color: var(--ink-muted); font-weight: 400; }
 
-    /* Signup form */
-    .signup-form {
-      display: flex;
-      gap: 0;
-      max-width: 420px;
-      margin: 2rem auto 0;
-    }
-    .signup-form input[type="email"] {
-      flex: 1;
-      padding: 0.7rem 1rem;
+    .install-prose {
       font-size: 0.95rem;
-      font-family: var(--font);
-      background: var(--bg-raised);
-      border: 1px solid var(--border);
-      border-right: none;
-      border-radius: 8px 0 0 8px;
-      color: var(--text-primary);
-      outline: none;
-      transition: border-color 0.2s;
+      color: var(--ink-soft);
+      max-width: var(--prose);
+      margin-top: 0.85rem;
     }
-    .signup-form input[type="email"]::placeholder { color: var(--text-muted); }
-    .signup-form input[type="email"]:focus { border-color: var(--accent-start); }
-    .signup-form button {
-      padding: 0.7rem 1.25rem;
-      font-size: 0.9rem;
+
+    /* ──────────────────────────────────────────────
+       What's new
+       ────────────────────────────────────────────── */
+    .release-card {
+      background: var(--raised);
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 1.65rem 1.85rem;
+      max-width: var(--prose);
+    }
+    .release-card .release-meta {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--ink-muted);
+      margin-bottom: 0.45rem;
+      letter-spacing: 0.02em;
+    }
+    .release-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
       font-weight: 600;
-      font-family: var(--font);
-      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-      color: white;
-      border: none;
-      border-radius: 0 8px 8px 0;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: opacity 0.2s;
+      margin-bottom: 0.85rem;
     }
-    .signup-form button:hover { opacity: 0.9; }
-    .signup-form button:focus-visible { outline: 2px solid var(--accent-start); outline-offset: 2px; }
-    .signup-note {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      text-align: center;
-      margin-top: 0.6rem;
-      transition: color 0.3s;
+    .release-card p {
+      font-size: 0.97rem;
+      color: var(--ink-soft);
+      line-height: 1.6;
+      margin-bottom: 0.85rem;
     }
-    .signup-note.success { color: var(--terminal-green); }
-    .signup-note.error { color: #ef4444; }
+    .release-card p:last-child { margin-bottom: 0; }
 
-    /* Builder note */
-    .builder-note {
-      margin-top: 3rem;
-      padding: 1.5rem;
-      border-left: 3px solid var(--accent-start);
-      background: rgba(99, 102, 241, 0.04);
-      border-radius: 0 8px 8px 0;
-    }
-    .builder-note h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: var(--text-primary);
-    }
-    .builder-note p {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      line-height: 1.7;
-      margin-bottom: 0.75rem;
-      max-width: none;
+    .whats-next {
+      margin-top: 1.5rem;
+      font-size: 0.92rem;
+      color: var(--ink-muted);
+      max-width: var(--prose);
     }
 
-    /* Footer */
+    /* ──────────────────────────────────────────────
+       Footer
+       ────────────────────────────────────────────── */
     .footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem 1.5rem;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.8rem;
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 2.5rem var(--pad-x) 3rem;
+      border-top: 1px solid var(--rule);
+      font-size: 0.88rem;
     }
-    .footer a { color: var(--text-secondary); }
-    .footer .links { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.75rem; }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.5rem 2rem;
+      align-items: start;
+    }
+    @media (max-width: 720px) {
+      .footer-top { grid-template-columns: 1fr; }
+    }
+    .footer-brand {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      color: var(--ink-soft);
+      margin-bottom: 0.4rem;
+    }
+    .footer-brand strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .footer-tag {
+      color: var(--ink-muted);
+      font-size: 0.82rem;
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+    }
+    .footer-links a {
+      color: var(--ink-soft);
+      text-decoration: none;
+    }
+    .footer-links a:hover { color: var(--ink); text-decoration: underline; }
 
-    /* Responsive */
-    @media (max-width: 640px) {
-      .hero { padding: 3rem 1.5rem 2rem; }
-      .section { padding: 3rem 1.5rem; }
-      .evidence-grid { grid-template-columns: 1fr 1fr; }
-      .team-grid { grid-template-columns: 1fr; }
-      .nav-links { gap: 1rem; }
-      .tier-legend { flex-direction: column; }
-      .steps li { gap: 0.75rem; }
-      .steps li::before { width: 24px; height: 24px; font-size: 0.7rem; }
-      .signup-form { flex-direction: column; gap: 0.5rem; }
-      .signup-form input[type="email"] { border-right: 1px solid var(--border); border-radius: 8px; }
-      .signup-form button { border-radius: 8px; }
+    .footer-signup {
+      margin-top: 1.75rem;
+      display: flex;
+      align-items: stretch;
+      max-width: 420px;
+      gap: 0;
     }
+    .footer-signup label {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .footer-signup input[type="email"] {
+      flex: 1;
+      padding: 0.55rem 0.85rem;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      background: var(--raised);
+      color: var(--ink);
+      border: 1px solid var(--rule);
+      border-right: none;
+      border-radius: 6px 0 0 6px;
+      outline: none;
+    }
+    .footer-signup input[type="email"]:focus { border-color: var(--accent); }
+    .footer-signup input[type="email"]::placeholder { color: var(--ink-muted); }
+    .footer-signup button {
+      padding: 0.55rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--bg);
+      background: var(--ink);
+      border: 1px solid var(--ink);
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+    }
+    .footer-signup button:hover { opacity: 0.92; }
+    .footer-signup button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .signup-note {
+      margin-top: 0.55rem;
+      font-size: 0.82rem;
+      color: var(--ink-muted);
+      min-height: 1.2em;
+    }
+    .signup-note.success { color: var(--tier-1); }
+    .signup-note.error   { color: var(--severity-critical-fg); }
 
-    /* Terminal typing animation */
-    .typing-container { position: relative; }
-    .typing-line {
-      opacity: 0;
-      animation: fadeIn 0.1s forwards;
-      white-space: pre;
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      left: 0.5rem;
+      top: 0.5rem;
+      background: var(--ink);
+      color: var(--bg);
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      transform: translateY(-200%);
+      transition: transform 0.15s;
+      z-index: 100;
+      text-decoration: none;
     }
-    @keyframes fadeIn { to { opacity: 1; } }
+    .skip-link:focus { transform: translateY(0); outline: 2px solid var(--accent); outline-offset: 2px; }
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
-  <!-- Nav -->
-  <nav class="nav" role="navigation" aria-label="Main navigation">
-    <span class="nav-logo">idstack <span class="beta-badge">beta</span></span>
-    <div class="nav-links">
-      <a href="https://github.com/savvides/idstack" aria-label="View idstack on GitHub">GitHub</a>
-      <a href="https://github.com/savvides/idstack/blob/main/LICENSE">MIT License</a>
-    </div>
-  </nav>
-
-  <!-- Hero -->
-  <header class="hero">
-    <p class="hero-beta"><strong>Beta</strong> &nbsp;·&nbsp; idstack is in active development. Skills work end-to-end, but expect rough edges and breaking changes between minor versions.</p>
-    <h1>
-      <span class="gradient">Design better courses.</span>
-    </h1>
-    <p>Open-source skills that bring 30 years of peer-reviewed instructional design research into your course design workflow. Every recommendation cites its evidence tier, from meta-analyses (T1) to expert opinion (T5).</p>
-    <form id="signup-form" class="signup-form">
-      <input type="email" name="email" placeholder="your@email.com" required aria-label="Email address">
-      <button type="submit">Get updates</button>
-    </form>
-    <p class="signup-note" id="signup-note"></p>
-    <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Runs in Claude Code and OpenAI Codex CLI &middot; Gemini CLI coming in v2.6</p>
+  <header class="topbar" role="banner">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="/">idstack<sup class="brand-beta">beta</sup></a>
+      <div class="nav-links">
+        <a href="#evidence">Evidence</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/savvides/idstack" rel="noopener">GitHub&nbsp;↗</a>
+        <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme" id="theme-toggle">
+          <span class="icon-dark" aria-hidden="true">☾</span>
+          <span class="icon-light" aria-hidden="true">☀</span>
+        </button>
+      </div>
+    </nav>
   </header>
 
-  <hr class="section-divider" style="margin-top: 3rem;">
+  <main id="main">
 
-  <!-- What it does -->
-  <section class="section" id="what-it-does">
-    <div class="section-label">What it does</div>
-    <h2>Your course, reviewed by research</h2>
-    <p>idstack is a design partner for course designers. Import your course, and it checks your work against peer-reviewed research across 11 domains. No jargon. No guessing. Just evidence.</p>
+    <!-- ────────── Hero ────────── -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-text">
+        <p class="hero-meta">
+          <span>Open source</span>
+          <span class="dot" aria-hidden="true"></span>
+          <span>MIT</span>
+          <span class="dot" aria-hidden="true"></span>
+          <span>v2.5.0 — Codex CLI</span>
+        </p>
+        <h1 id="hero-title">Evidence-based instructional design, transparently cited.</h1>
+        <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier — <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code, OpenAI Codex CLI, and (soon) Gemini.</p>
 
-    <ul class="features">
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text"><strong>Quality review</strong> against Quality Matters standards and Community of Inquiry framework</span>
-      </li>
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text"><strong>Alignment check</strong> between your learning objectives, assessments, and activities</span>
-      </li>
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text"><strong>Cognitive load flags</strong> when modules overload working memory</span>
-      </li>
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text"><strong>Bloom's classification</strong> of every learning objective, automatically</span>
-      </li>
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text"><strong>Evidence strength</strong> for every recommendation, from T1 (meta-analyses) to T5 (expert opinion)</span>
-      </li>
-      <li>
-        <span class="check" aria-hidden="true">&#10003;</span>
-        <span class="text"><strong>Accessibility audit</strong> with WCAG compliance and Universal Design for Learning review</span>
-      </li>
-    </ul>
-
-    <h3 style="font-size: 1.15rem; margin-top: 2.5rem; margin-bottom: 0.5rem;">See it work</h3>
-    <p>Import a course, get an evidence-based audit in minutes.</p>
-
-    <div class="demo-block">
-      <div class="demo-header">
-        <div class="demo-dot red"></div>
-        <div class="demo-dot yellow"></div>
-        <div class="demo-dot green"></div>
-        <span class="demo-title">terminal</span>
-      </div>
-      <div class="demo-body" aria-label="Example of idstack course review session">
-        <div><span class="prompt">You:</span> <span class="command">/idstack:course-import</span></div>
-        <br>
-        <div><span class="output">How do you want to import your course?</span></div>
-        <div><span class="dim">  A) IMS Common Cartridge file (.imscc)</span></div>
-        <div><span class="dim">  B) Paste course documents</span></div>
-        <div><span class="dim">  C) Canvas API</span></div>
-        <div><span class="dim">  D) PDF or document file</span></div>
-        <div><span class="dim">  E) SCORM package (.zip)</span></div>
-        <br>
-        <div><span class="prompt">You:</span> <span class="command">B</span> <span class="dim">- here's my syllabus.</span></div>
-        <br>
-        <div><span class="output">Analyzing... Found 12 modules, 8 assignments, 4 discussions.</span></div>
-        <br>
-        <div><span class="prompt">You:</span> <span class="command">/idstack:course-quality-review</span></div>
-        <br>
-        <div><span class="score">Overall Score: 62/100</span></div>
-        <br>
-        <div><span class="flag">&#9888; Learning Objectives</span> <span class="dim">- 8 modules lack stated objectives</span></div>
-        <div><span class="flag">&#9888; Assessment</span> <span class="dim">- no rubrics, no alignment to objectives</span></div>
-        <div><span class="flag">&#9888; Social Presence: 3/10</span> <span class="dim">- no group work, minimal peer interaction</span></div>
-        <br>
-        <div><span class="evidence">[Assessment-8] [T1] - elaborated feedback produces larger</span></div>
-        <div><span class="evidence">learning gains than correctness-only feedback</span></div>
-      </div>
-    </div>
-    <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Shown in Claude Code (<code>/idstack:&lt;skill&gt;</code>). In OpenAI Codex CLI, the same skills are invoked as <code>$&lt;skill&gt;</code>.</p>
-
-  </section>
-
-  <hr class="section-divider">
-
-  <!-- Evidence Base -->
-  <section class="section" id="evidence">
-    <div class="section-label">Evidence Base</div>
-    <h2>Every recommendation cites its research.</h2>
-    <p>11 domains. 5 evidence tiers. Stronger evidence takes precedence when tiers conflict.</p>
-
-    <div class="evidence-grid">
-      <div class="evidence-card">
-        <h4>Instructional Design</h4>
-        <div class="count">12</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Alignment &amp; Objectives</h4>
-        <div class="count">10</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Needs Analysis</h4>
-        <div class="count">7</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Cognitive Load</h4>
-        <div class="count">15</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Assessment &amp; Feedback</h4>
-        <div class="count">10</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Multimedia Learning</h4>
-        <div class="count">10</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Learner Analysis</h4>
-        <div class="count">8</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Evaluation Models</h4>
-        <div class="count">8</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Rapid Prototyping</h4>
-        <div class="count">9</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Online Quality</h4>
-        <div class="count">10</div>
-        <div class="label">papers cited</div>
-      </div>
-      <div class="evidence-card">
-        <h4>Accessibility &amp; UDL</h4>
-        <div class="count">9</div>
-        <div class="label">papers cited</div>
-      </div>
-    </div>
-
-    <div class="tier-legend" role="list" aria-label="Evidence tier legend">
-      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t1)"></span> T1: Meta-analyses, RCTs</span>
-      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t2)"></span> T2: Quasi-experimental</span>
-      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t3)"></span> T3: Systematic reviews</span>
-      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t4)"></span> T4: Observational</span>
-      <span class="tier-badge" role="listitem"><span class="tier-dot" style="background:var(--tier-t5)"></span> T5: Expert opinion</span>
-    </div>
-  </section>
-
-  <hr class="section-divider">
-
-  <!-- Get started -->
-  <section class="section" id="get-started">
-    <div class="section-label">Get started</div>
-    <h2>Up and running in 5 minutes</h2>
-
-    <p style="margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary);"><code>./setup</code> auto-detects Claude Code or OpenAI Codex CLI on your <code>PATH</code> and installs to whichever you have. Force one with <code>--codex</code> or <code>--no-codex</code>.</p>
-
-    <div class="install-block">
-      <span class="dollar" aria-hidden="true">$</span>
-      <code id="install-cmd">git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup</code>
-      <button class="copy-btn" onclick="copyInstall()" aria-label="Copy install command to clipboard">Copy</button>
-    </div>
-
-    <p style="margin-top: 1.5rem; margin-bottom: 1.5rem;">New to AI coding tools? No problem. Here's everything, step by step.</p>
-
-    <ol class="steps">
-      <li>
-        <div class="step-content">
-          <strong>Install your AI coding tool.</strong> idstack supports two:<br>
-          &middot; <strong>Claude Code</strong> &mdash; free download at <a href="https://claude.ai/download" target="_blank" rel="noopener">claude.ai/download</a><br>
-          &middot; <strong>OpenAI Codex CLI</strong> &mdash; <code>npm install -g @openai/codex</code>
-        </div>
-      </li>
-      <li>
-        <div class="step-content">
-          <strong>Install idstack.</strong> Open your terminal and paste the command above, or:<br>
-          <code>git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack && cd ~/.claude/plugins/idstack && ./setup</code>
-        </div>
-      </li>
-      <li>
-        <div class="step-content">
-          <strong>Start your AI tool</strong> &mdash; type <code>claude</code> for Claude Code, or <code>codex</code> for Codex CLI.
-        </div>
-      </li>
-      <li>
-        <div class="step-content">
-          <strong>Import your course.</strong> Type <code>/idstack:course-import</code> (or <code>$course-import</code> in Codex) and paste your syllabus, upload a Common Cartridge file, or connect your Canvas API.
-        </div>
-      </li>
-      <li>
-        <div class="step-content">
-          <strong>Get your review.</strong> Type <code>/idstack:course-quality-review</code> to see your evidence-based course audit. Or type <code>/idstack:pipeline</code> to run the full design pipeline automatically.
-        </div>
-      </li>
-    </ol>
-  </section>
-
-  <hr class="section-divider">
-
-  <!-- Your design team -->
-  <section class="section" id="how-it-works">
-    <div class="section-label">Your design team</div>
-    <h2>11 specialists. One command.</h2>
-    <p>Each skill is a specialist on your team. Run <code>/idstack:pipeline</code> and they work in sequence, or invoke any one directly. Codex CLI users: drop the <code>/idstack:</code> prefix and use <code>$&lt;skill&gt;</code> (e.g., <code>$pipeline</code>, <code>$needs-analysis</code>).</p>
-
-    <div class="team-grid">
-      <div class="team-card">
-        <div class="team-title">Needs Analyst</div>
-        <div class="team-skill">/idstack:needs-analysis</div>
-        <div class="team-desc">Three-level assessment before you build anything. Is training the right intervention? Task analysis and learner profiling.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Curriculum Designer</div>
-        <div class="team-skill">/idstack:learning-objectives</div>
-        <div class="team-desc">Measurable objectives with Bloom's taxonomy. Bidirectional alignment check: does each objective have a matching activity AND assessment?</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Assessment Architect</div>
-        <div class="team-skill">/idstack:assessment-design</div>
-        <div class="team-desc">Evidence-based rubrics and feedback strategies. Formative checkpoints before summative assessments. Nicol's 7 principles of good feedback.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">LMS Bridge</div>
-        <div class="team-skill">/idstack:course-import</div>
-        <div class="team-desc">Import from Common Cartridge, Canvas API, SCORM, PDF, or paste. Quick-scan quality flags and Bloom's pre-classification on import.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Content Generator</div>
-        <div class="team-skill">/idstack:course-builder</div>
-        <div class="team-desc">Generates syllabus, module pages, assignments, and rubrics from your manifest. Content adapts to learner expertise level.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Quality Auditor</div>
-        <div class="team-skill">/idstack:course-quality-review</div>
-        <div class="team-desc">Full Quality Matters audit plus Community of Inquiry presence analysis. 8 structural standards, 3 presence dimensions. Every finding cites its evidence.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Accessibility Reviewer</div>
-        <div class="team-skill">/idstack:accessibility-review</div>
-        <div class="team-desc">WCAG 2.1 AA compliance audit plus Universal Design for Learning review. Scores accessibility 0-100 with "Must Fix" and "Should Improve" tiers.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Adversarial Auditor</div>
-        <div class="team-skill">/idstack:red-team</div>
-        <div class="team-desc">Assumes your course is broken and tries to prove it. Alignment stress test, persona simulation, prerequisite chain integrity. Confidence score.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">LMS Publisher</div>
-        <div class="team-skill">/idstack:course-export</div>
-        <div class="team-desc">Exports to IMS Common Cartridge, SCORM 1.2, or pushes directly to Canvas via API. Shows readiness dashboard before export.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Pipeline Orchestrator</div>
-        <div class="team-skill">/idstack:pipeline</div>
-        <div class="team-desc">Chains all 8 skills automatically in order. Auto-skips completed skills. Pause anytime, resume later. One command for the full design cycle.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-title">Memory Manager</div>
-        <div class="team-skill">/idstack:learn</div>
-        <div class="team-desc">Search, delete, promote, and export learnings. Cross-project intelligence means discoveries from one course help design the next.</div>
-      </div>
-    </div>
-
-    <h3 style="font-size: 1.15rem; margin-top: 2.5rem; margin-bottom: 0.5rem;">How they fit together</h3>
-    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Skills are plain Markdown files. No build step, no dependencies. Each skill reads the shared manifest and session history, runs its evidence-based workflow, and logs the result. Your course context builds up over time.</p>
-
-  </section>
-
-  <hr class="section-divider">
-
-  <!-- Updates & Roadmap -->
-  <section class="section" id="updates">
-    <div class="section-label">Updates</div>
-    <h2>What's new and what's next.</h2>
-    <p>idstack is actively developed. Here's what shipped recently and what we're working on. Updates install automatically when you run any skill.</p>
-
-    <!-- Coming Soon -->
-    <div class="timeline">
-      <div class="timeline-item coming-soon">
-        <div class="timeline-dot coming-soon-dot"></div>
-        <div class="timeline-content coming-soon-card">
-          <div class="timeline-date">Coming soon <span class="version-tag">v2.6</span></div>
-          <div class="timeline-title">Gemini CLI support</div>
-          <div class="timeline-desc"><code>.tmpl</code> &rarr; <code>.toml</code> transform plus a <code>gemini-extension.json</code> manifest. Gemini's built-in <code>ask_user</code> tool maps cleanly to idstack's structured-question protocol. Same skills, same evidence, third runtime.</div>
-        </div>
-      </div>
-      <div class="timeline-item coming-soon">
-        <div class="timeline-dot coming-soon-dot"></div>
-        <div class="timeline-content coming-soon-card">
-          <div class="timeline-date">Coming soon</div>
-          <div class="timeline-title">More specialist skills</div>
-          <div class="timeline-desc">Content sequencing that manages cognitive load. Media selection that flags multimedia principle violations. Evaluation design using Kirkpatrick's four levels. Each backed by the same evidence base.</div>
-        </div>
-      </div>
-      <div class="timeline-item coming-soon">
-        <div class="timeline-dot coming-soon-dot"></div>
-        <div class="timeline-content coming-soon-card">
-          <div class="timeline-date">Exploring</div>
-          <div class="timeline-title">Push changes back to your LMS</div>
-          <div class="timeline-desc">After idstack reviews your course and generates better objectives, push the improvements directly back to Canvas. No more copy-pasting between design documents and your LMS.</div>
+        <div class="cta-row">
+          <div class="install-pill" role="group" aria-label="Install command">
+            <span class="prompt" aria-hidden="true">$</span>
+            <code id="install-cmd">git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack &amp;&amp; cd ~/.claude/plugins/idstack &amp;&amp; ./setup</code>
+            <button class="copy-btn" type="button" data-copy-target="install-cmd" aria-label="Copy install command">Copy</button>
+          </div>
+          <a class="cta-secondary" href="#evidence">→&nbsp; See the evidence base</a>
         </div>
       </div>
 
-      <!-- Shipped -->
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">May 9 <span class="version-tag">v2.5.0</span> <span class="latest-badge">Latest</span></div>
-          <div class="timeline-title">Native OpenAI Codex CLI support</div>
-          <div class="timeline-desc">Same 11 skills, same evidence base, same <code>.idstack/</code> dual-output contract, same manifest schema &mdash; now running natively in OpenAI Codex CLI alongside Claude Code. <code>./setup</code> auto-detects <code>codex</code> on <code>PATH</code>. New multi-target generator (<code>bin/idstack-gen-skills --target {claude|codex|all}</code>) emits both flavors from a single source. Codex auto-discovers skills at <code>$CODEX_HOME/skills/idstack-&lt;name&gt;/</code>. Skill bodies stay CLI-agnostic via a portable concept-name preamble.</div>
+      <aside class="finding" aria-labelledby="hero-finding-title">
+        <div class="finding-meta">
+          <span class="label-strong" id="hero-finding-title">Finding · cognitive load</span>
+          <span class="severity severity-warning">warning</span>
+        </div>
+        <p class="finding-observation">The introduction module presents seven new concepts before the first practice opportunity, exceeding working-memory capacity for novice learners.</p>
+        <div class="finding-cite">
+          <span class="cite-pill">[CogLoad-6]</span>
+          <span class="tier tier-1">T1</span>
+          <cite>Chen, Castro-Alonso, Paas &amp; Sweller (2018). <em>Educational Psychology Review.</em></cite>
+        </div>
+        <p class="finding-suggestion"><span class="arrow" aria-hidden="true">→</span>&nbsp;Consider splitting into two modules with retrieval practice between, or pre-train terminology before the conceptual sequence.</p>
+      </aside>
+    </section>
+
+    <!-- ────────── Evidence ────────── -->
+    <section class="section" id="evidence" aria-labelledby="evidence-title">
+      <header class="section-header">
+        <p class="eyebrow">Evidence</p>
+        <h2 id="evidence-title">Every recommendation cites its source.</h2>
+        <p class="lede">Stronger evidence wins when tiers conflict. All 108 references are auditable in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a> — open source, no proprietary studies, no cherry-picking.</p>
+      </header>
+
+      <div class="evidence-spine">
+        <div class="tier-column" role="list" aria-label="Evidence tiers">
+          <div class="tier-row" role="listitem"><span class="tier tier-1">T1</span> <span>Meta-analyses &amp; RCTs</span></div>
+          <div class="tier-row" role="listitem"><span class="tier tier-2">T2</span> <span>Quasi-experimental, with controls</span></div>
+          <div class="tier-row" role="listitem"><span class="tier tier-3">T3</span> <span>Systematic reviews</span></div>
+          <div class="tier-row" role="listitem"><span class="tier tier-4">T4</span> <span>Observational, no comparison</span></div>
+          <div class="tier-row" role="listitem"><span class="tier tier-5">T5</span> <span>Expert opinion &amp; theory</span></div>
+        </div>
+
+        <div class="domain-column" role="list" aria-label="Research domains by paper count">
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Cognitive Load Theory</span>
+            <span class="domain-count">15</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 100%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Instructional Design Models</span>
+            <span class="domain-count">12</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 80%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Constructive Alignment &amp; Objectives</span>
+            <span class="domain-count">10</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 67%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Formative Assessment &amp; Feedback</span>
+            <span class="domain-count">10</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 67%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Multimedia Learning</span>
+            <span class="domain-count">10</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 67%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Online Course Quality</span>
+            <span class="domain-count">10</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 67%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Accessibility &amp; UDL</span>
+            <span class="domain-count">9</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 60%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Rapid Prototyping &amp; DBR</span>
+            <span class="domain-count">9</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 60%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Learner Analysis &amp; Differentiation</span>
+            <span class="domain-count">8</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 53%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Evaluation Models</span>
+            <span class="domain-count">8</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 53%"></span></span>
+          </div>
+          <div class="domain-row" role="listitem">
+            <span class="domain-name">Needs Analysis</span>
+            <span class="domain-count">7</span>
+            <span class="domain-bar-wrap" aria-hidden="true"><span class="domain-bar" style="--w: 47%"></span></span>
+          </div>
         </div>
       </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">May 5 <span class="version-tag">v2.4.0</span></div>
-          <div class="timeline-title">Dual-output reports + pipeline aggregator</div>
-          <div class="timeline-desc">Every finding-producing skill now writes both a JSON manifest section (system state) and a Markdown report at <code>.idstack/reports/&lt;skill&gt;.md</code> (the human view), structured as observation → evidence → why it matters → suggestion. <code>/idstack:pipeline</code> produces a cross-cutting <code>pipeline.md</code> aggregate over all per-skill reports — top recurring issues, evidence themes, where to start. Plus install-hygiene fix and new <code>bin/idstack-doctor</code> diagnostic.</div>
+
+      <p class="evidence-foot">Recommendations carry a domain code and tier — <code>[Alignment-14] [T1]</code> — so you can trace any claim back to the source paper. The references file is just Markdown: grep it, fork it, audit it.</p>
+    </section>
+
+    <!-- ────────── Pipeline ────────── -->
+    <section class="section" id="pipeline" aria-labelledby="pipeline-title">
+      <header class="section-header">
+        <p class="eyebrow">Pipeline</p>
+        <h2 id="pipeline-title">11 skills. One pipeline. Always optional.</h2>
+        <p class="lede">Eight skills run end to end as a sequence. Two utilities sit outside it. Run the whole spine with one command, or invoke any skill standalone — each works without a manifest.</p>
+      </header>
+
+      <div class="pipeline-canvas">
+        <p class="pipeline-track-label">Sequence — runs left to right under <span class="track-mono">/idstack:pipeline</span></p>
+        <ol class="pipeline-flow" role="list">
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 1: needs-analysis. Three-level needs assessment and design-fit gate.">
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">needs-analysis</span>
+            <span class="node-desc">Three-level needs assessment; design-fit gate.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 2: learning-objectives. Bloom's classification and bidirectional alignment.">
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">learning-objectives</span>
+            <span class="node-desc">Bloom's classification; bidirectional alignment.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 3: assessment-design. Rubrics, formative checkpoints, Nicol's seven feedback principles.">
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">assessment-design</span>
+            <span class="node-desc">Rubrics, checkpoints, Nicol's 7 feedback principles.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 4: course-builder. Cognitive-load-aware content generation.">
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">course-builder</span>
+            <span class="node-desc">Cognitive-load-aware content generation.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 5: course-quality-review. Quality Matters eight standards plus Community of Inquiry.">
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">course-quality-review</span>
+            <span class="node-desc">QM 8 standards + Community of Inquiry.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 6: accessibility-review. WCAG 2.1 AA and UDL 3.0 audit.">
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">accessibility-review</span>
+            <span class="node-desc">WCAG 2.1 AA + UDL 3.0 audit.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 7: red-team. Adversarial pre-launch audit across five dimensions.">
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">red-team</span>
+            <span class="node-desc">Adversarial audit across 5 dimensions.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 8: course-export. Common Cartridge, SCORM 1.2, or Canvas API.">
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">course-export</span>
+            <span class="node-desc">Common Cartridge, SCORM 1.2, or Canvas API.</span>
+          </li>
+        </ol>
+
+        <div class="pipeline-aside-row" aria-label="Skills outside the linear pipeline">
+          <div class="pipeline-aside">
+            <span class="aside-tag">course-import</span>
+            <span>Branches in mid-pipeline when starting from an existing course.</span>
+          </div>
+          <div class="pipeline-aside">
+            <span class="aside-tag">learn</span>
+            <span>Cross-project memory utility — runs outside the pipeline.</span>
+          </div>
         </div>
       </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">May 2 <span class="version-tag">v2.3.0</span></div>
-          <div class="timeline-title">Imported-course mode</div>
-          <div class="timeline-desc">Needs-analysis, assessment-design, and course-builder now auto-detect imported courses and switch behavior. Needs-analysis runs a design-fit check instead of the training-decision gate. Assessment-design audits existing rubrics against Bloom's instead of designing new ones. Course-builder switches to gap-fill mode — generates only what's missing.</div>
-        </div>
+
+      <p class="pipeline-foot">Run the full sequence with <code>/idstack:pipeline</code> in Claude Code or <code>$pipeline</code> in Codex CLI. The orchestrator auto-skips completed steps and resumes where you left off.</p>
+    </section>
+
+    <!-- ────────── Output ────────── -->
+    <section class="section" aria-labelledby="output-title">
+      <header class="section-header">
+        <p class="eyebrow">Output</p>
+        <h2 id="output-title">Reports for humans. Manifests for the system.</h2>
+        <p class="lede">Every finding-producing skill writes both — a Markdown report you read and a JSON manifest the next skill in the pipeline reads. Same data, two views.</p>
+      </header>
+
+      <div class="output-pair">
+        <article class="output-panel" aria-label="Sample Markdown report excerpt">
+          <header class="output-header">Markdown · .idstack/reports/learning-objectives.md</header>
+          <div class="output-body">
+            <h3>
+              Finding obj-3: Three ILOs without assessment
+              <span class="severity severity-warning">warning</span>
+              <span class="tier tier-1">T1</span>
+            </h3>
+            <p><strong>What we saw.</strong> Of 8 stated objectives, 3 have no matching assessment item.</p>
+            <p><strong>What the evidence says.</strong> Constructive alignment requires every objective to map to an activity and an assessment; orphaned objectives predict learning-outcome gaps. <span class="cite-pill">[Alignment-14]</span>&nbsp;<span class="tier tier-1">T1</span></p>
+            <p><strong>Consider.</strong> Run <code>/idstack:assessment-design</code> to close the gap, or remove the orphaned objectives.</p>
+          </div>
+        </article>
+
+        <article class="output-panel" aria-label="Sample JSON manifest excerpt">
+          <header class="output-header">JSON · .idstack/project.json</header>
+<pre class="output-json"><code><span class="punct">{</span>
+  <span class="key">"learning_objectives"</span><span class="punct">:</span> <span class="punct">{</span>
+    <span class="key">"findings"</span><span class="punct">:</span> <span class="punct">[</span>
+      <span class="punct">{</span>
+        <span class="key">"id"</span><span class="punct">:</span> <span class="str">"obj-3"</span><span class="punct">,</span>
+        <span class="key">"severity"</span><span class="punct">:</span> <span class="str">"warning"</span><span class="punct">,</span>
+        <span class="key">"tier"</span><span class="punct">:</span> <span class="str">"T1"</span><span class="punct">,</span>
+        <span class="key">"domain"</span><span class="punct">:</span> <span class="str">"Alignment-14"</span><span class="punct">,</span>
+        <span class="key">"observation"</span><span class="punct">:</span> <span class="str">"3 of 8 ILOs lack assessment"</span><span class="punct">,</span>
+        <span class="key">"consider"</span><span class="punct">:</span> <span class="str">"/idstack:assessment-design"</span>
+      <span class="punct">}</span>
+    <span class="punct">],</span>
+    <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/reports/learning-objectives.md"</span><span class="punct">,</span>
+    <span class="key">"updated"</span><span class="punct">:</span> <span class="str">"2026-05-09T14:32:18Z"</span>
+  <span class="punct">}</span>
+<span class="punct">}</span></code></pre>
+        </article>
       </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">May 2 <span class="version-tag">v2.2.0</span></div>
-          <div class="timeline-title">Red-team in a clean-context sub-agent + triage-and-fix loop</div>
-          <div class="timeline-desc"><code>/idstack:red-team</code> spawns a clean-context sub-agent so the audit can't inherit build-bias from the parent. After the audit, control returns to the parent with a triage-and-fix prompt: Critical, Critical+High, All, or Skip.</div>
-        </div>
+
+      <p class="output-foot">The Markdown is what an instructional designer reads; the JSON is what <code>/idstack:assessment-design</code> reads next. Both files always reflect the most recent run; the timeline at <code>.idstack/timeline.jsonl</code> carries the run history.</p>
+    </section>
+
+    <!-- ────────── Install ────────── -->
+    <section class="section" id="install" aria-labelledby="install-title">
+      <header class="section-header">
+        <p class="eyebrow">Install</p>
+        <h2 id="install-title">Up and running in five minutes.</h2>
+      </header>
+
+      <div class="install-block" role="group" aria-label="Install command">
+        <span class="prompt" aria-hidden="true">$</span>
+        <code id="install-cmd-2">git clone https://github.com/savvides/idstack.git ~/.claude/plugins/idstack &amp;&amp; cd ~/.claude/plugins/idstack &amp;&amp; ./setup</code>
+        <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
       </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">May 2 <span class="version-tag">v2.1.0</span></div>
-          <div class="timeline-title">Manifest-merge tool + schema cleanup</div>
-          <div class="timeline-desc">New <code>bin/idstack-manifest-merge</code> is the canonical write path: section-scoped, atomic, preserves foreign sections, validates against the canonical schema. Schema migration v1.4 fixes drifted field names from earlier versions.</div>
-        </div>
+
+      <p class="install-prose"><code>./setup</code> auto-detects which CLIs are on your <code>PATH</code> and installs to whichever you have. Force one with <code>--codex</code> or <code>--no-codex</code>.</p>
+
+      <div class="detect-row" aria-label="Supported CLIs">
+        <span class="detect-pill"><span class="check" aria-hidden="true">✓</span> Claude Code</span>
+        <span class="detect-pill"><span class="check" aria-hidden="true">✓</span> OpenAI Codex CLI</span>
+        <span class="detect-pill detect-pending"><span class="check" aria-hidden="true">○</span> Gemini CLI · v2.6</span>
       </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">April 20 <span class="version-tag">v2.0.0</span></div>
-          <div class="timeline-title">Pipeline orchestrator, cross-course intelligence, sub-agents</div>
-          <div class="timeline-desc"><code>/idstack:pipeline</code> chains all skills automatically. Cross-course learnings transfer knowledge between projects. Parallel sub-agents speed up reviews on Claude Code. Designer profile adapts to your expertise level. All skills now namespaced under <code>/idstack</code>.</div>
-        </div>
+
+      <p class="install-prose">New to AI coding tools? Install one first — <a href="https://claude.ai/download" rel="noopener">Claude Code</a> (free download) or Codex CLI (<code>npm install -g @openai/codex</code>). Then paste the command above. When your CLI starts, run <code>/idstack:pipeline</code> (Claude) or <code>$pipeline</code> (Codex).</p>
+    </section>
+
+    <!-- ────────── What's new ────────── -->
+    <section class="section" id="whats-new" aria-labelledby="whatsnew-title">
+      <header class="section-header">
+        <p class="eyebrow">What's new</p>
+        <h2 id="whatsnew-title">v2.5.0 — Native OpenAI Codex CLI support.</h2>
+      </header>
+
+      <article class="release-card">
+        <p class="release-meta">May 9, 2026 · v2.5.0 · latest</p>
+        <h3>Same skills, second runtime.</h3>
+        <p>Same 11 skills, same evidence base, same dual-output contract — now running natively in OpenAI Codex CLI alongside Claude Code. <code>./setup</code> auto-detects <code>codex</code> on <code>PATH</code>, and a multi-target generator (<code>bin/idstack-gen-skills</code>) emits both flavors from a single source.</p>
+        <p>Skill bodies stay CLI-agnostic via a portable concept-name preamble: <code>AskUserQuestion</code>, <code>Agent</code>, and <code>Skill</code> are defined once and resolved per-CLI at runtime.</p>
+        <p><a href="https://github.com/savvides/idstack/releases" rel="noopener">→ All releases on GitHub</a></p>
+      </article>
+
+      <p class="whats-next">Next: Gemini CLI (v2.6), additional specialist skills (content sequencing, media selection, Kirkpatrick evaluation), and push-to-LMS so improvements land back in Canvas without copy-paste. See the <a href="https://github.com/savvides/idstack/blob/main/ROADMAP.md" rel="noopener">roadmap</a>.</p>
+    </section>
+
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="footer-top">
+      <div>
+        <p class="footer-brand"><strong>idstack</strong> — free, open source. Built with evidence.</p>
+        <p class="footer-tag">A side project, in active development. Skills work end-to-end; expect rough edges between minor versions.</p>
       </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">April 10 <span class="version-tag">v1.5.1</span></div>
-          <div class="timeline-title">Bidirectional pipeline + evidence depth</div>
-          <div class="timeline-desc">All 9 skills now write back to the manifest, so every step in the pipeline makes the next one smarter. Score trending shows your course improving across reviews. Accessibility review upgraded to full WCAG 2.1 AA with course-specific guidance. Red-team audit now cites research evidence for every adversarial check.</div>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">April 4 <span class="version-tag">v1.5.0</span></div>
-          <div class="timeline-title">Course memory</div>
-          <div class="timeline-desc">idstack now remembers your design sessions. Quality score trends, which skills you've completed, and project-specific discoveries all carry over between conversations. Start a new session and idstack picks up where you left off.</div>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">April 1 <span class="version-tag">v1.4.0</span></div>
-          <div class="timeline-title">SCORM import and export</div>
-          <div class="timeline-desc">Import courses from Articulate Rise, Storyline, Adobe Captivate, and any SCORM-compliant authoring tool. Export SCORM packages for any LMS. PDF import also added.</div>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">April 1 <span class="version-tag">v1.3.0</span></div>
-          <div class="timeline-title">Accessibility review and stress testing</div>
-          <div class="timeline-desc">WCAG 2.1 AA compliance audit plus Universal Design for Learning review. Red team audit that assumes your course is broken and tries to prove it. Two new quality gates before export.</div>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot shipped-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-date">March 31 <span class="version-tag">v1.2.0</span></div>
-          <div class="timeline-title">Cross-domain quality checks</div>
-          <div class="timeline-desc">Quality review now checks cognitive load, multimedia principles, feedback quality, and expertise reversal across your entire course. Score trending and per-category breakdown.</div>
-        </div>
+      <div class="footer-links">
+        <a href="https://github.com/savvides/idstack" rel="noopener">GitHub</a>
+        <a href="https://github.com/savvides/idstack/blob/main/LICENSE" rel="noopener">MIT License</a>
+        <a href="https://github.com/savvides/idstack/blob/main/CONTRIBUTING.md" rel="noopener">Contribute</a>
+        <a href="https://github.com/savvides/idstack/blob/main/ROADMAP.md" rel="noopener">Roadmap</a>
+        <a href="https://forms.gle/6LDgDD1M6WWyYvME8" rel="noopener">Feedback</a>
       </div>
     </div>
 
-  </section>
-
-  <hr class="section-divider">
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="links">
-      <a href="https://github.com/savvides/idstack">GitHub</a>
-      <a href="https://github.com/savvides/idstack/blob/main/LICENSE">MIT License</a>
-      <a href="https://github.com/savvides/idstack/blob/main/CONTRIBUTING.md">Contribute</a>
-      <a href="https://forms.gle/6LDgDD1M6WWyYvME8">Feedback</a>
-    </div>
-    <p>Free, open source. Built with evidence.</p>
+    <form id="signup-form" class="footer-signup" novalidate>
+      <label for="signup-email">Email</label>
+      <input id="signup-email" type="email" name="email" placeholder="your@email.com — release updates only" required aria-describedby="signup-note">
+      <button type="submit">Subscribe</button>
+    </form>
+    <p class="signup-note" id="signup-note" aria-live="polite"></p>
   </footer>
 
   <script>
-    function copyInstall() {
-      var text = document.getElementById('install-cmd').textContent;
-      var btn = document.querySelector('.copy-btn');
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(function() {
-          btn.textContent = 'Copied!';
-          setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
-        });
-      } else {
-        var textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          document.execCommand('copy');
-          btn.textContent = 'Copied!';
-          setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
-        } catch (e) { /* silent fail */ }
-        document.body.removeChild(textarea);
-      }
-    }
-
-    document.getElementById('signup-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var form = this;
-      var btn = form.querySelector('button');
-      var note = document.getElementById('signup-note');
-      var originalLabel = btn.textContent;
-      function showError() {
-        note.textContent = 'Something went wrong. Try again.';
-        note.classList.remove('success');
-        note.classList.add('error');
-      }
-      btn.disabled = true;
-      btn.textContent = 'Sending...';
-      fetch('https://formspree.io/f/xkokkzyy', {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { 'Accept': 'application/json' }
-      }).then(function(res) {
-        if (res.ok) {
-          note.textContent = 'You\u2019re in! We\u2019ll keep you posted.';
-          note.classList.remove('error');
-          note.classList.add('success');
-          form.reset();
-        } else {
-          showError();
-        }
-      }).catch(showError).finally(function() {
-        btn.disabled = false;
-        btn.textContent = originalLabel;
+    // ─── Theme toggle ───────────────────────────────────────
+    (function () {
+      var btn = document.getElementById('theme-toggle');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        var current = document.documentElement.getAttribute('data-theme') || 'light';
+        var next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('idstack:theme', next); } catch (e) {}
       });
-    });
-  </script>
+    })();
 
+    // ─── Copy buttons (one handler, multiple targets) ───────
+    (function () {
+      function flash(btn) {
+        var original = btn.textContent;
+        btn.textContent = 'Copied';
+        btn.setAttribute('data-copied', 'true');
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.removeAttribute('data-copied');
+        }, 1800);
+      }
+      document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.getAttribute('data-copy-target');
+          var el = document.getElementById(id);
+          if (!el) return;
+          var text = el.textContent;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { flash(btn); });
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); flash(btn); } catch (e) {}
+            document.body.removeChild(ta);
+          }
+        });
+      });
+    })();
+
+    // ─── Email signup (Formspree, preserved) ────────────────
+    (function () {
+      var form = document.getElementById('signup-form');
+      if (!form) return;
+      var note = document.getElementById('signup-note');
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = form.querySelector('button');
+        var originalLabel = btn.textContent;
+        function fail() {
+          note.textContent = 'Something went wrong. Try again.';
+          note.classList.remove('success');
+          note.classList.add('error');
+        }
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+        fetch('https://formspree.io/f/xkokkzyy', {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'Accept': 'application/json' }
+        }).then(function (res) {
+          if (res.ok) {
+            note.textContent = 'You’re in. We’ll keep you posted on releases.';
+            note.classList.remove('error');
+            note.classList.add('success');
+            form.reset();
+          } else { fail(); }
+        }).catch(fail).finally(function () {
+          btn.disabled = false;
+          btn.textContent = originalLabel;
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
