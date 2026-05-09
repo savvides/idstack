@@ -5,15 +5,6 @@ description: |
   module pages, assignment descriptions, and rubric documents. Content follows
   cognitive load principles and adapts to learner expertise level. Reads from
   the full pipeline (needs, objectives, assessments) for richest output. (idstack)
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - Agent
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->

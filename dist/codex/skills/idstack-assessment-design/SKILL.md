@@ -5,14 +5,6 @@ description: |
   checkpoints. Aligns each assessment to learning objectives using Bloom's taxonomy.
   Applies Nicol's 7 principles of good feedback practice. Reads from /learning-objectives
   manifest and extends it with assessment specs. (idstack)
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->

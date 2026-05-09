@@ -1,5 +1,60 @@
 # Changelog
 
+## v2.5.0.0 (2026-05-09)
+
+### Added — OpenAI Codex CLI support
+
+idstack now runs natively in OpenAI Codex CLI in addition to Claude Code. Same 11
+skills, same evidence base, same `.idstack/` dual-output contract, same manifest
+schema. The skill bodies are CLI-agnostic; small per-CLI shims handle interaction
+primitives.
+
+- **Multi-target generator.** `bin/idstack-gen-skills --target {claude|codex|all}`.
+  Codex output goes to `dist/codex/` (committed, so `codex marketplace add` works
+  directly from a clone). Claude output unchanged at `skills/<name>/SKILL.md`.
+- **Frontmatter portability.** The `allowed-tools:` block is stripped from Codex
+  output (Codex has no per-skill allowlist; tool restrictions are session-global
+  via approval policy + per-MCP `enabled_tools`/`disabled_tools`).
+- **Concept-name preamble.** New "Interaction Conventions" section in
+  `templates/preamble.md` defines `AskUserQuestion`, `Agent`, and `Skill (cross-skill
+  invocation)` as portable concept names. Skill bodies use the same wording in both
+  CLIs; the preamble interprets the concept per-host. Same body, two hosts, no
+  per-target text substitution.
+- **Pipeline graceful degradation.** `pipeline` skill picks up a "If the Skill tool
+  is NOT available" branch — Codex prompts the user to type the next skill name and
+  resumes when they re-invoke `$pipeline`. The partial-run report is regenerated
+  before stopping.
+- **Codex bundle artifacts.** Top-level `AGENTS.md` (memory file generated from
+  `templates/agent-context.md`) and 11 `dist/codex/skills/idstack-<name>/SKILL.md`
+  files. All committed; all freshness-checked by smoke test. Skill discovery in
+  Codex happens at `$CODEX_HOME/skills/<name>/SKILL.md` (Codex auto-discovers
+  skills there) — no marketplace.json or `.codex-plugin/plugin.json` needed for
+  v1 distribution. Marketplace publishing is on the v2.6 roadmap.
+- **Multi-CLI install path detection.** Preamble path resolution and the in-skill
+  `_IDSTACK` chain in `course-export` and `learn` now check, in order:
+  `$CLAUDE_PLUGIN_ROOT`, `$IDSTACK_HOME`, `~/.claude/plugins/idstack`,
+  `~/.agents/plugins/idstack`, `~/.agents/skills/idstack`. One install layout per
+  CLI; same code finds either.
+- **`setup` extended.** Auto-detects `codex` on PATH and creates a two-part Codex
+  install: per-skill symlinks at `$CODEX_HOME/skills/idstack-<name>/` (Codex auto-
+  discovers each skill) plus a whole-repo symlink at `~/.agents/plugins/idstack/`
+  (so the in-skill `$_IDSTACK/bin/idstack-*` resolves via the preamble's path
+  fallback chain). Force on with `--codex`, opt out with `--no-codex`. Existing
+  Claude Code install is unchanged for users who don't have Codex CLI. Setup also
+  detects pre-existing real directories at install targets and removes them before
+  symlinking (avoids the `ln -snf` symlink-inside-dir footgun). Caught in PR
+  review by Gemini bot.
+- **Smoke test extended.** New checks for `dist/codex/` artifacts: bundle directory,
+  marketplace.json validity, AGENTS.md presence, all 11 Codex SKILL.md files with
+  correct frontmatter and stripped `allowed-tools`. Total: 217 checks (was 161).
+
+### Changed
+
+- **README** marks idstack as supporting Claude Code **and** Codex CLI. (Gemini
+  CLI is on the v2.6 roadmap.)
+- **Plugin manifest version** bumped to `2.5.0.0` (minor: adds CLI target without
+  breaking Claude Code).
+
 ## v2.4.0.2 (2026-05-05)
 
 ### Fixed — version-pattern fragility (Gemini code review, third pass)

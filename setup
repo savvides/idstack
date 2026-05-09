@@ -11,12 +11,35 @@ IDSTACK_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 PLUGINS_DIR="$HOME/.claude/plugins"
 LEGACY_SKILLS_DIR="$HOME/.claude/skills"
 SCOPE="global"
+CODEX_OPT_IN=""  # "" = auto-detect, "yes" = force-install, "no" = skip
 
-if [ "$1" = "--local" ]; then
-  PLUGINS_DIR="$(pwd)/.claude/plugins"
-  LEGACY_SKILLS_DIR="$(pwd)/.claude/skills"
-  SCOPE="local"
-fi
+for arg in "$@"; do
+  case "$arg" in
+    --local)
+      PLUGINS_DIR="$(pwd)/.claude/plugins"
+      LEGACY_SKILLS_DIR="$(pwd)/.claude/skills"
+      SCOPE="local"
+      ;;
+    --codex)    CODEX_OPT_IN="yes" ;;
+    --no-codex) CODEX_OPT_IN="no" ;;
+    --keep-legacy) ;;  # consumed later in the legacy-cleanup branch
+    -h|--help)
+      echo "Usage: ./setup [--local] [--codex|--no-codex] [--keep-legacy]"
+      echo "  --local       install to ./.claude/plugins/ instead of \$HOME/.claude/plugins/"
+      echo "  --codex       force Codex install even if codex is not on PATH"
+      echo "  --no-codex    skip Codex install even if codex is on PATH"
+      echo "  --keep-legacy keep pre-v2 install at \$HOME/.claude/skills/idstack (default: remove)"
+      exit 0
+      ;;
+    *) echo "ERROR: unknown argument: $arg" >&2; echo "Run ./setup --help for usage." >&2; exit 2 ;;
+  esac
+done
+
+# Regenerate skill files for all targets so installs are always fresh against
+# the current .tmpl source. Cheap (<1s); the source-of-truth invariant is
+# worth more than the cost.
+"$IDSTACK_DIR/bin/idstack-gen-skills" --target all >/dev/null
+echo "  regenerated skill files for all targets"
 
 TARGET="$PLUGINS_DIR/idstack"
 
@@ -117,7 +140,83 @@ else
 fi
 
 echo ""
-echo "idstack installed."
+echo "idstack installed (Claude Code)."
+
+# Optional: Codex CLI install. Auto-detect codex on PATH unless the user passed
+# --codex (force) or --no-codex (skip). The Codex bundle lives under
+# dist/codex/ and is regenerated on every setup run.
+CODEX_INSTALL=0
+if [ "$CODEX_OPT_IN" = "yes" ]; then
+  CODEX_INSTALL=1
+elif [ "$CODEX_OPT_IN" = "no" ]; then
+  CODEX_INSTALL=0
+elif command -v codex >/dev/null 2>&1; then
+  CODEX_INSTALL=1
+fi
+
+if [ "$CODEX_INSTALL" = "1" ]; then
+  # Codex install — two-part:
+  #   1. Per-skill symlinks at $CODEX_HOME/skills/idstack-<name>/ so Codex auto-
+  #      discovers each skill ($needs-analysis, $pipeline, etc.).
+  #   2. A whole-repo symlink at ~/.agents/plugins/idstack/ -> $IDSTACK_DIR so
+  #      the in-skill bash blocks can resolve $_IDSTACK/bin/idstack-*. The
+  #      preamble's path-detection chain finds it via the ~/.agents/plugins/
+  #      fallback.
+  CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
+  if [ "$SCOPE" = "local" ]; then
+    CODEX_HOME_DIR="$(pwd)/.codex"
+    CODEX_BIN_PARENT="$(pwd)/.agents/plugins"
+  else
+    CODEX_BIN_PARENT="$HOME/.agents/plugins"
+  fi
+  CODEX_SKILLS_DIR="$CODEX_HOME_DIR/skills"
+  CODEX_BIN_TARGET="$CODEX_BIN_PARENT/idstack"
+  CODEX_BUNDLE_SKILLS="$IDSTACK_DIR/dist/codex/skills"
+
+  if [ ! -d "$CODEX_BUNDLE_SKILLS" ]; then
+    echo "  WARNING: Codex skill bundle missing at $CODEX_BUNDLE_SKILLS — generator did not produce it. Skipping Codex install."
+  else
+    # Part 1: per-skill symlinks for auto-discovery.
+    mkdir -p "$CODEX_SKILLS_DIR"
+    for skill_dir in "$CODEX_BUNDLE_SKILLS"/idstack-*; do
+      [ -d "$skill_dir" ] || continue
+      skill_name=$(basename "$skill_dir")
+      target="$CODEX_SKILLS_DIR/$skill_name"
+      # Replace pre-existing real dir so ln -snf doesn't symlink-into-dir.
+      if [ -d "$target" ] && [ ! -L "$target" ]; then
+        if [ -z "$HOME" ] || [[ "$target" != */idstack-* ]]; then
+          echo "ERROR: refusing to rm $target" >&2
+          exit 1
+        fi
+        rm -rf "$target"
+      fi
+      ln -snf "$skill_dir" "$target"
+    done
+    echo "  linked 11 skills into: $CODEX_SKILLS_DIR/idstack-*"
+
+    # Part 2: whole-repo symlink so $_IDSTACK/bin/idstack-* resolves in skill bodies.
+    mkdir -p "$CODEX_BIN_PARENT"
+    if [ "$CODEX_BIN_TARGET" = "$IDSTACK_DIR" ]; then
+      echo "  in place: $CODEX_BIN_TARGET (no bin-resolution symlink needed)"
+    else
+      if [ -d "$CODEX_BIN_TARGET" ] && [ ! -L "$CODEX_BIN_TARGET" ]; then
+        if [ -z "$HOME" ] || [[ "$CODEX_BIN_TARGET" != */idstack ]]; then
+          echo "ERROR: refusing to rm $CODEX_BIN_TARGET (HOME=$HOME)" >&2
+          exit 1
+        fi
+        rm -rf "$CODEX_BIN_TARGET"
+        echo "  removed pre-existing dir: $CODEX_BIN_TARGET"
+      fi
+      ln -snf "$IDSTACK_DIR" "$CODEX_BIN_TARGET"
+      echo "  linked: $CODEX_BIN_TARGET -> $IDSTACK_DIR (for in-skill bin/ resolution)"
+    fi
+    echo ""
+    echo "idstack installed (Codex CLI)."
+    echo "  If Codex CLI is already running, restart it."
+    echo "  Usage: \$<skill> (e.g., \$needs-analysis, \$pipeline)"
+  fi
+fi
+
 echo ""
 echo "  If Claude Code is already running, restart it (plugins load at session start)."
 echo ""

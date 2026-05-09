@@ -172,8 +172,25 @@ if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
   fi
 fi
 
-# Template freshness check
-check "generated SKILL.md files are up to date" "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
+# Template freshness check (covers all targets: claude + codex)
+check "generated files are up to date for all targets" "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
+
+# Codex bundle — generated artifacts for Codex CLI consumers.
+# AGENTS.md lives at the repo root (Codex memory file for sessions inside the
+# idstack repo). End-user skill installs go into $CODEX_HOME/skills/idstack-<name>/
+# via per-skill symlinks created by setup; Codex auto-discovers skills there.
+# SKILL.md files are generated under dist/codex/skills/idstack-<name>/.
+CODEX_SKILLS_DIR="$IDSTACK_DIR/dist/codex/skills"
+check "Codex AGENTS.md at repo root exists" "[ -f '$IDSTACK_DIR/AGENTS.md' ]"
+check "AGENTS.md matches templates/agent-context.md" "cmp -s '$IDSTACK_DIR/templates/agent-context.md' '$IDSTACK_DIR/AGENTS.md'"
+check "Codex skills dir exists" "[ -d '$CODEX_SKILLS_DIR' ]"
+for skill in $SKILLS; do
+  check "Codex skills/idstack-$skill/SKILL.md exists" "[ -f '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md' ]"
+  check "Codex $skill has name: $skill" "grep -q '^name: $skill' '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md'"
+  check "Codex $skill has description: field" "grep -q '^description:' '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md'"
+  # Codex has no per-skill tool allowlist; the field must be stripped.
+  check "Codex $skill has allowed-tools: stripped" "! grep -q '^allowed-tools:' '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md'"
+done
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

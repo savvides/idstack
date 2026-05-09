@@ -5,18 +5,223 @@ description: |
   compatible with Canvas, Blackboard, Moodle, and D2L, or pushes directly to
   Canvas via REST API. Reads from /course-builder output and the idstack manifest.
   The output IS the course. (idstack)
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - WebFetch
 ---
+<!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
+<!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->
 
-{{PREAMBLE}}
+
+## Preamble: Interaction Conventions
+
+idstack skills are designed to run in multiple CLIs (Claude Code, OpenAI Codex CLI, and
+others). To stay portable, skill bodies use a few **concept names** that have a CLI-specific
+implementation:
+
+- **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
+  it means: present a single numbered multiple-choice question (e.g., "Which of these best
+  describes X? 1) ..., 2) ..., 3) Other") and stop, waiting for the user's next message
+  before proceeding. Ask **one** question at a time, never batch. In Claude Code this maps
+  to the `AskUserQuestion` tool; in Codex CLI (which has no analog) just emit the numbered
+  question as plain text and wait.
+- **Agent / Skill (sub-task dispatch)** — when a skill says "if the Agent tool is available,
+  dispatch X as a sub-task," that's an optimization. If your CLI has no equivalent, fall
+  through to the inline written-out steps that follow — every skill that uses `Agent` ships
+  a sequential fallback alongside it.
+- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`. In Claude Code this
+  invokes a child skill in-process via the `Skill` tool. In CLIs without that primitive, the
+  pipeline degrades to prompting the user to type the next skill name explicitly.
+- **Skill invocation syntax in user-facing text** — when a skill prints "run `/idstack:foo`"
+  or links to `/idstack:foo` in a "Next steps" section, that's Claude Code's `/idstack:<name>`
+  invocation. **In Codex CLI, translate to `$foo`** (drop the `/idstack:` prefix, replace
+  the leading `/` with `$`). Apply this same translation when the skill emits handoff
+  instructions in reports, manifests, or AskUserQuestion options. Same body text, two
+  hosts; the model translates per-CLI on output.
+
+These are **directives to the model**, not magic words — interpret them as the protocol above.
+
+## Preamble: Update Check
+
+```bash
+# Locate the idstack install. Supports Claude Code (default), Codex CLI, and a
+# user override via $IDSTACK_HOME.
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  _IDSTACK="$CLAUDE_PLUGIN_ROOT"
+elif [ -n "${IDSTACK_HOME:-}" ]; then
+  _IDSTACK="$IDSTACK_HOME"
+elif [ -d "$HOME/.claude/plugins/idstack" ]; then
+  _IDSTACK="$HOME/.claude/plugins/idstack"
+elif [ -d "$HOME/.agents/plugins/idstack" ]; then
+  _IDSTACK="$HOME/.agents/plugins/idstack"
+elif [ -d "$HOME/.agents/skills/idstack" ]; then
+  _IDSTACK="$HOME/.agents/skills/idstack"
+else
+  _IDSTACK="$HOME/.claude/plugins/idstack"
+fi
+_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD"
+```
+
+If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+
+## Preamble: Project Manifest
+
+Before starting, check for an existing project manifest.
+
+```bash
+if [ -f ".idstack/project.json" ]; then
+  echo "MANIFEST_EXISTS"
+  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
+else
+  echo "NO_MANIFEST"
+fi
+```
+
+**If MANIFEST_EXISTS:**
+- Read the manifest. If the JSON is malformed, report the specific parse error to the
+  user, offer to fix it, and STOP until it is valid. Never silently overwrite corrupt JSON.
+- Preserve all existing sections when writing back.
+
+**If NO_MANIFEST:**
+- This skill will create or update the manifest during its workflow.
+
+## Preamble: Preferences
+
+```bash
+if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
+  python3 -c "
+import json, sys
+try:
+    data = json.load(open('.idstack/project.json'))
+    prefs = data.get('preferences', {})
+    v = prefs.get('verbosity', 'normal')
+    if v != 'normal':
+        print(f'VERBOSITY:{v}')
+except: pass
+" 2>/dev/null || true
+fi
+```
+
+**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
+(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
+considered, and rationale for each recommendation.
+**If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
+explain key decisions, skip exhaustive alternatives.
+
+## Preamble: Designer Profile
+
+```bash
+_PROFILE="$HOME/.idstack/profile.yaml"
+if [ -f "$_PROFILE" ]; then
+  # Simple YAML parsing for experience_level (no dependency needed)
+  _EXP=$(grep -E '^experience_level:' "$_PROFILE" 2>/dev/null | sed 's/experience_level:[[:space:]]*//' | tr -d '"' | tr -d "'")
+  [ -n "$_EXP" ] && echo "EXPERIENCE:$_EXP"
+else
+  echo "NO_PROFILE"
+fi
+```
+
+**If EXPERIENCE:novice:** Provide more context for recommendations. Explain WHY each
+step matters, not just what to do. Define jargon on first use. Offer examples.
+**If EXPERIENCE:intermediate:** Standard explanations. Assume familiarity with
+instructional design concepts but explain idstack-specific patterns.
+**If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
+tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
+**If NO_PROFILE:** On first run, after the main workflow is underway (not before),
+mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
+to adjust how much detail idstack provides."
+
+## Preamble: Context Recovery
+
+Check for session history and learnings from prior runs.
+
+```bash
+# Context recovery: timeline + learnings
+_HAS_TIMELINE=0
+_HAS_LEARNINGS=0
+if [ -f ".idstack/timeline.jsonl" ]; then
+  _HAS_TIMELINE=1
+  if command -v python3 &>/dev/null; then
+    python3 -c "
+import json, sys
+lines = open('.idstack/timeline.jsonl').readlines()[-200:]
+events = []
+for line in lines:
+    try: events.append(json.loads(line))
+    except: pass
+if not events:
+    sys.exit(0)
+
+# Quality score trend
+scores = [e for e in events if e.get('skill') == 'course-quality-review' and 'score' in e]
+if scores:
+    trend = ' -> '.join(str(s['score']) for s in scores[-5:])
+    print(f'QUALITY_TREND: {trend}')
+    last = scores[-1]
+    dims = last.get('dimensions', {})
+    if dims:
+        tp = dims.get('teaching_presence', '?')
+        sp = dims.get('social_presence', '?')
+        cp = dims.get('cognitive_presence', '?')
+        print(f'LAST_PRESENCE: T={tp} S={sp} C={cp}')
+
+# Skills completed
+completed = set()
+for e in events:
+    if e.get('event') == 'completed':
+        completed.add(e.get('skill', ''))
+print(f'SKILLS_COMPLETED: {','.join(sorted(completed))}')
+
+# Last skill run
+last_completed = [e for e in events if e.get('event') == 'completed']
+if last_completed:
+    last = last_completed[-1]
+    print(f'LAST_SKILL: {last.get(\"skill\",\"?\")} at {last.get(\"ts\",\"?\")}')
+
+# Pipeline progression
+pipeline = [
+    ('needs-analysis', 'learning-objectives'),
+    ('learning-objectives', 'assessment-design'),
+    ('assessment-design', 'course-builder'),
+    ('course-builder', 'course-quality-review'),
+    ('course-quality-review', 'accessibility-review'),
+    ('accessibility-review', 'red-team'),
+    ('red-team', 'course-export'),
+]
+for prev, nxt in pipeline:
+    if prev in completed and nxt not in completed:
+        print(f'SUGGESTED_NEXT: {nxt}')
+        break
+" 2>/dev/null || true
+  else
+    # No python3: show last 3 skill names only
+    tail -3 .idstack/timeline.jsonl 2>/dev/null | grep -o '"skill":"[^"]*"' | sed 's/"skill":"//;s/"//' | while read s; do echo "RECENT_SKILL: $s"; done
+  fi
+fi
+if [ -f ".idstack/learnings.jsonl" ]; then
+  _HAS_LEARNINGS=1
+  _LEARN_COUNT=$(wc -l < .idstack/learnings.jsonl 2>/dev/null | tr -d ' ')
+  echo "LEARNINGS: $_LEARN_COUNT"
+  if [ "$_LEARN_COUNT" -gt 0 ] 2>/dev/null; then
+    "$_IDSTACK/bin/idstack-learnings-search" --limit 3 2>/dev/null || true
+  fi
+fi
+```
+
+**If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
+Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /learning-objectives."
+Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
+mention it as a recurring pattern with its evidence citation.
+
+**If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
+Example: "Welcome back. Last session you ran /course-import."
+
+**If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
+Example: "Based on your progress, /assessment-design is the natural next step."
+
+**If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
+Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+
+---
 
 **Skill-specific manifest check:** If the manifest `course_export` section already has data,
 ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
@@ -924,7 +1129,394 @@ everything correctly. Pay particular attention to:
 
 ---
 
-{{MANIFEST_SCHEMA}}
+## Manifest Schema Reference
+
+The idstack manifest lives at `.idstack/project.json`. Schema version: **1.4**.
+
+This is the canonical schema. Every skill writes to its own section using the shapes documented here; **all other sections must be preserved verbatim**. There is one source of truth — this file. If the schema ever needs to change, edit `templates/manifest-schema.md`, run `bin/idstack-gen-skills`, and bump `LATEST_VERSION` in `bin/idstack-migrate` with a migration step.
+
+### Two outputs per skill: JSON manifest + Markdown report
+
+Every skill that produces findings emits **both**:
+
+- a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
+- a **Markdown report** at `.idstack/reports/<skill>.md` (the human view — read by the instructional designer).
+
+The Markdown report follows the canonical structure in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the Markdown report path back into its own section's `report_path` field so other skills and tools can find it.
+
+`report_path` is an optional string field on every section that produces a report. Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report.
+
+### Two ways to write to the manifest
+
+**1. Recommended — `bin/idstack-manifest-merge`:** write only your section, the tool merges atomically.
+
+```bash
+# Write a payload for your skill's section, then:
+"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload /tmp/payload.json
+```
+
+The merge tool replaces only the named top-level section, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. Use this in preference to inlining the full manifest in `Edit` operations.
+
+**2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
+
+### Top-level fields
+
+| Field | Owner skill(s) | Notes |
+|---|---|---|
+| `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
+| `project_name` | (any) | Set on first manifest creation. Don't overwrite once set. |
+| `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
+| `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
+| `context` | needs-analysis (initial) | Modality, timeline, class size, etc. Edited by skills that learn new context. |
+| `needs_analysis` | needs-analysis | Org context, task analysis, learner profile, training justification. |
+| `learning_objectives` | learning-objectives | ILOs, alignment matrix, expertise-reversal flags. |
+| `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
+| `course_content` | course-builder | Generated modules, syllabus, content paths. |
+| `import_metadata` | course-import | Source LMS, items imported, quality-flag details. |
+| `export_metadata` | course-export | Export destination, items exported, readiness check. |
+| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
+| `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
+| `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
+| `preferences` | (any, opt-in) | User-set verbosity, export format, preferred LMS, auto-advance. |
+
+### Full schema (canonical shape)
+
+```json
+{
+  "version": "1.4",
+  "project_name": "",
+  "created": "",
+  "updated": "",
+  "context": {
+    "modality": "",
+    "timeline": "",
+    "class_size": "",
+    "institution_type": "",
+    "available_tech": []
+  },
+  "needs_analysis": {
+    "mode": "",
+    "report_path": "",
+    "organizational_context": {
+      "problem_statement": "",
+      "stakeholders": [],
+      "current_state": "",
+      "desired_state": "",
+      "performance_gap": ""
+    },
+    "task_analysis": {
+      "job_tasks": [],
+      "prerequisite_knowledge": [],
+      "tools_and_resources": []
+    },
+    "learner_profile": {
+      "prior_knowledge_level": "",
+      "motivation_factors": [],
+      "demographics": "",
+      "access_constraints": [],
+      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+    },
+    "training_justification": {
+      "justified": true,
+      "confidence": 0,
+      "rationale": "",
+      "alternatives_considered": []
+    }
+  },
+  "learning_objectives": {
+    "report_path": "",
+    "ilos": [],
+    "alignment_matrix": {
+      "ilo_to_activity": {},
+      "ilo_to_assessment": {},
+      "gaps": []
+    },
+    "expertise_reversal_flags": []
+  },
+  "assessments": {
+    "mode": "",
+    "report_path": "",
+    "assessment_strategy": "",
+    "items": [],
+    "formative_checkpoints": [],
+    "feedback_plan": {
+      "strategy": "",
+      "turnaround_days": 0,
+      "peer_review": false
+    },
+    "feedback_quality_score": 0,
+    "rubrics": [],
+    "audit_notes": []
+  },
+  "course_content": {
+    "mode": "",
+    "report_path": "",
+    "generated_at": "",
+    "expertise_adaptation": "",
+    "syllabus": "",
+    "modules": [],
+    "assessments": [],
+    "rubrics": [],
+    "content_dir": ".idstack/course-content/",
+    "generated_files": [],
+    "build_timestamp": "",
+    "placeholders_used": [],
+    "recommended_generation_targets": []
+  },
+  "import_metadata": {
+    "source": "",
+    "report_path": "",
+    "imported_at": "",
+    "source_lms": "",
+    "source_cartridge": "",
+    "source_size_bytes": 0,
+    "schema": "",
+    "items_imported": {
+      "modules": 0,
+      "objectives": 0,
+      "module_objectives": 0,
+      "assessments": 0,
+      "activities": 0,
+      "pages": 0,
+      "rubrics": 0,
+      "quizzes": 0,
+      "discussions": 0
+    },
+    "quality_flags": 0,
+    "quality_flag_details": []
+  },
+  "export_metadata": {
+    "report_path": "",
+    "exported_at": "",
+    "format": "",
+    "destination": "",
+    "items_exported": {
+      "modules": 0,
+      "pages": 0,
+      "assignments": 0,
+      "quizzes": 0,
+      "discussions": 0
+    },
+    "failed_items": [],
+    "notes": "",
+    "readiness_check": {
+      "quality_score": 0,
+      "quality_reviewed": false,
+      "red_team_critical": 0,
+      "red_team_reviewed": false,
+      "accessibility_critical": 0,
+      "accessibility_reviewed": false,
+      "verdict": ""
+    }
+  },
+  "quality_review": {
+    "report_path": "",
+    "last_reviewed": "",
+    "qm_standards": {
+      "course_overview":         {"status": "", "findings": []},
+      "learning_objectives":     {"status": "", "findings": []},
+      "assessment":              {"status": "", "findings": []},
+      "instructional_materials": {"status": "", "findings": []},
+      "learning_activities":     {"status": "", "findings": []},
+      "course_technology":       {"status": "", "findings": []},
+      "learner_support":         {"status": "", "findings": []},
+      "accessibility":           {"status": "", "findings": []}
+    },
+    "coi_presence": {
+      "teaching_presence":  {"score": 0, "findings": []},
+      "social_presence":    {"score": 0, "findings": []},
+      "cognitive_presence": {"score": 0, "findings": []}
+    },
+    "alignment_audit": {"findings": []},
+    "cross_domain_checks": {
+      "cognitive_load":        {"score": 0, "flags": []},
+      "multimedia_principles": {"score": 0, "flags": []},
+      "feedback_quality":      {"score": 0, "flags": []},
+      "expertise_reversal":    {"score": 0, "flags": []}
+    },
+    "overall_score": 0,
+    "score_breakdown": {
+      "qm_structural": 0,
+      "coi_presence": 0,
+      "constructive_alignment": 0,
+      "cross_domain_evidence": 0
+    },
+    "quick_wins": [],
+    "recommendations": [],
+    "review_history": []
+  },
+  "red_team_audit": {
+    "updated": "",
+    "confidence_score": 0,
+    "focus": "",
+    "report_path": "",
+    "findings_summary": {"critical": 0, "warning": 0, "info": 0},
+    "dimensions": {
+      "alignment":      {"score": "", "findings": []},
+      "evidence":       {"score": "", "mode": "", "findings": []},
+      "cognitive_load": {"score": "", "findings": []},
+      "personas":       {"score": "", "findings": []},
+      "prerequisites":  {"score": "", "findings": []}
+    },
+    "top_actions": [],
+    "limitations": [],
+    "fixes_applied": [],
+    "fixes_deferred": []
+  },
+  "accessibility_review": {
+    "updated": "",
+    "report_path": "",
+    "score": {"overall": 0, "wcag": 0, "udl": 0},
+    "wcag_violations": [],
+    "udl_recommendations": [],
+    "quick_wins": []
+  },
+  "preferences": {
+    "verbosity": "normal",
+    "export_format": "",
+    "preferred_lms": "",
+    "auto_advance_pipeline": false
+  }
+}
+```
+
+### Per-section item shapes
+
+These document the **shape of array elements and dictionary values** that the canonical schema leaves as `[]` or `{}`. Skills should produce items in these shapes; downstream skills can rely on them.
+
+**`learning_objectives.alignment_matrix.ilo_to_activity`** — keyed by ILO id, values are arrays of activity names:
+```json
+{ "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }
+```
+
+**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape, values are arrays of assessment titles.
+
+**`learning_objectives.alignment_matrix.gaps[]`** — each item:
+```json
+{
+  "ilo": "ILO-1",
+  "type": "untested|orphaned|underspecified|bloom_mismatch",
+  "description": "ILO-1 has no matching assessment in the active modules.",
+  "severity": "critical|warning|info"
+}
+```
+
+**`learning_objectives.ilos[]`** — each item:
+```json
+{
+  "id": "ILO-1",
+  "statement": "Analyze competitive forces in...",
+  "blooms_level": "analyze",
+  "blooms_confidence": "high|medium|low"
+}
+```
+
+**`assessments.items[]`** — each item:
+```json
+{
+  "id": "A-1",
+  "type": "quiz|discussion|rubric|peer_review|gate|...",
+  "title": "Module 1 Quiz",
+  "weight": 5,
+  "ilos_measured": ["ILO-1", "ILO-3"],
+  "rubric_present": true,
+  "elaborated_feedback": false,
+  "alignment_status": "weak|moderate|strong"
+}
+```
+
+**`assessments.rubrics[]`** — each item:
+```json
+{
+  "id": "rubric-1",
+  "title": "SM Project Rubric",
+  "criteria": [{"name": "...", "blooms_level": "...", "weight": 0}],
+  "applies_to": ["A-3"]
+}
+```
+
+**`import_metadata.quality_flag_details[]`** — each item (replaces the legacy `_import_quality_flags` root field that sometimes appeared in the wild):
+```json
+{
+  "key": "orphan_module_8",
+  "description": "Module 8 wiki content exists in the cartridge but is not referenced in <organizations>.",
+  "severity": "warning|critical|info",
+  "evidence": "Optional citation tag, e.g. [Alignment-1] [T5]"
+}
+```
+
+**`red_team_audit.dimensions.<name>.findings[]`** — each item (matches the `<dimension>-<n>` id convention from the red-team orchestrator):
+```json
+{
+  "id": "alignment-1",
+  "description": "ILO-2 (vision/mission) has no matching assessment.",
+  "module": "Module 4",
+  "severity": "critical|warning|info"
+}
+```
+
+**`accessibility_review.wcag_violations[]`** — each item:
+```json
+{
+  "id": "wcag-1",
+  "criterion": "1.3.1 Info and Relationships",
+  "level": "A|AA|AAA",
+  "description": "All cartridge HTML pages lack <h1> elements.",
+  "affected": ["page1.html", "page2.html"],
+  "severity": "critical|warning|info"
+}
+```
+
+**`accessibility_review.udl_recommendations[]`** — each item:
+```json
+{
+  "id": "udl-1",
+  "principle": "engagement|representation|action_expression",
+  "description": "Add transcripts to all videos.",
+  "status": "fully_met|partial|not_met"
+}
+```
+
+**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.alignment_audit.findings[]`**, **`quality_review.cross_domain_checks.<check>.flags[]`**, and other findings arrays — each item:
+```json
+{
+  "id": "<dimension>-<n>",
+  "description": "...",
+  "evidence": "[Domain-N] [TX]",
+  "severity": "critical|warning|info"
+}
+```
+
+### Mode field — design-new vs audit-existing
+
+`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
+
+Allowed values per skill:
+- `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
+- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
+- `course_content.mode`: `"build-new"` or `"gap-fill"`
+
+Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).
+
+**`assessments.audit_notes[]`** — only populated in Mode 3. Records which audit findings the user chose to act on:
+```json
+{
+  "target_id": "A-3",
+  "action": "applied|deferred|declined",
+  "description": "Rubric criterion for ILO-2 added: 'Synthesis depth (1-4 scale)'.",
+  "reason": "Optional — only meaningful for deferred/declined."
+}
+```
+
+**`course_content.recommended_generation_targets[]`** — populated in `gap-fill` mode. Lists artifacts upstream skills flagged as missing, with status:
+```json
+{
+  "description": "Discussion rubric for Module 5",
+  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
+  "status": "generated|deferred|declined",
+  "output_path": "Optional — set when status=generated, points to the generated file."
+}
+```
 
 ## Feedback
 

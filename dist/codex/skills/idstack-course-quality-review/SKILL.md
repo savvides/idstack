@@ -5,15 +5,6 @@ description: |
   and Community of Inquiry framework. Reviews structural quality, teaching/social/cognitive
   presence, and constructive alignment. Works standalone or reads from the
   idstack project manifest for richer analysis. (idstack)
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - Agent
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
 <!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->
