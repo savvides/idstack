@@ -4,6 +4,13 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### OpenAI Codex CLI support (v2.5.0.0)
+- **Run idstack natively in Codex CLI.** Same 11 skills, same evidence base, same `.idstack/` dual-output contract, same manifest schema. `./setup` auto-detects `codex` on PATH and installs alongside Claude.
+- **Multi-target generator.** `bin/idstack-gen-skills --target {claude|codex|all}` emits per-CLI flavors from a single `.tmpl` source. Codex output goes to `dist/codex/skills/idstack-<name>/` — the `allowed-tools:` block is stripped (Codex has no per-skill allowlist).
+- **Concept-name preamble.** `AskUserQuestion`, `Agent`, and `Skill (cross-skill invocation)` are now portable concept names defined in `templates/preamble.md`. Same body, two hosts; the model interprets per-CLI.
+- **Codex install layout.** Per-skill symlinks at `$CODEX_HOME/skills/idstack-<name>/` for Codex auto-discovery, plus a whole-repo symlink at `~/.agents/plugins/idstack/` so in-skill `$_IDSTACK/bin/...` calls resolve.
+- **Memory file at repo root.** `AGENTS.md` is generated from `templates/agent-context.md` for Codex sessions running inside the idstack repo.
+
 ### Dual-output report contract + pipeline aggregator (v2.4)
 - **Two artifacts per skill.** Every finding-producing skill now writes both `.idstack/project.json` (system state for downstream skills) and `.idstack/reports/<skill>.md` (the human view). Each finding follows observation → evidence → why-it-matters → suggestion, with severity and evidence tier. Recommendations are framed as "consider…", not directives — idstack collaborates on your design, doesn't dictate it.
 - **`/idstack:pipeline` produces `.idstack/reports/pipeline.md`.** A single aggregate document the designer can read for the full audit across all 8 stages: top recurring issues, evidence themes, where to start. Regenerated on every pipeline run, including partial runs and explicit re-runs.
@@ -61,8 +68,11 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Coming soon
 
-### Multi-platform support (v2.5)
-Run idstack skills in Gemini CLI. `./setup --host gemini` installs to `~/.gemini/skills/`. Gated on a spike test. Codex CLI support after Gemini proves out.
+### Gemini CLI support (v2.6)
+Add native Gemini CLI as a third target. `.tmpl` → `.toml` transform plus a `gemini-extension.json` manifest. Gemini's built-in `ask_user` tool maps cleanly to the AskUserQuestion concept (drop-in), and inline `!{cmd}` shell interpolation will speed up the manifest-merge call paths. Codex shipped first because its SKILL.md format is a 1:1 match; Gemini needs the file-format transform.
+
+### Marketplace publishing (v2.6)
+Publish idstack via `codex plugin marketplace add savvides/idstack` so users don't need to clone the repo. Requires building the proper two-tier marketplace.json + .codex-plugin/plugin.json schema. v2.5 ships with simpler per-skill auto-discovery at `$CODEX_HOME/skills/`, which works without a marketplace.
 
 ### More skills
 Four more skills based on the research synthesis:
