@@ -92,18 +92,21 @@ Use domain codes from `evidence/references.md` (e.g., `[Alignment-14] [T1]`). St
 
 ## Interaction pattern
 
-- Use `AskUserQuestion` for all user interaction
-- One question at a time — never batch multiple questions
+- Ask one structured question at a time. In Claude Code this maps to the `AskUserQuestion` tool; in Codex CLI emit a numbered multiple-choice question in plain text and wait. The preamble's "Interaction Conventions" section defines this protocol — your skill body uses the same wording in both CLIs.
+- Never batch multiple questions
 - Let users work through the workflow at their own pace
+- When emitting next-step text like "/idstack:foo" in handoff sections, the model translates to "$foo" on Codex output. You don't need to write per-CLI variants.
 
 ## Testing
 
 ```bash
-./setup              # Register your new skill
-./test/smoke-test.sh # Verify installation
+./setup              # Register your new skill (auto-detects Claude Code and codex on PATH)
+./test/smoke-test.sh # Verify installation across all targets
 ```
 
-Then test manually in Claude Code by running `/idstack:your-skill`.
+Then test manually:
+- Claude Code: `/idstack:your-skill`
+- Codex CLI: `$your-skill`
 
 ## What makes a good PR
 

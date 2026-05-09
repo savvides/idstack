@@ -55,16 +55,22 @@ Shipped in v1.5.0. Pipeline progression guidance now generates dynamic next-step
 recommendations based on timeline data. The shared preamble handles this consistently
 across all skills.
 
-## v2: Multi-Platform Install (Gemini CLI + Codex CLI)
-Add install support for Gemini CLI (~/.gemini/skills/) and Codex CLI (~/.agents/skills/).
-All three platforms use the same SKILL.md format (name + description frontmatter).
-Key challenges: hardcoded ~/.claude/ paths in all 7 SKILL.md preambles need refactoring
-to platform-agnostic paths (IDSTACK_HOME env var or relative resolution), allowed-tools
-frontmatter uses Claude Code tool names, and tool name compatibility needs verification.
-**Why:** Expands addressable market to Gemini CLI and Codex CLI users.
-**Depends on:** User feedback confirming demand (via Google Form). Spike test on
-one SKILL.md to verify compatibility before full implementation.
-**Priority:** P2
+## v2: Multi-Platform Install (Gemini CLI + Codex CLI) — PARTIALLY SHIPPED
+**Codex CLI: SHIPPED in v2.5.0.0.** Per-skill auto-discovery at `$CODEX_HOME/skills/idstack-<name>/`,
+plus a whole-repo symlink at `~/.agents/plugins/idstack/` for in-skill `bin/` resolution. Multi-target
+generator (`--target {claude|codex|all}`) emits the Codex flavor under `dist/codex/skills/` with
+`allowed-tools:` stripped. Concept-name preamble lets the same skill body run in both CLIs.
+
+**Gemini CLI: still pending (v2.6).** `.tmpl` → `.toml` transform, `gemini-extension.json`
+manifest, `ask_user` tool mapping. Gemini's built-in structured-question tool is a clean
+drop-in for the AskUserQuestion concept.
+
+**Marketplace publishing: still pending (v2.6).** v2.5 uses simpler per-skill auto-discovery;
+proper Codex marketplace.json + .codex-plugin/plugin.json packaging would let users do
+`codex plugin marketplace add savvides/idstack` without cloning.
+
+**Why:** Expands addressable market beyond Claude Code.
+**Priority:** P2 (Codex done; Gemini next)
 
 ## ~~v2: Sub-Agent Architecture for Context Efficiency~~ SHIPPED (v2.0–v2.2)
 Shipped across v2.0 and v2.2. /accessibility-review runs WCAG and UDL as parallel

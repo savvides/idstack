@@ -1,22 +1,26 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. The same project also ships a Codex CLI flavor (see `AGENTS.md`); skill bodies are CLI-agnostic and small per-CLI shims handle interaction primitives.
 
 ## What is idstack
 
-An open source set of Claude Code skills that bring peer-reviewed instructional design research into the course design workflow. Each skill is a SKILL.md file that defines a conversational workflow backed by evidence from peer-reviewed research across 11 domains.
+An open source set of skills for evidence-based instructional design. Runs in Claude Code and OpenAI Codex CLI (Gemini CLI on the v2.6 roadmap). Each skill is a SKILL.md file that defines a conversational workflow backed by evidence from peer-reviewed research across 11 domains.
 
 ## Commands
 
 ```bash
-./setup              # Install idstack (registers plugin at ~/.claude/plugins/idstack)
-./setup --local      # Install to .claude/skills/ in current project only
+./setup              # Install idstack — auto-detects Claude Code and codex on PATH
+./setup --local      # Install to .claude/plugins/ in current project only
+./setup --codex      # Force-install the Codex bundle even if codex isn't on PATH
+./setup --no-codex   # Skip the Codex install
 ./test/smoke-test.sh # Verify installation, SKILL.md files, YAML frontmatter, migrations
-bin/idstack-gen-skills          # Regenerate SKILL.md from .tmpl templates
-bin/idstack-gen-skills --dry-run  # Check if generated files are up to date
-bin/idstack-doctor              # Diagnose plugin install (presence, manifest version, legacy-install conflicts)
-bin/idstack-status              # Course health dashboard (run in a project dir)
-bin/idstack-status --readiness  # Pre-export readiness check only
+bin/idstack-gen-skills                     # Regenerate skill files for all targets (claude + codex)
+bin/idstack-gen-skills --target claude     # Regenerate Claude flavor only (skills/<name>/SKILL.md)
+bin/idstack-gen-skills --target codex      # Regenerate Codex flavor only (dist/codex/skills/idstack-<name>/)
+bin/idstack-gen-skills --dry-run           # Check if generated files are up to date
+bin/idstack-doctor                         # Diagnose plugin install (presence, manifest version, legacy-install conflicts)
+bin/idstack-status                         # Course health dashboard (run in a project dir)
+bin/idstack-status --readiness             # Pre-export readiness check only
 ```
 
 No build step for users. No dependencies beyond bash (python3 recommended for full features). Skills are plain Markdown files.
@@ -75,12 +79,13 @@ Rules for writing the report:
 
 Every skill template follows this pattern:
 
-1. **YAML frontmatter** with `name`, `description`, and `allowed-tools` fields
+1. **YAML frontmatter** with `name`, `description`, and (Claude target only) `allowed-tools` fields. The generator strips `allowed-tools` for the Codex target — Codex has no per-skill allowlist; restrictions are session-global.
 2. **`{{PREAMBLE}}`** placeholder (replaced by `templates/preamble.md` during generation)
 3. **Workflow** (Markdown defining the conversational flow, decision trees, outputs)
-4. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
+4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`)
+5. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
 
-The shared preamble includes: update check, manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
+The shared preamble includes: interaction conventions (defines `AskUserQuestion` / `Agent` / `Skill` as portable concept names so the same body runs in both CLIs), update check, manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
 
 ### Course memory
 
@@ -102,9 +107,10 @@ Format: `[DomainCode-Number] [Tier]` (e.g., `[Alignment-14] [T1]`). Stronger evi
 
 ### Interaction pattern
 
-- Use `AskUserQuestion` for all user interaction
-- One question at a time, never batch multiple questions
+- Ask one structured question at a time. In Claude Code this maps to the `AskUserQuestion` tool; in Codex CLI (which has no analog) emit a numbered multiple-choice question in plain text and wait. The preamble's "Interaction Conventions" section defines this protocol.
+- Never batch multiple questions
 - Skills must work without a manifest (fallback to asking questions directly)
+- When emitting next-step text like "/idstack:foo", translate to "$foo" on Codex output (drop the `/idstack:` prefix, replace leading `/` with `$`)
 
 ## Skill routing
 
