@@ -175,24 +175,27 @@ fi
 # Template freshness check (covers all targets: claude + codex)
 check "generated files are up to date for all targets" "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
 
-# Codex bundle (dist/codex/) — generated artifacts shipped for Codex CLI consumers.
-# These checks pass when the bundle has been generated; bin/idstack-gen-skills
-# regenerates dist/codex/ from the same .tmpl source, so drift is impossible if
-# the freshness check above passed.
-CODEX_BUNDLE="$IDSTACK_DIR/dist/codex"
-check "Codex bundle dir exists" "[ -d '$CODEX_BUNDLE' ]"
-check "Codex marketplace.json exists" "[ -f '$CODEX_BUNDLE/marketplace.json' ]"
+# Codex bundle — generated artifacts for Codex CLI consumers.
+# marketplace.json + AGENTS.md live at the repo root so the install (which
+# symlinks the whole repo to ~/.agents/plugins/idstack/) can find them
+# alongside bin/, templates/, evidence/. SKILL.md files live under
+# dist/codex/skills/idstack-<name>/ and are pointed to by marketplace.json's
+# skills_dir field. Drift is impossible if the freshness check above passed.
+CODEX_SKILLS_DIR="$IDSTACK_DIR/dist/codex/skills"
+check "Codex marketplace.json at repo root exists" "[ -f '$IDSTACK_DIR/marketplace.json' ]"
+check "Codex AGENTS.md at repo root exists" "[ -f '$IDSTACK_DIR/AGENTS.md' ]"
 if command -v python3 >/dev/null 2>&1; then
-  check "Codex marketplace.json is valid JSON" "python3 -c 'import json; json.load(open(\"$CODEX_BUNDLE/marketplace.json\"))'"
-  check "Codex marketplace.json declares the idstack plugin" "python3 -c 'import json; d=json.load(open(\"$CODEX_BUNDLE/marketplace.json\")); assert d[\"name\"]==\"idstack\"; assert any(p[\"name\"]==\"idstack\" for p in d[\"plugins\"])'"
+  check "Codex marketplace.json is valid JSON" "python3 -c 'import json; json.load(open(\"$IDSTACK_DIR/marketplace.json\"))'"
+  check "Codex marketplace.json declares the idstack plugin" "python3 -c 'import json; d=json.load(open(\"$IDSTACK_DIR/marketplace.json\")); assert d[\"name\"]==\"idstack\"; assert any(p[\"name\"]==\"idstack\" for p in d[\"plugins\"])'"
+  check "Codex marketplace.json skills_dir resolves" "python3 -c 'import json,os; d=json.load(open(\"$IDSTACK_DIR/marketplace.json\")); sd=d[\"plugins\"][0][\"skills_dir\"]; assert os.path.isdir(os.path.join(\"$IDSTACK_DIR\", sd)), f\"skills_dir does not exist: {sd}\"'"
 fi
-check "Codex AGENTS.md exists" "[ -f '$CODEX_BUNDLE/AGENTS.md' ]"
+check "Codex skills dir exists" "[ -d '$CODEX_SKILLS_DIR' ]"
 for skill in $SKILLS; do
-  check "Codex skills/idstack-$skill/SKILL.md exists" "[ -f '$CODEX_BUNDLE/skills/idstack-$skill/SKILL.md' ]"
-  check "Codex $skill has name: $skill" "grep -q '^name: $skill' '$CODEX_BUNDLE/skills/idstack-$skill/SKILL.md'"
-  check "Codex $skill has description: field" "grep -q '^description:' '$CODEX_BUNDLE/skills/idstack-$skill/SKILL.md'"
+  check "Codex skills/idstack-$skill/SKILL.md exists" "[ -f '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md' ]"
+  check "Codex $skill has name: $skill" "grep -q '^name: $skill' '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md'"
+  check "Codex $skill has description: field" "grep -q '^description:' '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md'"
   # Codex has no per-skill tool allowlist; the field must be stripped.
-  check "Codex $skill has allowed-tools: stripped" "! grep -q '^allowed-tools:' '$CODEX_BUNDLE/skills/idstack-$skill/SKILL.md'"
+  check "Codex $skill has allowed-tools: stripped" "! grep -q '^allowed-tools:' '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md'"
 done
 
 echo ""

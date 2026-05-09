@@ -26,7 +26,7 @@ ask the user: "I see you've already run this skill. Want to update the results o
 Before starting the export workflow, run the readiness dashboard:
 
 ```bash
-for _p in "$IDSTACK_HOME" "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-status" --readiness
 ```
 

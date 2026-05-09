@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.5.0 (2026-05-09)
+## v2.5.0.0 (2026-05-09)
 
 ### Added — OpenAI Codex CLI support
 
@@ -24,19 +24,25 @@ primitives.
   is NOT available" branch — Codex prompts the user to type the next skill name and
   resumes when they re-invoke `$pipeline`. The partial-run report is regenerated
   before stopping.
-- **Codex bundle artifacts.** `dist/codex/marketplace.json` (Codex plugin manifest),
-  `dist/codex/AGENTS.md` (memory file, generated from `templates/agent-context.md`),
-  and 11 `dist/codex/skills/idstack-<name>/SKILL.md` files. All committed; all
-  freshness-checked by smoke test.
+- **Codex bundle artifacts.** Top-level `marketplace.json` (Codex plugin manifest,
+  with `skills_dir: "dist/codex/skills"`), top-level `AGENTS.md` (memory file,
+  generated from `templates/agent-context.md`), and 11
+  `dist/codex/skills/idstack-<name>/SKILL.md` files. The marketplace.json + AGENTS.md
+  live at the repo root so the Codex install (which symlinks the whole repo) can find
+  them alongside `bin/`, `templates/`, `evidence/` — same in-skill `$_IDSTACK/bin/...`
+  resolution as Claude. All committed; all freshness-checked by smoke test.
 - **Multi-CLI install path detection.** Preamble path resolution and the in-skill
   `_IDSTACK` chain in `course-export` and `learn` now check, in order:
-  `$IDSTACK_HOME`, `$CLAUDE_PLUGIN_ROOT`, `~/.claude/plugins/idstack`,
+  `$CLAUDE_PLUGIN_ROOT`, `$IDSTACK_HOME`, `~/.claude/plugins/idstack`,
   `~/.agents/plugins/idstack`, `~/.agents/skills/idstack`. One install layout per
   CLI; same code finds either.
 - **`setup` extended.** Auto-detects `codex` on PATH and adds a parallel install at
-  `~/.agents/plugins/idstack` (symlinked to `dist/codex/`). Force on with
-  `--codex`, opt out with `--no-codex`. Existing Claude Code install is unchanged
-  for users who don't have Codex CLI.
+  `~/.agents/plugins/idstack` (symlinked to the whole `$IDSTACK_DIR`, mirroring
+  Claude's install pattern). Force on with `--codex`, opt out with `--no-codex`.
+  Existing Claude Code install is unchanged for users who don't have Codex CLI.
+  Setup also detects pre-existing real directories at the install target and
+  removes them before symlinking (avoids the `ln -snf` symlink-inside-dir
+  footgun). Caught in PR review by Gemini bot.
 - **Smoke test extended.** New checks for `dist/codex/` artifacts: bundle directory,
   marketplace.json validity, AGENTS.md presence, all 11 Codex SKILL.md files with
   correct frontmatter and stripped `allowed-tools`. Total: 217 checks (was 161).
@@ -45,7 +51,7 @@ primitives.
 
 - **README** marks idstack as supporting Claude Code **and** Codex CLI. (Gemini
   CLI is on the v2.6 roadmap.)
-- **Plugin manifest version** bumped to `2.5.0` (minor: adds CLI target without
+- **Plugin manifest version** bumped to `2.5.0.0` (minor: adds CLI target without
   breaking Claude Code).
 
 ## v2.4.0.2 (2026-05-05)

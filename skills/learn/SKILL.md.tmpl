@@ -31,7 +31,7 @@ Show the most recent learnings. If the user just said `/learn` with no arguments
 this is the default.
 
 ```bash
-for _p in "$IDSTACK_HOME" "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-search" --limit 10
 ```
 
@@ -49,13 +49,13 @@ bloom-verbs      | pedagogical  | Avoid "understand" as ILO verb   | 9/10
 Search learnings by keyword. Supports `--cross-project` to include global learnings.
 
 ```bash
-for _p in "$IDSTACK_HOME" "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --limit 10
 ```
 
 For cross-project search:
 ```bash
-for _p in "$IDSTACK_HOME" "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --cross-project --limit 10
 ```
 
@@ -66,7 +66,7 @@ If results include global learnings (tagged with `_source`), show their source p
 Delete a learning by its key. Always confirm with the user before deleting.
 
 ```bash
-for _p in "$IDSTACK_HOME" "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-delete" KEY
 ```
 
@@ -75,7 +75,7 @@ for _p in "$IDSTACK_HOME" "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack" 
 Copy a local learning to the global store so it's available across projects.
 
 ```bash
-for _p in "$IDSTACK_HOME" "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-promote" KEY
 ```
 
@@ -84,7 +84,7 @@ for _p in "$IDSTACK_HOME" "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack" 
 Export all learnings to a markdown file.
 
 ```bash
-for _p in "$IDSTACK_HOME" "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
 "$_IDSTACK/bin/idstack-learnings-search" --limit 1000
 ```
 

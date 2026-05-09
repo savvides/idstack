@@ -22,6 +22,16 @@ for arg in "$@"; do
       ;;
     --codex)    CODEX_OPT_IN="yes" ;;
     --no-codex) CODEX_OPT_IN="no" ;;
+    --keep-legacy) ;;  # consumed later in the legacy-cleanup branch
+    -h|--help)
+      echo "Usage: ./setup [--local] [--codex|--no-codex] [--keep-legacy]"
+      echo "  --local       install to ./.claude/plugins/ instead of \$HOME/.claude/plugins/"
+      echo "  --codex       force Codex install even if codex is not on PATH"
+      echo "  --no-codex    skip Codex install even if codex is on PATH"
+      echo "  --keep-legacy keep pre-v2 install at \$HOME/.claude/skills/idstack (default: remove)"
+      exit 0
+      ;;
+    *) echo "ERROR: unknown argument: $arg" >&2; echo "Run ./setup --help for usage." >&2; exit 2 ;;
   esac
 done
 
@@ -145,7 +155,10 @@ elif command -v codex >/dev/null 2>&1; then
 fi
 
 if [ "$CODEX_INSTALL" = "1" ]; then
-  CODEX_BUNDLE="$IDSTACK_DIR/dist/codex"
+  # Codex install: symlink the whole repo to ~/.agents/plugins/idstack/ so the
+  # in-skill bash blocks can resolve $_IDSTACK/bin/idstack-* (binaries live at
+  # repo root, not under dist/codex/). Codex finds skills via marketplace.json
+  # at the repo root, which points to dist/codex/skills as the skills_dir.
   if [ "$SCOPE" = "local" ]; then
     CODEX_PLUGINS_DIR="$(pwd)/.agents/plugins"
   else
@@ -153,15 +166,28 @@ if [ "$CODEX_INSTALL" = "1" ]; then
   fi
   CODEX_TARGET="$CODEX_PLUGINS_DIR/idstack"
 
-  if [ ! -d "$CODEX_BUNDLE" ]; then
-    echo "  WARNING: Codex bundle missing at $CODEX_BUNDLE — generator did not produce it. Skipping Codex install."
+  if [ ! -f "$IDSTACK_DIR/marketplace.json" ]; then
+    echo "  WARNING: marketplace.json missing at $IDSTACK_DIR — generator did not produce it. Skipping Codex install."
   else
     mkdir -p "$CODEX_PLUGINS_DIR"
-    if [ "$CODEX_TARGET" = "$CODEX_BUNDLE" ]; then
+    if [ "$CODEX_TARGET" = "$IDSTACK_DIR" ]; then
       echo "  in place: $CODEX_TARGET (no symlink needed)"
     else
-      ln -snf "$CODEX_BUNDLE" "$CODEX_TARGET"
-      echo "  linked: $CODEX_TARGET -> $CODEX_BUNDLE"
+      # If $CODEX_TARGET exists as a real directory (not a symlink), `ln -snf`
+      # would create the symlink INSIDE it instead of replacing it. Remove the
+      # real dir first so the symlink lands at the intended path.
+      # Scope-guard the rm: refuse if $HOME is unset or $CODEX_TARGET doesn't
+      # end with /idstack — defense-in-depth against accidental wide deletes.
+      if [ -d "$CODEX_TARGET" ] && [ ! -L "$CODEX_TARGET" ]; then
+        if [ -z "$HOME" ] || [[ "$CODEX_TARGET" != */idstack ]]; then
+          echo "ERROR: refusing to rm $CODEX_TARGET (HOME=$HOME)" >&2
+          exit 1
+        fi
+        rm -rf "$CODEX_TARGET"
+        echo "  removed pre-existing dir: $CODEX_TARGET"
+      fi
+      ln -snf "$IDSTACK_DIR" "$CODEX_TARGET"
+      echo "  linked: $CODEX_TARGET -> $IDSTACK_DIR"
     fi
     echo ""
     echo "idstack installed (Codex CLI)."

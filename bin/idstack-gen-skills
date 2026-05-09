@@ -5,12 +5,13 @@
 #   idstack-gen-skills [--target {claude|codex|all}] [--dry-run]
 #
 # Targets:
-#   claude (default): writes skills/<name>/SKILL.md (the existing Claude Code layout)
+#   claude:           writes skills/<name>/SKILL.md (the existing Claude Code layout)
 #   codex:            writes dist/codex/skills/idstack-<name>/SKILL.md (Codex CLI layout),
-#                     plus dist/codex/AGENTS.md (memory file) and dist/codex/marketplace.json
-#                     (Codex plugin manifest). The frontmatter `allowed-tools:` block is
-#                     stripped — Codex has no per-skill allowlist.
-#   all:              both targets
+#                     plus repo-root AGENTS.md (memory file) and repo-root marketplace.json
+#                     (Codex plugin manifest, with skills_dir pointing to dist/codex/skills).
+#                     The frontmatter `allowed-tools:` block is stripped — Codex has no
+#                     per-skill allowlist.
+#   all (default):    both targets
 #
 # Source of truth is unchanged: skills/<name>/SKILL.md.tmpl with {{PREAMBLE}} and
 # {{MANIFEST_SCHEMA}} placeholders. The preamble defines the AskUserQuestion / Skill
@@ -32,7 +33,9 @@ while [ $# -gt 0 ]; do
     --target)  TARGET="$2"; shift 2 ;;
     --target=*) TARGET="${1#--target=}"; shift ;;
     -h|--help)
-      sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
+      # Print the header comment block (line 2 through first blank line) as help.
+      # Pattern-based range — robust to header edits.
+      sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -92,18 +95,19 @@ render_template() {
       next
     }
     # Strip the `allowed-tools:` block from frontmatter for codex target.
-    # The block runs from `allowed-tools:` until the next non-indented line
-    # (a sibling key or the closing `---`).
+    # The block runs from `allowed-tools:` until the next non-indented sibling
+    # key or the closing `---`. Match is case-insensitive and rejects leading
+    # whitespace so a stray indented duplicate cannot bypass the strip.
     frontmatter_count == 1 && target == "codex" {
       if (in_allowed_tools) {
         if ($0 ~ /^[^ \t-]/) {
           in_allowed_tools = 0
-          # fall through to print this line
+          # fall through to print this line (the next sibling key)
         } else {
-          next  # still inside allowed-tools, skip
+          next  # still inside allowed-tools list, skip
         }
       }
-      if ($0 ~ /^allowed-tools:/) {
+      if (tolower($0) ~ /^allowed-tools:[[:space:]]*$/) {
         in_allowed_tools = 1
         next
       }
@@ -163,30 +167,53 @@ render_target() {
     fi
   done
 
-  # Codex target: also emit AGENTS.md (memory file) and marketplace.json (plugin manifest)
-  if [ "$target" = "codex" ] && [ "$DRY_RUN" -eq 0 ]; then
+  # Codex target: also emit AGENTS.md (memory file) and marketplace.json (plugin
+  # manifest). Renders in dry-run too, comparing against on-disk content so drift
+  # is visible to the smoke test.
+  if [ "$target" = "codex" ]; then
     render_codex_assets
   fi
 }
 
-# render_codex_assets — emit AGENTS.md and marketplace.json for the Codex bundle
+# render_codex_assets — emit AGENTS.md and marketplace.json at the repo root.
+# Both live at the root so the Codex install (which symlinks the whole repo to
+# ~/.agents/plugins/idstack/) can find them alongside bin/, templates/, evidence/.
+# `marketplace.json` points to dist/codex/skills as the skills_dir.
+#
+# Honors $DRY_RUN: when set, renders to a tempfile and reports STALE/OK without
+# touching the on-disk file (matches the SKILL.md dry-run contract).
 render_codex_assets() {
   local agents_src="$IDSTACK_DIR/templates/agent-context.md"
-  local agents_dst="$IDSTACK_DIR/dist/codex/AGENTS.md"
-  local marketplace_dst="$IDSTACK_DIR/dist/codex/marketplace.json"
+  local agents_dst="$IDSTACK_DIR/AGENTS.md"
+  local marketplace_dst="$IDSTACK_DIR/marketplace.json"
   local version
   version=$(cat "$IDSTACK_DIR/VERSION" 2>/dev/null || echo "0.0.0")
 
-  mkdir -p "$IDSTACK_DIR/dist/codex"
-
-  if [ -f "$agents_src" ]; then
-    cp "$agents_src" "$agents_dst"
-    echo "  GENERATED: dist/codex/AGENTS.md"
+  # VERSION sanity: refuse to interpolate anything that isn't [0-9.] —
+  # otherwise a malformed VERSION file produces malformed JSON in
+  # marketplace.json. Repo-controlled but worth the guard.
+  if ! [[ "$version" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+    echo "ERROR: VERSION file content is not a valid version string: '$version'" >&2
+    exit 1
   fi
 
-  cat > "$marketplace_dst" <<MARKETPLACE
+  if [ -f "$agents_src" ]; then
+    if [ "$DRY_RUN" -eq 1 ]; then
+      if [ -f "$agents_dst" ] && cmp -s "$agents_src" "$agents_dst"; then
+        echo "  OK: AGENTS.md (up to date)"
+      else
+        echo "  STALE: AGENTS.md (would be updated)"
+        ERRORS=$((ERRORS + 1))
+      fi
+    else
+      cp "$agents_src" "$agents_dst"
+      echo "  GENERATED: AGENTS.md"
+    fi
+  fi
+
+  local marketplace_content
+  marketplace_content=$(cat <<MARKETPLACE
 {
-  "\$schema": "https://developers.openai.com/codex/schemas/marketplace.json",
   "name": "idstack",
   "version": "$version",
   "description": "Evidence-based instructional design pipeline. 11 skills for needs analysis, learning objectives, assessment design, course building, quality review, accessibility audit, red team, and LMS export.",
@@ -198,12 +225,23 @@ render_codex_assets() {
     {
       "name": "idstack",
       "description": "All 11 idstack skills as a single Codex plugin.",
-      "skills_dir": "skills"
+      "skills_dir": "dist/codex/skills"
     }
   ]
 }
 MARKETPLACE
-  echo "  GENERATED: dist/codex/marketplace.json"
+)
+  if [ "$DRY_RUN" -eq 1 ]; then
+    if [ -f "$marketplace_dst" ] && [ "$marketplace_content" = "$(cat "$marketplace_dst")" ]; then
+      echo "  OK: marketplace.json (up to date)"
+    else
+      echo "  STALE: marketplace.json (would be updated)"
+      ERRORS=$((ERRORS + 1))
+    fi
+  else
+    echo "$marketplace_content" > "$marketplace_dst"
+    echo "  GENERATED: marketplace.json"
+  fi
 }
 
 # Dispatch
