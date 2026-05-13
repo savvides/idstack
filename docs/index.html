@@ -1102,12 +1102,12 @@
       <header class="section-header">
         <p class="eyebrow">Output</p>
         <h2 id="output-title">Reports for humans. Manifests for the system.</h2>
-        <p class="lede">Every finding-producing skill writes both — a Markdown report you read and a JSON manifest the next skill in the pipeline reads. Same data, two views.</p>
+        <p class="lede">Every finding-producing skill writes both — a branded HTML report you open in a browser and a JSON manifest the next skill in the pipeline reads. Same data, two views. All per-course artifacts land under one self-describing folder: <code>.idstack/exports/&lt;course-slug&gt;/</code>.</p>
       </header>
 
       <div class="output-pair">
-        <article class="output-panel" aria-label="Sample Markdown report excerpt">
-          <header class="output-header">Markdown · .idstack/reports/learning-objectives.md</header>
+        <article class="output-panel" aria-label="Sample HTML report excerpt">
+          <header class="output-header">HTML · .idstack/exports/&lt;course-slug&gt;/learning-objectives.html</header>
           <div class="output-body">
             <h3>
               Finding obj-3: Three ILOs without assessment
@@ -1134,14 +1134,14 @@
         <span class="key">"consider"</span><span class="punct">:</span> <span class="str">"/idstack:assessment-design"</span>
       <span class="punct">}</span>
     <span class="punct">],</span>
-    <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/reports/learning-objectives.md"</span><span class="punct">,</span>
-    <span class="key">"updated"</span><span class="punct">:</span> <span class="str">"2026-05-09T14:32:18Z"</span>
+    <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/exports/&lt;course-slug&gt;/learning-objectives.html"</span><span class="punct">,</span>
+    <span class="key">"updated"</span><span class="punct">:</span> <span class="str">"2026-05-13T14:32:18Z"</span>
   <span class="punct">}</span>
 <span class="punct">}</span></code></pre>
         </article>
       </div>
 
-      <p class="output-foot">The Markdown is what an instructional designer reads; the JSON is what <code>/idstack:assessment-design</code> reads next. Both files always reflect the most recent run; the timeline at <code>.idstack/timeline.jsonl</code> carries the run history.</p>
+      <p class="output-foot">The HTML report is what an instructional designer reads (or hands to a stakeholder — the folder is self-contained, CSS bundled, zip-friendly); the JSON is what <code>/idstack:assessment-design</code> reads next. Both files always reflect the most recent run; the timeline at <code>.idstack/timeline.jsonl</code> carries the run history. <code>/idstack:pipeline</code> additionally writes an <code>index.html</code> course dashboard at the folder root, linking to every per-skill report.</p>
     </section>
 
     <!-- ────────── Install ────────── -->

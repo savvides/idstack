@@ -65,7 +65,7 @@ The smoke test includes a freshness check that fails if any `SKILL.md` is stale.
 Every skill that produces findings writes **both**:
 
 1. **JSON section** in `.idstack/project.json` — system state for downstream skills, the pipeline orchestrator, and `bin/idstack-status`.
-2. **Markdown report** at `.idstack/reports/<skill>.md` — the human view. Follow `templates/report-format.md`: observation → evidence → why-it-matters → suggestion, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. The skill writes the relative path back into its section's `report_path` field.
+2. **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the branded, self-contained human view. Follow the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md`: observation → evidence → why-it-matters → suggestion, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. The skill writes the relative path back into its section's `report_path` field, and copies `templates/assets/idstack.css` into the course folder so the deliverable is self-contained when zipped.
 
 Phrase recommendations as suggestions ("consider…"), not directives. Cite every recommendation with `[DomainCode-N] [Tier]`; uncited claims belong in *Limitations* or *Notes*, not *Findings*.
 
