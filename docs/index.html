@@ -68,12 +68,16 @@
     })();
   </script>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Light — parchment scholarly */
-      --bg:           #fbfaf6;
+      /* Light — ivory publication. See DESIGN.md § Color. */
+      --bg:           #faf8f3;
       --raised:       #ffffff;
       --ink:          #1a1815;
       --ink-soft:     #3a352e;
@@ -81,6 +85,7 @@
       --rule:         #e6e0d2;
       --rule-strong:  #d4cdb9;
       --accent:       #7a1f1f;
+      --accent-blue:  #1d4a5e;
       --accent-soft:  #f4eae8;
 
       --tier-1: #2f7a4a;
@@ -96,8 +101,9 @@
       --severity-info-bg:    #e7eaf1;
       --severity-info-fg:    #344566;
 
-      --font-display: 'Charter', 'Source Serif Pro', 'Iowan Old Style', 'Sitka Text', Georgia, serif;
-      --font-body:    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-display: 'Source Serif 4', 'Source Serif Pro', 'Charter', 'Iowan Old Style', 'Sitka Text', Georgia, serif;
+      --font-body:    'Source Serif 4', 'Source Serif Pro', 'Charter', 'Iowan Old Style', 'Sitka Text', Georgia, serif;
+      --font-ui:      'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
 
       --max:    1120px;
@@ -115,6 +121,7 @@
       --rule:         #2c2a23;
       --rule-strong:  #3d3a30;
       --accent:       #d97461;
+      --accent-blue:  #6aa6e3;
       --accent-soft:  #2a1d1a;
 
       --tier-1: #5fc185;
@@ -171,7 +178,7 @@
       background: var(--raised);
       border: 1px solid var(--rule);
       padding: 0.08em 0.35em;
-      border-radius: 3px;
+      border-radius: 2px;
       font-size: 0.85em;
     }
 
@@ -213,9 +220,9 @@
     }
     .brand:hover { text-decoration: none; }
     .brand-beta {
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       font-size: 0.62rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--accent);
@@ -272,9 +279,9 @@
     .section + .section { border-top: 1px solid var(--rule); }
 
     .eyebrow {
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       font-size: 0.72rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--accent);
@@ -342,7 +349,7 @@
       gap: 0.6rem;
       background: var(--raised);
       border: 1px solid var(--rule);
-      border-radius: 8px;
+      border-radius: 2px;
       padding: 0.55rem 0.55rem 0.55rem 0.85rem;
       width: 100%;
       max-width: 640px;
@@ -369,11 +376,12 @@
     .copy-btn {
       background: transparent;
       border: 1px solid var(--rule);
-      border-radius: 5px;
+      border-radius: 2px;
       padding: 0.4rem 0.7rem;
       min-height: 32px;
       color: var(--ink-soft);
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
+      font-weight: 600;
       font-size: 0.78rem;
       cursor: pointer;
       flex-shrink: 0;
@@ -408,7 +416,7 @@
       font-weight: 700;
       letter-spacing: 0.04em;
       padding: 0.18em 0.5em;
-      border-radius: 3px;
+      border-radius: 2px;
       border: 1px solid currentColor;
       line-height: 1;
     }
@@ -425,18 +433,18 @@
       background: var(--accent-soft);
       border: 1px solid var(--rule);
       padding: 0.15em 0.5em;
-      border-radius: 3px;
+      border-radius: 2px;
       white-space: nowrap;
     }
 
     .severity {
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       font-size: 0.65rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       padding: 0.18em 0.55em;
-      border-radius: 3px;
+      border-radius: 2px;
       line-height: 1;
     }
     .severity-warning { background: var(--severity-warning-bg); color: var(--severity-warning-fg); }
@@ -520,9 +528,9 @@
     }
 
     .pipeline-track-label {
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       font-size: 0.72rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--ink-muted);
@@ -553,7 +561,7 @@
       position: relative;
       background: var(--raised);
       border: 1px solid var(--rule);
-      border-radius: 6px;
+      border-radius: 0;
       padding: 0.85rem 0.85rem 0.85rem 0.85rem;
       cursor: default;
       transition: border-color 0.15s, transform 0.15s;
@@ -607,7 +615,7 @@
       color: var(--accent);
       border: 1px solid var(--rule);
       padding: 0.18em 0.5em;
-      border-radius: 4px;
+      border-radius: 2px;
       background: var(--raised);
     }
 
@@ -632,7 +640,7 @@
     .output-panel {
       background: var(--raised);
       border: 1px solid var(--rule);
-      border-radius: 8px;
+      border-radius: 0;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -695,7 +703,7 @@
       gap: 0.6rem;
       background: var(--raised);
       border: 1px solid var(--rule);
-      border-radius: 8px;
+      border-radius: 2px;
       padding: 0.85rem 0.85rem 0.85rem 1.1rem;
       max-width: 760px;
       width: 100%;
@@ -731,7 +739,7 @@
       font-size: 0.85rem;
       padding: 0.3rem 0.7rem;
       border: 1px solid var(--rule);
-      border-radius: 999px;
+      border-radius: 2px;
       color: var(--ink-soft);
       background: var(--raised);
     }
@@ -755,7 +763,7 @@
     .release-card {
       background: var(--raised);
       border: 1px solid var(--rule);
-      border-radius: 10px;
+      border-radius: 0;
       padding: clamp(1.25rem, 3vw, 1.75rem);
       max-width: var(--prose);
     }
@@ -841,8 +849,8 @@
     }
     @media (max-width: 420px) {
       .footer-signup { flex-direction: column; gap: 0.5rem; }
-      .footer-signup input[type="email"] { border-right: 1px solid var(--rule); border-radius: 6px; }
-      .footer-signup button { border-radius: 6px; }
+      .footer-signup input[type="email"] { border-right: 1px solid var(--rule); border-radius: 2px; }
+      .footer-signup button { border-radius: 2px; }
     }
     .footer-signup label {
       position: absolute;
@@ -854,26 +862,26 @@
     .footer-signup input[type="email"] {
       flex: 1;
       padding: 0.55rem 0.85rem;
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       font-size: 0.9rem;
       background: var(--raised);
       color: var(--ink);
       border: 1px solid var(--rule);
       border-right: none;
-      border-radius: 6px 0 0 6px;
+      border-radius: 2px 0 0 2px;
       outline: none;
     }
     .footer-signup input[type="email"]:focus { border-color: var(--accent); }
     .footer-signup input[type="email"]::placeholder { color: var(--ink-muted); }
     .footer-signup button {
       padding: 0.55rem 1rem;
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       font-size: 0.85rem;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--bg);
       background: var(--ink);
       border: 1px solid var(--ink);
-      border-radius: 0 6px 6px 0;
+      border-radius: 0 2px 2px 0;
       cursor: pointer;
     }
     .footer-signup button:hover { opacity: 0.92; }
@@ -895,7 +903,7 @@
       background: var(--ink);
       color: var(--bg);
       padding: 0.4rem 0.8rem;
-      border-radius: 4px;
+      border-radius: 2px;
       font-size: 0.85rem;
       transform: translateY(-200%);
       transition: transform 0.15s;

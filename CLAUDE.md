@@ -133,3 +133,9 @@ When working in this repo, route user requests to the appropriate idstack skill:
 Skills are auto-discovered by Claude Code via the plugin manifest at
 `.claude-plugin/plugin.json`. In Codex CLI, drop the `/idstack:` prefix and use
 `$<skill>` (e.g., `$needs-analysis`).
+
+## Design system
+
+Always read `DESIGN.md` (repo root) before making any visual or UI decision in this project. All font choices, colors, spacing, border radii, motion timing, and aesthetic direction are defined there. Do not deviate without explicit user approval and a corresponding update to `DESIGN.md`.
+
+When generating HTML reports, the report stylesheet at `templates/assets/idstack.css` is the canonical implementation of `DESIGN.md`. Any update to `DESIGN.md` should be reflected there (and in `docs/index.html` for landing-page tokens) in the same PR.

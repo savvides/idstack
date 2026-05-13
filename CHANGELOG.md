@@ -1,5 +1,30 @@
 # Changelog
 
+## v3.1.0.0 (2026-05-13)
+
+### Added — `DESIGN.md` and design-system reconciliation
+
+The visual system that ships in the report stylesheet and the landing page is now documented at the repo root in `DESIGN.md`. Skills, contributors, and reviewers read it before touching anything visual. `CLAUDE.md` and `AGENTS.md` route to it.
+
+- **`DESIGN.md` at the repo root.** Source of truth for fonts, colors, spacing, border radii, motion timing, and aesthetic direction. North-star is **Proof** — the artifact should read like a peer-reviewed clinical reference. Includes anti-patterns to never ship and a dated decisions log.
+- **Web fonts swapped to publication-grade.** Source Serif 4 (display + body), Public Sans (UI/labels/badges), JetBrains Mono (citations/IDs/code), loaded via Google Fonts `<link>` in `docs/index.html`, `templates/report.html.tmpl`, and `templates/index.html.tmpl`. System-font fallbacks preserved so pages stay legible offline.
+- **Palette shift: ivory replaces parchment.** Background goes from `#fbfaf6` (parchment-warm) to `#faf8f3` (pristine ivory). Reads as "good paper," not "old book."
+- **Second annotation color added.** Prussian blue `#1d4a5e` joins library-stamp red `#7a1f1f`. Links and citation cross-references now use blue; the kicker / primary marks stay red. Mirrors the two-pen academic-editor convention.
+- **Sharper corners across the surface.** Finding cards and other card surfaces are now `border-radius: 0`. Buttons, badges, chips, install snippets normalize to `2px`. The publication signal at the expense of consumer-SaaS softness.
+- **Tier-badge weights amplified.** T1 / T2 render bold (the strongest evidence reads heaviest); T5 stays light grey (expert opinion reads weakest). Hex values unchanged.
+
+### Changed
+
+- `templates/assets/idstack.css` — reconciled to `DESIGN.md` tokens (ivory bg, prussian-blue links, sharp finding cards, new font tokens). Shipped to every course folder as before.
+- `docs/index.html` — same token swap; UI chrome (eyebrows, badges, copy button, footer form, brand-beta, severity chips, pipeline labels) now uses Public Sans via `--font-ui`.
+- `templates/report.html.tmpl` / `templates/index.html.tmpl` — `<head>` now includes Google Fonts preconnect + stylesheet link for Source Serif 4 / Public Sans / JetBrains Mono.
+- `CLAUDE.md` / `AGENTS.md` (via `templates/agent-context.md`) — new **Design system** section instructing skills to read `DESIGN.md` before any UI decision.
+
+### Notes
+
+- No path, manifest, or API changes; minor version bump because the design system is now load-bearing for new skills and reviewers.
+- Reports written by older versions still render correctly with the new stylesheet — the existing class hooks (`finding sev-{severity}`, `tier-badge tier-T{N}`, `sev-badge`, `citation`) are unchanged.
+
 ## v3.0.0.0 (2026-05-13)
 
 ### Changed — branded HTML reports + per-course export folder
