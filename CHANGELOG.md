@@ -1,5 +1,38 @@
 # Changelog
 
+## v3.0.0.0 (2026-05-13)
+
+### Changed — branded HTML reports + per-course export folder
+
+The human-facing report format is now HTML. The container is now a per-course folder. Every artifact that belongs to a course — every per-skill report, the pipeline dashboard, the bundled stylesheet, and any LMS packages — lives under one self-describing folder: `.idstack/exports/<course-slug>/`. Zip the folder to hand the whole deliverable to a stakeholder.
+
+- **HTML replaces Markdown for the human view.** Every skill that produces findings now writes a branded, self-contained HTML report at `.idstack/exports/<course-slug>/<skill>.html`. Visual contract: `templates/report.html.tmpl` (the HTML skeleton) plus `templates/assets/idstack.css` (the brand stylesheet). Content contract is unchanged: observation → evidence → why-it-matters → suggestion, severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding.
+- **Brand stylesheet matches `idstack.org`.** Scholarly serif body, ink-on-parchment palette, severity-colored finding cards (rust/amber/slate), tier badges weighted by strength (T1 heaviest, T5 lightest), citation marks in mono. Print-friendly. Auto light/dark via `prefers-color-scheme`. No JavaScript, no external fonts, no network — open and read.
+- **Course folder, by name.** `<course-slug>` is derived from `project_name` via `bin/idstack-slugify` (NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). Renaming a course's `project_name` moves future exports to a new folder; older folders are left in place.
+- **`/idstack:pipeline` produces a course dashboard.** `.idstack/exports/<course-slug>/index.html` carries readiness scores (Quality / Accessibility / Red-team confidence), a pipeline status table with links to every per-skill report, top cross-cutting issues, evidence themes, the LMS artifact list, and a where-to-start pointer. Same structure as `templates/index.html.tmpl`. Replaces the old `pipeline.md` aggregate.
+- **LMS packages move into the course folder.** `course-export.imscc` and `scorm-export.zip` now write to `.idstack/exports/<course-slug>/`, not the root `.idstack/`. The `export_metadata.destination` field reflects the new path.
+- **`course-export` now writes a report.** Previously the only pipeline skill without a human-facing report. Now produces `.idstack/exports/<course-slug>/course-export.html` alongside the LMS package.
+- **`bin/idstack-status` reads the new layout.** Surfaces the dashboard first, then per-skill HTML reports, then LMS packages — all from the course folder. Auto-resolves the slug from `project_name`; falls back to the only `.idstack/exports/*` subfolder when present.
+- **`bin/idstack-slugify` is a new CLI helper.** Standalone bash + python3 script implementing the slug rule. Documented in `templates/manifest-schema.md`; called by every skill that writes a report.
+
+### Added
+
+- `templates/report.html.tmpl` — per-skill HTML skeleton (visual contract).
+- `templates/index.html.tmpl` — course dashboard skeleton.
+- `templates/assets/idstack.css` — branded stylesheet matching `idstack.org` tone.
+- `bin/idstack-slugify` — `project_name` → course slug.
+- `bin/idstack-gen-skills` now sanity-checks that the three new template files exist; fails loud if any is missing.
+
+### Breaking
+
+- `report_path` semantics moved from `.idstack/reports/<skill>.md` to `.idstack/exports/<course-slug>/<skill>.html`. Existing `.idstack/reports/*.md` files from previous runs are left in place but treated as legacy — re-run the pipeline (or any skill) to migrate. Manifest schema version is unchanged (still 1.4) since field shape is identical; only the path the field points to has changed.
+- LMS package paths moved: `.idstack/course-export.imscc` → `.idstack/exports/<course-slug>/course-export.imscc`; `.idstack/scorm-export.zip` → `.idstack/exports/<course-slug>/scorm-export.zip`. Tooling and docs that hard-coded the old paths need updating.
+
+### Notes
+
+- `bin/idstack-status` reads from the new location; legacy `.idstack/reports/*.md` are not surfaced in the dashboard listing.
+- Plugin manifest version bumped to `3.0.0.0` (major: breaking `report_path` semantics).
+
 ## v2.5.0.0 (2026-05-09)
 
 ### Added — OpenAI Codex CLI support
