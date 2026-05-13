@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://idstack.org/sitemap.xml
