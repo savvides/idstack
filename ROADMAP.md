@@ -4,6 +4,13 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Branded HTML reports + per-course export folder (v3.0.0)
+- **HTML replaces Markdown for the human view.** Every skill that produces findings now writes a branded, self-contained HTML report at `.idstack/exports/<course-slug>/<skill>.html`. Visual contract: `templates/report.html.tmpl` + `templates/assets/idstack.css` (scholarly serif body, severity-colored finding cards, evidence-tier badges, print-friendly, auto light/dark via `prefers-color-scheme`). Content contract is unchanged — observation → evidence → why-it-matters → suggestion, severity + tier on every finding.
+- **One folder per course, by name.** All per-course artifacts — every per-skill HTML report, the pipeline `index.html` dashboard, the bundled CSS, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under `.idstack/exports/<course-slug>/`. The slug is derived from `project_name` via `bin/idstack-slugify` (NFKD-fold, kebab-case, ASCII-safe). Zip the folder to hand the whole deliverable to a stakeholder.
+- **`/idstack:pipeline` produces a course dashboard.** `index.html` at the folder root, with readiness scores (Quality / Accessibility / Red-team confidence), a pipeline status table with links to every per-skill report, top cross-cutting issues, and a where-to-start pointer. Replaces the old `pipeline.md` aggregate.
+- **`bin/idstack-status` reads the new layout.** Surfaces the dashboard first, then per-skill HTML reports, then LMS packages — all from the course folder. Auto-resolves the slug from `project_name`; falls back to the only `.idstack/exports/*` subfolder when present.
+- **Breaking change.** `report_path` semantics moved from `.idstack/reports/<skill>.md` to `.idstack/exports/<course-slug>/<skill>.html`. Existing `.idstack/reports/*.md` files from previous runs are left in place but treated as legacy — re-run the pipeline (or any skill) to migrate.
+
 ### OpenAI Codex CLI support (v2.5.0.0)
 - **Run idstack natively in Codex CLI.** Same 11 skills, same evidence base, same `.idstack/` dual-output contract, same manifest schema. `./setup` auto-detects `codex` on PATH and installs alongside Claude.
 - **Multi-target generator.** `bin/idstack-gen-skills --target {claude|codex|all}` emits per-CLI flavors from a single `.tmpl` source. Codex output goes to `dist/codex/skills/idstack-<name>/` — the `allowed-tools:` block is stripped (Codex has no per-skill allowlist).

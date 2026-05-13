@@ -291,10 +291,10 @@ starting point.
 - If `course-import` is completed but `needs-analysis` is not, skip `needs-analysis`
   (import provides equivalent manifest data).
 - If ALL skills are completed, tell the user via AskUserQuestion: "All pipeline skills have been completed. What would you like to do?" Options:
-  - **Regenerate the pipeline report** — reads each per-skill report, refreshes `.idstack/reports/pipeline.md` with the latest cross-cutting view (no skills re-run). Recommended after editing per-skill outputs by hand.
+  - **Regenerate the course dashboard** — reads each per-skill report, refreshes `.idstack/exports/<course-slug>/index.html` with the latest cross-cutting view (no skills re-run). Recommended after editing per-skill outputs by hand.
   - **Re-run a specific skill** — e.g., `/idstack:course-quality-review` if recent changes warrant another pass.
   - **Exit** — leave everything as-is.
-  If the user picks "Regenerate the pipeline report," skip directly to Step 4 (Generate Pipeline Report).
+  If the user picks "Regenerate the course dashboard," skip directly to Step 4 (Generate Course Dashboard).
 
 ### Step 2: Present Pipeline Status
 
@@ -325,7 +325,7 @@ For each skill from the starting point onward:
 1. Announce: "Starting /skill-name..."
 2. Invoke the skill using the `Skill` tool with the skill name (e.g., `skill: "needs-analysis"`)
 3. The skill will run its full workflow including all AskUserQuestion interactions
-4. When the skill completes (logs to timeline), **execute Step 4 (Generate Pipeline Report) inline** to refresh `.idstack/reports/pipeline.md` against the new per-skill report. This keeps the aggregate fresh if the designer pauses partway through.
+4. When the skill completes (logs to timeline), **execute Step 4 (Generate Course Dashboard) inline** to refresh `.idstack/exports/<course-slug>/index.html` against the new per-skill report. This keeps the dashboard fresh if the designer pauses partway through.
 5. Announce completion and move to next.
 
 **If the Skill tool is NOT available** (e.g., on Codex CLI or any host without a primitive
@@ -333,144 +333,66 @@ to invoke a sibling skill in-process), degrade gracefully: after announcing the 
 print exactly what the user should type to invoke it (e.g., "Type `$needs-analysis` to run
 the next stage, then resume the pipeline by typing `$pipeline` again") and STOP. The user
 runs the skill themselves; the pipeline picks up on the next `$pipeline` invocation by re-
-reading the timeline and continuing from the new starting point. Generate the pipeline
-report (Step 4) before stopping so the partial-run aggregate is up to date.
+reading the timeline and continuing from the new starting point. Generate the course
+dashboard (Step 4) before stopping so the partial-run dashboard is up to date.
 
 **Between skills**, briefly announce the transition:
-"[skill-name] complete. Pipeline report refreshed. Moving to /next-skill..."
+"[skill-name] complete. Course dashboard refreshed. Moving to /next-skill..."
 
-### Step 4: Generate Pipeline Report
+### Step 4: Generate Course Dashboard
 
-After each skill completes (or after the orchestrator finishes the run, including partial runs), aggregate the per-skill reports into a single `.idstack/reports/pipeline.md` so the designer can read the full picture in one document.
+After each skill completes (or after the orchestrator finishes the run, including partial runs), assemble the per-skill HTML reports and the manifest into a single `index.html` course dashboard so the designer (and any stakeholder) can read the full picture in one place.
 
 **When this step runs:**
 
-- Inline after each skill completes during the orchestrator's main loop (Step 3, item 4) — so a partial pipeline still leaves a useful aggregate behind if the designer pauses.
-- As a one-shot regeneration when the "Regenerate the pipeline report" branch from Step 1 is selected (no skills are re-run; this step is the entire body of that branch).
+- Inline after each skill completes during the orchestrator's main loop (Step 3, item 4) — so a partial pipeline still leaves a useful dashboard behind if the designer pauses.
+- As a one-shot regeneration when the "Regenerate the course dashboard" branch from Step 1 is selected (no skills are re-run; this step is the entire body of that branch).
 
-**Inputs.** Read each per-skill report file if it exists:
-
-- `.idstack/reports/needs-analysis.md`
-- `.idstack/reports/learning-objectives.md`
-- `.idstack/reports/assessment-design.md`
-- `.idstack/reports/course-builder.md`
-- `.idstack/reports/course-quality-review.md`
-- `.idstack/reports/accessibility-review.md`
-- `.idstack/reports/red-team.md`
-- `.idstack/reports/course-export.md` (if present)
-- `.idstack/reports/course-import.md` (if present)
-
-Also read `.idstack/project.json` for project_name, scores, and the `report_path` fields.
-
-**Output.** Write `.idstack/reports/pipeline.md`:
+**Prep.** Compute the course slug and prepare the export folder:
 
 ```bash
-mkdir -p .idstack/reports
+_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+mkdir -p "$_EXPORT_DIR/assets"
+cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Dashboard: $_EXPORT_DIR/index.html"
 ```
 
-```markdown
-# Pipeline Report
+**Inputs.** Read each per-skill HTML report file if it exists (they're already in `$_EXPORT_DIR/`):
 
-**Course:** [project_name]
-**Generated:** [ISO-8601 timestamp]
-**Pipeline run:** [partial — N of 8 skills complete | complete]
+- `$_EXPORT_DIR/needs-analysis.html`
+- `$_EXPORT_DIR/learning-objectives.html`
+- `$_EXPORT_DIR/assessment-design.html`
+- `$_EXPORT_DIR/course-builder.html`
+- `$_EXPORT_DIR/course-quality-review.html`
+- `$_EXPORT_DIR/accessibility-review.html`
+- `$_EXPORT_DIR/red-team.html`
+- `$_EXPORT_DIR/course-export.html` (if present)
+- `$_EXPORT_DIR/course-import.html` (if present)
 
-## Across your course
+Also read `.idstack/project.json` for project_name, scores (`quality_review.overall_score`, `accessibility_review.score.overall`, `red_team_audit.confidence_score`), and each section's `report_path`.
 
-[2–3 paragraphs of cross-cutting synthesis. Designed to be read by a designer who
-hasn't yet opened the per-skill reports. Lead with the verdict, follow with the
-themes that recur across multiple skills, end with where to start.]
+**Output.** Write `$_EXPORT_DIR/index.html`, following the structure of `templates/index.html.tmpl`. Customize:
 
-### Top cross-cutting issues
+- **`{{project_name}}`:** from the manifest top-level.
+- **`{{pipeline_run_status}}`:** e.g., "complete · 8 of 8 skills" or "partial · 4 of 8 skills".
+- **Cross-cutting summary** (replaces `{{cross_cutting_summary_2_to_3_paragraphs}}`): 2–3 paragraphs of cross-cutting synthesis. Designed to be read by a designer (or stakeholder) who hasn't yet opened the per-skill reports. Lead with the verdict, follow with the themes that recur across multiple skills, end with where to start.
+- **Readiness scoreboard** — populate the four `<div class="score verdict-{verdict}">` cards (Quality, Accessibility, Red-team confidence, Overall verdict). Verdict values: `ready` (green border) / `issues` (amber) / `blocked` (red) / `pending` (grey, when skill hasn't run yet). Thresholds match `bin/idstack-status --readiness`.
+- **Pipeline status table** — one row per pipeline skill. `status-done` if the per-skill HTML report file exists, `status-pending` otherwise. `signal` column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). Link the report cell to the relative HTML filename (e.g., `<a href="needs-analysis.html">needs-analysis.html</a>`). Add an optional course-import row when that report is present.
+- **Top cross-cutting issues** (`<ol>` items): 3–5 highest-impact findings that appear in or affect multiple per-skill reports. Each item shows the source skill(s) and the evidence tier as a `<cite class="citation">` element.
+- **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: `<p>No LMS packages produced yet. Run <code>/idstack:course-export</code> to package this course.</p>`.
+- **Where to start** — one paragraph. The single change (or 2–3 changes) that would address the largest number of cross-cutting concerns. Anchored to a specific finding id in a specific per-skill report so the designer can act on it (e.g., "Address `assess-1` in <code>assessment-design.html</code> first…").
 
-[The 3–5 highest-impact findings that appear in or affect multiple per-skill reports.
-Each item shows the source skill(s) and the evidence tier.]
-
-1. **[Finding title]** — appears in [skill A], [skill B] reports. [Evidence-N] [Tier]
-   [One sentence: why this is the cross-cutting concern, not just a single-skill issue.]
-2. ...
-
-### Evidence themes
-
-[Which evidence domains recur across the pipeline. Useful as a meta-read: "your
-course's biggest wedge is feedback quality" or "alignment is the through-line
-across 4 of 8 skills."]
-
-- **[Domain]:** cited in [N] findings across [skill list]
-- ...
-
-### Where to start
-
-[One paragraph. The single change (or 2–3 changes) that would address the largest
-number of cross-cutting concerns. Anchored to a specific finding id in a specific
-per-skill report so the designer can act on it.]
-
----
-
-## Pipeline status
-
-| Skill | Status | Score / signal | Report |
-|-------|--------|----------------|--------|
-| /idstack:course-import | [✓ run / not run] | [N items, F flags] | [path or —] |
-| /idstack:needs-analysis | [✓ run / not run] | [training justified Y/N] | [path or —] |
-| /idstack:learning-objectives | [✓ run / not run] | [N ILOs, M gaps] | [path or —] |
-| /idstack:assessment-design | [✓ run / not run] | [feedback_quality_score] | [path or —] |
-| /idstack:course-builder | [✓ run / not run] | [N artifacts, P placeholders] | [path or —] |
-| /idstack:course-quality-review | [✓ run / not run] | [overall_score/100] | [path or —] |
-| /idstack:accessibility-review | [✓ run / not run] | [overall/100, N WCAG-A] | [path or —] |
-| /idstack:red-team | [✓ run / not run] | [confidence_score/100, N critical] | [path or —] |
-| /idstack:course-export | [✓ run / not run] | [verdict from readiness_check] | [path or —] |
-
-## Per-skill summaries
-
-[For each skill that has a report file, include a subsection with:
-- The Summary paragraph pulled verbatim from the per-skill report
-- The top 2 findings (titles + severities + tiers — NOT the full block; the
-  designer follows the link for detail)
-- A link to the full per-skill report]
-
-### /idstack:needs-analysis
-
-[Summary paragraph from .idstack/reports/needs-analysis.md]
-
-**Top findings:** `needs-1` [severity] [tier] · `needs-2` [severity] [tier]
-
-**Full report:** [`.idstack/reports/needs-analysis.md`](needs-analysis.md)
-
----
-
-[Repeat per skill that has a report.]
-
-## Limitations
-
-[Standard footer.]
-
-- Cross-cutting findings are aggregated by reading per-skill reports, not by re-
-  analyzing the course. If a per-skill report missed something, the pipeline
-  report will too.
-- Evidence-theme counts are based on `[Domain-N]` citation tags in the per-skill
-  reports. Skills that wrote citations differently may be under-counted.
-- This report is regenerated on every pipeline run — historical pipeline reports
-  are not retained. The timeline at `.idstack/timeline.jsonl` carries the run
-  history.
-
-## Next steps
-
-[Concrete pointer: which finding id to address first, or which skill to re-run
-once a fix lands. Avoid generic advice.]
-
----
-
-*Generated by `/idstack:pipeline`. Per-skill reports are in `.idstack/reports/`. The system-readable manifest is in `.idstack/project.json`.*
-```
+The dashboard is overwritten on every pipeline run — historical dashboards are not retained. The timeline at `.idstack/timeline.jsonl` carries the run history.
 
 ### Step 5: Pipeline Complete
 
 When all remaining skills have been executed:
 - Announce: "Pipeline complete. Your course has been through all 8 stages."
-- Confirm the pipeline report path: "Aggregate report at `.idstack/reports/pipeline.md` — read this for the cross-cutting view; the per-skill reports under `.idstack/reports/` carry the full detail."
+- Confirm the dashboard path: "Course dashboard at `.idstack/exports/<course-slug>/index.html` — open it in any browser for the cross-cutting view; the per-skill HTML reports in the same folder carry the full detail. Zip the folder to hand it to a stakeholder."
 - If `/course-quality-review` produced a score, show it.
-- Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the aggregate report.
+- Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.
 
 ## Important Rules
 

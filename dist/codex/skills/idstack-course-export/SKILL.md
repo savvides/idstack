@@ -323,6 +323,31 @@ Preserve all existing manifest sections when writing back.
 
 ---
 
+## Prepare Course Export Folder
+
+Every artifact this skill produces — the HTML report, the LMS package — lands
+under `.idstack/exports/<course-slug>/`, alongside the per-skill HTML reports
+produced by the rest of the pipeline. Compute the slug and prepare the folder
+now, then reuse `$_EXPORT_DIR` throughout the workflow:
+
+```bash
+# Course-slug-based export folder. Required before any artifact write.
+_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/course-export.html"
+mkdir -p "$_EXPORT_DIR/assets"
+cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Course export folder: $_EXPORT_DIR"
+```
+
+All subsequent paths (`.imscc`, SCORM `.zip`, HTML report) write into
+`$_EXPORT_DIR`, never directly into `.idstack/`. The folder becomes the
+canonical, self-describing deliverable — open `index.html` to navigate, or
+zip the whole folder to hand to a stakeholder.
+
+---
+
 ## Export Format Selection
 
 Ask the user how they want to export. Use AskUserQuestion:
@@ -601,12 +626,13 @@ mkdir -p "$EXPORT_DIR/discussions"
 # Write discussion XML files to $EXPORT_DIR/discussions/
 # Write syllabus HTML to $EXPORT_DIR/syllabus.html
 
-# Package
+# Package. $EXPORT_DIR here is the mktemp staging dir; $_EXPORT_DIR is the
+# course-named folder under .idstack/exports/<slug>/ from the prep step above.
 cd "$EXPORT_DIR"
 zip -r course-export.imscc .
-mv "$EXPORT_DIR/course-export.imscc" .idstack/course-export.imscc
+mv "$EXPORT_DIR/course-export.imscc" "$_EXPORT_DIR/course-export.imscc"
 rm -rf "$EXPORT_DIR"
-echo "Export saved to .idstack/course-export.imscc"
+echo "Export saved to $_EXPORT_DIR/course-export.imscc"
 ```
 
 Write each file individually using the Write tool, then package with Bash.
@@ -616,23 +642,23 @@ This ensures every file is correctly formed before zipping.
 
 ```bash
 # Verify it's a valid zip
-file .idstack/course-export.imscc
+file "$_EXPORT_DIR/course-export.imscc"
 # List contents
-unzip -l .idstack/course-export.imscc
+unzip -l "$_EXPORT_DIR/course-export.imscc"
 # Count items
 echo "---"
-echo "Module pages: $(unzip -l .idstack/course-export.imscc | grep 'modules/' | wc -l)"
-echo "Assignments: $(unzip -l .idstack/course-export.imscc | grep 'assignments/' | wc -l)"
-echo "Quizzes: $(unzip -l .idstack/course-export.imscc | grep 'quizzes/' | wc -l)"
-echo "Discussions: $(unzip -l .idstack/course-export.imscc | grep 'discussions/' | wc -l)"
+echo "Module pages: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'modules/' | wc -l)"
+echo "Assignments: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'assignments/' | wc -l)"
+echo "Quizzes: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'quizzes/' | wc -l)"
+echo "Discussions: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'discussions/' | wc -l)"
 ```
 
-Present verification to the user:
+Present verification to the user (substituting `$_EXPORT_DIR` in the file path):
 
 ```
 ## Common Cartridge Export Complete
 
-File: .idstack/course-export.imscc
+File: .idstack/exports/<course-slug>/course-export.imscc
 Size: {X} KB
 Contents:
   - imsmanifest.xml
@@ -984,18 +1010,20 @@ Rules for generating the manifest:
 ### C5. Package as ZIP
 
 ```bash
+# Package. $EXPORT_DIR here is the mktemp staging dir; $_EXPORT_DIR is the
+# course-named folder under .idstack/exports/<slug>/ from the prep step above.
 cd "$EXPORT_DIR"
 zip -r scorm-export.zip imsmanifest.xml content/
-mv "$EXPORT_DIR/scorm-export.zip" .idstack/scorm-export.zip
-echo "SCORM package saved to .idstack/scorm-export.zip"
+mv "$EXPORT_DIR/scorm-export.zip" "$_EXPORT_DIR/scorm-export.zip"
+echo "SCORM package saved to $_EXPORT_DIR/scorm-export.zip"
 ```
 
 ### C6. Verify package
 
 ```bash
-file .idstack/scorm-export.zip
-unzip -l .idstack/scorm-export.zip | head -20
-echo "Total files: $(unzip -l .idstack/scorm-export.zip | tail -1)"
+file "$_EXPORT_DIR/scorm-export.zip"
+unzip -l "$_EXPORT_DIR/scorm-export.zip" | head -20
+echo "Total files: $(unzip -l "$_EXPORT_DIR/scorm-export.zip" | tail -1)"
 ```
 
 Verify:
@@ -1008,7 +1036,7 @@ Verify:
 ```
 ## SCORM 1.2 Export Complete
 
-File: .idstack/scorm-export.zip
+File: .idstack/exports/<course-slug>/scorm-export.zip
 Format: SCORM 1.2
 SCOs: [count] (one per module)
 Total files: [count]
@@ -1041,10 +1069,26 @@ rm -rf "$EXPORT_DIR"
 
 ---
 
+## Generate Export Report
+
+After the export completes (any path), write the HTML report at `$_REPORT_PATH` (from the Prepare Course Export Folder step) — i.e., `.idstack/exports/<course-slug>/course-export.html`. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`. Use the standard CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+
+- **`{{skill_title}}`:** "Course Export Report"
+- **`{{skill_name}}`:** `course-export`
+- **`{{mode}}`:** include `format: imscc|canvas-api|scorm` in the header `meta` line.
+- **Summary:** 2–3 sentences. What was exported, where it landed, and the readiness verdict (clean / with warnings) at the time of export. Include the optional one-line scoreboard: "Modules N · Pages M · Assignments P · Quizzes Q · Discussions R".
+- **Skill-specific section before Findings** — add a `<section class="export-manifest">` with `<h2>Export contents</h2>` and an HTML `<table>` (Item type, Count, Notes). For Canvas API: include Created / Failed / Skipped columns instead.
+- **Finding ids:** `export-1`, `readiness-1`, `qti-1`, etc. Findings come from auto-generated content the designer should review before publishing (quiz questions, rubric formatting, missing placeholders), readiness-check items at time of export, and items the API call failed on. If everything is clean, the Findings section can simply contain an `info` finding noting the clean state.
+- **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="failed-items">` with `<h2>Failed items</h2>` only when the Canvas API path produced failed items.
+- **Limitations:** SCORM/IMSCC packages contain static HTML; interactive elements aren't generated. Quiz questions are auto-generated from assessment specs and need designer review. Tokens are never written to disk.
+- **Next steps:** Verify that the LMS import preserved everything correctly. Pay particular attention to quiz questions, assignment rubrics, discussion prompts, and module sequencing. If the readiness verdict was "with warnings," address the flagged findings before publishing.
+
+---
+
 ## Manifest Write
 
-After export completes (any path), update the project manifest with export
-metadata.
+After export completes (any path) and the report is written, update the project
+manifest with export metadata.
 
 **CRITICAL -- Manifest Integrity Rules:**
 1. If a manifest already exists, READ it first with the Read tool.
@@ -1083,9 +1127,10 @@ Add or update the `export_metadata` field at the root level:
 ```json
 {
   "export_metadata": {
+    "report_path": "<set to $_REPORT_PATH from the Prepare Course Export Folder block — e.g. .idstack/exports/<course-slug>/course-export.html>",
     "exported_at": "ISO-8601 timestamp",
     "format": "imscc|canvas-api|scorm",
-    "destination": "file path (.idstack/course-export.imscc) or Canvas URL",
+    "destination": "file path (.idstack/exports/<course-slug>/course-export.imscc) or Canvas URL",
     "items_exported": {
       "modules": 0,
       "pages": 0,
@@ -1135,16 +1180,18 @@ The idstack manifest lives at `.idstack/project.json`. Schema version: **1.4**.
 
 This is the canonical schema. Every skill writes to its own section using the shapes documented here; **all other sections must be preserved verbatim**. There is one source of truth — this file. If the schema ever needs to change, edit `templates/manifest-schema.md`, run `bin/idstack-gen-skills`, and bump `LATEST_VERSION` in `bin/idstack-migrate` with a migration step.
 
-### Two outputs per skill: JSON manifest + Markdown report
+### Two outputs per skill: JSON manifest + HTML report
 
 Every skill that produces findings emits **both**:
 
 - a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
-- a **Markdown report** at `.idstack/reports/<skill>.md` (the human view — read by the instructional designer).
+- an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
 
-The Markdown report follows the canonical structure in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the Markdown report path back into its own section's `report_path` field so other skills and tools can find it.
+The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills and tools can find it.
 
-`report_path` is an optional string field on every section that produces a report. Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report.
+`<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
+
+`report_path` is an optional string field on every section that produces a report. It is a path relative to the project root (typically `.idstack/exports/<course-slug>/<skill>.html`). Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report. Renaming a course's `project_name` changes the slug, which moves future exports to a new folder; older folders are left in place.
 
 ### Two ways to write to the manifest
 

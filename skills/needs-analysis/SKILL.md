@@ -548,90 +548,34 @@ Based on the learner profile, note which instructional strategies are appropriat
 
 ### Step 6: Generate Report
 
-Before writing the manifest, generate a human-readable report at `.idstack/reports/needs-analysis.md` so the designer has a single document to read. The report follows the canonical structure in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding).
+Generate an HTML report so the designer has a single document to read. The report follows the **visual contract** in `templates/report.html.tmpl` (the skeleton) and the **content contract** in `templates/report-format.md` (severity ordering, citation format, what each placeholder must carry).
 
 ```bash
-mkdir -p .idstack/reports
+# Compute the course slug from project_name and prepare the export folder.
+_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/needs-analysis.html"
+mkdir -p "$_EXPORT_DIR/assets"
+cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report path: $_REPORT_PATH"
 ```
 
-Write `.idstack/reports/needs-analysis.md` with this structure:
+Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/needs-analysis.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks so the stylesheet applies cleanly: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
-```markdown
-# Needs Analysis Report
+- **`{{skill_title}}`:** "Needs Analysis Report"
+- **`{{skill_name}}`:** `needs-analysis`
+- **`{{mode}}`:** `design-new` or `audit-existing` (include the optional mode segment in the header `meta` line).
+- **Summary:** 2–3 sentences. Lead with the verdict — training justified or not, the biggest risk in the learner profile, and the headline finding from the task analysis. Don't bury the lede.
+- **Skill-specific section before Findings** — add a `<section class="project-context">` with `<h2>Project context</h2>` and a `<dl>` listing modality, timeline, class size, institution type, and available tech.
+- **Finding ids:** `needs-1`, `needs-2`, etc. Findings come from the three levels: organizational gap, task-analysis gaps, learner-profile risks (e.g., expertise mismatch with the planned design).
+- **Optional skill-specific sections** (after Top recommendations, before Limitations):
+  - `<section class="training-justification">` with `<h2>Training justification</h2>` — show `Justified: Yes/No`, `Confidence: X/10`, the rationale paragraph, and alternatives considered (or "n/a — imported credit-bearing course" in audit-existing mode).
+  - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence so the read isn't opinion: `[CogLoad-4] [T1]` for novices; `[CogLoad-19] [T1]` for advanced; `[Learner-16] [T1]` for mixed.
+- **Limitations:** imported-course mode skips the training-decision gate; learner profile draws on the registrar/syllabus, not a learner survey; task analysis is from job-task lists, not observed performance.
+- **Next steps:** Run `/idstack:learning-objectives` to develop ILOs grounded in this analysis. The objectives skill reads your task analysis and learner profile to recommend appropriate Bloom's levels and alignment strategies.
 
-**Course:** [project_name]
-**Generated:** [ISO-8601 timestamp]
-**Skill:** /idstack:needs-analysis
-**Mode:** [design-new | audit-existing]
-
-## Summary
-
-[2–3 sentences. The verdict for the designer: training justified or not, biggest risk in
-the learner profile, headline finding from the task analysis. Don't bury the lede.]
-
-## Project context
-
-- **Modality:** [modality] | **Timeline:** [timeline] | **Class size:** [size]
-- **Institution type:** [type] | **Available tech:** [list]
-
-## Findings
-
-[One block per finding. Order by severity. Use stable ids: `needs-1`, `needs-2`, etc.
-Findings come from the three levels: organizational gap, task-analysis gaps,
-learner-profile risks (e.g., expertise mismatch with the planned design).]
-
-### Finding needs-1: [short title]                        [severity] [tier]
-
-**What we saw.** [Concrete observation from the analysis.]
-
-**What the evidence says.** [1–2 sentences.] [Domain-N] [Tier]
-
-**Why it matters.** [Bridge: observation → evidence → learner outcome.]
-
-**Consider.** [Collaborative recommendation. May reference another skill.]
-
----
-
-[Repeat per finding.]
-
-## Top recommendations
-
-[The 3–5 highest-impact moves from the needs-analysis findings, ordered.
-Each carries its evidence citation and points to the skill or finding that
-would address it. Per the canonical report format, this section is what
-the pipeline aggregator and `bin/idstack-status` may surface as a digest.]
-
-1. **[Action]** [Domain-N] [Tier] — [one-line why; pointer to skill/finding]
-2. ...
-
-## Training justification
-
-- **Justified:** [Yes/No] (Confidence: X/10)
-- **Rationale:** [one paragraph]
-- **Alternatives considered:** [list, or "n/a — imported credit-bearing course"]
-
-## Expertise-fit read
-
-[Based on the learner profile, which instructional strategies are appropriate. Cite the
-expertise-reversal evidence so the designer knows the read isn't opinion:
-[CogLoad-4] [T1] for novices; [CogLoad-19] [T1] for advanced; [Learner-16] [T1] for mixed.]
-
-## Limitations
-
-[What this report didn't analyze. Examples: imported-course mode skips the training
-decision gate; learner profile draws on the registrar/syllabus, not a learner survey;
-task analysis is from job-task lists, not observed performance.]
-
-## Next steps
-
-Run `/idstack:learning-objectives` to develop ILOs grounded in this analysis. The
-objectives skill will read your task analysis and learner profile to recommend
-appropriate Bloom's levels and alignment strategies.
-
----
-
-*Generated by `/idstack:needs-analysis`. The system-readable manifest section is in `.idstack/project.json` under `needs_analysis`.*
-```
+Every finding in the HTML must correspond to a finding the manifest's `needs_analysis` section can carry, so downstream skills and `bin/idstack-status` can refer to them programmatically.
 
 ### Step 7: Write Manifest
 
@@ -644,7 +588,7 @@ Create or update the project manifest. Use the Write tool to write `.idstack/pro
 3. Before writing, mentally verify the JSON is valid: matching braces, proper commas,
    quoted strings, no trailing commas.
 4. The `updated` timestamp must reflect the current time.
-5. Set `needs_analysis.report_path` to `.idstack/reports/needs-analysis.md`.
+5. Set `needs_analysis.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/needs-analysis.html`.
 6. If this is a new manifest, initialize ALL sections (including learning_objectives
    and quality_review) with empty/default values so downstream skills find the
    expected structure.
@@ -653,9 +597,10 @@ Write the manifest, then confirm to the user:
 
 "Your needs analysis is saved. Two artifacts:
 
-- **Read this:** `.idstack/reports/needs-analysis.md` — the human-readable report with
-  evidence-backed findings, the training-justification read, and a learner-profile
-  expertise check.
+- **Read this:** `.idstack/exports/<course-slug>/needs-analysis.html` — the branded HTML
+  report with evidence-backed findings, the training-justification read, and a
+  learner-profile expertise check. Open it in any browser. The folder is self-contained
+  (CSS is bundled), so you can zip or email it.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Next step:** Run `/learning-objectives` to develop learning objectives based on
@@ -670,16 +615,18 @@ The idstack manifest lives at `.idstack/project.json`. Schema version: **1.4**.
 
 This is the canonical schema. Every skill writes to its own section using the shapes documented here; **all other sections must be preserved verbatim**. There is one source of truth — this file. If the schema ever needs to change, edit `templates/manifest-schema.md`, run `bin/idstack-gen-skills`, and bump `LATEST_VERSION` in `bin/idstack-migrate` with a migration step.
 
-### Two outputs per skill: JSON manifest + Markdown report
+### Two outputs per skill: JSON manifest + HTML report
 
 Every skill that produces findings emits **both**:
 
 - a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
-- a **Markdown report** at `.idstack/reports/<skill>.md` (the human view — read by the instructional designer).
+- an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
 
-The Markdown report follows the canonical structure in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the Markdown report path back into its own section's `report_path` field so other skills and tools can find it.
+The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills and tools can find it.
 
-`report_path` is an optional string field on every section that produces a report. Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report.
+`<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
+
+`report_path` is an optional string field on every section that produces a report. It is a path relative to the project root (typically `.idstack/exports/<course-slug>/<skill>.html`). Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report. Renaming a course's `project_name` changes the slug, which moves future exports to a new folder; older folders are left in place.
 
 ### Two ways to write to the manifest
 

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# idstack-slugify — derive a filesystem-safe slug from a string.
+#
+# Used by every skill that writes to .idstack/exports/<course-slug>/ to keep
+# folder naming consistent across the pipeline. The slug is derived from
+# project_name in the manifest, but the rule lives here so callers don't have
+# to re-implement it.
+#
+# Rule:
+#   1. Unicode NFKD-fold; drop combining marks; strip non-ASCII residue.
+#   2. Lowercase.
+#   3. Replace runs of anything-but-[a-z0-9] with a single '-'.
+#   4. Strip leading/trailing '-'.
+#   5. Empty result → 'untitled-course'.
+#
+# Usage:
+#   idstack-slugify "Introduction to Biology 101"   # introduction-to-biology-101
+#   idstack-slugify "Géographie I"                  # geographie-i
+#   idstack-slugify ""                              # untitled-course
+#   echo "Some Course" | idstack-slugify -          # some-course
+#
+# Exit codes:
+#   0  success (slug printed on stdout)
+#   2  python3 not available
+#   3  no argument and no stdin
+
+set -e
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "idstack-slugify: python3 is required" >&2
+  exit 2
+fi
+
+# Read input: argv[1] if present and not "-", else stdin.
+if [ $# -gt 0 ] && [ "$1" != "-" ]; then
+  INPUT="$1"
+else
+  if [ -t 0 ]; then
+    echo "idstack-slugify: no input given (pass an argument or pipe via stdin)" >&2
+    exit 3
+  fi
+  INPUT=$(cat)
+fi
+
+python3 - "$INPUT" <<'PY'
+import sys, re, unicodedata
+
+raw = sys.argv[1] if len(sys.argv) > 1 else ""
+s = unicodedata.normalize("NFKD", raw)
+s = "".join(c for c in s if not unicodedata.combining(c))
+s = s.encode("ascii", "ignore").decode("ascii")
+s = s.lower()
+s = re.sub(r"[^a-z0-9]+", "-", s)
+s = s.strip("-")
+print(s if s else "untitled-course")
+PY

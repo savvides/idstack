@@ -53,7 +53,7 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
@@ -62,9 +62,40 @@ done
 check "templates/preamble.md exists" "[ -f '$IDSTACK_DIR/templates/preamble.md' ]"
 check "templates/manifest-schema.md exists" "[ -f '$IDSTACK_DIR/templates/manifest-schema.md' ]"
 check "templates/manifest-schema.md is non-empty" "[ -s '$IDSTACK_DIR/templates/manifest-schema.md' ]"
+check "templates/report.html.tmpl exists" "[ -f '$IDSTACK_DIR/templates/report.html.tmpl' ]"
+check "templates/index.html.tmpl exists" "[ -f '$IDSTACK_DIR/templates/index.html.tmpl' ]"
+check "templates/assets/idstack.css exists" "[ -f '$IDSTACK_DIR/templates/assets/idstack.css' ]"
+check "templates/assets/idstack.css is non-empty" "[ -s '$IDSTACK_DIR/templates/assets/idstack.css' ]"
+check "templates/report.html.tmpl mentions {{skill_name}}" "grep -q '{{skill_name}}' '$IDSTACK_DIR/templates/report.html.tmpl'"
+check "templates/index.html.tmpl mentions {{project_name}}" "grep -q '{{project_name}}' '$IDSTACK_DIR/templates/index.html.tmpl'"
 for skill in $SKILLS; do
   check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
+
+# Slugify behavior — pinned cases protect the slug derivation rule that the manifest
+# schema and every skill's report-write block depend on.
+check "idstack-slugify: 'Introduction to Biology 101' → introduction-to-biology-101" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Introduction to Biology 101')\" = 'introduction-to-biology-101' ]"
+check "idstack-slugify: empty input → untitled-course" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' '')\" = 'untitled-course' ]"
+check "idstack-slugify: '!!!' → untitled-course" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' '!!!')\" = 'untitled-course' ]"
+check "idstack-slugify: unicode ASCII-folds — 'Géographie I' → geographie-i" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Géographie I')\" = 'geographie-i' ]"
+
+# Skills that write per-skill HTML reports must reference the new export folder pattern
+# and use the slugify helper (not the legacy .idstack/reports/<skill>.md path).
+REPORT_PRODUCING_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review red-team"
+for skill in $REPORT_PRODUCING_SKILLS; do
+  check "$skill SKILL.md.tmpl references .idstack/exports/" "grep -q '\.idstack/exports/' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl calls idstack-slugify" "grep -q 'idstack-slugify' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl copies templates/assets/idstack.css" "grep -q 'templates/assets/idstack.css' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+
+# Pipeline orchestrator must produce index.html under the course folder.
+# Use -E (extended regex) so the `|` alternation works under BSD grep too;
+# in BRE, `\|` is a GNU extension and silently matches nothing on BSD.
+check "pipeline SKILL.md.tmpl produces index.html in exports/<slug>/" "grep -qE 'exports/.*index.html|\$_EXPORT_DIR/index.html' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 
 # Schema-drift regression: skills that share the canonical schema must use the
 # {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy.

@@ -934,7 +934,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v2.5.0 — Codex CLI</span>
+          <span>v3.0.0 — Branded HTML reports</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design, transparently cited.</h1>
         <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier — <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code, OpenAI Codex CLI, and (soon) Gemini.</p>
@@ -1102,12 +1102,12 @@
       <header class="section-header">
         <p class="eyebrow">Output</p>
         <h2 id="output-title">Reports for humans. Manifests for the system.</h2>
-        <p class="lede">Every finding-producing skill writes both — a Markdown report you read and a JSON manifest the next skill in the pipeline reads. Same data, two views.</p>
+        <p class="lede">Every finding-producing skill writes both — a branded HTML report you open in a browser and a JSON manifest the next skill in the pipeline reads. Same data, two views. All per-course artifacts land under one self-describing folder: <code>.idstack/exports/&lt;course-slug&gt;/</code>.</p>
       </header>
 
       <div class="output-pair">
-        <article class="output-panel" aria-label="Sample Markdown report excerpt">
-          <header class="output-header">Markdown · .idstack/reports/learning-objectives.md</header>
+        <article class="output-panel" aria-label="Sample HTML report excerpt">
+          <header class="output-header">HTML · .idstack/exports/&lt;course-slug&gt;/learning-objectives.html</header>
           <div class="output-body">
             <h3>
               Finding obj-3: Three ILOs without assessment
@@ -1134,14 +1134,14 @@
         <span class="key">"consider"</span><span class="punct">:</span> <span class="str">"/idstack:assessment-design"</span>
       <span class="punct">}</span>
     <span class="punct">],</span>
-    <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/reports/learning-objectives.md"</span><span class="punct">,</span>
-    <span class="key">"updated"</span><span class="punct">:</span> <span class="str">"2026-05-09T14:32:18Z"</span>
+    <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/exports/&lt;course-slug&gt;/learning-objectives.html"</span><span class="punct">,</span>
+    <span class="key">"updated"</span><span class="punct">:</span> <span class="str">"2026-05-13T14:32:18Z"</span>
   <span class="punct">}</span>
 <span class="punct">}</span></code></pre>
         </article>
       </div>
 
-      <p class="output-foot">The Markdown is what an instructional designer reads; the JSON is what <code>/idstack:assessment-design</code> reads next. Both files always reflect the most recent run; the timeline at <code>.idstack/timeline.jsonl</code> carries the run history.</p>
+      <p class="output-foot">The HTML report is what an instructional designer reads (or hands to a stakeholder — the folder is self-contained, CSS bundled, zip-friendly); the JSON is what <code>/idstack:assessment-design</code> reads next. Both files always reflect the most recent run; the timeline at <code>.idstack/timeline.jsonl</code> carries the run history. <code>/idstack:pipeline</code> additionally writes an <code>index.html</code> course dashboard at the folder root, linking to every per-skill report.</p>
     </section>
 
     <!-- ────────── Install ────────── -->
@@ -1172,18 +1172,18 @@
     <section class="section" id="whats-new" aria-labelledby="whatsnew-title">
       <header class="section-header">
         <p class="eyebrow">What's new</p>
-        <h2 id="whatsnew-title">v2.5.0 — Native OpenAI Codex CLI support.</h2>
+        <h2 id="whatsnew-title">v3.0.0 — Branded HTML reports + per-course export folder.</h2>
       </header>
 
       <article class="release-card">
-        <p class="release-meta">May 9, 2026 · v2.5.0 · latest</p>
-        <h3>Same skills, second runtime.</h3>
-        <p>Same 11 skills, same evidence base, same dual-output contract — now running natively in OpenAI Codex CLI alongside Claude Code. <code>./setup</code> auto-detects <code>codex</code> on <code>PATH</code>, and a multi-target generator (<code>bin/idstack-gen-skills</code>) emits both flavors from a single source.</p>
-        <p>Skill bodies stay CLI-agnostic via a portable concept-name preamble: <code>AskUserQuestion</code>, <code>Agent</code>, and <code>Skill</code> are defined once and resolved per-CLI at runtime.</p>
+        <p class="release-meta">May 13, 2026 · v3.0.0 · latest</p>
+        <h3>Reports a stakeholder can read.</h3>
+        <p>Every skill that produces findings now writes a branded, self-contained HTML report at <code>.idstack/exports/&lt;course-slug&gt;/&lt;skill&gt;.html</code> instead of Markdown. Every per-course artifact — per-skill reports, the pipeline dashboard, and any LMS packages — lives under one self-describing folder named after the course. Zip the folder to email or hand off; the CSS bundles in.</p>
+        <p><code>/idstack:pipeline</code> writes an <code>index.html</code> dashboard at the folder root with readiness scores (Quality, Accessibility, Red-team confidence), a status table linking to every per-skill report, top cross-cutting issues, and a where-to-start pointer. Opens in any browser — no JavaScript, no network, prints cleanly.</p>
         <p><a href="https://github.com/savvides/idstack/releases" rel="noopener">→ All releases on GitHub</a></p>
       </article>
 
-      <p class="whats-next">Next: Gemini CLI (v2.6), additional specialist skills (content sequencing, media selection, Kirkpatrick evaluation), and push-to-LMS so improvements land back in Canvas without copy-paste. See the <a href="https://github.com/savvides/idstack/blob/main/ROADMAP.md" rel="noopener">roadmap</a>.</p>
+      <p class="whats-next">Next: Gemini CLI, additional specialist skills (content sequencing, media selection, Kirkpatrick evaluation), and push-to-LMS so improvements land back in Canvas without copy-paste. See the <a href="https://github.com/savvides/idstack/blob/main/ROADMAP.md" rel="noopener">roadmap</a>.</p>
     </section>
 
   </main>

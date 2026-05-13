@@ -1,0 +1,160 @@
+<!doctype html>
+<!--
+  idstack — course dashboard skeleton.
+
+  Written by /idstack:pipeline at .idstack/exports/<course-slug>/index.html. Acts
+  as the single entry point for a stakeholder reading the course exports: top-
+  line scores, readiness verdict, links to every per-skill report and LMS
+  artifact present in the folder.
+
+  Same {{placeholder}} convention as report.html.tmpl. The pipeline skill body
+  defines which placeholders are required vs optional.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{project_name}} — idstack course review</title>
+  <link rel="stylesheet" href="assets/idstack.css">
+</head>
+<body class="idstack-report dashboard">
+
+  <header class="report-header">
+    <p class="kicker">idstack · course review</p>
+    <h1>{{project_name}}</h1>
+    <p class="meta">
+      <time datetime="{{iso_timestamp}}">{{human_timestamp}}</time>
+      <span class="sep">·</span>
+      <span class="run-id">{{pipeline_run_status}}</span>
+      <!-- pipeline_run_status: "complete · 8 of 8 skills" | "partial · 4 of 8 skills" -->
+    </p>
+  </header>
+
+  <main>
+
+    <section class="summary">
+      <h2>Across your course</h2>
+      <p>{{cross_cutting_summary_2_to_3_paragraphs}}</p>
+    </section>
+
+    <section class="readiness">
+      <h2>Readiness</h2>
+      <div class="scoreboard">
+        <div class="score verdict-{{quality_verdict}}">
+          <span class="label">Quality</span>
+          <span class="value">{{quality_score}}<span class="unit">/100</span></span>
+        </div>
+        <div class="score verdict-{{accessibility_verdict}}">
+          <span class="label">Accessibility</span>
+          <span class="value">{{accessibility_score}}<span class="unit">/100</span></span>
+        </div>
+        <div class="score verdict-{{red_team_verdict}}">
+          <span class="label">Red-team confidence</span>
+          <span class="value">{{red_team_confidence}}<span class="unit">/100</span></span>
+        </div>
+        <div class="score verdict-{{overall_verdict}}">
+          <span class="label">Verdict</span>
+          <span class="value" style="font-size: 1.05rem;">{{overall_verdict_label}}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="pipeline-status">
+      <h2>Skill reports</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Skill</th>
+            <th>Status</th>
+            <th>Signal</th>
+            <th>Report</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- One row per pipeline skill. status-done if report present, status-pending otherwise. -->
+          <tr>
+            <td><code>/idstack:needs-analysis</code></td>
+            <td class="status-{{needs_analysis_status}}">{{needs_analysis_status_label}}</td>
+            <td>{{needs_analysis_signal}}</td>
+            <td><a href="needs-analysis.html">needs-analysis.html</a></td>
+          </tr>
+          <tr>
+            <td><code>/idstack:learning-objectives</code></td>
+            <td class="status-{{learning_objectives_status}}">{{learning_objectives_status_label}}</td>
+            <td>{{learning_objectives_signal}}</td>
+            <td><a href="learning-objectives.html">learning-objectives.html</a></td>
+          </tr>
+          <tr>
+            <td><code>/idstack:assessment-design</code></td>
+            <td class="status-{{assessment_design_status}}">{{assessment_design_status_label}}</td>
+            <td>{{assessment_design_signal}}</td>
+            <td><a href="assessment-design.html">assessment-design.html</a></td>
+          </tr>
+          <tr>
+            <td><code>/idstack:course-builder</code></td>
+            <td class="status-{{course_builder_status}}">{{course_builder_status_label}}</td>
+            <td>{{course_builder_signal}}</td>
+            <td><a href="course-builder.html">course-builder.html</a></td>
+          </tr>
+          <tr>
+            <td><code>/idstack:course-quality-review</code></td>
+            <td class="status-{{course_quality_review_status}}">{{course_quality_review_status_label}}</td>
+            <td>{{course_quality_review_signal}}</td>
+            <td><a href="course-quality-review.html">course-quality-review.html</a></td>
+          </tr>
+          <tr>
+            <td><code>/idstack:accessibility-review</code></td>
+            <td class="status-{{accessibility_review_status}}">{{accessibility_review_status_label}}</td>
+            <td>{{accessibility_review_signal}}</td>
+            <td><a href="accessibility-review.html">accessibility-review.html</a></td>
+          </tr>
+          <tr>
+            <td><code>/idstack:red-team</code></td>
+            <td class="status-{{red_team_status}}">{{red_team_status_label}}</td>
+            <td>{{red_team_signal}}</td>
+            <td><a href="red-team.html">red-team.html</a></td>
+          </tr>
+          <tr>
+            <td><code>/idstack:course-export</code></td>
+            <td class="status-{{course_export_status}}">{{course_export_status_label}}</td>
+            <td>{{course_export_signal}}</td>
+            <td><a href="course-export.html">course-export.html</a></td>
+          </tr>
+          <!-- Optional course-import row, only when present -->
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cross-cutting">
+      <h2>Top cross-cutting issues</h2>
+      <ol>
+        <li><strong>{{issue_title}}</strong> — appears in {{skill_list}}. <cite class="citation">[{{domain}}-{{n}}] [{{tier}}]</cite><br>{{one_line_why}}</li>
+        <!-- 3–5 items pulled from per-skill reports -->
+      </ol>
+    </section>
+
+    <section class="artifacts">
+      <h2>LMS export artifacts</h2>
+      <!-- Only show files actually present in the folder. If none, write:
+           <p>No LMS packages produced yet. Run <code>/idstack:course-export</code> to package this course.</p>
+      -->
+      <ul>
+        <li><code>course-export.imscc</code> — IMS Common Cartridge (Canvas, Blackboard, Moodle, D2L)</li>
+        <li><code>scorm-export.zip</code> — SCORM 1.2 package</li>
+      </ul>
+    </section>
+
+    <section class="where-to-start">
+      <h2>Where to start</h2>
+      <p>{{where_to_start_paragraph}}</p>
+    </section>
+
+  </main>
+
+  <footer class="report-footer">
+    <p>Generated by <code>/idstack:pipeline</code> · idstack v{{idstack_version}}</p>
+    <p>System-readable manifest: <code>.idstack/project.json</code></p>
+  </footer>
+
+</body>
+</html>

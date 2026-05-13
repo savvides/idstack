@@ -246,7 +246,7 @@ The output is a confidence score (0-100): "How confident are we this course work
 
 If the same Claude session helped build the course, it has sunk-cost bias toward its own design choices. Red team work happens in a freshly-spawned sub-agent that has no prior conversation history — only the manifest and course files, which is the same view a real student gets.
 
-The sub-agent (the **orchestrator**) runs the full audit, writes a structured report to `.idstack/reports/red-team.md`, and returns a short executive summary. The parent (this skill) then offers to apply fixes in-context, since the parent already knows the course structure and is good at editing.
+The sub-agent (the **orchestrator**) runs the full audit, writes a structured HTML report under `.idstack/exports/<course-slug>/red-team.html`, and returns a short executive summary including the report path. The parent (this skill) then offers to apply fixes in-context, since the parent already knows the course structure and is good at editing.
 
 ---
 
@@ -491,51 +491,30 @@ Contextualize:
 
 ## Output
 
-The Markdown report follows the canonical structure documented in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The structure below is the red-team-specific shape; treat the canonical format as the contract for tone and per-finding fields.
-
-Before writing the report, ensure the directory exists:
+The orchestrator emits an HTML report. Follow the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
 
 ```bash
-mkdir -p .idstack/reports
+# Compute the course slug from project_name and prepare the export folder.
+_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/red-team.html"
+mkdir -p "$_EXPORT_DIR/assets"
+cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report path: $_REPORT_PATH"
 ```
 
-Then write `.idstack/reports/red-team.md` with this structure (Markdown):
+Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/red-team.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
-```markdown
-# Red Team Audit Report
-
-**Date:** <ISO-8601 timestamp>
-**Confidence Score:** <0-100>
-**Focus:** <{{FOCUS}}>
-**Mode:** <full | limited>
-
-## Severity Counts
-- Critical: <N>
-- Warning: <N>
-- Info: <N>
-
-## Critical Findings
-For each: dimension, description, affected module/objective/assessment, evidence citation, suggested fix direction.
-
-## Warning Findings
-Same structure.
-
-## Info Findings
-Same structure.
-
-## Per-Dimension Summary
-- Alignment: <pass | warning | critical> — 1-line summary
-- Evidence: <pass | warning | critical> — 1-line summary
-- Cognitive Load: <pass | warning | critical> — 1-line summary
-- Personas: <pass | warning | critical> — 1-line summary
-- Prerequisites: <pass | warning | critical> — 1-line summary
-
-## Top 3 Actions
-The three changes that would most improve the score.
-
-## Limitations
-What this audit could not assess (content-level analysis, actual learner behavior, LMS-specific implementation, etc.).
-```
+- **`{{skill_title}}`:** "Red Team Audit"
+- **`{{skill_name}}`:** `red-team`
+- **`{{mode}}`:** `full` or `limited` (include the optional mode segment in the header `meta` line; you may also append `· focus: {{FOCUS}}`).
+- **Summary:** 2–3 sentences. Lead with the confidence score (0–100) and the band ("High confidence" / "Moderate, needs work" / "Low confidence, significant gaps" / "Course needs redesign"). Include the optional one-line scoreboard: "Confidence XX/100 · Critical N · Warning N · Info N".
+- **Findings** ordered by severity (`sev-critical` → `sev-warning` → `sev-info`) inside a single `<section class="findings">`. Stable ids of the form `<dimension>-<n>` (e.g., `alignment-1`, `cogload-3`) so the parent can reference findings when applying fixes. Each `<article class="finding sev-...">` should include the affected module/objective/assessment in the "What we saw" `<dd>`.
+- **Skill-specific section before Findings** — add a `<section class="dimension-summary">` with `<h2>Per-dimension summary</h2>` and an HTML `<table>` with a row for each dimension (Alignment, Evidence, Cognitive Load, Personas, Prerequisites) showing the per-dimension `pass | warning | critical` score and a one-line summary.
+- **Top recommendations:** the 3 changes that would most improve the score. Reference finding ids.
+- **Limitations:** what this audit could not assess (content-level analysis, actual learner behavior, LMS-specific implementation, etc.).
+- **Next steps:** If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
 
 Each finding **must** have a stable id of the form `<dimension>-<n>` (e.g., `alignment-1`, `cogload-3`) so the parent can reference findings when applying fixes.
 
@@ -545,7 +524,7 @@ After writing the report, return ONLY a short executive summary (≤200 words) t
 - Confidence score and band ("Moderate, needs work")
 - Severity counts
 - Top 1 critical finding (one line)
-- Path: `.idstack/reports/red-team.md`
+- Path: the value of `$_REPORT_PATH` (e.g., `.idstack/exports/<course-slug>/red-team.html`)
 
 Do NOT return the full report inline. The parent will read the file.
 
@@ -554,9 +533,9 @@ Do NOT return the full report inline. The parent will read the file.
 ### Step 3: Surface the summary
 
 After the orchestrator returns:
-1. Read `.idstack/reports/red-team.md` (full report).
+1. Read the HTML report file at the path the orchestrator returned (e.g., `.idstack/exports/<course-slug>/red-team.html`). HTML is fine to Read — extract the content sections by tag.
 2. Show the user the executive summary in your own words: confidence score, severity counts, top critical finding, and the report path.
-3. Mention: "Full report at `.idstack/reports/red-team.md` — open it for the complete finding list."
+3. Mention: "Full HTML report at the path above — open it in any browser for the complete finding list."
 
 ### Step 4: Triage — choose fix scope
 
@@ -590,8 +569,8 @@ If the user pushes back on any specific fix, mark it deferred and continue.
 Save results to `.idstack/project.json` via `bin/idstack-manifest-merge`, which replaces only
 the `red_team_audit` section, preserves every other section verbatim, validates JSON, and
 atomically updates the top-level `updated` timestamp. Pull the score and findings from
-`.idstack/reports/red-team.md` (the report is the source of truth — do not re-derive from
-the orchestrator's return summary, which is lossy).
+the orchestrator's HTML report at `$_REPORT_PATH` (the report is the source of truth — do
+not re-derive from the orchestrator's return summary, which is lossy).
 
 ```bash
 "$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
@@ -599,7 +578,7 @@ the orchestrator's return summary, which is lossy).
   "updated": "<ISO-8601 timestamp>",
   "confidence_score": 0,
   "focus": "Full sweep",
-  "report_path": ".idstack/reports/red-team.md",
+  "report_path": "<set to the orchestrator-returned path — e.g. .idstack/exports/<course-slug>/red-team.html>",
   "findings_summary": {"critical": 0, "warning": 0, "info": 0},
   "dimensions": {
     "alignment":      {"score": "pass|warning|critical", "findings": []},
@@ -634,7 +613,7 @@ canonical schema for reference is in `templates/manifest-schema.md`.
 ### Step 7: Final summary to user
 
 Two sentences:
-- "Confidence: X/100. Applied N fixes (M deferred). Report at `.idstack/reports/red-team.md`."
+- "Confidence: X/100. Applied N fixes (M deferred). Report at `.idstack/exports/<course-slug>/red-team.html`."
 - If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
 
 If the user wants to verify fixes hold, they can re-run `/idstack:red-team` — that's deliberately manual to avoid token costs of automatic re-verification.

@@ -44,17 +44,26 @@ Every skill that produces findings writes **both**:
 
 1. **JSON section** in `.idstack/project.json` — system state for downstream skills, the
    pipeline orchestrator, and `bin/idstack-status`.
-2. **Markdown report** at `.idstack/reports/<skill>.md` — the human view, structured per
-   `templates/report-format.md`. The skill writes the relative path back into its
-   section's `report_path` field.
+2. **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the human view,
+   branded and self-contained. Visual contract: `templates/report.html.tmpl` plus
+   `templates/assets/idstack.css`. Content contract: `templates/report-format.md`. The
+   skill writes the relative path back into its section's `report_path` field.
 
-The Markdown is what the instructional designer reads. The JSON is for the system. The
-two stay in sync — every finding in the report corresponds to a finding in the manifest's
-structured arrays.
+The HTML is what the instructional designer reads (open in any browser; the folder is
+self-contained with CSS bundled). The JSON is for the system. The two stay in sync —
+every finding in the report corresponds to a finding in the manifest's structured arrays.
 
-`pipeline` additionally produces `.idstack/reports/pipeline.md` — the cross-cutting
-aggregate over per-skill reports. Regenerated on every pipeline run (including partial
-runs and explicit re-runs when all skills are already complete).
+`<course-slug>` is derived from the manifest's `project_name` via `bin/idstack-slugify`
+(NFKD-fold, lowercase, kebab-case, ASCII-safe; empty → `untitled-course`). All per-course
+artifacts — every per-skill HTML report, the pipeline `index.html` dashboard, and LMS
+packages (`course-export.imscc`, `scorm-export.zip`) — live under the same
+`.idstack/exports/<course-slug>/` folder, so the deliverable is self-describing when
+zipped, emailed, or handed off.
+
+`pipeline` produces `.idstack/exports/<course-slug>/index.html` — the cross-cutting
+course dashboard with readiness scores, links to every per-skill report, and a where-to-
+start pointer. Regenerated on every pipeline run (including partial runs and explicit
+re-runs when all skills are already complete).
 
 Manifest write rules:
 
@@ -68,9 +77,15 @@ Manifest write rules:
 
 Report write rules:
 
-- Follow `templates/report-format.md` — observation → evidence → why-it-matters →
+- Follow the **visual contract** in `templates/report.html.tmpl` and the **content
+  contract** in `templates/report-format.md` — observation → evidence → why-it-matters →
   suggestion, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on
-  every finding.
+  every finding. Use the CSS hooks the stylesheet styles: `<article class="finding
+  sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge
+  tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`.
+- Every skill that writes a report copies `$_IDSTACK/templates/assets/idstack.css` into
+  `.idstack/exports/<course-slug>/assets/idstack.css` so the folder is self-contained
+  when zipped or moved.
 - Phrase recommendations as suggestions ("consider…"), not directives. idstack is a
   collaborator.
 - Cite every recommendation. Findings without a `[Domain-N] [Tier]` citation belong in
