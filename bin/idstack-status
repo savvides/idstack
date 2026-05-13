@@ -146,20 +146,42 @@ if [ -f "$LEARNINGS" ] && [ "$READINESS_ONLY" -eq 0 ]; then
   [ "$LEARN_COUNT" -gt 0 ] 2>/dev/null && echo "Learnings: $LEARN_COUNT discoveries stored"
 fi
 
-# Reports — list every per-skill markdown report present, plus the pipeline
-# aggregate. The pointer is what the designer reads; the manifest is for the system.
-if [ -d ".idstack/reports" ] && [ "$READINESS_ONLY" -eq 0 ]; then
-  REPORT_COUNT=$(find .idstack/reports -maxdepth 1 -name '*.md' -type f 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$REPORT_COUNT" -gt 0 ] 2>/dev/null; then
-    echo ""
-    echo "Reports (read these for the human view):"
-    if [ -f ".idstack/reports/pipeline.md" ]; then
-      echo "  .idstack/reports/pipeline.md  <-- aggregate, start here"
+# Reports — list every per-skill HTML report present under the course's export
+# folder, plus the index.html dashboard. The dashboard is what the designer
+# opens in a browser; the manifest is for the system.
+if [ -d ".idstack/exports" ] && [ "$READINESS_ONLY" -eq 0 ]; then
+  # Find the course folder. Prefer the slug derived from project_name; fall
+  # back to the only subfolder if exactly one exists (handles legacy folders
+  # left behind after a course rename).
+  COURSE_DIR=""
+  if [ -n "$PROJECT_NAME" ] && [ "$PROJECT_NAME" != "unknown" ] && [ -x "$(dirname "$0")/idstack-slugify" ]; then
+    _SLUG=$("$(dirname "$0")/idstack-slugify" "$PROJECT_NAME" 2>/dev/null || true)
+    [ -n "$_SLUG" ] && [ -d ".idstack/exports/$_SLUG" ] && COURSE_DIR=".idstack/exports/$_SLUG"
+  fi
+  if [ -z "$COURSE_DIR" ]; then
+    SUBDIR_COUNT=$(find .idstack/exports -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$SUBDIR_COUNT" = "1" ]; then
+      COURSE_DIR=$(find .idstack/exports -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)
     fi
-    for f in .idstack/reports/*.md; do
-      [ "$f" = ".idstack/reports/pipeline.md" ] && continue
-      [ -f "$f" ] && echo "  $f"
-    done
+  fi
+
+  if [ -n "$COURSE_DIR" ]; then
+    REPORT_COUNT=$(find "$COURSE_DIR" -maxdepth 1 -name '*.html' -type f 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$REPORT_COUNT" -gt 0 ] 2>/dev/null; then
+      echo ""
+      echo "Reports (open in a browser for the human view):"
+      if [ -f "$COURSE_DIR/index.html" ]; then
+        echo "  $COURSE_DIR/index.html  <-- course dashboard, start here"
+      fi
+      for f in "$COURSE_DIR"/*.html; do
+        [ "$f" = "$COURSE_DIR/index.html" ] && continue
+        [ -f "$f" ] && echo "  $f"
+      done
+      # LMS packages
+      for f in "$COURSE_DIR"/course-export.imscc "$COURSE_DIR"/scorm-export.zip; do
+        [ -f "$f" ] && echo "  $f  <-- LMS package"
+      done
+    fi
   fi
 fi
 
