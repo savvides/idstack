@@ -150,3 +150,15 @@ bin/idstack-status --readiness   # Pre-export readiness check only
 
 No build step for users. No dependencies beyond bash (python3 recommended for full
 features). Skills are plain Markdown files.
+
+## Design system
+
+Always read `DESIGN.md` (repo root) before making any visual or UI decision in this
+project. All font choices, colors, spacing, border radii, motion timing, and aesthetic
+direction are defined there. Do not deviate without explicit user approval and a
+corresponding update to `DESIGN.md`.
+
+The canonical implementations are `templates/assets/idstack.css` (per-skill HTML
+reports + course dashboard) and the inline `<style>` block in `docs/index.html`
+(idstack.org landing page). When `DESIGN.md` changes, both implementations update
+in the same PR.
