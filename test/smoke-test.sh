@@ -93,7 +93,9 @@ for skill in $REPORT_PRODUCING_SKILLS; do
 done
 
 # Pipeline orchestrator must produce index.html under the course folder.
-check "pipeline SKILL.md.tmpl produces index.html in exports/<slug>/" "grep -q 'exports/.*index.html\|\$_EXPORT_DIR/index.html' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+# Use -E (extended regex) so the `|` alternation works under BSD grep too;
+# in BRE, `\|` is a GNU extension and silently matches nothing on BSD.
+check "pipeline SKILL.md.tmpl produces index.html in exports/<slug>/" "grep -qE 'exports/.*index.html|\$_EXPORT_DIR/index.html' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 
 # Schema-drift regression: skills that share the canonical schema must use the
 # {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy.
