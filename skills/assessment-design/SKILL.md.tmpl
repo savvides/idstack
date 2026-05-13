@@ -447,92 +447,32 @@ Consider adding a formative peer review checkpoint to partially address the gap.
 
 ## Generate Report
 
-Before writing the manifest, generate a human-readable report at `.idstack/reports/assessment-design.md` so the designer has a single document to read. The report follows the canonical structure in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding).
+Before writing the manifest, generate an HTML report so the designer has a single document to read. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
 
 ```bash
-mkdir -p .idstack/reports
+# Compute the course slug from project_name and prepare the export folder.
+_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/assessment-design.html"
+mkdir -p "$_EXPORT_DIR/assets"
+cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report path: $_REPORT_PATH"
 ```
 
-Write `.idstack/reports/assessment-design.md` with this structure:
+Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/assessment-design.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
-```markdown
-# Assessment Design Report
+- **`{{skill_title}}`:** "Assessment Design Report"
+- **`{{skill_name}}`:** `assessment-design`
+- **`{{mode}}`:** `Mode 1`, `Mode 2`, or `Mode 3` (include the optional mode segment in the header `meta` line).
+- **Summary:** 2–3 sentences. Lead with the `feedback_quality_score`, the biggest alignment risk, and one headline observation about elaborated feedback or rubric coverage. Include the optional one-line scoreboard ("Feedback quality XX/100").
+- **Skill-specific section before Findings** — add a `<section class="assessment-plan">` with `<h2>Assessment plan</h2>` and an HTML `<table>` (columns: ID, Assessment, Type, Format, Aligned ILOs, Feedback, Points).
+- **Finding ids:** `assess-1`, `rubric-1`, `feedback-1`, etc. Findings come from alignment mismatches, correctness-only feedback at apply+ Bloom's levels, missing rubrics, missing formative checkpoints before high-stakes summatives, and fewer than 5 of Nicol's 7 feedback principles.
+- **Optional skill-specific section** (Mode 3 only, after Top recommendations, before Limitations): `<section class="mode3-audit-notes">` with `<h2>Mode 3 audit notes</h2>` listing the existing assessments audited, the Bloom's level each rubric criterion targets, where the gap is, and which gaps the designer chose to act on vs. defer.
+- **Limitations:** report reads rubric criteria as documented in the manifest, not as enacted in instructor grading; `feedback_quality_score` is a heuristic, not a validated instrument; Mode 3 doesn't propose new assessments.
+- **Next steps:** Run `/idstack:course-builder` to generate the full course content including assessment documents, rubric handouts, and assignment instructions. (For imported courses in gap-fill mode, course-builder will only generate the artifacts flagged as missing here.)
 
-**Course:** [project_name]
-**Generated:** [ISO-8601 timestamp]
-**Skill:** /idstack:assessment-design
-**Mode:** [Mode 1 | Mode 2 | Mode 3 — audit existing]
-
-## Summary
-
-[2–3 sentences. Lead with: feedback_quality_score, biggest alignment risk, and one
-headline observation about elaborated feedback or rubric coverage.]
-
-**Feedback quality score:** XX/100
-
-## Assessment plan
-
-| ID | Assessment | Type | Format | Aligned ILOs | Feedback | Points |
-|----|-----------|------|--------|--------------|----------|--------|
-| A-1 | ... | project | summative | ILO-1, ILO-2 | elaborated | 100 |
-
-## Findings
-
-[One block per finding. Stable ids: `assess-1`, `rubric-1`, `feedback-1`, etc.
-Findings come from: alignment mismatches, correctness-only feedback at apply+ Bloom's
-levels, missing rubrics, missing formative checkpoints before high-stakes summatives,
-fewer than 5 of Nicol's 7 feedback principles.]
-
-### Finding feedback-1: [short title]                        [severity] [tier]
-
-**What we saw.** [Concrete observation: "A-3 (Module 6 Quiz) measures ILO-3 (Evaluate
-business cases) but uses correctness-only feedback."]
-
-**What the evidence says.** [1–2 sentences.] [Assessment-N] [Tier]
-Example: "Elaborated feedback produces substantially larger learning gains than
-correctness-only, especially at higher cognitive levels [Assessment-8] [T1]."
-
-**Why it matters.** [Bridge: students at evaluate-level need to know *why* an answer
-is wrong, not just that it is.]
-
-**Consider.** [Collaborative recommendation: "Add elaborated feedback to A-3 (a 1–2
-sentence rationale per option). The rubric criteria already exist in the manifest;
-the feedback layer can be added without changing item types."]
-
----
-
-[Repeat per finding. In Mode 3 (audit-existing), every finding should reference the
-audited rubric criterion or assessment item and explicitly state the gap, not propose
-a wholesale redesign.]
-
-## Top recommendations
-
-1. **[Action]** [Domain-N] [Tier] — [one-line why]
-2. ...
-
-## Mode 3 audit notes (if applicable)
-
-[Only populated when mode = "Mode 3". Lists the existing assessments audited, the
-Bloom's level each rubric criterion targets, where the gap is, and which gaps the
-designer chose to act on vs. defer.]
-
-## Limitations
-
-[What this report didn't analyze. Examples: report reads rubric criteria as documented
-in the manifest, not as enacted in instructor grading; feedback_quality_score is a
-heuristic not a validated instrument; Mode 3 doesn't propose new assessments.]
-
-## Next steps
-
-Run `/idstack:course-builder` to generate the full course content including
-assessment documents, rubric handouts, and assignment instructions. (For imported
-courses in gap-fill mode, course-builder will only generate the artifacts flagged
-as missing here.)
-
----
-
-*Generated by `/idstack:assessment-design`. The system-readable manifest section is in `.idstack/project.json` under `assessments`.*
-```
+In Mode 3 (audit-existing), every finding should reference the audited rubric criterion or assessment item and explicitly state the gap, not propose a wholesale redesign.
 
 ---
 
@@ -547,7 +487,7 @@ twice (once per section). The `learning_objectives` write needs to update the
 `alignment_matrix.gaps` array as well). Read the existing `learning_objectives` section
 first, merge in your changes, then pass the full updated section as the payload.
 
-The `assessments` payload must include `report_path: ".idstack/reports/assessment-design.md"`.
+The `assessments` payload must include `report_path` set to the value of `$_REPORT_PATH` from the bash block above (e.g., `.idstack/exports/<course-slug>/assessment-design.html`).
 
 ```bash
 # Section 1: assessments
@@ -645,8 +585,9 @@ Write the manifest, then confirm to the user:
 
 "Your assessment designs are saved. Two artifacts:
 
-- **Read this:** `.idstack/reports/assessment-design.md` — the assessment plan, the
-  feedback-quality score with evidence-backed findings, and per-rubric alignment notes.
+- **Read this:** `.idstack/exports/<course-slug>/assessment-design.html` — the assessment
+  plan, the feedback-quality score with evidence-backed findings, and per-rubric
+  alignment notes. Open it in any browser; the folder is self-contained.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Next step:** Run `/course-builder` to generate the full course content including
