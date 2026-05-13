@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>idstack OG card</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #faf8f3;
+      --ink:          #1a1815;
+      --ink-soft:     #3a352e;
+      --ink-muted:    #6b6358;
+      --rule:         #d4cdb9;
+      --accent:       #7a1f1f;
+      --accent-blue:  #1d4a5e;
+      --tier-1: #2f7a4a;
+      --tier-2: #2864a8;
+      --tier-3: #a87726;
+      --tier-4: #b35a1f;
+      --tier-5: #6b6b6b;
+    }
+
+    html, body {
+      width: 1200px;
+      height: 630px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Source Serif 4', Georgia, serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .card {
+      width: 1200px;
+      height: 630px;
+      padding: 64px 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+    }
+    .brand {
+      font-family: 'Public Sans', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--accent);
+    }
+    .brand-beta {
+      font-family: 'Public Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      vertical-align: super;
+      margin-left: 4px;
+    }
+    .kicker {
+      font-family: 'Public Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border-left: 1px solid var(--rule);
+      padding-left: 18px;
+    }
+
+    .hero {
+      max-width: 1040px;
+    }
+    .hero-title {
+      font-family: 'Source Serif 4', serif;
+      font-size: 72px;
+      font-weight: 600;
+      line-height: 1.04;
+      letter-spacing: -0.022em;
+      color: var(--ink);
+      margin-bottom: 28px;
+    }
+    .lede {
+      font-family: 'Source Serif 4', serif;
+      font-size: 26px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--ink-soft);
+      max-width: 960px;
+    }
+    .lede strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .bottom-rail {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--rule);
+      padding-top: 22px;
+    }
+    .tier-legend {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+    }
+    .tier-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .tier-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .tier-dot.t1 { background: var(--tier-1); }
+    .tier-dot.t2 { background: var(--tier-2); }
+    .tier-dot.t3 { background: var(--tier-3); }
+    .tier-dot.t4 { background: var(--tier-4); }
+    .tier-dot.t5 { background: var(--tier-5); }
+    .tier-legend-item strong {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--ink);
+      font-size: 17px;
+      letter-spacing: 0.04em;
+    }
+
+    .url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--ink-muted);
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <header class="brand-row">
+      <span class="brand">idstack<sup class="brand-beta">beta</sup></span>
+      <span class="kicker">Evidence-based · Open source · MIT</span>
+    </header>
+
+    <div class="hero">
+      <h1 class="hero-title">Evidence-based instructional design, transparently cited.</h1>
+      <p class="lede"><strong>108 peer-reviewed studies</strong> across <strong>11 research domains</strong>. Every recommendation tagged with its evidence tier. Runs in Claude Code and OpenAI Codex CLI.</p>
+    </div>
+
+    <div class="bottom-rail">
+      <div class="tier-legend">
+        <span class="tier-legend-item"><span class="tier-dot t1"></span><strong>T1</strong></span>
+        <span class="tier-legend-item"><span class="tier-dot t2"></span><strong>T2</strong></span>
+        <span class="tier-legend-item"><span class="tier-dot t3"></span><strong>T3</strong></span>
+        <span class="tier-legend-item"><span class="tier-dot t4"></span><strong>T4</strong></span>
+        <span class="tier-legend-item"><span class="tier-dot t5"></span><strong>T5</strong></span>
+      </div>
+      <span class="url">idstack.org</span>
+    </div>
+  </div>
+</body>
+</html>
