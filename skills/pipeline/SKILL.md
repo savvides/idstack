@@ -55,14 +55,16 @@ if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   _IDSTACK="$CLAUDE_PLUGIN_ROOT"
 elif [ -n "${IDSTACK_HOME:-}" ]; then
   _IDSTACK="$IDSTACK_HOME"
-elif [ -d "$HOME/.claude/plugins/idstack" ]; then
-  _IDSTACK="$HOME/.claude/plugins/idstack"
 elif [ -d "$HOME/.agents/plugins/idstack" ]; then
   _IDSTACK="$HOME/.agents/plugins/idstack"
 elif [ -d "$HOME/.agents/skills/idstack" ]; then
   _IDSTACK="$HOME/.agents/skills/idstack"
 else
-  _IDSTACK="$HOME/.claude/plugins/idstack"
+  # Claude Code caches marketplace plugins under a versioned dir; take the
+  # highest version present. Empty if idstack was never installed this way —
+  # every "$_IDSTACK/bin/..." call below is guarded, so that degrades quietly.
+  _IDSTACK=$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)
+  _IDSTACK="${_IDSTACK%/}"
 fi
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"

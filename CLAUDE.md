@@ -10,7 +10,7 @@ An open source set of skills for evidence-based instructional design. Runs in Cl
 
 ```bash
 ./setup              # Install idstack — auto-detects Claude Code and codex on PATH
-./setup --local      # Install to .claude/plugins/ in current project only
+./setup --local      # Install at project scope (./.claude/) instead of user scope
 ./setup --codex      # Force-install the Codex bundle even if codex isn't on PATH
 ./setup --no-codex   # Skip the Codex install
 ./test/smoke-test.sh # Verify installation, SKILL.md files, YAML frontmatter, migrations

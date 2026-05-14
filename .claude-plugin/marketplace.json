@@ -1,0 +1,14 @@
+{
+  "name": "idstack",
+  "description": "Evidence-based instructional design pipeline — 11 skills backed by peer-reviewed research across 11 domains.",
+  "owner": {
+    "name": "Philippos Savvides",
+    "url": "https://github.com/savvides"
+  },
+  "plugins": [
+    {
+      "name": "idstack",
+      "source": "./"
+    }
+  ]
+}

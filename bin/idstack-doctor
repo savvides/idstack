@@ -1,29 +1,30 @@
 #!/usr/bin/env bash
-# idstack install doctor — diagnose plugin / legacy-install conflicts.
+# idstack install doctor — diagnose plugin install + legacy conflicts.
 #
 # Answers: "is /idstack:<skill> going to work, and if not, exactly what
 # do I run?" without the user having to know about smoke-test.
 #
 # Usage:
-#   idstack-doctor               # check global install (~/.claude)
-#   idstack-doctor --local       # check local install (./.claude)
+#   idstack-doctor               # check user-scope install
+#   idstack-doctor --local       # also check project-scope legacy paths
 #
 # Exit code: 0 if all green, 1 if any problem is detected.
 
 set -u
 
+# This script lives at <repo>/bin/idstack-doctor — resolve the repo root from
+# its own location so the diagnosis works regardless of where the repo sits.
+IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
+
 SCOPE="global"
-CLAUDE_BASE="$HOME/.claude"
+LEGACY_BASE="$HOME/.claude"
 # Match --local in any position, not just $1. Robust if other flags get added.
 if [[ " ${*:-} " == *" --local "* ]]; then
   SCOPE="local"
-  CLAUDE_BASE="$(pwd)/.claude"
+  LEGACY_BASE="$(pwd)/.claude"
 fi
-
-PLUGINS_DIR="$CLAUDE_BASE/plugins"
-SKILLS_DIR="$CLAUDE_BASE/skills"
-PLUGIN_DIR="$PLUGINS_DIR/idstack"
-LEGACY_DIR="$SKILLS_DIR/idstack"
+LEGACY_SKILLS_DIR="$LEGACY_BASE/skills"
+LEGACY_DIR="$LEGACY_SKILLS_DIR/idstack"
 
 PROBLEMS=0
 note_problem() { PROBLEMS=$((PROBLEMS + 1)); }
@@ -33,67 +34,95 @@ assessment-design course-builder course-export accessibility-review red-team \
 pipeline learn"
 
 echo "idstack doctor ($SCOPE)"
-echo "  claude base: $CLAUDE_BASE"
+echo "  repo: $IDSTACK_DIR"
 echo ""
 
-# 1. Plugin presence
-echo "Plugin install:"
-if [ -e "$PLUGIN_DIR" ]; then
-  if [ -L "$PLUGIN_DIR" ]; then
-    target=$(readlink "$PLUGIN_DIR")
-    resolved=$(cd "$PLUGIN_DIR" 2>/dev/null && pwd -P || echo "BROKEN")
-    echo "  $PLUGIN_DIR -> $target"
-    if [ "$resolved" = "BROKEN" ]; then
-      echo "  PROBLEM: symlink target is missing or unreadable."
-      note_problem
-    fi
-  elif [ -d "$PLUGIN_DIR" ]; then
-    echo "  $PLUGIN_DIR (real directory)"
+# 1. Plugin + marketplace manifests in the repo
+echo "Plugin manifests:"
+plugin_manifest="$IDSTACK_DIR/.claude-plugin/plugin.json"
+market_manifest="$IDSTACK_DIR/.claude-plugin/marketplace.json"
+if [ -f "$plugin_manifest" ]; then
+  version=$(grep -o '"version": *"[^"]*"' "$plugin_manifest" | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
+  if [ -n "$version" ]; then
+    echo "  plugin.json present (version $version)"
   else
-    echo "  PROBLEM: $PLUGIN_DIR exists but is not a directory or symlink."
-    note_problem
-  fi
-  manifest="$PLUGIN_DIR/.claude-plugin/plugin.json"
-  if [ -f "$manifest" ]; then
-    version=$(grep -o '"version": *"[^"]*"' "$manifest" | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
-    if [ -n "$version" ]; then
-      echo "  manifest version: $version"
-    else
-      echo "  PROBLEM: could not parse version from $manifest"
-      note_problem
-    fi
-  else
-    echo "  PROBLEM: missing $manifest"
+    echo "  PROBLEM: could not parse version from $plugin_manifest"
     note_problem
   fi
 else
-  echo "  MISSING: $PLUGIN_DIR"
-  echo "  Run: ./setup   (from the idstack repo)"
+  echo "  PROBLEM: missing $plugin_manifest"
+  note_problem
+fi
+if [ -f "$market_manifest" ]; then
+  echo "  marketplace.json present"
+else
+  echo "  PROBLEM: missing $market_manifest"
+  echo "  Claude Code installs plugins through a marketplace manifest;"
+  echo "  without it, ./setup cannot register the plugin."
   note_problem
 fi
 echo ""
 
-# 2. Skill files reachable
+# 2. Skill files reachable in the repo
 echo "Skill files:"
 missing_skills=0
 for skill in $SKILLS; do
-  if [ ! -f "$PLUGIN_DIR/skills/$skill/SKILL.md" ]; then
+  if [ ! -f "$IDSTACK_DIR/skills/$skill/SKILL.md" ]; then
     echo "  MISSING: skills/$skill/SKILL.md"
     missing_skills=$((missing_skills + 1))
   fi
 done
 if [ "$missing_skills" = "0" ]; then
-  echo "  all 11 SKILL.md files reachable"
+  echo "  all 11 SKILL.md files present"
 else
-  echo "  PROBLEM: $missing_skills SKILL.md file(s) missing under the plugin"
+  echo "  PROBLEM: $missing_skills SKILL.md file(s) missing under skills/"
   note_problem
 fi
 echo ""
 
-# 3. Legacy install detection — the failure mode that surfaced as
-# "Unknown skill: idstack:course-import" / "Unknown skill: course-import".
+# 3. Claude Code install state — the marketplace flow records the plugin in
+# Claude Code's own registry; a bare symlink is not enough on current versions.
+echo "Claude Code install:"
+if command -v claude >/dev/null 2>&1; then
+  plugin_list=$(claude plugin list 2>/dev/null || true)
+  if echo "$plugin_list" | grep -q "idstack@idstack"; then
+    if echo "$plugin_list" | grep -A4 "idstack@idstack" | grep -qi "enabled"; then
+      echo "  idstack@idstack installed and enabled"
+    else
+      echo "  PROBLEM: idstack@idstack is installed but not enabled."
+      echo "  Fix: claude plugin enable idstack@idstack"
+      note_problem
+    fi
+  else
+    echo "  PROBLEM: idstack@idstack is not installed."
+    echo "  Fix: run ./setup from the repo, or manually:"
+    echo "    claude plugin marketplace add \"$IDSTACK_DIR\""
+    echo "    claude plugin install idstack@idstack"
+    note_problem
+  fi
+else
+  echo "  WARNING: 'claude' not found on PATH — cannot verify the install."
+  echo "           Install Claude Code, then run ./setup from the repo."
+fi
+echo ""
+
+# 4. Legacy / vestigial install conflicts.
 echo "Legacy install conflicts:"
 legacy_problem=0
+
+# Vestigial bare symlink from the pre-marketplace setup method. Harmless on
+# current Claude Code (ignored), but worth removing so it stops confusing
+# diagnostics. Informational, not counted as a problem.
+for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
+  vestigial="$plugins_base/idstack"
+  if [ -L "$vestigial" ]; then
+    echo "  NOTE: vestigial symlink at $vestigial (pre-marketplace install method)."
+    echo "        Harmless — ./setup removes it. Or: rm \"$vestigial\""
+  fi
+done
+
+# Pre-v2.0.1.0 dispatcher install — the failure mode that surfaced as
+# "Unknown skill: idstack:course-import" / "Unknown skill: course-import".
 if [ -L "$LEGACY_DIR" ]; then
   target=$(readlink "$LEGACY_DIR")
   echo "  PROBLEM: legacy symlink at $LEGACY_DIR -> $target"
@@ -126,9 +155,9 @@ elif [ -d "$LEGACY_DIR" ]; then
     echo "           Not auto-removed. Inspect and remove manually if unwanted."
   fi
 fi
-# Pre-v2 individual skill symlinks pointing into idstack
+# Pre-v2 individual skill symlinks pointing into idstack.
 for skill in $SKILLS; do
-  link="$SKILLS_DIR/$skill"
+  link="$LEGACY_SKILLS_DIR/$skill"
   if [ -L "$link" ]; then
     t=$(readlink "$link" 2>/dev/null || true)
     if [[ "$t" == *"idstack"* ]]; then
@@ -145,7 +174,7 @@ else
 fi
 echo ""
 
-# 4. Final verdict
+# 5. Final verdict
 if [ "$PROBLEMS" = "0" ]; then
   echo "OK"
   exit 0

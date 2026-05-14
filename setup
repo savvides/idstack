@@ -7,25 +7,25 @@ set -e
 # the new plugin symlink pointing at a deleted target.
 IDSTACK_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
-# Default install: global plugin so /idstack:<skill> is discovered.
-PLUGINS_DIR="$HOME/.claude/plugins"
+# Default install: user-scope plugin so /idstack:<skill> is discovered.
 LEGACY_SKILLS_DIR="$HOME/.claude/skills"
 SCOPE="global"
-CODEX_OPT_IN=""  # "" = auto-detect, "yes" = force-install, "no" = skip
+CLAUDE_SCOPE="user"  # claude plugin scope: user (global) or project (--local)
+CODEX_OPT_IN=""      # "" = auto-detect, "yes" = force-install, "no" = skip
 
 for arg in "$@"; do
   case "$arg" in
     --local)
-      PLUGINS_DIR="$(pwd)/.claude/plugins"
       LEGACY_SKILLS_DIR="$(pwd)/.claude/skills"
       SCOPE="local"
+      CLAUDE_SCOPE="project"
       ;;
     --codex)    CODEX_OPT_IN="yes" ;;
     --no-codex) CODEX_OPT_IN="no" ;;
     --keep-legacy) ;;  # consumed later in the legacy-cleanup branch
     -h|--help)
       echo "Usage: ./setup [--local] [--codex|--no-codex] [--keep-legacy]"
-      echo "  --local       install to ./.claude/plugins/ instead of \$HOME/.claude/plugins/"
+      echo "  --local       install at project scope (./.claude/) instead of user scope"
       echo "  --codex       force Codex install even if codex is not on PATH"
       echo "  --no-codex    skip Codex install even if codex is on PATH"
       echo "  --keep-legacy keep pre-v2 install at \$HOME/.claude/skills/idstack (default: remove)"
@@ -41,20 +41,20 @@ done
 "$IDSTACK_DIR/bin/idstack-gen-skills" --target all >/dev/null
 echo "  regenerated skill files for all targets"
 
-TARGET="$PLUGINS_DIR/idstack"
-
-mkdir -p "$PLUGINS_DIR"
-
 echo "Installing idstack ($SCOPE)..."
 echo "  source: $IDSTACK_DIR"
-echo "  target: $TARGET"
 echo ""
 
-# Verify plugin manifest is present (sanity check; setup should not silently
-# install something Claude Code can't discover).
+# Verify plugin + marketplace manifests are present (sanity check; setup should
+# not silently install something Claude Code can't discover).
 if [ ! -f "$IDSTACK_DIR/.claude-plugin/plugin.json" ]; then
   echo "ERROR: missing .claude-plugin/plugin.json at $IDSTACK_DIR" >&2
   echo "       This setup script expects a plugin layout. Aborting." >&2
+  exit 1
+fi
+if [ ! -f "$IDSTACK_DIR/.claude-plugin/marketplace.json" ]; then
+  echo "ERROR: missing .claude-plugin/marketplace.json at $IDSTACK_DIR" >&2
+  echo "       Claude Code installs plugins through a marketplace manifest. Aborting." >&2
   exit 1
 fi
 
@@ -129,18 +129,36 @@ for skill in $LEGACY_SKILLS; do
   fi
 done
 
-# If $TARGET is the same path as $IDSTACK_DIR (user cloned directly into
-# the plugins dir), there's nothing to symlink — the plugin is already there.
-# Skipping prevents `ln -snf` from creating a broken self-link inside the dir.
-if [ "$TARGET" = "$IDSTACK_DIR" ]; then
-  echo "  in place: $TARGET (no symlink needed)"
-else
-  ln -snf "$IDSTACK_DIR" "$TARGET"
-  echo "  linked: $TARGET -> $IDSTACK_DIR"
-fi
+# Vestigial bare-symlink cleanup. Older setup versions symlinked the repo into
+# ~/.claude/plugins/idstack (or ./.claude/plugins/idstack for --local). Current
+# Claude Code discovers plugins through the marketplace registry, not bare
+# symlinks, so that link is dead weight. Only ever removes a *symlink* — a real
+# directory there might be someone's clone, and is left untouched.
+for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
+  vestigial="$plugins_base/idstack"
+  if [ -L "$vestigial" ]; then
+    rm "$vestigial"
+    echo "  removed vestigial symlink: $vestigial (pre-marketplace install method)"
+  fi
+done
 
-echo ""
-echo "idstack installed (Claude Code)."
+# Claude Code install — register this repo as a single-plugin marketplace, then
+# install from it. Both commands are idempotent, so re-running setup is safe.
+# The marketplace source is this repo's path; `marketplace update` re-reads it,
+# and `plugin update` picks up a newer committed version on `git pull && ./setup`.
+if command -v claude >/dev/null 2>&1; then
+  claude plugin marketplace add "$IDSTACK_DIR"
+  claude plugin marketplace update idstack >/dev/null 2>&1 || true
+  claude plugin install idstack@idstack --scope "$CLAUDE_SCOPE"
+  claude plugin update idstack@idstack --scope "$CLAUDE_SCOPE" >/dev/null 2>&1 || true
+  echo ""
+  echo "idstack installed (Claude Code) — scope: $CLAUDE_SCOPE."
+else
+  echo "  WARNING: 'claude' not found on PATH — skipped Claude Code install."
+  echo "  Install Claude Code, then re-run ./setup — or register it manually:"
+  echo "    claude plugin marketplace add \"$IDSTACK_DIR\""
+  echo "    claude plugin install idstack@idstack --scope $CLAUDE_SCOPE"
+fi
 
 # Optional: Codex CLI install. Auto-detect codex on PATH unless the user passed
 # --codex (force) or --no-codex (skip). The Codex bundle lives under

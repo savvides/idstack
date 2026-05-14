@@ -6,10 +6,9 @@ PASS=0
 FAIL=0
 TOTAL=0
 
-# Default to the plugin install location. Override by passing the parent dir
-# as $1 (e.g., for --local installs into a project's .claude/plugins/).
-PLUGINS_DIR="${1:-$HOME/.claude/plugins}"
-IDSTACK_DIR="$PLUGINS_DIR/idstack"
+# Verify the repo this script lives in (test/smoke-test.sh -> repo root is "..").
+# Override with $1 to point at a different checkout (CI fixtures, etc.).
+IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 
 check() {
   TOTAL=$((TOTAL + 1))
@@ -23,18 +22,17 @@ check() {
 }
 
 echo "idstack smoke test"
-echo "  plugins dir: $PLUGINS_DIR"
 echo "  idstack dir: $IDSTACK_DIR"
 echo ""
 
-# Plugin install can be either a symlink (setup created it) OR a real directory
-# (user cloned directly into the plugin location, the README's recommended flow).
-# Both are valid — Claude Code only cares that SKILL.md files are reachable.
-check "idstack plugin path is reachable" "[ -d '$IDSTACK_DIR' ]"
+check "idstack repo dir is reachable" "[ -d '$IDSTACK_DIR' ]"
 
-# Check plugin manifest
+# Check plugin + marketplace manifests — both are required for the Claude Code
+# marketplace install flow that ./setup drives.
 check "plugin manifest exists" "[ -f '$IDSTACK_DIR/.claude-plugin/plugin.json' ]"
 check "plugin manifest has name" "grep -q '\"name\": \"idstack\"' '$IDSTACK_DIR/.claude-plugin/plugin.json'"
+check "marketplace manifest exists" "[ -f '$IDSTACK_DIR/.claude-plugin/marketplace.json' ]"
+check "marketplace manifest names the idstack plugin" "grep -q '\"name\": \"idstack\"' '$IDSTACK_DIR/.claude-plugin/marketplace.json'"
 
 # Check all skill SKILL.md files are reachable under skills/
 SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
@@ -121,10 +119,10 @@ done
 
 # Legacy-install conflict regression: a pre-v2.0.1.0 dispatcher install at
 # ~/.claude/skills/idstack/ shadows the plugin namespace and breaks
-# /idstack:<skill> resolution. We only check this when the plugins dir is the
-# global default — CI fixtures and --local installs use their own paths and
-# don't share state with the user's home directory.
-if [ "$PLUGINS_DIR" = "$HOME/.claude/plugins" ]; then
+# /idstack:<skill> resolution. We only check this when run without a $1 override
+# — CI fixtures point $1 at their own checkout and don't share state with the
+# user's home directory.
+if [ -z "${1:-}" ]; then
   LEGACY_CHECK_DIR="$HOME/.claude/skills/idstack"
   check "no legacy idstack dispatcher at ~/.claude/skills/idstack/SKILL.md (run: rm -rf $LEGACY_CHECK_DIR)" \
     "[ ! -f '$LEGACY_CHECK_DIR/SKILL.md' ] || ! grep -q '^name: idstack' '$LEGACY_CHECK_DIR/SKILL.md'"
