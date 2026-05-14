@@ -1,5 +1,31 @@
 # Changelog
 
+## v3.2.0.0 (2026-05-14)
+
+### Fixed — Claude Code install uses the plugin marketplace flow
+
+`./setup` registered the plugin by symlinking the repo into `~/.claude/plugins/idstack`. Current Claude Code (2.1.x) does not discover plugins from bare symlinks — it requires marketplace registration — so `claude plugin list` showed nothing and `/idstack:<skill>` never appeared in the slash-command picker. New Claude Code users could not install idstack.
+
+- **`.claude-plugin/marketplace.json`** — new one-plugin marketplace manifest (`source: "./"`), the manifest the install flow requires.
+- **`setup`** — the Claude branch now runs `claude plugin marketplace add` + `claude plugin install --scope <user|project>` (both idempotent; `--local` maps to project scope). Detects a missing `claude` on `PATH` and prints manual steps. Removes the now-vestigial bare symlink from older installs (only ever a symlink, never a real directory). Codex install path unchanged.
+- **`bin/idstack-doctor`** — self-locates the repo and checks the real signal: `claude plugin list` for `idstack@idstack` installed and enabled, plus the plugin and marketplace manifests. Legacy-conflict detection retained.
+- **`templates/preamble.md`** — `$_IDSTACK` detection no longer falls back to the removed bare symlink; the last-ditch branch resolves the marketplace cache directory. All 22 skill files regenerated.
+- **`test/smoke-test.sh`** — `$IDSTACK_DIR` self-locates the repo instead of assuming `~/.claude/plugins/idstack`.
+
+The install command in the README and on idstack.org changes from `git clone … ~/.claude/plugins/idstack && …` to `git clone … && cd idstack && ./setup`.
+
+### Changed — idstack.org SEO and landing-page copy
+
+- **Discoverability.** Added `docs/robots.txt` and `docs/sitemap.xml`; the `SoftwareApplication` JSON-LD gained `softwareVersion`, `datePublished`, and `dateModified`; the `<head>` announces the GitHub releases Atom feed.
+- **Evidence section redesign.** The per-domain bar graph that counted studies is replaced with eleven short descriptions of what each body of evidence claims, plus a compact tier legend.
+- **Branded OG share card.** `docs/og-image.png` regenerated against the current design system; `docs/og-template.html` added as the regenerable source.
+- **Language pass.** Evidence-card copy, four other landing-page lines, and AI-language tells across the repo's other Markdown were rewritten to drop negative parallelism, metaphor stacking, and marketing clichés.
+
+### Notes
+
+- No manifest schema, path, or API changes. Minor version bump: the installer mechanism changed and the landing page got substantive work, but nothing breaks existing course folders or downstream skills.
+- Claude Code copies marketplace plugins into a versioned cache; a re-run of `./setup` refreshes it on a version bump. For live plugin development, use `claude --plugin-dir <repo>`.
+
 ## v3.1.0.0 (2026-05-13)
 
 ### Added — `DESIGN.md` and design-system reconciliation
