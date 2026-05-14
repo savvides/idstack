@@ -982,7 +982,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v3.0.0 — Branded HTML reports</span>
+          <span>v3.2.0.0 — Marketplace install</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design, transparently cited.</h1>
         <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier — <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code, OpenAI Codex CLI, and (soon) Gemini.</p>
@@ -1228,14 +1228,14 @@
     <section class="section" id="whats-new" aria-labelledby="whatsnew-title">
       <header class="section-header">
         <p class="eyebrow">What's new</p>
-        <h2 id="whatsnew-title">v3.0.0 — Branded HTML reports + per-course export folder.</h2>
+        <h2 id="whatsnew-title">v3.2.0.0 — Install through the Claude Code plugin marketplace.</h2>
       </header>
 
       <article class="release-card">
-        <p class="release-meta">May 13, 2026 · v3.0.0 · latest</p>
-        <h3>Reports a stakeholder can read.</h3>
-        <p>Every skill that produces findings now writes a branded, self-contained HTML report at <code>.idstack/exports/&lt;course-slug&gt;/&lt;skill&gt;.html</code> instead of Markdown. Every per-course artifact — per-skill reports, the pipeline dashboard, and any LMS packages — lives under one self-describing folder named after the course. Zip the folder to email or hand off; the CSS bundles in.</p>
-        <p><code>/idstack:pipeline</code> writes an <code>index.html</code> dashboard at the folder root with readiness scores (Quality, Accessibility, Red-team confidence), a status table linking to every per-skill report, top cross-cutting issues, and a where-to-start pointer. Opens in any browser — no JavaScript, no network, prints cleanly.</p>
+        <p class="release-meta">May 14, 2026 · v3.2.0.0 · latest</p>
+        <h3>The install Claude Code actually discovers.</h3>
+        <p><code>./setup</code> now registers idstack as a Claude Code plugin marketplace and installs it from there. Recent Claude Code versions stopped discovering plugins from the bare symlink the old setup created, so <code>/idstack:&lt;skill&gt;</code> commands silently never appeared in the slash picker. If that happened to you, pull the latest and re-run <code>./setup</code>.</p>
+        <p>A fresh install is one line: <code>git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>. Setup is idempotent, auto-detects Claude Code and Codex CLI on your <code>PATH</code>, and clears out installs from older versions. Restart Claude Code afterward — plugins load at session start.</p>
         <p><a href="https://github.com/savvides/idstack/releases" rel="noopener">→ All releases on GitHub</a></p>
       </article>
 
