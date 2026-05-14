@@ -323,15 +323,15 @@ idstack encodes findings from a literature synthesis spanning 11 domains of inst
 |--------|------------------|-------------|
 | Cognitive Load Theory | Very strong (T1) | Manage working memory load through sequencing, segmenting, and integration |
 | Multimedia Learning | Very strong (T1) | Spatial contiguity, signaling, and coherence reliably improve learning |
-| Formative Assessment | Strong (T1) | Elaborated, timely feedback drives learning; correctness-only does not |
+| Formative Assessment | Strong (T1) | Feedback that explains what to do next outperforms correctness-only feedback |
 | Constructive Alignment | Moderate-Strong (T2) | Objectives, activities, and assessments must form a coherent chain |
 | Online Course Quality | Moderate (T2-T4) | QM standards + CoI presence predicts outcomes beyond compliance |
 | Needs Analysis | Weak-Moderate (T3) | Multi-level analysis is necessary but rarely done |
-| Accessibility & UDL | Moderate (T2-T3) | WCAG 2.1 AA compliance is the floor; UDL 3.0 is the ceiling |
+| Accessibility & UDL | Moderate (T2-T3) | WCAG 2.1 AA is the legal baseline; UDL 3.0 extends to design for learner variation |
 
 **Cross-domain principles** (appear in 3+ domains):
 1. Alignment is non-negotiable
-2. Expertise level modulates everything (what helps novices hurts experts)
+2. Expertise level changes which instructional moves help and which backfire
 3. Feedback quality matters more than feedback quantity
 4. Cognitive load is the central design constraint
 5. Context determines model selection (no universal "best" approach)

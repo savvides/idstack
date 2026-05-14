@@ -47,7 +47,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **IDSTACK_HOME** — all paths portable via env var. Foundation for multi-platform support.
 
 ### Bidirectional pipeline + evidence depth (v1.5.1)
-- All 9 skills now write back to the manifest, closing the feedback loop. Downstream skills get richer input from upstream analysis.
+- All 9 skills now write back to the manifest. Downstream skills get richer input from upstream analysis.
 - Score trending: run `/idstack course-quality-review` multiple times and see your score improve over sessions.
 - `/idstack accessibility-review` expanded to full WCAG 2.1 AA coverage with course-specific guidance for videos, quizzes, forums, PDFs, and simulations.
 - `/idstack red-team` all 5 adversarial dimensions now cite their research evidence.

@@ -17,7 +17,7 @@ handle interaction primitives.
 
 ### Skills
 
-11 skills total. The 8-skill linear pipeline is the spine; `course-import` branches in
+11 skills total. The 8-skill linear pipeline is the canonical sequence; `course-import` joins it
 when there is an existing course to start from, and `learn` is a cross-project memory
 utility that runs outside the pipeline.
 

@@ -163,8 +163,8 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 These findings appear across 3+ domains and are treated as design axioms:
 
 1. **Alignment is non-negotiable.** Objectives -> activities -> assessments -> evaluation must form a coherent chain. (Domains 2, 5, 8, 10)
-2. **Expertise level modulates everything.** What helps novices hurts experts. (Domains 4, 6, 7)
-3. **Feedback quality > feedback quantity.** Elaborated, timely, actionable feedback drives learning. (Domains 5, 6, 10)
+2. **Expertise level changes what works.** Scaffolding that helps a novice can backfire on an expert. (Domains 4, 6, 7)
+3. **Feedback quality > feedback quantity.** Elaborated, timely, actionable feedback produces larger learning gains than correctness-only feedback. (Domains 5, 6, 10)
 4. **Cognitive load is the central design constraint.** Every design decision either helps or hurts working memory management. (Domains 4, 6)
 5. **Context determines model selection.** No universal "best" ID model, media format, or differentiation strategy. (Domains 1, 3, 7, 9)
 6. **Evaluation is designed, not appended.** Plan evaluation upfront or you measure satisfaction, not learning. (Domains 3, 8)
