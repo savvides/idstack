@@ -81,6 +81,26 @@ check "no file returns empty" \
 
 echo ""
 
+# --- idstack-learnings-delete ---
+echo "## idstack-learnings-delete"
+
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"operational","key":"to-delete","insight":"delete me","confidence":9}'
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"operational","key":"to-keep","insight":"keep me","confidence":9}'
+
+check "deletes specific learning by key" \
+  "$IDSTACK_DIR/bin/idstack-learnings-delete to-delete && ! grep -q 'to-delete' .idstack/learnings.jsonl && grep -q 'to-keep' .idstack/learnings.jsonl"
+
+check "fails if key not found" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-delete non-existent-key 2>/dev/null"
+
+check "fails on missing arg" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-delete 2>/dev/null"
+
+check "fails if file missing" \
+  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/bin/idstack-learnings-delete to-keep 2>/dev/null"
+
+echo ""
+
 # --- idstack-status ---
 echo "## idstack-status"
 
