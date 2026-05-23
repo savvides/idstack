@@ -81,6 +81,28 @@ check "no file returns empty" \
 
 echo ""
 
+# --- idstack-learnings-promote ---
+echo "## idstack-learnings-promote"
+
+check "fails if no key provided" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-promote 2>/dev/null"
+
+check "fails if no local learnings found" \
+  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/bin/idstack-learnings-promote 'testkey' 2>/dev/null"
+
+# Create fake local learnings
+mkdir -p .idstack
+echo '{"key": "testkey", "insight": "test insight"}' > .idstack/learnings.jsonl
+echo '{"project_name": "Test Project"}' > .idstack/project.json
+
+check "fails if key not found" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-promote 'missingkey' 2>/dev/null"
+
+check "promotes learning and tags it" \
+  "HOME=$TEST_DIR $IDSTACK_DIR/bin/idstack-learnings-promote 'testkey' && [ -f $TEST_DIR/.idstack/global/learnings.jsonl ] && python3 -c \"import json; d=json.loads(open('$TEST_DIR/.idstack/global/learnings.jsonl').readline()); assert d['key']=='testkey' and d['_promoted']==True and d['_source_project']=='Test Project'\""
+
+echo ""
+
 # --- idstack-status ---
 echo "## idstack-status"
 
