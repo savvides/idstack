@@ -60,8 +60,9 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 if [ "$READINESS_ONLY" -eq 0 ]; then
+export PROJECT_NAME
 python3 -c "
-import json, sys
+import json, sys, os
 
 lines = open('$TIMELINE').readlines()[-200:]
 events = []
@@ -75,7 +76,8 @@ if not events:
     print('No valid timeline entries.')
     sys.exit(0)
 
-print(f'Project: $PROJECT_NAME')
+project_name = os.environ.get('PROJECT_NAME', 'unknown')
+print(f'Project: {project_name}')
 print()
 
 # Skills completed
