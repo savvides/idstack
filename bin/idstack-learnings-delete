@@ -17,30 +17,33 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 python3 -c "
-import json, sys
+import json, sys, os
 
 key = sys.argv[1]
 learnings_file = '$LEARNINGS'
 
-lines = open(learnings_file).readlines()
-# Find the last line with this key and remove it
+# Find the last line with this key
 found_idx = -1
-for i, line in enumerate(lines):
-    try:
-        d = json.loads(line)
-        if d.get('key') == key:
-            found_idx = i
-    except:
-        pass
+with open(learnings_file, 'r') as f:
+    for i, line in enumerate(f):
+        try:
+            d = json.loads(line)
+            if d.get('key') == key:
+                found_idx = i
+        except:
+            pass
 
 if found_idx == -1:
     print(f'No learning found with key: {key}', file=sys.stderr)
     sys.exit(1)
 
-# Remove that line
-lines.pop(found_idx)
-with open(learnings_file, 'w') as f:
-    f.writelines(lines)
+# Write to temp file skipping the line to remove
+temp_file = learnings_file + '.tmp'
+with open(learnings_file, 'r') as f_in, open(temp_file, 'w') as f_out:
+    for i, line in enumerate(f_in):
+        if i != found_idx:
+            f_out.write(line)
 
+os.replace(temp_file, learnings_file)
 print(f'Deleted learning: {key}')
 " "$KEY"
