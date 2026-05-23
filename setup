@@ -129,19 +129,6 @@ for skill in $LEGACY_SKILLS; do
   fi
 done
 
-# Vestigial bare-symlink cleanup. Older setup versions symlinked the repo into
-# ~/.claude/plugins/idstack (or ./.claude/plugins/idstack for --local). Current
-# Claude Code discovers plugins through the marketplace registry, not bare
-# symlinks, so that link is dead weight. Only ever removes a *symlink* — a real
-# directory there might be someone's clone, and is left untouched.
-for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
-  vestigial="$plugins_base/idstack"
-  if [ -L "$vestigial" ]; then
-    rm "$vestigial"
-    echo "  removed vestigial symlink: $vestigial (pre-marketplace install method)"
-  fi
-done
-
 # Claude Code install — register this repo as a single-plugin marketplace, then
 # install from it. Both commands are idempotent, so re-running setup is safe.
 # The marketplace source is this repo's path; `marketplace update` re-reads it,
