@@ -40,10 +40,13 @@ if command -v python3 &>/dev/null; then
   python3 -c "
 import json, sys
 
-sources = '$SOURCES'.split()
-type_filter = '$TYPE'
-keyword = '$KEYWORD'.lower()
-limit = $LIMIT
+sources = sys.argv[1].split() if len(sys.argv) > 1 else []
+type_filter = sys.argv[2] if len(sys.argv) > 2 else ''
+keyword = sys.argv[3].lower() if len(sys.argv) > 3 else ''
+try:
+    limit = int(sys.argv[4]) if len(sys.argv) > 4 else 3
+except ValueError:
+    limit = 3
 
 matches = []
 for src in sources:
@@ -69,7 +72,7 @@ for src in sources:
 # Local learnings first (take precedence), then global
 for m in matches[-limit:]:
     print(m)
-" 2>/dev/null || {
+" "$SOURCES" "$TYPE" "$KEYWORD" "$LIMIT" 2>/dev/null || {
   # Fallback: basic grep
   if [ -n "$KEYWORD" ]; then
     cat $SOURCES 2>/dev/null | grep -i "$KEYWORD" | tail -"$LIMIT"
