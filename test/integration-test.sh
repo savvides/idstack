@@ -81,27 +81,6 @@ check "no file returns empty" \
 
 echo ""
 
-# --- idstack-status ---
-echo "## idstack-status"
-
-check "no timeline shows empty state message" \
-  "rm -f .idstack/timeline.jsonl && $IDSTACK_DIR/bin/idstack-status | grep -q 'No course data yet'"
-
-# Rebuild timeline for status tests
-$IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"needs-analysis","event":"completed","training_justified":true}'
-$IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"course-quality-review","event":"completed","score":65,"dimensions":{"teaching_presence":7,"social_presence":3,"cognitive_presence":5}}'
-
-check "shows skills completed checkboxes" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q '\[x\] /needs-analysis'"
-
-check "shows quality trend" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q 'Quality trend: 65'"
-
-check "suggests next skill" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q 'Suggested next'"
-
-echo ""
-
 # --- idstack-gen-skills ---
 echo "## idstack-gen-skills"
 

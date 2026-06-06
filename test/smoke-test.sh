@@ -140,6 +140,11 @@ if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
   check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
 fi
 
+# idstack-status unit tests
+if [ -x "$IDSTACK_DIR/test/test-status.sh" ]; then
+  check "idstack-status unit tests pass" "'$IDSTACK_DIR/test/test-status.sh'"
+fi
+
 # Version classifier (shared by setup + bin/idstack-doctor) must classify
 # multi-digit versions correctly. Pinned to catch the pattern-fragility
 # regression Gemini flagged twice.
