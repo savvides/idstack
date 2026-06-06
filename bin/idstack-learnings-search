@@ -72,19 +72,19 @@ for m in matches[-limit:]:
 " 2>/dev/null || {
   # Fallback: basic grep
   if [ -n "$KEYWORD" ]; then
-    cat $SOURCES 2>/dev/null | grep -i "$KEYWORD" | tail -"$LIMIT"
+    cat $SOURCES 2>/dev/null | grep -i -- "$KEYWORD" | tail -n "$LIMIT"
   elif [ -n "$TYPE" ]; then
-    cat $SOURCES 2>/dev/null | grep "\"type\":\"$TYPE\"" | tail -"$LIMIT"
+    cat $SOURCES 2>/dev/null | grep -- "\"type\":\"$TYPE\"" | tail -n "$LIMIT"
   else
-    cat $SOURCES 2>/dev/null | tail -"$LIMIT"
+    cat $SOURCES 2>/dev/null | tail -n "$LIMIT"
   fi
 }
 else
   if [ -n "$KEYWORD" ]; then
-    cat $SOURCES 2>/dev/null | grep -i "$KEYWORD" | tail -"$LIMIT"
+    cat $SOURCES 2>/dev/null | grep -i -- "$KEYWORD" | tail -n "$LIMIT"
   elif [ -n "$TYPE" ]; then
-    cat $SOURCES 2>/dev/null | grep "\"type\":\"$TYPE\"" | tail -"$LIMIT"
+    cat $SOURCES 2>/dev/null | grep -- "\"type\":\"$TYPE\"" | tail -n "$LIMIT"
   else
-    cat $SOURCES 2>/dev/null | tail -"$LIMIT"
+    cat $SOURCES 2>/dev/null | tail -n "$LIMIT"
   fi
 fi
