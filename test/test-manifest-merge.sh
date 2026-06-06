@@ -136,5 +136,25 @@ set -e
 assert "manifest with string root exits 2" "[ $EC -eq 2 ]"
 
 echo ""
+
+# --- Test 13: payload with non-dict root (list) rejected with exit 1 ---
+seed_manifest
+echo '[]' > "$WORK/payload.json"
+set +e
+"$MERGE" --section red_team_audit --payload "$WORK/payload.json" --manifest "$WORK/project.json" --quiet 2>/dev/null
+EC=$?
+set -e
+assert "payload with list root exits 1" "[ $EC -eq 1 ]"
+
+# --- Test 14: payload with non-dict root (string) rejected with exit 1 ---
+seed_manifest
+echo '"a string"' > "$WORK/payload.json"
+set +e
+"$MERGE" --section red_team_audit --payload "$WORK/payload.json" --manifest "$WORK/project.json" --quiet 2>/dev/null
+EC=$?
+set -e
+assert "payload with string root exits 1" "[ $EC -eq 1 ]"
+
+echo ""
 echo "manifest-merge: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
