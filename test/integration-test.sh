@@ -115,5 +115,34 @@ check "regenerate fixes staleness" \
   "$IDSTACK_DIR/bin/idstack-gen-skills && $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
 
 echo ""
+# --- idstack-learnings-promote ---
+echo "## idstack-learnings-promote"
+
+FAKE_HOME="$TEST_DIR/fake_home"
+mkdir -p "$FAKE_HOME"
+
+check "fails if no key provided" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-promote"
+
+check "fails if no local learnings found" \
+  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/bin/idstack-learnings-promote my-key"
+
+mkdir -p .idstack
+echo '{"skill":"test-skill","key":"my-key","type":"pattern","insight":"hello"}' > .idstack/learnings.jsonl
+
+check "fails if key not found" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-promote wrong-key"
+
+check "promotes learning with unknown project" \
+  "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/bin/idstack-learnings-promote my-key && [ -f \"$FAKE_HOME/.idstack/global/learnings.jsonl\" ] && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'unknown'\""
+
+echo '{"project_name":"my-test-proj"}' > .idstack/project.json
+echo '{"skill":"test-skill","key":"key2","type":"pattern","insight":"hello2"}' >> .idstack/learnings.jsonl
+
+check "promotes learning with known project" \
+  "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/bin/idstack-learnings-promote key2 && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'my-test-proj'\""
+
+echo ""
+
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
