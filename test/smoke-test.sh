@@ -166,39 +166,9 @@ done
 # Check preamble uses CLAUDE_PLUGIN_ROOT
 check "preamble supports CLAUDE_PLUGIN_ROOT" "grep -q 'CLAUDE_PLUGIN_ROOT' '$IDSTACK_DIR/templates/preamble.md'"
 
-# Migration tests
-FIXTURE_DIR="$IDSTACK_DIR/test/fixtures"
-if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
-  # Test v1.0 → v1.4 chained migration
-  TMPDIR_MIG=$(mktemp -d)
-  cp "$FIXTURE_DIR/manifest-v1.0.json" "$TMPDIR_MIG/project.json"
-  "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
-  check "v1.0→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
-  check "v1.0→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'preferences' in d\""
-  check "v1.0→v1.4: preserves project_name" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['project_name']=='Test Course v1.0'\""
-  rm -rf "$TMPDIR_MIG"
-
-  # Test v1.2 → v1.4 migration
-  TMPDIR_MIG=$(mktemp -d)
-  cp "$FIXTURE_DIR/manifest-v1.2.json" "$TMPDIR_MIG/project.json"
-  "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
-  check "v1.2→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
-  check "v1.2→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['preferences']['verbosity']=='normal'\""
-  check "v1.2→v1.4: idempotent" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\" && '$IDSTACK_DIR/bin/idstack-migrate' '$TMPDIR_MIG/project.json' >/dev/null 2>&1 && python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
-  rm -rf "$TMPDIR_MIG"
-
-  # Test v1.3-drifted → v1.4 cleanup migration (renames red_team_audit.summary.*_count
-  # to red_team_audit.findings_summary.*, moves _import_quality_flags into
-  # import_metadata.quality_flag_details).
-  if [ -f "$FIXTURE_DIR/manifest-v1.3-drifted.json" ]; then
-    TMPDIR_MIG=$(mktemp -d)
-    cp "$FIXTURE_DIR/manifest-v1.3-drifted.json" "$TMPDIR_MIG/project.json"
-    "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
-    check "v1.3-drifted→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
-    check "v1.3-drifted→v1.4: red_team summary renamed to findings_summary" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); rt=d['red_team_audit']; assert 'summary' not in rt; assert rt['findings_summary']=={'critical': 3, 'warning': 5, 'info': 2}\""
-    check "v1.3-drifted→v1.4: _import_quality_flags moved into import_metadata" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert '_import_quality_flags' not in d; details=d['import_metadata']['quality_flag_details']; assert len(details)==2 and details[0]['key']=='orphan_module_8'\""
-    rm -rf "$TMPDIR_MIG"
-  fi
+# Migration tests (delegated to unit test suite)
+if [ -x "$IDSTACK_DIR/test/test-migrate.sh" ]; then
+  check "idstack-migrate unit tests pass" "'$IDSTACK_DIR/test/test-migrate.sh'"
 fi
 
 # Template freshness check (covers all targets: claude + codex)
