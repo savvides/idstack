@@ -36,6 +36,16 @@ fi
 
 [ -z "$SOURCES" ] && exit 0
 
+fallback_search() {
+  if [ -n "$KEYWORD" ]; then
+    cat $SOURCES 2>/dev/null | grep -i "$KEYWORD" | tail -"$LIMIT"
+  elif [ -n "$TYPE" ]; then
+    cat $SOURCES 2>/dev/null | grep "\"type\":\"$TYPE\"" | tail -"$LIMIT"
+  else
+    cat $SOURCES 2>/dev/null | tail -"$LIMIT"
+  fi
+}
+
 if command -v python3 &>/dev/null; then
   python3 -c "
 import json, sys
@@ -71,20 +81,8 @@ for m in matches[-limit:]:
     print(m)
 " 2>/dev/null || {
   # Fallback: basic grep
-  if [ -n "$KEYWORD" ]; then
-    cat $SOURCES 2>/dev/null | grep -i "$KEYWORD" | tail -"$LIMIT"
-  elif [ -n "$TYPE" ]; then
-    cat $SOURCES 2>/dev/null | grep "\"type\":\"$TYPE\"" | tail -"$LIMIT"
-  else
-    cat $SOURCES 2>/dev/null | tail -"$LIMIT"
-  fi
+  fallback_search
 }
 else
-  if [ -n "$KEYWORD" ]; then
-    cat $SOURCES 2>/dev/null | grep -i "$KEYWORD" | tail -"$LIMIT"
-  elif [ -n "$TYPE" ]; then
-    cat $SOURCES 2>/dev/null | grep "\"type\":\"$TYPE\"" | tail -"$LIMIT"
-  else
-    cat $SOURCES 2>/dev/null | tail -"$LIMIT"
-  fi
+  fallback_search
 fi
