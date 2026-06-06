@@ -87,7 +87,7 @@ def load_payload(payload_arg):
     if payload_arg == "-":
         try:
             text = sys.stdin.read()
-        except Exception as exc:
+        except OSError as exc:
             die(6, f"failed to read payload from stdin: {exc}")
     else:
         if not os.path.isfile(payload_arg):
@@ -95,7 +95,7 @@ def load_payload(payload_arg):
         try:
             with open(payload_arg, "r", encoding="utf-8") as handle:
                 text = handle.read()
-        except Exception as exc:
+        except OSError as exc:
             die(6, f"failed to read payload file {payload_arg!r}: {exc}")
     try:
         return json.loads(text)
@@ -109,7 +109,7 @@ def load_manifest(manifest_path):
     try:
         with open(manifest_path, "r", encoding="utf-8") as handle:
             text = handle.read()
-    except Exception as exc:
+    except OSError as exc:
         die(6, f"failed to read manifest {manifest_path!r}: {exc}")
     try:
         data = json.loads(text)
@@ -130,7 +130,7 @@ def write_atomic(manifest_path, data):
             json.dump(data, handle, indent=2)
             handle.write("\n")
         os.replace(tmp_path, manifest_path)
-    except Exception as exc:
+    except OSError as exc:
         try:
             os.unlink(tmp_path)
         except OSError:
