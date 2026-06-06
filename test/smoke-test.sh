@@ -147,6 +147,11 @@ if [ -x "$IDSTACK_DIR/test/test-version-classifier.sh" ]; then
   check "version-classifier unit tests pass" "'$IDSTACK_DIR/test/test-version-classifier.sh'"
 fi
 
+# Doctor script must be testable in mocked environments.
+if [ -x "$IDSTACK_DIR/test/test-doctor.sh" ]; then
+  check "doctor unit tests pass" "'$IDSTACK_DIR/test/test-doctor.sh'"
+fi
+
 # Check generated files have auto-generated header
 for skill in $SKILLS; do
   check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
