@@ -2,24 +2,11 @@
 # idstack smoke test — verifies installation is correct
 set -e
 
-PASS=0
-FAIL=0
-TOTAL=0
+. "$(dirname "$0")/test_helper.sh"
 
 # Verify the repo this script lives in (test/smoke-test.sh -> repo root is "..").
 # Override with $1 to point at a different checkout (CI fixtures, etc.).
 IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
-
-check() {
-  TOTAL=$((TOTAL + 1))
-  if eval "$2" 2>/dev/null; then
-    echo "  PASS: $1"
-    PASS=$((PASS + 1))
-  else
-    echo "  FAIL: $1"
-    FAIL=$((FAIL + 1))
-  fi
-}
 
 echo "idstack smoke test"
 echo "  idstack dir: $IDSTACK_DIR"

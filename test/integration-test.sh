@@ -2,24 +2,11 @@
 # idstack integration tests — behavioral tests for bin scripts
 set -e
 
-PASS=0
-FAIL=0
-TOTAL=0
+. "$(dirname "$0")/test_helper.sh"
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TEST_DIR=$(mktemp -d)
 trap "rm -rf $TEST_DIR" EXIT
-
-check() {
-  TOTAL=$((TOTAL + 1))
-  if eval "$2" 2>/dev/null; then
-    echo "  PASS: $1"
-    PASS=$((PASS + 1))
-  else
-    echo "  FAIL: $1"
-    FAIL=$((FAIL + 1))
-  fi
-}
 
 echo "idstack integration tests"
 echo "  test dir: $TEST_DIR"
