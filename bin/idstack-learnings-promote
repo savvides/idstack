@@ -30,11 +30,14 @@ global_file = '$GLOBAL_LEARNINGS'
 
 # Find matching learning
 match = None
-for line in open(local_file):
+for line in reversed(list(open(local_file))):
+    if key not in line:
+        continue
     try:
         d = json.loads(line)
         if d.get('key') == key:
             match = d
+            break
     except:
         pass
 
