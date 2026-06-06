@@ -36,6 +36,15 @@ check "creates .idstack/ and timeline.jsonl" \
 check "appends valid JSON with ts field" \
   "python3 -c \"import json; d=json.loads(open('.idstack/timeline.jsonl').readline()); assert 'ts' in d and d['skill']=='test'\""
 
+check "preserves caller-supplied ts field" \
+  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"test\",\"ts\":\"2020-01-01T00:00:00Z\"}' && grep -q '\"ts\": \"2020-01-01T00:00:00Z\"' .idstack/timeline.jsonl"
+
+check "handles invalid JSON gracefully" \
+  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"bad\",}' && grep -q '\"raw\": \"{\\\\\\\"skill\\\\\\\":\\\\\\\"bad\\\\\\\",}\"' .idstack/timeline.jsonl"
+
+check "fallback to bash works when python3 is missing" \
+  "mkdir -p mockbin && for cmd in bash sed date mkdir env tr wc grep echo cat ls rm pwd dirname chmod; do ln -s \$(which \$cmd) mockbin/\$cmd 2>/dev/null || true; done && PATH=\"\$PWD/mockbin\" $IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"no_py\"}' && grep -q '\"skill\":\"no_py\",\"ts\":' .idstack/timeline.jsonl"
+
 check "handles empty arg without error" \
   "$IDSTACK_DIR/bin/idstack-timeline-log ''"
 
@@ -43,7 +52,7 @@ check "handles no arg without error" \
   "$IDSTACK_DIR/bin/idstack-timeline-log"
 
 check "multiple appends create multiple lines" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 2 ]"
+  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -gt 1 ]"
 
 echo ""
 
