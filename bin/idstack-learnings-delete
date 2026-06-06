@@ -16,20 +16,22 @@ if ! command -v python3 &>/dev/null; then
   exit 1
 fi
 
+export LEARNINGS
 python3 -c "
-import json, sys
+import json, sys, os
 
 key = sys.argv[1]
-learnings_file = '$LEARNINGS'
+learnings_file = os.environ.get('LEARNINGS')
 
 lines = open(learnings_file).readlines()
 # Find the last line with this key and remove it
 found_idx = -1
-for i, line in enumerate(lines):
+for i, line in reversed(list(enumerate(lines))):
     try:
         d = json.loads(line)
         if d.get('key') == key:
             found_idx = i
+            break
     except:
         pass
 
