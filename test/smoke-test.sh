@@ -140,6 +140,11 @@ if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
   check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
 fi
 
+# Gen-skills tool unit tests must pass.
+if [ -x "$IDSTACK_DIR/test/test-gen-skills.sh" ]; then
+  check "gen-skills unit tests pass" "'$IDSTACK_DIR/test/test-gen-skills.sh'"
+fi
+
 # Version classifier (shared by setup + bin/idstack-doctor) must classify
 # multi-digit versions correctly. Pinned to catch the pattern-fragility
 # regression Gemini flagged twice.
