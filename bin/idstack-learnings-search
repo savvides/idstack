@@ -49,20 +49,21 @@ matches = []
 for src in sources:
     is_global = 'global' in src
     try:
-        for line in open(src):
-            try:
-                d = json.loads(line)
-                if type_filter and d.get('type') != type_filter:
-                    continue
-                if keyword:
-                    insight = (d.get('insight', '') + ' ' + d.get('key', '')).lower()
-                    if keyword not in insight:
+        with open(src) as f:
+            for line in f:
+                try:
+                    d = json.loads(line)
+                    if type_filter and d.get('type') != type_filter:
                         continue
-                if is_global:
-                    d['_source'] = 'global'
-                matches.append(json.dumps(d))
-            except Exception:
-                pass
+                    if keyword:
+                        insight = (d.get('insight', '') + ' ' + d.get('key', '')).lower()
+                        if keyword not in insight:
+                            continue
+                    if is_global:
+                        d['_source'] = 'global'
+                    matches.append(json.dumps(d))
+                except Exception:
+                    pass
     except Exception:
         pass
 
