@@ -135,14 +135,12 @@ elif [ -d "$LEGACY_DIR" ]; then
   fi
   if [ -f "$LEGACY_DIR/VERSION" ]; then
     v=$(tr -d '[:space:]' < "$LEGACY_DIR/VERSION")
-    # Two arms: explicitly skip modern/future versions first, then flag the
-    # legacy ones. Mirrors setup. Patterns avoid literal dots and single-digit
-    # ranges so multi-digit components (2.0.10.0, 2.10.0.0, 20.x, 100.0.0,
-    # 200.0.0) work. Covered by test/test-version-classifier.sh.
-    case "$v" in
-      2.0.[1-9]*|2.[1-9]*|[3-9]*|[1-9][0-9]*) ;;
-      0.*|1.*|2.0.0.*|2.0.0) signature="${signature:+$signature, }VERSION=$v" ;;
-    esac
+    # Uses shared classifier to identify pre-v2.0.1.0 versions. Mirrors setup.
+    # Covered by test/test-version-classifier.sh.
+    class=$("$IDSTACK_DIR/bin/idstack-version-classifier" "$v")
+    if [ "$class" = "legacy" ]; then
+      signature="${signature:+$signature, }VERSION=$v"
+    fi
   fi
   if [ -n "$signature" ]; then
     echo "  PROBLEM: pre-v2.0.1.0 install at $LEGACY_DIR ($signature)"

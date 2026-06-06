@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Classifies an idstack version string as "skip" (modern), "legacy", or "unknown".
+# Used by setup, bin/idstack-doctor, and test/test-version-classifier.sh.
+
+case "${1:-}" in
+  2.0.[1-9]*|2.[1-9]*|[3-9]*|[1-9][0-9]*) echo "skip" ;;
+  0.*|1.*|2.0.0.*|2.0.0) echo "legacy" ;;
+  *) echo "unknown" ;;
+esac
