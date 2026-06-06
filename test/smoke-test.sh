@@ -70,17 +70,6 @@ for skill in $SKILLS; do
   check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
 
-# Slugify behavior — pinned cases protect the slug derivation rule that the manifest
-# schema and every skill's report-write block depend on.
-check "idstack-slugify: 'Introduction to Biology 101' → introduction-to-biology-101" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Introduction to Biology 101')\" = 'introduction-to-biology-101' ]"
-check "idstack-slugify: empty input → untitled-course" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' '')\" = 'untitled-course' ]"
-check "idstack-slugify: '!!!' → untitled-course" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' '!!!')\" = 'untitled-course' ]"
-check "idstack-slugify: unicode ASCII-folds — 'Géographie I' → geographie-i" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Géographie I')\" = 'geographie-i' ]"
-
 # Skills that write per-skill HTML reports must reference the new export folder pattern
 # and use the slugify helper (not the legacy .idstack/reports/<skill>.md path).
 REPORT_PRODUCING_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review red-team"
@@ -145,6 +134,11 @@ fi
 # regression Gemini flagged twice.
 if [ -x "$IDSTACK_DIR/test/test-version-classifier.sh" ]; then
   check "version-classifier unit tests pass" "'$IDSTACK_DIR/test/test-version-classifier.sh'"
+fi
+
+# Slugify (derives filesystem-safe slug from a string)
+if [ -x "$IDSTACK_DIR/test/test-slugify.sh" ]; then
+  check "slugify unit tests pass" "'$IDSTACK_DIR/test/test-slugify.sh'"
 fi
 
 # Check generated files have auto-generated header
