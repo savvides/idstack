@@ -85,7 +85,7 @@ Restrained. Two-color annotation set (rust + prussian blue) for primary marks; t
 | warning | `#7a4f0c` | `#fbf0d9` | Likely problem worth addressing. |
 | info | `#344566` | `#e7eaf1` | Worth knowing, not blocking. |
 
-**Dark mode strategy:** Auto via `prefers-color-scheme: dark` (the report stylesheet) and explicit `data-theme="dark"` toggle (landing page). Surfaces redesigned (not just inverted): inky-dark background `#16140f`, warm-cream text `#ebe7dd`, terracotta accent `#d97461` replaces oxblood (oxblood loses too much chroma when inverted). All tier and severity tokens redefined with 10–20% saturation drop and adjusted backgrounds. The light theme is canonical; dark mode is a courtesy. The landing page is now dark-only (not a toggle), with its own indigo palette (`#0a0a0f` background, `#6366f1`→`#a855f7` gradient accents), distinct from the report stylesheet dark mode described here.
+**Dark mode strategy:** Auto via `prefers-color-scheme: dark` (the report stylesheet). Surfaces redesigned (not just inverted): inky-dark background `#16140f`, warm-cream text `#ebe7dd`, terracotta accent `#d97461` replaces oxblood (oxblood loses too much chroma when inverted). All tier and severity tokens redefined with 10–20% saturation drop and adjusted backgrounds. The light theme is canonical; dark mode is a courtesy. The landing page is now dark-only (not a toggle), with its own indigo palette (`#0a0a0f` background, `#6366f1`→`#a855f7` gradient accents), distinct from the report stylesheet dark mode described here.
 
 ## Spacing
 

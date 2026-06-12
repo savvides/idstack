@@ -88,6 +88,19 @@ check "landing: no legacy plugins-dir install string" "! grep -q '.claude/plugin
 check "landing: current version v3.2.0.0 present" "grep -q 'v3.2.0.0' '$LANDING'"
 check "landing: structured-data softwareVersion 3.2.0" "grep -qF '\"softwareVersion\": \"3.2.0\"' '$LANDING'"
 check "landing: Output section present" "grep -q 'id=.output.' '$LANDING'"
+# Gradient-clipped text (hero h1, eyebrow) must keep a solid color fallback so it
+# stays visible where `background-clip: text` is unsupported. Guards against a bare
+# `color: transparent` (the leading [^-] excludes `-webkit-text-fill-color: transparent`).
+check "landing: gradient text keeps a color fallback (no bare 'color: transparent')" \
+  "! grep -Eq '[^-]color: *transparent' '$LANDING'"
+
+# Open Graph card template (docs/og-template.html) - same gradient-text fallback rule.
+OG_TEMPLATE="$IDSTACK_DIR/docs/og-template.html"
+check "og-template.html exists" "[ -f '$OG_TEMPLATE' ]"
+check "og-template: gradient text keeps a color fallback (no bare 'color: transparent')" \
+  "! grep -Eq '[^-]color: *transparent' '$OG_TEMPLATE'"
+check "og-template: gradient text uses -webkit-text-fill-color" \
+  "grep -q 'text-fill-color: transparent' '$OG_TEMPLATE'"
 
 # Slugify behavior — pinned cases protect the slug derivation rule that the manifest
 # schema and every skill's report-write block depend on.
