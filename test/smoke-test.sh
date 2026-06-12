@@ -70,6 +70,25 @@ for skill in $SKILLS; do
   check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
 
+# Landing page (docs/index.html) - dark-only revert invariants. Guards against
+# regressions: losing the dark theme, the toggle creeping back, or the stale
+# bare-clone install string returning (see dea7ebc).
+LANDING="$IDSTACK_DIR/docs/index.html"
+check "landing/index.html exists" "[ -f '$LANDING' ]"
+check "landing: dark background (#0a0a0f)" "grep -q -- '--bg: *#0a0a0f' '$LANDING'"
+check "landing: dark-only, no theme toggle" "! grep -q 'theme-toggle' '$LANDING'"
+check "landing: no data-theme attribute or blocks" "! grep -q 'data-theme' '$LANDING'"
+check "landing: no Google Fonts dependency" "! grep -q 'fonts.googleapis' '$LANDING'"
+check "landing: indigo gradient present" "grep -q 'linear-gradient' '$LANDING'"
+# In HTML the '&&' is entity-escaped as '&amp;&amp;', so don't grep the literal '&&'.
+# Assert the repo clone + 'cd idstack' (current marketplace form); the legacy
+# ~/.claude/plugins/idstack form is caught by the next check. Escaping-independent.
+check "landing: marketplace install command present" "grep -q 'github.com/savvides/idstack.git' '$LANDING' && grep -q 'cd idstack' '$LANDING'"
+check "landing: no legacy plugins-dir install string" "! grep -q '.claude/plugins/idstack' '$LANDING'"
+check "landing: current version v3.2.0.0 present" "grep -q 'v3.2.0.0' '$LANDING'"
+check "landing: structured-data softwareVersion 3.2.0" "grep -qF '\"softwareVersion\": \"3.2.0\"' '$LANDING'"
+check "landing: Output section present" "grep -q 'id=.output.' '$LANDING'"
+
 # Slugify behavior — pinned cases protect the slug derivation rule that the manifest
 # schema and every skill's report-write block depend on.
 check "idstack-slugify: 'Introduction to Biology 101' → introduction-to-biology-101" \

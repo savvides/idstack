@@ -3,25 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <title>idstack OG card</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:           #faf8f3;
-      --ink:          #1a1815;
-      --ink-soft:     #3a352e;
-      --ink-muted:    #6b6358;
-      --rule:         #d4cdb9;
-      --accent:       #7a1f1f;
-      --accent-blue:  #1d4a5e;
-      --tier-1: #2f7a4a;
-      --tier-2: #2864a8;
-      --tier-3: #a87726;
-      --tier-4: #b35a1f;
-      --tier-5: #6b6b6b;
+      --bg:           #0a0a0f;
+      --ink:          #e4e4e7;
+      --ink-soft:     #c4c4cc;
+      --ink-muted:    #8b8b96;
+      --rule:         #2a2a3e;
+      --accent:       #818cf8;
+      --accent-blue:  #60a5fa;
+      --tier-1: #4ade80;
+      --tier-2: #60a5fa;
+      --tier-3: #fbbf24;
+      --tier-4: #fb923c;
+      --tier-5: #a1a1aa;
     }
 
     html, body {
@@ -29,7 +26,7 @@
       height: 630px;
       background: var(--bg);
       color: var(--ink);
-      font-family: 'Source Serif 4', Georgia, serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -51,14 +48,17 @@
       gap: 18px;
     }
     .brand {
-      font-family: 'Public Sans', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 28px;
       font-weight: 700;
       letter-spacing: 0.01em;
-      color: var(--accent);
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
     .brand-beta {
-      font-family: 'Public Sans', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.18em;
@@ -68,12 +68,12 @@
       margin-left: 4px;
     }
     .kicker {
-      font-family: 'Public Sans', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 13px;
       font-weight: 600;
       letter-spacing: 0.22em;
       text-transform: uppercase;
-      color: var(--accent);
+      color: #818cf8;
       border-left: 1px solid var(--rule);
       padding-left: 18px;
     }
@@ -82,16 +82,19 @@
       max-width: 1040px;
     }
     .hero-title {
-      font-family: 'Source Serif 4', serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 72px;
       font-weight: 600;
       line-height: 1.04;
       letter-spacing: -0.022em;
-      color: var(--ink);
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
       margin-bottom: 28px;
     }
     .lede {
-      font-family: 'Source Serif 4', serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 26px;
       font-weight: 400;
       line-height: 1.4;
@@ -132,7 +135,7 @@
     .tier-dot.t4 { background: var(--tier-4); }
     .tier-dot.t5 { background: var(--tier-5); }
     .tier-legend-item strong {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
       font-weight: 600;
       color: var(--ink);
       font-size: 17px;
@@ -140,7 +143,7 @@
     }
 
     .url {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
       font-size: 18px;
       font-weight: 500;
       color: var(--ink-muted);

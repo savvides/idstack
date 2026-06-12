@@ -1,6 +1,6 @@
 # Design System — idstack
 
-This file is the source of truth for idstack's visual system. Any visual or UI decision (font, color, spacing, radius, motion) must be grounded here. The canonical implementations are `templates/assets/idstack.css` (per-skill HTML reports + course dashboard) and the inline `<style>` block in `docs/index.html` (idstack.org landing page); when this file changes, both implementations update in the same PR.
+This file is the source of truth for idstack's visual system. Any visual or UI decision (font, color, spacing, radius, motion) must be grounded here. The canonical implementation is `templates/assets/idstack.css` (per-skill HTML reports + course dashboard); when this file changes, that implementation updates in the same PR. The idstack.org landing page (`docs/index.html`) is an intentional separate dark/indigo surface that no longer tracks this report token system (see Decisions log, 2026-06-12).
 
 ## Product context
 
@@ -8,7 +8,7 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
 - **Who it's for:** Instructional designers (university, K-12, corporate L&D), faculty doing their own course design, course-design teams. **Downstream stakeholders:** deans, faculty senates, accreditation reviewers — they read the HTML reports the designer hands them.
 - **Space:** Edtech / instructional design. Adjacent inspiration: open-access academic publishing (eLife), evidence-based-medicine reference (UpToDate, Cochrane), modern dev tools (Linear, Cursor).
 - **Project type:** Hybrid — three surfaces share one system:
-  1. Marketing landing (`idstack.org`) — drives discovery + install.
+  1. Marketing landing (`idstack.org`) — drives discovery + install. Uses a distinct dark/indigo aesthetic, separate from the report system.
   2. CLI tool — terminal interaction, text-only, design-irrelevant.
   3. Stakeholder deliverables — branded HTML reports + `index.html` course dashboard under `.idstack/exports/<course-slug>/`. Audience: designer + their stakeholders.
 
@@ -85,7 +85,7 @@ Restrained. Two-color annotation set (rust + prussian blue) for primary marks; t
 | warning | `#7a4f0c` | `#fbf0d9` | Likely problem worth addressing. |
 | info | `#344566` | `#e7eaf1` | Worth knowing, not blocking. |
 
-**Dark mode strategy:** Auto via `prefers-color-scheme: dark` (the report stylesheet) and explicit `data-theme="dark"` toggle (landing page). Surfaces redesigned (not just inverted): inky-dark background `#16140f`, warm-cream text `#ebe7dd`, terracotta accent `#d97461` replaces oxblood (oxblood loses too much chroma when inverted). All tier and severity tokens redefined with 10–20% saturation drop and adjusted backgrounds. The light theme is canonical; dark mode is a courtesy.
+**Dark mode strategy:** Auto via `prefers-color-scheme: dark` (the report stylesheet) and explicit `data-theme="dark"` toggle (landing page). Surfaces redesigned (not just inverted): inky-dark background `#16140f`, warm-cream text `#ebe7dd`, terracotta accent `#d97461` replaces oxblood (oxblood loses too much chroma when inverted). All tier and severity tokens redefined with 10–20% saturation drop and adjusted backgrounds. The light theme is canonical; dark mode is a courtesy. The landing page is now dark-only (not a toggle), with its own indigo palette (`#0a0a0f` background, `#6366f1`→`#a855f7` gradient accents), distinct from the report stylesheet dark mode described here.
 
 ## Spacing
 
@@ -138,7 +138,7 @@ No medium / long durations. No scroll-driven animations. No parallax. No entranc
 
 ## Anti-patterns (NEVER ship)
 
-- Gradient mesh hero (Stripe owns it; copying = derivative AI-slop).
+- Gradient mesh hero (Stripe owns it; copying = derivative AI-slop). _(Scope: this binds the report system. The marketing landing uses an indigo→purple gradient-ACCENT treatment by explicit decision — accent marks, not a full-bleed mesh hero background. See Decisions log, 2026-06-12.)_
 - Stock photo of person looking at laptop (Quality Matters does this; category cliché).
 - 3-column or 5-column badge-icon feature grid (Quality Matters has FIVE; category cliché).
 - Bright association blue + orange palette.
@@ -159,3 +159,4 @@ No medium / long durations. No scroll-driven animations. No parallax. No entranc
 | 2026-05-13 | No hero illustration / gradient / image anywhere | Type-only marketing hero. Anti-SaaS, anti-AI-slop. Cost: scroll-stoppage power; accepted. Open question for future if first-time-visitor metrics call for revisiting. |
 | 2026-05-13 | Background ivory `#faf8f3` (replaces parchment `#fbfaf6`) | Cleaner publication feel. Parchment-warm read as "old book"; ivory reads as "good paper." |
 | 2026-05-13 | Add prussian blue `#1d4a5e` as secondary accent | Two-color annotation set (red + blue) mirrors how academic editors marked manuscripts. |
+| 2026-06-12 | Landing reverted to original dark/indigo aesthetic, separate from the report system (owner request) | Reports retain scholarly ivory "Proof" identity. Landing uses indigo→purple gradient accents — a scoped exception to the no-gradient anti-pattern, which still binds reports. |

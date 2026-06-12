@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,9 +42,9 @@
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows",
-    "softwareVersion": "3.1.0",
+    "softwareVersion": "3.2.0",
     "datePublished": "2026-04-20",
-    "dateModified": "2026-05-13",
+    "dateModified": "2026-05-14",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -60,79 +60,31 @@
   }
   </script>
 
-  <script>
-    // Theme bootstrap — runs before paint to avoid flash.
-    (function () {
-      try {
-        var saved = localStorage.getItem('idstack:theme');
-        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var theme = saved || (prefersDark ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch (e) { /* localStorage blocked — fall back to default */ }
-    })();
-  </script>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Light — ivory publication. See DESIGN.md § Color. */
-      --bg:           #faf8f3;
-      --raised:       #ffffff;
-      --ink:          #1a1815;
-      --ink-soft:     #3a352e;
-      --ink-muted:    #6b6358;
-      --rule:         #e6e0d2;
-      --rule-strong:  #d4cdb9;
-      --accent:       #7a1f1f;
-      --accent-blue:  #1d4a5e;
-      --accent-soft:  #f4eae8;
+      /* Dark-only — near-black with the indigo→purple signature. See DESIGN.md § Color. */
+      --bg:           #0a0a0f;
+      --raised:       #16161f;
+      --ink:          #e4e4e7;
+      --ink-soft:     #c4c4cc;
+      --ink-muted:    #8b8b96;
+      --rule:         #1e1e2e;
+      --rule-strong:  #2a2a3e;
+      --accent:       #818cf8;
+      --accent-blue:  #60a5fa;
+      --accent-soft:  rgba(99,102,241,0.12);
 
-      --tier-1: #2f7a4a;
-      --tier-2: #2864a8;
-      --tier-3: #a87726;
-      --tier-4: #b35a1f;
-      --tier-5: #6b6b6b;
+      --accent-start: #6366f1;
+      --accent-end:   #a855f7;
+      --accent-gradient: linear-gradient(135deg, #6366f1, #a855f7);
 
-      --severity-warning-bg: #fbf0d9;
-      --severity-warning-fg: #7a4f0c;
-      --severity-critical-bg: #f5dcd5;
-      --severity-critical-fg: #8c2515;
-      --severity-info-bg:    #e7eaf1;
-      --severity-info-fg:    #344566;
-
-      --font-display: 'Source Serif 4', 'Source Serif Pro', 'Charter', 'Iowan Old Style', 'Sitka Text', Georgia, serif;
-      --font-body:    'Source Serif 4', 'Source Serif Pro', 'Charter', 'Iowan Old Style', 'Sitka Text', Georgia, serif;
-      --font-ui:      'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
-
-      --max:    1120px;
-      --prose:  62ch;
-      --pad-x:  clamp(1.25rem, 4vw, 2rem);
-      --pad-y:  clamp(3.5rem, 7vw, 6rem);
-    }
-
-    [data-theme="dark"] {
-      --bg:           #16140f;
-      --raised:       #1f1d18;
-      --ink:          #ebe7dd;
-      --ink-soft:     #cfc9bc;
-      --ink-muted:    #968f80;
-      --rule:         #2c2a23;
-      --rule-strong:  #3d3a30;
-      --accent:       #d97461;
-      --accent-blue:  #6aa6e3;
-      --accent-soft:  #2a1d1a;
-
-      --tier-1: #5fc185;
-      --tier-2: #6aa6e3;
-      --tier-3: #d6a64c;
-      --tier-4: #e58f53;
-      --tier-5: #a3a3a3;
+      --tier-1: #4ade80;
+      --tier-2: #60a5fa;
+      --tier-3: #fbbf24;
+      --tier-4: #fb923c;
+      --tier-5: #a1a1aa;
 
       --severity-warning-bg: #2e2210;
       --severity-warning-fg: #e3b25c;
@@ -140,6 +92,16 @@
       --severity-critical-fg: #e89786;
       --severity-info-bg:    #1a2030;
       --severity-info-fg:    #9bafd2;
+
+      --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-ui:      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono:    "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+
+      --max:    1120px;
+      --prose:  62ch;
+      --pad-x:  clamp(1.25rem, 4vw, 2rem);
+      --pad-y:  clamp(3.5rem, 7vw, 6rem);
     }
 
     html { scroll-behavior: smooth; }
@@ -152,12 +114,10 @@
       line-height: 1.65;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      body { transition: none; }
     }
 
     a {
@@ -244,27 +204,6 @@
       font-size: 0.93rem;
     }
     .nav-links a:hover { color: var(--ink); }
-    .theme-toggle {
-      background: transparent;
-      border: 1px solid var(--rule);
-      color: var(--ink-soft);
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 0.95rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-      transition: border-color 0.15s, color 0.15s;
-    }
-    .theme-toggle:hover { color: var(--ink); border-color: var(--rule-strong); }
-    .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .theme-toggle .icon-light { display: none; }
-    .theme-toggle .icon-dark { display: inline; }
-    [data-theme="dark"] .theme-toggle .icon-light { display: inline; }
-    [data-theme="dark"] .theme-toggle .icon-dark { display: none; }
 
     @media (max-width: 720px) {
       .nav-links { gap: 1rem; font-size: 0.9rem; }
@@ -288,7 +227,11 @@
       font-weight: 700;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--accent);
+      color: var(--accent-start);
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
       margin-bottom: 0.6rem;
     }
 
@@ -322,6 +265,11 @@
       margin-bottom: 1.25rem;
       text-wrap: balance;
       max-width: 22ch;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
     }
     .hero .lede {
       font-size: clamp(1rem, 1.6vw, 1.15rem);
@@ -351,8 +299,8 @@
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      background: var(--raised);
-      border: 1px solid var(--rule);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-start);
       border-radius: 2px;
       padding: 0.55rem 0.55rem 0.55rem 0.85rem;
       width: 100%;
@@ -434,8 +382,8 @@
       font-family: var(--font-mono);
       font-size: 0.78rem;
       color: var(--ink-soft);
-      background: var(--accent-soft);
-      border: 1px solid var(--rule);
+      background: rgba(99,102,241,0.15);
+      border: 1px solid var(--accent-start);
       padding: 0.15em 0.5em;
       border-radius: 2px;
       white-space: nowrap;
@@ -918,9 +866,9 @@
       font-family: var(--font-ui);
       font-size: 0.85rem;
       font-weight: 700;
-      color: var(--bg);
-      background: var(--ink);
-      border: 1px solid var(--ink);
+      color: #f5f5fb;
+      background: var(--accent-gradient);
+      border: 1px solid var(--accent-start);
       border-radius: 0 2px 2px 0;
       cursor: pointer;
     }
@@ -964,10 +912,6 @@
         <a href="#pipeline">Pipeline</a>
         <a href="#install">Install</a>
         <a href="https://github.com/savvides/idstack" rel="noopener">GitHub&nbsp;↗</a>
-        <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme" id="theme-toggle">
-          <span class="icon-dark" aria-hidden="true">☾</span>
-          <span class="icon-light" aria-hidden="true">☀</span>
-        </button>
       </div>
     </nav>
   </header>
@@ -1154,7 +1098,7 @@
     </section>
 
     <!-- ────────── Output ────────── -->
-    <section class="section" aria-labelledby="output-title">
+    <section class="section" id="output" aria-labelledby="output-title">
       <header class="section-header">
         <p class="eyebrow">Output</p>
         <h2 id="output-title">Each skill writes both a report and a manifest.</h2>
@@ -1268,18 +1212,6 @@
   </footer>
 
   <script>
-    // ─── Theme toggle ───────────────────────────────────────
-    (function () {
-      var btn = document.getElementById('theme-toggle');
-      if (!btn) return;
-      btn.addEventListener('click', function () {
-        var current = document.documentElement.getAttribute('data-theme') || 'light';
-        var next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        try { localStorage.setItem('idstack:theme', next); } catch (e) {}
-      });
-    })();
-
     // ─── Copy buttons (one handler, multiple targets) ───────
     (function () {
       function flash(btn) {
