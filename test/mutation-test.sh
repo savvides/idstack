@@ -100,6 +100,17 @@ sed -i.bak 's|`/idstack:learning-objectives`|`/learning-objectives`|' \
 regen
 expect_fail "bare /skill reference regression" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 4b. UNBACKTICKED bare /skill in the preamble returns -> smoke-test must fail.
+# The guard above matched only backticked refs until v3.3.0.1, so three plain-prose
+# examples sat in the preamble's context-recovery section telling the model to say
+# "/assessment-design is the natural next step" — a command that does nothing. The
+# preamble is spliced into all 22 skill files, so this reached every user.
+fresh
+sed -i.bak 's|/idstack:assessment-design is the natural next step|/assessment-design is the natural next step|' \
+  "$WORK/r/templates/preamble.md"
+regen
+expect_fail "unbackticked bare /skill in preamble regression" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 # 5. pipeline unnamespaced Skill invocation returns -> smoke-test must fail
 fresh
 sed -i.bak 's|skill: "idstack:needs-analysis"|skill: "needs-analysis"|' \

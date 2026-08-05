@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.3.0.1 (2026-08-05)
+
+To get this fix: `cd` into your idstack clone, then `git pull && ./setup`. Restart Claude Code afterward — plugins load at session start.
+
+### Fixed — skills no longer suggest commands that don't exist
+
+- **Welcome-back and next-step messages named unrunnable commands.** v3.3.0.0 banned bare `/skill` references because they resolve in neither CLI, and fixed them in `bin/idstack-status`. The guard enforcing it matched only backticked refs, so three plain-prose examples in the preamble's context-recovery section survived — and the preamble is spliced into all 22 skill files. The model copied their shape and told users things like "Based on your progress, /assessment-design is the natural next step." Typing that does nothing. Landing inside the context-recovery message v3.3.0.0 had just repaired made it the first thing a user saw once welcome-back messages started working again. Now namespaced; on Codex the existing translation rule renders them as `$<skill>`.
+
+### For contributors
+
+- The smoke-test guard now matches a bare `/skill` in any command position, not only inside backticks, and scans skill bodies with frontmatter still exempt (`description:` is picker prose, not a command). Suite count unchanged at 371.
+- `test/mutation-test.sh` gained a case that reintroduces an unbackticked bare reference into the preamble and asserts smoke-test fails: 14 mutations, 14 guarded.
+
 ## v3.3.0.0 (2026-08-04)
 
 To get these fixes: `cd` into your idstack clone, then `git pull && ./setup`. Restart Claude Code afterward — plugins load at session start.

@@ -253,15 +253,15 @@ fi
 ```
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
-Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /learning-objectives."
+Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
 Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
 mention it as a recurring pattern with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
-Example: "Welcome back. Last session you ran /course-import."
+Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /assessment-design is the natural next step."
+Example: "Based on your progress, /idstack:assessment-design is the natural next step."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
 Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
