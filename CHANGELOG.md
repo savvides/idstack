@@ -22,8 +22,12 @@ A full audit of the toolchain surfaced a set of bugs that broke user-visible beh
 
 ### Infrastructure
 
-- New GitHub Actions `test.yml` runs all six test suites on push and PR (ubuntu + macos, Python 3.9 + 3.12); `release.yml` refuses to publish unless the tag, `VERSION`, `plugin.json`, and `CHANGELOG.md` agree and the smoke test passes.
-- smoke-test grew from 272 to 370 assertions (version agreement, canonical section names, `/idstack:` namespacing, resolve-snippet lockstep, v1.1 migration) and prints failure diagnostics; integration-test proves it leaves the working tree untouched.
+The audit found the test suite had never run automatically, and that some of it was not testing what it appeared to test. Both are fixed:
+
+- **CI.** New GitHub Actions `test.yml` runs all seven suites on push and PR (ubuntu + macos, Python 3.9 + 3.12 — 3.9 is the leg that catches the context-recovery class of bug). `release.yml` refuses to publish unless the tag, `VERSION`, `plugin.json`, and `CHANGELOG.md` agree and the smoke test passes.
+- **`./setup` is now tested** — 16 behavioral tests covering flag parsing, scope selection, all three legacy-cleanup shapes, and failure handling, run against a repo copy with a fake `$HOME` and a stub `claude`. It previously had no coverage at all while the smoke test spent 14 assertions on landing-page CSS.
+- **A mutation suite proves the guards work.** `test/mutation-test.sh` reintroduces each of the 13 defects fixed here into a throwaway copy and asserts the guarding test fails. This is what was missing: the version-classifier suite passed green while testing a local copy of the classifier rather than the shipped code, and `gen-skills` counted a placeholder-less template as neither generated nor failed.
+- smoke-test grew from 272 to 371 assertions (version agreement, canonical section names, `/idstack:` namespacing, resolve-snippet lockstep, v1.1 migration, `bash -n` on every script) and prints failure diagnostics instead of a bare FAIL; integration-test proves it leaves the working tree untouched.
 
 ## v3.2.0.0 (2026-05-14)
 
