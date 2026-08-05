@@ -73,7 +73,7 @@ for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack
 done
 
 # Bash syntax gate for the shell entry points (idstack-manifest-merge is python).
-for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/version-classify.sh; do
+for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/version-classify.sh bin/lib/plugin-status.sh; do
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
 
@@ -250,6 +250,15 @@ check "idstack-doctor sources the shared version classifier" "grep -q 'lib/versi
 check "version-classifier test sources the shared classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/test/test-version-classifier.sh'"
 if [ -x "$IDSTACK_DIR/test/test-version-classifier.sh" ]; then
   check "version-classifier unit tests pass" "'$IDSTACK_DIR/test/test-version-classifier.sh'"
+fi
+
+# `claude plugin list` parsing, also extracted to bin/lib/ so it is testable.
+# A fixed-size window here once reported a disabled idstack as enabled.
+check "bin/lib/plugin-status.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/plugin-status.sh' ]"
+check "idstack-doctor sources the shared plugin-status parser" "grep -q 'lib/plugin-status.sh' '$IDSTACK_DIR/bin/idstack-doctor'"
+check "idstack-doctor no longer uses a fixed -A4 window" "! grep -q 'grep -A4' '$IDSTACK_DIR/bin/idstack-doctor'"
+if [ -x "$IDSTACK_DIR/test/test-plugin-status.sh" ]; then
+  check "plugin-status unit tests pass" "'$IDSTACK_DIR/test/test-plugin-status.sh'"
 fi
 
 # Check generated files have auto-generated header

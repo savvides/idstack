@@ -19,6 +19,8 @@ IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 # Shared legacy-VERSION classifier (also sourced by setup; pinned by
 # test/test-version-classifier.sh).
 . "$IDSTACK_DIR/bin/lib/version-classify.sh"
+# `claude plugin list` parsing (pinned by test/test-plugin-status.sh).
+. "$IDSTACK_DIR/bin/lib/plugin-status.sh"
 
 SCOPE="global"
 LEGACY_BASE="$HOME/.claude"
@@ -97,16 +99,10 @@ echo "Claude Code install:"
 if command -v claude >/dev/null 2>&1; then
   plugin_list=$(claude plugin list 2>/dev/null || true)
   if echo "$plugin_list" | grep -q "idstack@idstack"; then
-    # Scope the enabled check to idstack's own entry: from the idstack@idstack
-    # line until a blank line or the next plugin id (name@marketplace). A fixed
-    # -A4 window could read a neighboring plugin's status line.
-    idstack_entry=$(echo "$plugin_list" | awk '
-      /idstack@idstack/ && !f { f = 1; print; next }
-      f {
-        if ($0 ~ /^[[:space:]]*$/ || $0 ~ /[A-Za-z0-9._-]+@[A-Za-z0-9._-]+/) { f = 0 }
-        else { print }
-      }')
-    if echo "$idstack_entry" | grep -qi "enabled"; then
+    # Scoped to idstack's own entry — see bin/lib/plugin-status.sh. A fixed
+    # -A4 window read a neighboring plugin's status line and called a disabled
+    # idstack enabled. Pinned by test/test-plugin-status.sh.
+    if echo "$plugin_list" | plugin_is_enabled "idstack@idstack"; then
       echo "  idstack@idstack installed and enabled"
     else
       echo "  PROBLEM: idstack@idstack is installed but not enabled."
