@@ -15,15 +15,19 @@
 #                     allowlist.
 #   all (default):    both targets
 #
-# Source of truth is unchanged: skills/<name>/SKILL.md.tmpl with {{PREAMBLE}} and
-# {{MANIFEST_SCHEMA}} placeholders. The preamble defines the AskUserQuestion / Skill
-# / Agent concepts portably so skill bodies don't need per-target text substitution.
+# Source of truth is unchanged: skills/<name>/SKILL.md.tmpl with {{PREAMBLE}},
+# {{MANIFEST_SCHEMA}}, and {{IDSTACK_RESOLVE}} placeholders. The preamble defines
+# the AskUserQuestion / Skill / Agent concepts portably so skill bodies don't need
+# per-target text substitution; {{IDSTACK_RESOLVE}} splices the canonical
+# $_IDSTACK resolution (templates/snippets/idstack-resolve.sh) into each bash
+# block that needs it — blocks run in separate shells and must be self-contained.
 
 set -e
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PREAMBLE="$IDSTACK_DIR/templates/preamble.md"
 MANIFEST_SCHEMA="$IDSTACK_DIR/templates/manifest-schema.md"
+RESOLVE_SNIPPET="$IDSTACK_DIR/templates/snippets/idstack-resolve.sh"
 DRY_RUN=0
 TARGET="all"
 GENERATED=0
@@ -58,14 +62,22 @@ if [ ! -f "$MANIFEST_SCHEMA" ]; then
   exit 1
 fi
 
+if [ ! -f "$RESOLVE_SNIPPET" ]; then
+  echo "ERROR: templates/snippets/idstack-resolve.sh not found at $RESOLVE_SNIPPET" >&2
+  exit 1
+fi
+
 # HTML report assets — skills read these at runtime to write branded reports
-# into .idstack/exports/<course-slug>/. Missing files would silently break
-# every skill that produces a report, so fail loud here.
+# into .idstack/exports/<course-slug>/. report-format.md is the content
+# contract the report-producing skills read alongside the visual template.
+# Missing files would silently break every skill that produces a report, so
+# fail loud here.
 REPORT_HTML_TMPL="$IDSTACK_DIR/templates/report.html.tmpl"
 INDEX_HTML_TMPL="$IDSTACK_DIR/templates/index.html.tmpl"
 REPORT_CSS="$IDSTACK_DIR/templates/assets/idstack.css"
+REPORT_FORMAT="$IDSTACK_DIR/templates/report-format.md"
 
-for f in "$REPORT_HTML_TMPL" "$INDEX_HTML_TMPL" "$REPORT_CSS"; do
+for f in "$REPORT_HTML_TMPL" "$INDEX_HTML_TMPL" "$REPORT_CSS" "$REPORT_FORMAT"; do
   if [ ! -f "$f" ]; then
     echo "ERROR: report asset not found at ${f#$IDSTACK_DIR/}" >&2
     exit 1
@@ -86,13 +98,17 @@ render_template() {
   skill_name="$(basename "$(dirname "$tmpl")")"
 
   if ! grep -q '{{PREAMBLE}}' "$tmpl"; then
-    echo "  SKIP: $skill_name/SKILL.md.tmpl (no {{PREAMBLE}} placeholder)"
+    # A template without the placeholder would never be generated or checked —
+    # a silent SKIP here once let --dry-run pass green over an absent output.
+    echo "  ERROR: $skill_name/SKILL.md.tmpl has no {{PREAMBLE}} placeholder" >&2
+    ERRORS=$((ERRORS + 1))
     return 1
   fi
 
   local result
   result=$(awk -v header="$HEADER" -v header2="$HEADER2" \
                -v preamble_file="$PREAMBLE" -v schema_file="$MANIFEST_SCHEMA" \
+               -v resolve_file="$RESOLVE_SNIPPET" \
                -v target="$target" '
     BEGIN {
       after_frontmatter = 0
@@ -136,6 +152,14 @@ render_template() {
     /\{\{MANIFEST_SCHEMA\}\}/ {
       while ((getline line < schema_file) > 0) print line
       close(schema_file)
+      next
+    }
+    # {{IDSTACK_RESOLVE}} appears many times per template (once per bash block
+    # that calls $_IDSTACK/bin/...); close() resets the read so each occurrence
+    # splices the full snippet.
+    /\{\{IDSTACK_RESOLVE\}\}/ {
+      while ((getline line < resolve_file) > 0) print line
+      close(resolve_file)
       next
     }
     { print }
@@ -183,9 +207,8 @@ render_target() {
     fi
   done
 
-  # Codex target: also emit AGENTS.md (memory file) and marketplace.json (plugin
-  # manifest). Renders in dry-run too, comparing against on-disk content so drift
-  # is visible to the smoke test.
+  # Codex target: also emit AGENTS.md (memory file). Renders in dry-run too,
+  # comparing against on-disk content so drift is visible to the smoke test.
   if [ "$target" = "codex" ]; then
     render_codex_assets
   fi
@@ -225,16 +248,20 @@ case "$TARGET" in
   all)    render_target claude; render_target codex ;;
 esac
 
-if [ "$GENERATED" -eq 0 ]; then
+if [ "$GENERATED" -eq 0 ] && [ "$ERRORS" -eq 0 ]; then
   echo "No .tmpl files found."
   exit 1
 fi
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo ""
-  echo "$GENERATED templates checked. $ERRORS stale."
+  echo "$GENERATED templates checked. $ERRORS stale or failed."
   if [ "$ERRORS" -gt 0 ]; then exit 1; fi
 else
   echo ""
   echo "$GENERATED skill files generated (target: $TARGET)."
+  if [ "$ERRORS" -gt 0 ]; then
+    echo "ERROR: $ERRORS template(s) failed to render." >&2
+    exit 1
+  fi
 fi

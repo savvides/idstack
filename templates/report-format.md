@@ -6,7 +6,7 @@ Skills produce two artifacts: a JSON manifest section (system state) and an HTML
 
 - **JSON.** `.idstack/project.json` — the manifest. The skill writes its section using `bin/idstack-manifest-merge`.
 - **HTML.** `.idstack/exports/<course-slug>/<skill>.html` — the report. The skill writes it using the `Write` tool, following the structure in `templates/report.html.tmpl`.
-- **Pointer.** The skill's manifest section sets `report_path` to the relative path of the HTML report so other skills (and `bin/idstack-status`) can find it.
+- **Pointer.** The skill's manifest section sets `report_path` to the relative path of the HTML report so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
 
 `<course-slug>` is derived from the manifest's `project_name` via `bin/idstack-slugify`. Empty/missing `project_name` falls back to `untitled-course`. The slug is computed deterministically; skills don't cache it. Every skill that writes a report also ensures `.idstack/exports/<course-slug>/assets/idstack.css` exists by copying the canonical stylesheet (`$_IDSTACK/templates/assets/idstack.css`) on each run — cheap, keeps the folder self-contained when zipped or moved.
 

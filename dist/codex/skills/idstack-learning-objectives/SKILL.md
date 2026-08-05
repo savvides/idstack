@@ -41,23 +41,26 @@ These are **directives to the model**, not magic words — interpret them as the
 ## Preamble: Update Check
 
 ```bash
-# Locate the idstack install. Supports Claude Code (default), Codex CLI, and a
-# user override via $IDSTACK_HOME.
-if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-  _IDSTACK="$CLAUDE_PLUGIN_ROOT"
-elif [ -n "${IDSTACK_HOME:-}" ]; then
-  _IDSTACK="$IDSTACK_HOME"
-elif [ -d "$HOME/.agents/plugins/idstack" ]; then
-  _IDSTACK="$HOME/.agents/plugins/idstack"
-elif [ -d "$HOME/.agents/skills/idstack" ]; then
-  _IDSTACK="$HOME/.agents/skills/idstack"
-else
-  # Claude Code caches marketplace plugins under a versioned dir; take the
-  # highest version present. Empty if idstack was never installed this way —
-  # every "$_IDSTACK/bin/..." call below is guarded, so that degrades quietly.
-  _IDSTACK=$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)
-  _IDSTACK="${_IDSTACK%/}"
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache (highest version). Empty if none found;
+# guard "$_IDSTACK/bin/..." calls accordingly.
+# Canonical copy: templates/snippets/idstack-resolve.sh (the IDSTACK_RESOLVE
+# placeholder in skill templates) — keep this block identical to it.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
@@ -69,6 +72,20 @@ If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of ids
 Before starting, check for an existing project manifest.
 
 ```bash
+# (fresh shell — re-derive the install dir; see Preamble: Update Check)
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
   "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
@@ -138,6 +155,20 @@ Check for session history and learnings from prior runs.
 
 ```bash
 # Context recovery: timeline + learnings
+# (fresh shell — re-derive the install dir; see Preamble: Update Check)
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 _HAS_TIMELINE=0
 _HAS_LEARNINGS=0
 if [ -f ".idstack/timeline.jsonl" ]; then
@@ -171,7 +202,9 @@ completed = set()
 for e in events:
     if e.get('event') == 'completed':
         completed.add(e.get('skill', ''))
-print(f'SKILLS_COMPLETED: {','.join(sorted(completed))}')
+# No f-string here: nesting same-type quotes in a replacement field is a
+# SyntaxError before Python 3.12, and macOS system python3 is 3.9.
+print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))
 
 # Last skill run
 last_completed = [e for e in events if e.get('event') == 'completed']
@@ -179,9 +212,11 @@ if last_completed:
     last = last_completed[-1]
     print(f'LAST_SKILL: {last.get(\"skill\",\"?\")} at {last.get(\"ts\",\"?\")}')
 
-# Pipeline progression
+# Pipeline progression. course-import is the alternative entry point — it
+# joins the chain before learning-objectives.
 pipeline = [
     ('needs-analysis', 'learning-objectives'),
+    ('course-import', 'learning-objectives'),
     ('learning-objectives', 'assessment-design'),
     ('assessment-design', 'course-builder'),
     ('course-builder', 'course-quality-review'),
@@ -244,7 +279,7 @@ Key findings encoded as decision rules in this skill:
 
 - **Constructive alignment improves student outcomes.** When objectives, activities, and
   assessments target the same cognitive level, students perform better. Misalignment is
-  one of the most common and most fixable problems in course design [Alignment-1]
+  one of the most common and most fixable problems in course design [Alignment-1] [T5]
   [Alignment-10] [T2].
 
 - **Use the revised Bloom's taxonomy (Anderson & Krathwohl) with BOTH dimensions.**
@@ -278,33 +313,17 @@ When multiple tiers apply, cite the strongest.
 
 ---
 
-## Preamble: Project Manifest
+## Manifest Inputs (skill-specific)
 
-Before starting objective development, check for an existing project manifest.
-
-```bash
-if [ -f ".idstack/project.json" ]; then
-  echo "MANIFEST_EXISTS"
-  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
-else
-  echo "NO_MANIFEST"
-fi
-```
-
-**If MANIFEST_EXISTS:**
-- Read the manifest. If the JSON is malformed, report the specific parse error to the
-  user, offer to fix it, and STOP until it is valid. Never silently overwrite corrupt JSON.
-- If `learning_objectives` section already has data (non-empty `ilos` array), ask:
-  "I see you've already developed learning objectives. Want to update them or start fresh?"
-- Preserve all existing sections when writing back.
+The shared preamble above already ran the manifest existence check
+(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
 
 **If NO_MANIFEST:**
-- Say: "I notice you haven't run `/needs-analysis` yet. Running it first gives me your
+- Say: "I notice you haven't run `/idstack:needs-analysis` yet. Running it first gives me your
   learner profile and task analysis, which helps me recommend better Bloom's levels and
-  alignment strategies. Want to continue anyway, or run `/needs-analysis` first?"
+  alignment strategies. Want to continue anyway, or run `/idstack:needs-analysis` first?"
 - If the user wants to continue, proceed without manifest context. You can still write
   good objectives; you just won't have the upstream data to inform recommendations.
-- You will create the manifest at the end of this skill's workflow.
 
 ---
 
@@ -448,7 +467,7 @@ Record any flags in the `expertise_reversal_flags` array for the manifest.
 
 This is the core value of this skill. Constructive alignment means every ILO connects to
 both a learning activity AND an assessment, and all three target the same cognitive level
-[Alignment-1] [Alignment-10] [T2].
+[Alignment-1] [T5] [Alignment-10] [T2].
 
 ### Forward Pass: ILO to Activity
 
@@ -541,6 +560,24 @@ Then list:
 Before writing the manifest, generate an HTML report so the designer has a single document to read. The report follows the **visual contract** in `templates/report.html.tmpl` (the skeleton) and the **content contract** in `templates/report-format.md` (severity ordering, citation format, what each placeholder must carry).
 
 ```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 # Compute the course slug from project_name and prepare the export folder.
 _PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
@@ -558,6 +595,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Summary:** 2–3 sentences — how many ILOs you have, how many are well-aligned, the single most important gap or mismatch the designer should know about.
 - **Skill-specific section before Findings** — add a `<section class="alignment-table">` with `<h2>Alignment table</h2>` and an HTML `<table>` (columns: ID, Objective, Knowledge, Process, Activity, Assessment, Alignment). Alignment values: `aligned` / `MISMATCH` / `GAP`.
 - **Finding ids:** `align-1`, `bloom-1`, `expertise-1`, etc. Findings come from bidirectional alignment gaps, Bloom's-level mismatches, expertise-reversal flags, and ambiguous verbs that were clarified.
+- **Top recommendations:** the 3-5 highest-impact alignment fixes, ordered by leverage; cite each ([Domain-N] [TN]) and reference the finding id it addresses.
 - **Limitations:** alignment is read from manifest descriptions, not from the actual rubric criteria; expertise-reversal flags are inferred from the learner profile without a learner survey.
 - **Next steps:** Run `/idstack:assessment-design` to design assessments aligned to these objectives with evidence-based rubrics and feedback strategies.
 
@@ -569,17 +607,58 @@ Every finding in the HTML must correspond to an entry in `learning_objectives.al
 
 Create or update the project manifest at `.idstack/project.json`.
 
-**CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first, then modify ONLY the `learning_objectives`
-   section. Preserve all other sections unchanged.
-2. Include the COMPLETE schema structure. Do not omit fields.
-3. Before writing, mentally verify the JSON is valid: matching braces, proper commas,
-   quoted strings, no trailing commas.
-4. The `updated` timestamp must reflect the current time.
-5. Set `learning_objectives.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/learning-objectives.html`.
-6. If this is a new manifest (no needs analysis was run), initialize ALL sections
-   (including `needs_analysis`, `context`, and `quality_review`) with empty/default
-   values so downstream skills find the expected structure.
+**If MANIFEST_EXISTS (primary path):** write the `learning_objectives` section via
+`bin/idstack-manifest-merge`. The merge tool replaces only the named section, preserves
+every other section verbatim, validates JSON, writes atomically (tempfile + rename), and
+updates the top-level `updated` timestamp for you:
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+"$_IDSTACK/bin/idstack-manifest-merge" --section learning_objectives --payload - <<'PAYLOAD'
+{
+  "report_path": "<set to $_REPORT_PATH from the bash block above — e.g. .idstack/exports/<course-slug>/learning-objectives.html>",
+  "ilos": [],
+  "alignment_matrix": {
+    "ilo_to_activity": {},
+    "ilo_to_assessment": {},
+    "gaps": []
+  },
+  "expertise_reversal_flags": []
+}
+PAYLOAD
+```
+
+Replace the placeholder payload above with the actual session data. Include the COMPLETE
+section structure — do not omit fields. If the tool exits non-zero (e.g., exit 4 = manifest
+not found, exit 2 = malformed manifest), report the error to the user and stop; never
+silently overwrite.
+
+**If NO_MANIFEST (first run only):** use the Write tool to create the full manifest —
+first-run init writes the whole document; the merge tool replaces exactly one section per
+call. Initialize ALL sections (including `needs_analysis`, `context`, and `quality_review`)
+with empty/default values per the schema below so downstream skills find the expected
+structure, set the `updated` timestamp to the current time, and verify the JSON is valid
+before writing.
+
+In both paths, set `learning_objectives.report_path` to the value of `$_REPORT_PATH` from
+the bash block above — i.e., `.idstack/exports/<course-slug>/learning-objectives.html`.
 
 **Populate the `learning_objectives` section:**
 
@@ -606,7 +685,7 @@ Write the manifest, then confirm to the user:
   read. Open it in any browser; the folder is self-contained.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
-**Next step:** Run `/assessment-design` to design assessments aligned to your objectives
+**Next step:** Run `/idstack:assessment-design` to design assessments aligned to your objectives
 with evidence-based rubrics and feedback strategies."
 
 ---
@@ -624,7 +703,7 @@ Every skill that produces findings emits **both**:
 - a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
 - an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
 
-The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills and tools can find it.
+The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
 
 `<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
 
@@ -635,9 +714,31 @@ The HTML report follows the visual contract in `templates/report.html.tmpl` and 
 **1. Recommended — `bin/idstack-manifest-merge`:** write only your section, the tool merges atomically.
 
 ```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 # Write a payload for your skill's section, then:
 "$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload /tmp/payload.json
 ```
+
+(This file is spliced into skills verbatim, so the resolution above is written
+out rather than using the `IDSTACK_RESOLVE` placeholder — that placeholder is
+only expanded in `SKILL.md.tmpl` bodies.)
 
 The merge tool replaces only the named top-level section, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. Use this in preference to inlining the full manifest in `Edit` operations.
 
@@ -1013,6 +1114,24 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"learning-objectives","event":"completed"}'
 ```
 
@@ -1023,5 +1142,23 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-learnings-log" '{"skill":"learning-objectives","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

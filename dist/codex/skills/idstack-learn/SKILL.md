@@ -40,23 +40,26 @@ These are **directives to the model**, not magic words — interpret them as the
 ## Preamble: Update Check
 
 ```bash
-# Locate the idstack install. Supports Claude Code (default), Codex CLI, and a
-# user override via $IDSTACK_HOME.
-if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-  _IDSTACK="$CLAUDE_PLUGIN_ROOT"
-elif [ -n "${IDSTACK_HOME:-}" ]; then
-  _IDSTACK="$IDSTACK_HOME"
-elif [ -d "$HOME/.agents/plugins/idstack" ]; then
-  _IDSTACK="$HOME/.agents/plugins/idstack"
-elif [ -d "$HOME/.agents/skills/idstack" ]; then
-  _IDSTACK="$HOME/.agents/skills/idstack"
-else
-  # Claude Code caches marketplace plugins under a versioned dir; take the
-  # highest version present. Empty if idstack was never installed this way —
-  # every "$_IDSTACK/bin/..." call below is guarded, so that degrades quietly.
-  _IDSTACK=$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)
-  _IDSTACK="${_IDSTACK%/}"
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache (highest version). Empty if none found;
+# guard "$_IDSTACK/bin/..." calls accordingly.
+# Canonical copy: templates/snippets/idstack-resolve.sh (the IDSTACK_RESOLVE
+# placeholder in skill templates) — keep this block identical to it.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
@@ -68,6 +71,20 @@ If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of ids
 Before starting, check for an existing project manifest.
 
 ```bash
+# (fresh shell — re-derive the install dir; see Preamble: Update Check)
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
   "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
@@ -137,6 +154,20 @@ Check for session history and learnings from prior runs.
 
 ```bash
 # Context recovery: timeline + learnings
+# (fresh shell — re-derive the install dir; see Preamble: Update Check)
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 _HAS_TIMELINE=0
 _HAS_LEARNINGS=0
 if [ -f ".idstack/timeline.jsonl" ]; then
@@ -170,7 +201,9 @@ completed = set()
 for e in events:
     if e.get('event') == 'completed':
         completed.add(e.get('skill', ''))
-print(f'SKILLS_COMPLETED: {','.join(sorted(completed))}')
+# No f-string here: nesting same-type quotes in a replacement field is a
+# SyntaxError before Python 3.12, and macOS system python3 is 3.9.
+print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))
 
 # Last skill run
 last_completed = [e for e in events if e.get('event') == 'completed']
@@ -178,9 +211,11 @@ if last_completed:
     last = last_completed[-1]
     print(f'LAST_SKILL: {last.get(\"skill\",\"?\")} at {last.get(\"ts\",\"?\")}')
 
-# Pipeline progression
+# Pipeline progression. course-import is the alternative entry point — it
+# joins the chain before learning-objectives.
 pipeline = [
     ('needs-analysis', 'learning-objectives'),
+    ('course-import', 'learning-objectives'),
     ('learning-objectives', 'assessment-design'),
     ('assessment-design', 'course-builder'),
     ('course-builder', 'course-quality-review'),
@@ -238,11 +273,28 @@ Parse the user's intent and map to one of these commands:
 
 ### list (default)
 
-Show the most recent learnings. If the user just said `/learn` with no arguments,
+Show the most recent learnings. If the user just said `/idstack:learn` (Codex: `$learn`) with no arguments,
 this is the default.
 
 ```bash
-for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-learnings-search" --limit 10
 ```
 
@@ -260,13 +312,47 @@ bloom-verbs      | pedagogical  | Avoid "understand" as ILO verb   | 9/10
 Search learnings by keyword. Supports `--cross-project` to include global learnings.
 
 ```bash
-for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --limit 10
 ```
 
 For cross-project search:
 ```bash
-for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --cross-project --limit 10
 ```
 
@@ -277,7 +363,24 @@ If results include global learnings (tagged with `_source`), show their source p
 Delete a learning by its key. Always confirm with the user before deleting.
 
 ```bash
-for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-learnings-delete" KEY
 ```
 
@@ -286,7 +389,24 @@ for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" 
 Copy a local learning to the global store so it's available across projects.
 
 ```bash
-for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-learnings-promote" KEY
 ```
 
@@ -295,7 +415,24 @@ for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" 
 Export all learnings to a markdown file.
 
 ```bash
-for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache. Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-learnings-search" --limit 1000
 ```
 

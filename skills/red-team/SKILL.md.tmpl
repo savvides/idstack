@@ -64,7 +64,7 @@ No automatic re-verification. If the user wants to confirm fixes hold, they re-r
 The preamble above already ran the manifest check. Now confirm scope.
 
 **Determine course inputs:**
-- If `MANIFEST_EXISTS`: the orchestrator will read all sections (`needs_analysis`, `learning_objectives`, `assessment_design`, `course_builder`, `quality_review`, `accessibility_review`).
+- If `MANIFEST_EXISTS`: the orchestrator will read all sections (`needs_analysis`, `learning_objectives`, `assessments`, `course_content`, `quality_review`, `accessibility_review`).
 - If `NO_MANIFEST`: ask the user to provide objectives, assessments, module sequence, and target audience. Capture answers as a brief block to pass to the orchestrator. Standalone mode reduces precision on Dimensions 1 (alignment) and 5 (prerequisites).
 
 **Ask one focus question** via AskUserQuestion:
@@ -86,7 +86,7 @@ Use the **Agent tool** with `subagent_type=general-purpose`. The prompt is the f
 
 - `{{FOCUS}}` → the user's choice from Step 1 (or `Full sweep` by default)
 - `{{MANIFEST_INFO}}` → either `Manifest at .idstack/project.json — read it directly.` or, in standalone mode, the captured course information from Step 1
-- `{{COURSE_FILES_HINT}}` → if the manifest has `course_builder.output_path`, set this to that path; otherwise `Look under ./course/ or ./modules/ for generated course files.`
+- `{{COURSE_FILES_HINT}}` → if the manifest has `course_content.content_dir`, set this to that path; otherwise `Look under ./course/ or ./modules/ for generated course files.`
 
 Then call Agent. Block on its return.
 
@@ -290,6 +290,7 @@ Contextualize:
 The orchestrator emits an HTML report. Follow the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
 
 ```bash
+{{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
 _PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
@@ -369,6 +370,7 @@ the orchestrator's HTML report at `$_REPORT_PATH` (the report is the source of t
 not re-derive from the orchestrator's return summary, which is lossy).
 
 ```bash
+{{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
 {
   "updated": "<ISO-8601 timestamp>",
@@ -399,8 +401,14 @@ Each finding object: `{"id": "alignment-1", "description": "...", "module": "Mod
 
 The merge tool exits non-zero (and prints a diagnostic on stderr) if the payload is malformed,
 the manifest is corrupt, or the section name is misspelled — never silently overwriting. If
-`.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json`
-first (it creates a fresh canonical manifest).
+`.idstack/project.json` doesn't exist yet (standalone mode), create it first with `--init`,
+which writes a canonical manifest with every section at its default — without one the merge
+tool exits 4:
+
+```bash
+{{IDSTACK_RESOLVE}}
+"$_IDSTACK/bin/idstack-migrate" --init .idstack/project.json >/dev/null
+```
 
 **Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify
 only the `red_team_audit` section, Write back. Preserve all other sections verbatim. The
@@ -425,6 +433,7 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
+{{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"red-team","event":"completed"}'
 ```
 
@@ -433,5 +442,6 @@ Include skill-specific fields where available (confidence_score, focus, fixes_ap
 If you discover a non-obvious project-specific quirk during this session (LMS behavior, import format issue, course structure pattern), also log it as a learning:
 
 ```bash
+{{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-learnings-log" '{"skill":"red-team","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```
