@@ -8,15 +8,20 @@ TOTAL=0
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TEST_DIR=$(mktemp -d)
-trap "rm -rf $TEST_DIR" EXIT
+# Single-quoted so expansion happens at trap time and a path with spaces survives.
+trap 'rm -rf "$TEST_DIR"' EXIT
 
 check() {
   TOTAL=$((TOTAL + 1))
-  if eval "$2" 2>/dev/null; then
+  local _out
+  if _out=$(eval "$2" 2>&1); then
     echo "  PASS: $1"
     PASS=$((PASS + 1))
   else
     echo "  FAIL: $1"
+    if [ -n "$_out" ]; then
+      printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
+    fi
     FAIL=$((FAIL + 1))
   fi
 }
@@ -103,16 +108,27 @@ check "suggests next skill" \
 echo ""
 
 # --- idstack-gen-skills ---
+# The staleness test mutates a generated SKILL.md, so it runs against a
+# disposable copy of the repo under $TEST_DIR — never against the real tree
+# (an interrupted run used to leave the working tree dirty).
 echo "## idstack-gen-skills"
 
 check "dry-run passes when fresh" \
-  "$IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+  "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
 
-check "dry-run detects stale SKILL.md" \
-  "echo 'stale content' >> $IDSTACK_DIR/skills/needs-analysis/SKILL.md && ! $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+SANDBOX="$TEST_DIR/repo"
+mkdir -p "$SANDBOX"
+cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/skills" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/dist" "$SANDBOX/"
+cp "$IDSTACK_DIR/AGENTS.md" "$SANDBOX/AGENTS.md"
 
-check "regenerate fixes staleness" \
-  "$IDSTACK_DIR/bin/idstack-gen-skills && $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+check "dry-run detects stale SKILL.md (sandbox)" \
+  "echo 'stale content' >> '$SANDBOX/skills/needs-analysis/SKILL.md' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run"
+
+check "regenerate fixes staleness (sandbox)" \
+  "'$SANDBOX/bin/idstack-gen-skills' && '$SANDBOX/bin/idstack-gen-skills' --dry-run"
+
+check "real tree untouched by gen-skills tests" \
+  "[ -z \"\$(git -C '$IDSTACK_DIR' status --porcelain -- skills dist AGENTS.md)\" ]"
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

@@ -10,13 +10,22 @@ TOTAL=0
 # Override with $1 to point at a different checkout (CI fixtures, etc.).
 IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 
+# Single source of truth for the released version — all version assertions
+# derive from VERSION so a release bump can't leave this test stale.
+VER="$(tr -d '[:space:]' < "$IDSTACK_DIR/VERSION" 2>/dev/null || true)"
+VER3="${VER%.*}"  # 4-component 3.2.0.0 -> 3-component 3.2.0 (JSON-LD softwareVersion)
+
 check() {
   TOTAL=$((TOTAL + 1))
-  if eval "$2" 2>/dev/null; then
+  local _out
+  if _out=$(eval "$2" 2>&1); then
     echo "  PASS: $1"
     PASS=$((PASS + 1))
   else
     echo "  FAIL: $1"
+    if [ -n "$_out" ]; then
+      printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
+    fi
     FAIL=$((FAIL + 1))
   fi
 }
@@ -33,6 +42,13 @@ check "plugin manifest exists" "[ -f '$IDSTACK_DIR/.claude-plugin/plugin.json' ]
 check "plugin manifest has name" "grep -q '\"name\": \"idstack\"' '$IDSTACK_DIR/.claude-plugin/plugin.json'"
 check "marketplace manifest exists" "[ -f '$IDSTACK_DIR/.claude-plugin/marketplace.json' ]"
 check "marketplace manifest names the idstack plugin" "grep -q '\"name\": \"idstack\"' '$IDSTACK_DIR/.claude-plugin/marketplace.json'"
+
+# Version agreement — VERSION is the source of truth; plugin.json is what the
+# marketplace actually serves (users only receive fixes when it bumps), and
+# CHANGELOG must document every released version.
+check "VERSION file exists and is non-empty" "[ -s '$IDSTACK_DIR/VERSION' ]"
+check "plugin.json version matches VERSION ($VER)" "grep -qF '\"version\": \"$VER\"' '$IDSTACK_DIR/.claude-plugin/plugin.json'"
+check "CHANGELOG.md has an entry for v$VER" "grep -qF '## v$VER' '$IDSTACK_DIR/CHANGELOG.md'"
 
 # Check all skill SKILL.md files are reachable under skills/
 SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
@@ -51,9 +67,14 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
+done
+
+# Bash syntax gate for the shell entry points (idstack-manifest-merge is python).
+for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/version-classify.sh; do
+  check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
 
 # Check template system
@@ -85,8 +106,8 @@ check "landing: indigo gradient present" "grep -q 'linear-gradient' '$LANDING'"
 # ~/.claude/plugins/idstack form is caught by the next check. Escaping-independent.
 check "landing: marketplace install command present" "grep -q 'github.com/savvides/idstack.git' '$LANDING' && grep -q 'cd idstack' '$LANDING'"
 check "landing: no legacy plugins-dir install string" "! grep -q '.claude/plugins/idstack' '$LANDING'"
-check "landing: current version v3.2.0.0 present" "grep -q 'v3.2.0.0' '$LANDING'"
-check "landing: structured-data softwareVersion 3.2.0" "grep -qF '\"softwareVersion\": \"3.2.0\"' '$LANDING'"
+check "landing: current version v$VER present" "grep -qF 'v$VER' '$LANDING'"
+check "landing: structured-data softwareVersion $VER3" "grep -qF '\"softwareVersion\": \"$VER3\"' '$LANDING'"
 check "landing: Output section present" "grep -q 'id=.output.' '$LANDING'"
 # Gradient-clipped text (hero h1, eyebrow) must keep a solid color fallback so it
 # stays visible where `background-clip: text` is unsupported. Guards against a bare
@@ -174,7 +195,13 @@ fi
 
 # Version classifier (shared by setup + bin/idstack-doctor) must classify
 # multi-digit versions correctly. Pinned to catch the pattern-fragility
-# regression Gemini flagged twice.
+# regression Gemini flagged twice. The classifier itself lives in
+# bin/lib/version-classify.sh — one definition sourced by setup, doctor, and
+# the unit test, so the test exercises the shipped code, never a copy.
+check "bin/lib/version-classify.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/version-classify.sh' ]"
+check "setup sources the shared version classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/setup'"
+check "idstack-doctor sources the shared version classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/bin/idstack-doctor'"
+check "version-classifier test sources the shared classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/test/test-version-classifier.sh'"
 if [ -x "$IDSTACK_DIR/test/test-version-classifier.sh" ]; then
   check "version-classifier unit tests pass" "'$IDSTACK_DIR/test/test-version-classifier.sh'"
 fi
@@ -198,38 +225,44 @@ done
 # Check preamble uses CLAUDE_PLUGIN_ROOT
 check "preamble supports CLAUDE_PLUGIN_ROOT" "grep -q 'CLAUDE_PLUGIN_ROOT' '$IDSTACK_DIR/templates/preamble.md'"
 
-# Migration tests
+# Migration tests. One tempdir root cleaned by trap; every cp + migrate runs
+# inside a check so a migrate failure records a FAIL instead of killing the
+# whole suite under `set -e` with no summary (and no leaked tempdir).
 FIXTURE_DIR="$IDSTACK_DIR/test/fixtures"
 if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
+  MIG_ROOT=$(mktemp -d)
+  trap 'rm -rf "$MIG_ROOT"' EXIT
+
   # Test v1.0 → v1.4 chained migration
-  TMPDIR_MIG=$(mktemp -d)
-  cp "$FIXTURE_DIR/manifest-v1.0.json" "$TMPDIR_MIG/project.json"
-  "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
-  check "v1.0→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
-  check "v1.0→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert 'preferences' in d\""
-  check "v1.0→v1.4: preserves project_name" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['project_name']=='Test Course v1.0'\""
-  rm -rf "$TMPDIR_MIG"
+  MIG="$MIG_ROOT/v10"; mkdir -p "$MIG"
+  check "v1.0→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.0.json' '$MIG/project.json' && '$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null"
+  check "v1.0→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
+  check "v1.0→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert 'preferences' in d\""
+  check "v1.0→v1.4: preserves project_name" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['project_name']=='Test Course v1.0'\""
+
+  # Test v1.1 → v1.4 migration (export_metadata.failed_items was an int count
+  # in v1.1; v1.2+ made it a list of item descriptors — see bin/idstack-migrate).
+  MIG="$MIG_ROOT/v11"; mkdir -p "$MIG"
+  check "v1.1→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.1.json' '$MIG/project.json' && '$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null"
+  check "v1.1→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
+  check "v1.1→v1.4: failed_items int converted to list" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert isinstance(d['export_metadata']['failed_items'], list)\""
 
   # Test v1.2 → v1.4 migration
-  TMPDIR_MIG=$(mktemp -d)
-  cp "$FIXTURE_DIR/manifest-v1.2.json" "$TMPDIR_MIG/project.json"
-  "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
-  check "v1.2→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
-  check "v1.2→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['preferences']['verbosity']=='normal'\""
-  check "v1.2→v1.4: idempotent" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\" && '$IDSTACK_DIR/bin/idstack-migrate' '$TMPDIR_MIG/project.json' >/dev/null 2>&1 && python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
-  rm -rf "$TMPDIR_MIG"
+  MIG="$MIG_ROOT/v12"; mkdir -p "$MIG"
+  check "v1.2→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.2.json' '$MIG/project.json' && '$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null"
+  check "v1.2→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
+  check "v1.2→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['preferences']['verbosity']=='normal'\""
+  check "v1.2→v1.4: idempotent" "'$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null && python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
 
   # Test v1.3-drifted → v1.4 cleanup migration (renames red_team_audit.summary.*_count
   # to red_team_audit.findings_summary.*, moves _import_quality_flags into
   # import_metadata.quality_flag_details).
   if [ -f "$FIXTURE_DIR/manifest-v1.3-drifted.json" ]; then
-    TMPDIR_MIG=$(mktemp -d)
-    cp "$FIXTURE_DIR/manifest-v1.3-drifted.json" "$TMPDIR_MIG/project.json"
-    "$IDSTACK_DIR/bin/idstack-migrate" "$TMPDIR_MIG/project.json" >/dev/null 2>&1
-    check "v1.3-drifted→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert d['version']=='1.4'\""
-    check "v1.3-drifted→v1.4: red_team summary renamed to findings_summary" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); rt=d['red_team_audit']; assert 'summary' not in rt; assert rt['findings_summary']=={'critical': 3, 'warning': 5, 'info': 2}\""
-    check "v1.3-drifted→v1.4: _import_quality_flags moved into import_metadata" "python3 -c \"import json; d=json.load(open('$TMPDIR_MIG/project.json')); assert '_import_quality_flags' not in d; details=d['import_metadata']['quality_flag_details']; assert len(details)==2 and details[0]['key']=='orphan_module_8'\""
-    rm -rf "$TMPDIR_MIG"
+    MIG="$MIG_ROOT/v13"; mkdir -p "$MIG"
+    check "v1.3-drifted→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.3-drifted.json' '$MIG/project.json' && '$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null"
+    check "v1.3-drifted→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
+    check "v1.3-drifted→v1.4: red_team summary renamed to findings_summary" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); rt=d['red_team_audit']; assert 'summary' not in rt; assert rt['findings_summary']=={'critical': 3, 'warning': 5, 'info': 2}\""
+    check "v1.3-drifted→v1.4: _import_quality_flags moved into import_metadata" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert '_import_quality_flags' not in d; details=d['import_metadata']['quality_flag_details']; assert len(details)==2 and details[0]['key']=='orphan_module_8'\""
   fi
 fi
 

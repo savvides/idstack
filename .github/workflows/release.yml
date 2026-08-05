@@ -13,6 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify tag matches VERSION, plugin.json, and CHANGELOG
+        run: |
+          VER="$(tr -d '[:space:]' < VERSION)"
+          if [ "v$VER" != "${{ github.ref_name }}" ]; then
+            echo "Tag ${{ github.ref_name }} does not match VERSION ($VER)" >&2
+            exit 1
+          fi
+          grep -qF "\"version\": \"$VER\"" .claude-plugin/plugin.json || {
+            echo "plugin.json version does not match VERSION ($VER)" >&2; exit 1; }
+          grep -qF "## v$VER" CHANGELOG.md || {
+            echo "CHANGELOG.md has no entry for v$VER" >&2; exit 1; }
+      - name: Run test suite
+        run: ./test/smoke-test.sh
       - name: Create GitHub Release
         run: gh release create "${{ github.ref_name }}" --generate-notes
         env:
