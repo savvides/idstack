@@ -14,7 +14,7 @@ smoke-test catches the regression, new `bin/idstack-doctor` for diagnostics.
 
 ## ~~v1.1: Manifest Versioning~~ SHIPPED (v1.2.0)
 Shipped in v1.2.0. `bin/idstack-migrate` handles schema migrations.
-All 7 skill preambles call it automatically.
+Every skill preamble calls it automatically (7 skills at the time; 11 now).
 
 ## ~~v2: Cross-Domain Quality Checks~~ SHIPPED (v1.2.0)
 Shipped in v1.2.0. Four checks added to /course-quality-review:
@@ -62,13 +62,14 @@ plus a whole-repo symlink at `~/.agents/plugins/idstack/` for in-skill `bin/` re
 generator (`--target {claude|codex|all}`) emits the Codex flavor under `dist/codex/skills/` with
 `allowed-tools:` stripped. Concept-name preamble lets the same skill body run in both CLIs.
 
-**Gemini CLI: still pending (v2.6).** `.tmpl` → `.toml` transform, `gemini-extension.json`
-manifest, `ask_user` tool mapping. Gemini's built-in structured-question tool is a clean
-drop-in for the AskUserQuestion concept.
+**Gemini CLI: still pending, not yet scheduled to a release.** `.tmpl` → `.toml` transform,
+`gemini-extension.json` manifest, `ask_user` tool mapping. Gemini's built-in
+structured-question tool is a clean drop-in for the AskUserQuestion concept.
 
-**Marketplace publishing: still pending (v2.6).** v2.5 uses simpler per-skill auto-discovery;
-proper Codex marketplace.json + .codex-plugin/plugin.json packaging would let users do
-`codex plugin marketplace add savvides/idstack` without cloning.
+**Codex marketplace publishing: still pending, not yet scheduled to a release.** Codex installs
+through simpler per-skill auto-discovery; proper Codex marketplace.json + .codex-plugin/plugin.json
+packaging would let users do `codex plugin marketplace add savvides/idstack` without cloning.
+(Claude Code has installed through its own marketplace since v3.2.0.0.)
 
 **Why:** Expands addressable market beyond Claude Code.
 **Priority:** P2 (Codex done; Gemini next)

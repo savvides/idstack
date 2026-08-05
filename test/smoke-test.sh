@@ -165,13 +165,27 @@ done
 
 # User-facing skill references must be namespaced /idstack:<skill> — the Codex
 # translation rule strips that prefix; a bare /skill renders as an invalid
-# command in both CLIs. (Frontmatter descriptions are exempt; this bans the
-# backticked in-body form.)
-BARE_SLASH_RE='`/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn)`'
+# command in both CLIs. (Frontmatter descriptions are exempt.)
+#
+# This matched only the backticked form until v3.3.0.1, which let three
+# unbackticked examples sit in the preamble's context-recovery section — the
+# model copied them and told users to run "/assessment-design", which does
+# nothing. The leading class covers a command position: line start, whitespace,
+# an opening quote/paren, or a backtick. It deliberately does NOT match a `/`
+# preceded by a path character, so `.idstack/exports/<slug>/red-team.html`
+# stays legal, and it can't match `/idstack:<skill>` because the skill name
+# there does not follow the slash.
+BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn)\b'
+# Frontmatter stays exempt: `description:` is prose the CLI shows in a skill
+# picker, not a command anyone types. STRIP_FM drops everything through the
+# closing `---` so only the body is scanned. Later `---` horizontal rules in
+# the body keep incrementing c, which is harmless once c>=2.
+STRIP_FM='awk "/^---\$/{c++; next} c>=2"'
 for skill in $SKILLS; do
-  check "$skill SKILL.md.tmpl free of bare backticked /skill refs" "! grep -E '$BARE_SLASH_RE' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl body free of bare /skill refs" "! $STRIP_FM '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | grep -qE '$BARE_SLASH_RE'"
 done
-check "preamble free of bare backticked /skill refs" "! grep -E '$BARE_SLASH_RE' '$IDSTACK_DIR/templates/preamble.md'"
+# The preamble has no frontmatter — scan the whole file.
+check "preamble free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK_DIR/templates/preamble.md'"
 check "no '/idstack <skill>' space typos in templates" "! grep -rE '/idstack [a-z]' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
 check "pipeline status table uses /idstack: prefixes" "grep -qF '[done] /idstack:needs-analysis' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 check "pipeline invokes children with the idstack: namespace" "grep -qF 'skill: \"idstack:needs-analysis\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
