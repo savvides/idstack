@@ -42,9 +42,9 @@
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows",
-    "softwareVersion": "3.2.0",
+    "softwareVersion": "3.3.0",
     "datePublished": "2026-04-20",
-    "dateModified": "2026-05-14",
+    "dateModified": "2026-08-04",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -926,7 +926,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v3.2.0.0 — Marketplace install</span>
+          <span>v3.3.0.0 — Course memory fixed</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design, transparently cited.</h1>
         <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier — <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code, OpenAI Codex CLI, and (soon) Gemini.</p>
@@ -1172,14 +1172,14 @@
     <section class="section" id="whats-new" aria-labelledby="whatsnew-title">
       <header class="section-header">
         <p class="eyebrow">What's new</p>
-        <h2 id="whatsnew-title">v3.2.0.0 — Install through the Claude Code plugin marketplace.</h2>
+        <h2 id="whatsnew-title">v3.3.0.0 — Course memory that actually remembers.</h2>
       </header>
 
       <article class="release-card">
-        <p class="release-meta">May 14, 2026 · v3.2.0.0 · latest</p>
-        <h3>The install Claude Code actually discovers.</h3>
-        <p><code>./setup</code> now registers idstack as a Claude Code plugin marketplace and installs it from there. Recent Claude Code versions stopped discovering plugins from the bare symlink the old setup created, so <code>/idstack:&lt;skill&gt;</code> commands silently never appeared in the slash picker. If that happened to you, pull the latest and re-run <code>./setup</code>.</p>
-        <p>A fresh install is one line: <code>git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>. Setup is idempotent, auto-detects Claude Code and Codex CLI on your <code>PATH</code>, and clears out installs from older versions. Restart Claude Code afterward — plugins load at session start.</p>
+        <p class="release-meta">August 4, 2026 · v3.3.0.0 · latest</p>
+        <h3>Welcome-back messages work on stock macOS now.</h3>
+        <p>On any Python older than 3.12 — including the 3.9 that macOS ships — the session-memory code inside every skill hit a silent syntax error. No welcome-back summary, no quality-score trend, no suggested next step. Fixed, and now exercised on Python 3.9 in CI so it stays fixed.</p>
+        <p>Also in this release: <code>/idstack:pipeline</code> invokes its child skills correctly in Claude Code, skills notice previous runs again ("update the results or start fresh?"), imported courses get a proper next-step suggestion, and a course name with an apostrophe no longer blanks the status dashboard. To update: <code>cd</code> into your idstack clone, then <code>git pull &amp;&amp; ./setup</code>.</p>
         <p><a href="https://github.com/savvides/idstack/releases" rel="noopener">→ All releases on GitHub</a></p>
       </article>
 

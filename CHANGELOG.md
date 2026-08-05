@@ -1,5 +1,29 @@
 # Changelog
 
+## v3.3.0.0 (2026-08-04)
+
+### Fixed — course memory, pipeline orchestration, re-run detection
+
+A full audit of the toolchain surfaced a set of bugs that broke user-visible behavior, some since their features shipped:
+
+- **Context recovery never ran on Python < 3.12.** The session-memory script embedded in every skill contained an f-string with nested same-type quotes — a SyntaxError on macOS system python3 (3.9) that died silently. Welcome-back messages, quality-score trends, and next-skill suggestions now work, and a new test suite runs the block on Python 3.9 and 3.12 in CI so the class of failure can't ship again.
+- **`/idstack:pipeline` invoked child skills with an unnamespaced name** that never resolved in Claude Code. The orchestrator now uses `skill: "idstack:<name>"`, logs its own completion to the timeline, and its status table and prompts use `/idstack:` forms the Codex translation rule can strip.
+- **Re-run detection was dead in five skills** (assessment-design, course-builder, course-export, course-import, course-quality-review): their "update or start fresh?" checks looked up manifest section names that don't exist. Corrected to the canonical names; smoke-test now bans the drifted tokens.
+- **`$_IDSTACK` resolution missed the marketplace cache** in `learn` and `course-export` — the way most users are installed — so their `bin/` calls pointed at a nonexistent directory. All bash blocks now splice one canonical resolution snippet (new `{{IDSTACK_RESOLVE}}` generator placeholder), re-derived per block because blocks run in separate shells.
+- **`bin/idstack-status` blanked the dashboard** when the course name contained an apostrophe (shell text interpolated into Python source). The name now travels via the environment; readiness failures print a message instead of vanishing. `course-import` counts as a pipeline entry for next-step suggestions.
+- **`setup`**: `--keep-legacy` is honored in all legacy-removal paths (was 1 of 3); `--local` no longer touches `$HOME/.claude/plugins`; `claude plugin` failures error loudly with manual-recovery steps instead of aborting silently.
+
+### Changed
+
+- course-quality-review and course-export write their manifest sections through `bin/idstack-manifest-merge` (atomic, section-scoped); needs-analysis and learning-objectives document their Write-tool fallback.
+- learning-objectives reports gained the required "Top recommendations" section; `[Alignment-1]` is now correctly cited as T5.
+- The version classifier shared by `setup` and `bin/idstack-doctor` lives in `bin/lib/version-classify.sh`, sourced by both and by its unit test — the test now exercises the shipped code.
+
+### Infrastructure
+
+- New GitHub Actions `test.yml` runs all five test suites on push and PR (ubuntu + macos, Python 3.9 + 3.12); `release.yml` refuses to publish unless the tag, `VERSION`, `plugin.json`, and `CHANGELOG.md` agree and the smoke test passes.
+- smoke-test grew from 272 to 365 assertions (version agreement, canonical section names, `/idstack:` namespacing, resolve-snippet lockstep, v1.1 migration) and prints failure diagnostics; integration-test proves it leaves the working tree untouched.
+
 ## v3.2.0.0 (2026-05-14)
 
 ### Fixed — Claude Code install uses the plugin marketplace flow
