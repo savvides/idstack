@@ -101,8 +101,8 @@ check "no timeline shows empty state message" \
 $IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"needs-analysis","event":"completed","training_justified":true}'
 $IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"course-quality-review","event":"completed","score":65,"dimensions":{"teaching_presence":7,"social_presence":3,"cognitive_presence":5}}'
 
-check "shows skills completed checkboxes" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q '\[x\] /needs-analysis'"
+check "shows skills completed checkboxes (namespaced)" \
+  "$IDSTACK_DIR/bin/idstack-status | grep -q '\[x\] /idstack:needs-analysis'"
 
 check "shows quality trend" \
   "$IDSTACK_DIR/bin/idstack-status | grep -q 'Quality trend: 65'"
@@ -127,7 +127,13 @@ check "apostrophe in project name: no 'Error reading timeline'" \
 mkdir -p importcase && ( cd importcase && \
   "$IDSTACK_DIR/bin/idstack-timeline-log" '{"skill":"course-import","event":"completed"}' )
 check "course-import alone suggests learning-objectives" \
-  "( cd importcase && '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Suggested next: /learning-objectives' )"
+  "( cd importcase && '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Suggested next: /idstack:learning-objectives' )"
+
+# Everything idstack-status prints is text a user may type back. It must carry
+# the /idstack: prefix for the same reason skill templates do — a bare /skill
+# is not a valid command in either CLI.
+check "idstack-status never prints a bare /skill command" \
+  "! '$IDSTACK_DIR/bin/idstack-status' | grep -Eq '(^|[^:])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline)\b'"
 
 rm -f .idstack/project.json
 

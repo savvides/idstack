@@ -60,7 +60,9 @@ The shared preamble above already ran the manifest existence check
 - Check which sections are populated. This skill benefits most from `learning_objectives`,
   `assessments`, and `course_content` data.
 - If no manifest: this skill works standalone. Gather course information through
-  AskUserQuestion.
+  AskUserQuestion. At the end, if the user wants the results saved, create the
+  manifest first (`bin/idstack-migrate --init`, see Write Manifest) — the merge
+  tool needs one to merge into.
 
 ---
 
@@ -352,10 +354,18 @@ and atomically updates the top-level `updated` timestamp. The payload must inclu
 PAYLOAD
 ```
 
-If `.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json`
-first — that creates a fresh canonical manifest. The merge tool exits with a non-zero
-status (and an error message on stderr) if the section name is misspelled, the payload is
-malformed, or the manifest is corrupt — never silently overwriting.
+If `.idstack/project.json` doesn't exist yet — the standalone case this skill explicitly
+supports — create it first with `--init`, which writes a canonical manifest with every
+section at its default. Without one the merge tool exits 4:
+
+```bash
+{{IDSTACK_RESOLVE}}
+"$_IDSTACK/bin/idstack-migrate" --init .idstack/project.json >/dev/null
+```
+
+The merge tool exits with a non-zero status (and an error message on stderr) if the
+section name is misspelled, the payload is malformed, or the manifest is corrupt —
+never silently overwriting.
 
 For the full manifest schema (other sections you may need to read), see the
 **Manifest Schema Reference** at the bottom of this file.

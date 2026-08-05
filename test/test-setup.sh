@@ -173,9 +173,15 @@ check "a failing 'claude' call prints manual-recovery steps" \
   "grep -q 'marketplace add' '$WORK/env/out.log'"
 
 # --- regeneration invariant ---
+# The fixture is copied from a tree the smoke test already gates as fresh, so
+# asserting freshness after a plain run proves nothing. Dirty a generated file
+# first: only an actual regeneration during setup can make the dry-run pass.
 setup_env
+echo 'drift' >> "$WORK/env/idstack/skills/red-team/SKILL.md"
+check "fixture is genuinely stale before setup runs" \
+  "! '$WORK/env/idstack/bin/idstack-gen-skills' --dry-run"
 run_setup
-check "setup leaves generated files fresh" \
+check "setup regenerates stale generated files" \
   "'$WORK/env/idstack/bin/idstack-gen-skills' --dry-run"
 
 echo ""

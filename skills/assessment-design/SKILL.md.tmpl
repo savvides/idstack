@@ -117,7 +117,9 @@ The shared preamble above already ran the manifest existence check
   that actually measure your stated outcomes. Want to continue anyway, or run
   `/idstack:learning-objectives` first?"
 - If the user wants to continue, proceed without manifest context. You can still
-  design assessments; you just won't have the upstream alignment data.
+  design assessments; you just won't have the upstream alignment data. The manifest
+  gets created at the end so results persist (`bin/idstack-migrate --init`, see
+  Write Manifest) — the merge tool needs one to merge into.
 
 ---
 
@@ -491,7 +493,12 @@ PAYLOAD
 
 If `bin/idstack-manifest-merge` is unavailable: fall back to manual write (Read manifest, modify only the two sections, Write back, preserve all others).
 
-If `.idstack/project.json` does not exist yet, run `bin/idstack-migrate .idstack/project.json` first — that creates a fresh canonical manifest. The merge tool then merges into it.
+If `.idstack/project.json` does not exist yet — the standalone case, where the user chose to continue without upstream data — create it first with `--init`, which writes a canonical manifest with every section at its default. The merge tool then merges into it (without a manifest it exits 4):
+
+```bash
+{{IDSTACK_RESOLVE}}
+"$_IDSTACK/bin/idstack-migrate" --init .idstack/project.json >/dev/null
+```
 
 **Populate the `assessments` section:**
 

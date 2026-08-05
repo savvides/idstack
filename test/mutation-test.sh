@@ -16,7 +16,7 @@ SRC="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
-pass=0; fail=0
+pass=0; fail=0; skip=0
 expect_fail() { # <name> <cmd...>
   local name="$1"; shift
   if "$@" >/dev/null 2>&1; then
@@ -27,6 +27,17 @@ expect_fail() { # <name> <cmd...>
     pass=$((pass+1))
   fi
 }
+
+skip_case() { # <name> <why>
+  echo "  SKIPPED: $1 ($2)"
+  skip=$((skip+1))
+}
+
+# Some defects only manifest on specific interpreters. PEP 701 (Python 3.12)
+# legalized reusing a quote character inside an f-string replacement field, so
+# the preamble f-string bug is a SyntaxError on 3.9-3.11 and valid code on
+# 3.12+. Mutating it under 3.12 would report a false NOT-GUARDED.
+PY_LT_312=$(python3 -c 'import sys; print(1 if sys.version_info < (3,12) else 0)' 2>/dev/null || echo 0)
 
 fresh() {
   rm -rf "$WORK/r"
@@ -39,16 +50,30 @@ fresh() {
   return 0
 }
 
-# 1. f-string bug in the preamble -> test-preamble-python must fail
-fresh
-python3 - "$WORK/r/templates/preamble.md" <<'PY'
+# Regenerate after mutating a .tmpl or a spliced template. Without this, the
+# generated files go stale and smoke-test's `gen-skills --dry-run` gate fires —
+# which means the mutation is caught by the staleness check rather than by the
+# assertion it is meant to exercise, and GUARDED proves nothing about that
+# assertion. Regenerating makes the specific guard the only thing that can fail.
+regen() { "$WORK/r/bin/idstack-gen-skills" --target all >/dev/null 2>&1 || true; }
+
+# 1. f-string bug in the preamble -> test-preamble-python must fail.
+# Only meaningful on Python < 3.12; see PY_LT_312 above.
+if [ "$PY_LT_312" = "1" ]; then
+  fresh
+  python3 - "$WORK/r/templates/preamble.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
 s = s.replace("print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))",
               "print(f'SKILLS_COMPLETED: {','.join(sorted(completed))}')")
 open(p,'w').write(s)
 PY
-expect_fail "preamble f-string regression" "$WORK/r/test/test-preamble-python.sh"
+  regen
+  expect_fail "preamble f-string regression" "$WORK/r/test/test-preamble-python.sh"
+else
+  skip_case "preamble f-string regression" \
+    "needs python < 3.12; PEP 701 makes the mutated form valid on $(python3 -V 2>&1)"
+fi
 
 # 2. course-import dropped from SUGGESTED_NEXT -> test-preamble-python must fail
 fresh
@@ -58,24 +83,28 @@ p = sys.argv[1]; s = open(p).read()
 s = s.replace("    ('course-import', 'learning-objectives'),\n", "")
 open(p,'w').write(s)
 PY
+regen
 expect_fail "course-import suggestion regression" "$WORK/r/test/test-preamble-python.sh"
 
 # 3. non-canonical manifest section name returns -> smoke-test must fail
 fresh
 sed -i.bak 's/manifest `assessments` section/manifest `assessment_design` section/' \
   "$WORK/r/skills/assessment-design/SKILL.md.tmpl"
+regen
 expect_fail "non-canonical section name regression" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 4. bare /skill reference returns -> smoke-test must fail
 fresh
 sed -i.bak 's|`/idstack:learning-objectives`|`/learning-objectives`|' \
   "$WORK/r/skills/needs-analysis/SKILL.md.tmpl"
+regen
 expect_fail "bare /skill reference regression" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 5. pipeline unnamespaced Skill invocation returns -> smoke-test must fail
 fresh
 sed -i.bak 's|skill: "idstack:needs-analysis"|skill: "needs-analysis"|' \
   "$WORK/r/skills/pipeline/SKILL.md.tmpl"
+regen
 expect_fail "pipeline namespace regression" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 6. hand-rolled _IDSTACK with the legacy path returns -> smoke-test must fail
@@ -87,6 +116,7 @@ s = s.replace("{{IDSTACK_RESOLVE}}",
   'for _p in "$CLAUDE_PLUGIN_ROOT" "$HOME/.claude/plugins/idstack"; do [ -d "$_p" ] && _IDSTACK="$_p" && break; done', 1)
 open(p,'w').write(s)
 PY
+regen
 expect_fail "hand-rolled _IDSTACK regression" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 7. plugin-status fixed-window regression -> test-plugin-status must fail
@@ -121,6 +151,7 @@ expect_fail "stale generated SKILL.md" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 # 10. missing Top recommendations -> smoke-test must fail
 fresh
 sed -i.bak '/\*\*Top recommendations:\*\*/d' "$WORK/r/skills/learning-objectives/SKILL.md.tmpl"
+regen
 expect_fail "missing Top recommendations" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 11. --keep-legacy ignored by the per-skill symlink loop -> test-setup must fail
@@ -177,5 +208,5 @@ PY
 expect_fail "silent 'claude' failure" "$WORK/r/test/test-setup.sh" "$WORK/r"
 
 echo ""
-echo "guarded: $pass   NOT guarded: $fail"
+echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

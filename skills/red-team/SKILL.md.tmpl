@@ -401,8 +401,14 @@ Each finding object: `{"id": "alignment-1", "description": "...", "module": "Mod
 
 The merge tool exits non-zero (and prints a diagnostic on stderr) if the payload is malformed,
 the manifest is corrupt, or the section name is misspelled — never silently overwriting. If
-`.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json`
-first (it creates a fresh canonical manifest).
+`.idstack/project.json` doesn't exist yet (standalone mode), create it first with `--init`,
+which writes a canonical manifest with every section at its default — without one the merge
+tool exits 4:
+
+```bash
+{{IDSTACK_RESOLVE}}
+"$_IDSTACK/bin/idstack-migrate" --init .idstack/project.json >/dev/null
+```
 
 **Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify
 only the `red_team_audit` section, Write back. Preserve all other sections verbatim. The

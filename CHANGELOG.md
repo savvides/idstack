@@ -16,7 +16,8 @@ A full audit of the toolchain surfaced a set of bugs that broke user-visible beh
 
 ### Changed
 
-- course-quality-review and course-export write their manifest sections through `bin/idstack-manifest-merge` (atomic, section-scoped); needs-analysis and learning-objectives document their Write-tool fallback.
+- course-quality-review, course-export, and learning-objectives now write their manifest sections through `bin/idstack-manifest-merge` (atomic, section-scoped, preserves every other section). needs-analysis and course-import keep the Read-modify-Write path — both write several co-owned sections in one pass, which whole-section merge cannot express — and each now documents why.
+- `bin/idstack-migrate --init` creates a canonical manifest with every section at its default. Three skills told the user to run `idstack-migrate` to create one when running standalone; it was a no-op on a missing file, so the merge that followed died with exit 4 and standalone results were silently never persisted. The skeleton comes from running the existing migration chain over a minimal seed, so there is no second definition of "canonical".
 - learning-objectives reports gained the required "Top recommendations" section; `[Alignment-1]` is now correctly cited as T5.
 - Logic that was duplicated or inlined and therefore untestable now lives in `bin/lib/` and is sourced by its callers: `version-classify.sh` (shared by `setup` and `bin/idstack-doctor`) and `plugin-status.sh` (the `claude plugin list` parser). Their unit tests exercise the shipped code rather than a copy — the version classifier had drifted across three PRs while a mirrored test passed green.
 

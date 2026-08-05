@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (see idstack-migrate --init coverage at the end of this file)
 # Unit tests for bin/idstack-manifest-merge.
 # Run from the repo root (or sourced by smoke-test.sh).
 
@@ -134,6 +135,47 @@ echo '{}' | "$MERGE" --section red_team_audit --payload - --manifest "$WORK/proj
 EC=$?
 set -e
 assert "manifest with string root exits 2" "[ $EC -eq 2 ]"
+
+# --- idstack-migrate --init: the manifest bootstrap the merge tool depends on ---
+# Skills running standalone create the manifest with --init before merging;
+# without it the merge exits 4 and standalone results are never persisted.
+MIGRATE="$(cd "$(dirname "$0")/.." && pwd -P)/bin/idstack-migrate"
+
+INIT_DIR="$WORK/initcase"
+mkdir -p "$INIT_DIR/.idstack"
+( cd "$INIT_DIR" && "$MIGRATE" --init .idstack/project.json >/dev/null 2>&1 )
+assert "--init creates a manifest" "[ -f '$INIT_DIR/.idstack/project.json' ]"
+assert "--init manifest is at the latest schema version" \
+  "python3 -c \"import json; assert json.load(open('$INIT_DIR/.idstack/project.json'))['version']=='1.4'\""
+
+# Every section the merge tool accepts must exist in a freshly initialized
+# manifest — otherwise a standalone skill's first merge lands in a document
+# missing the sections downstream skills read.
+assert "--init manifest carries every mergeable section" \
+  "python3 -c \"
+import json, re, sys
+d = json.load(open('$INIT_DIR/.idstack/project.json'))
+src = open('$MERGE').read()
+allowed = set(re.findall(r'\\\"([a-z_]+)\\\",?\\s*(?:#|\\n)', src.split('ALLOWED_SECTIONS')[1].split(']')[0]))
+missing = sorted(s for s in allowed if s not in d)
+assert not missing, 'missing from --init manifest: ' + repr(missing)
+\""
+
+# A merge into a freshly initialized manifest must succeed.
+( cd "$INIT_DIR" && echo '{"overall_score": 77}' | "$MERGE" --section quality_review --payload - --quiet >/dev/null 2>&1 )
+assert "merge into an --init manifest succeeds" \
+  "python3 -c \"import json; assert json.load(open('$INIT_DIR/.idstack/project.json'))['quality_review']['overall_score']==77\""
+
+# --init must never clobber an existing manifest.
+( cd "$INIT_DIR" && "$MIGRATE" --init .idstack/project.json >/dev/null 2>&1 )
+assert "--init preserves an existing manifest" \
+  "python3 -c \"import json; assert json.load(open('$INIT_DIR/.idstack/project.json'))['quality_review']['overall_score']==77\""
+
+# Without --init the old behavior holds: silent no-op on a missing file.
+NOINIT_DIR="$WORK/noinit"
+mkdir -p "$NOINIT_DIR/.idstack"
+( cd "$NOINIT_DIR" && "$MIGRATE" .idstack/project.json >/dev/null 2>&1 )
+assert "plain migrate does not create a manifest" "[ ! -f '$NOINIT_DIR/.idstack/project.json' ]"
 
 echo ""
 echo "manifest-merge: $PASS/$TOTAL passed, $FAIL failed"

@@ -44,12 +44,17 @@ jobs:
 
   # Confirms the guards above actually fail when their bugs return. Slower
   # (copies the repo per mutation), so it runs once rather than per matrix leg.
+  #
+  # Pinned to 3.9, the oldest supported interpreter: some defects only exist
+  # below a given version. PEP 701 (3.12) legalized reusing a quote inside an
+  # f-string replacement field, so mutating the preamble f-string bug is a
+  # no-op on 3.12 and the suite would skip that case.
   mutation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.9'
       - name: Mutation test
         run: ./test/mutation-test.sh
