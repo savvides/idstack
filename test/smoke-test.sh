@@ -261,6 +261,12 @@ if [ -x "$IDSTACK_DIR/test/test-plugin-status.sh" ]; then
   check "plugin-status unit tests pass" "'$IDSTACK_DIR/test/test-plugin-status.sh'"
 fi
 
+# ./setup is what a new user runs first; it is exercised against a repo copy
+# with a fake $HOME and a stub `claude`, never the real install.
+if [ -x "$IDSTACK_DIR/test/test-setup.sh" ]; then
+  check "setup behavioral tests pass" "'$IDSTACK_DIR/test/test-setup.sh' '$IDSTACK_DIR'"
+fi
+
 # Check generated files have auto-generated header
 for skill in $SKILLS; do
   check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/skills/$skill/SKILL.md'"

@@ -123,6 +123,59 @@ fresh
 sed -i.bak '/\*\*Top recommendations:\*\*/d' "$WORK/r/skills/learning-objectives/SKILL.md.tmpl"
 expect_fail "missing Top recommendations" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 11. --keep-legacy ignored by the per-skill symlink loop -> test-setup must fail
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace('''      if [ "$KEEP_LEGACY" = "1" ]; then
+        echo "  KEEPING legacy symlink: $legacy (--keep-legacy)"
+      else
+        rm "$legacy"
+        echo "  cleaned up legacy: $legacy"
+      fi''', '''      rm "$legacy"
+      echo "  cleaned up legacy: $legacy"''')
+open(p,'w').write(s)
+PY
+expect_fail "--keep-legacy ignored by per-skill loop" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 12. --local scope leaking into $HOME -> test-setup must fail
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace('''if [ "$SCOPE" = "local" ]; then
+  vestigial="$(pwd)/.claude/plugins/idstack"
+else
+  vestigial="$HOME/.claude/plugins/idstack"
+fi
+if [ -L "$vestigial" ]; then
+  rm "$vestigial"
+  echo "  removed vestigial symlink: $vestigial (pre-marketplace install method)"
+fi''', '''for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
+  vestigial="$plugins_base/idstack"
+  if [ -L "$vestigial" ]; then
+    rm "$vestigial"
+    echo "  removed vestigial symlink: $vestigial"
+  fi
+done''')
+open(p,'w').write(s)
+PY
+expect_fail "--local leaking into \$HOME" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 13. silent failure when `claude` exits nonzero -> test-setup must fail
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys, re
+p = sys.argv[1]; s = open(p).read()
+s = re.sub(r'  if ! claude plugin marketplace add "\$IDSTACK_DIR"; then\n(?:.*\n)*?  fi\n',
+           '  claude plugin marketplace add "$IDSTACK_DIR" || true\n', s, count=1)
+s = re.sub(r'  if ! claude plugin install idstack@idstack --scope "\$CLAUDE_SCOPE"; then\n(?:.*\n)*?  fi\n',
+           '  claude plugin install idstack@idstack --scope "$CLAUDE_SCOPE" || true\n', s, count=1)
+open(p,'w').write(s)
+PY
+expect_fail "silent 'claude' failure" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail"
 [ "$fail" -eq 0 ]
