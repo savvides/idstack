@@ -4,6 +4,26 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Course memory, pipeline orchestration, and re-run detection fixed (v3.3.0.0)
+- **Welcome-back messages work on stock macOS.** The session-memory code embedded in every skill contained an f-string that is a SyntaxError on any Python below 3.12 — including the 3.9 macOS ships. It failed silently, so context recovery, quality-score trends, and next-step suggestions produced nothing. Fixed, and now exercised on 3.9 in CI so the class of bug can't ship again.
+- **`/idstack:pipeline` invokes its child skills correctly.** It was calling them by an unnamespaced name that never resolved in Claude Code.
+- **Skills notice previous runs again.** Re-run detection ("update the results or start fresh?") was dead in five skills, which looked up manifest sections that don't exist.
+- **Marketplace installs resolve `bin/` correctly.** `learn` and `course-export` missed the marketplace cache — the way most users are installed — so their tool calls pointed at a nonexistent directory.
+- **Apostrophes no longer blank the dashboard**, imported courses get a proper next-step suggestion, and `bin/idstack-doctor` can no longer report a disabled install as healthy.
+- **Standalone runs persist.** `bin/idstack-migrate --init` creates a canonical manifest, so a skill run outside the pipeline has something to write into instead of silently discarding its results.
+
+### Test infrastructure and CI (v3.3.0.0, for contributors)
+- The suite had never run automatically. GitHub Actions now runs all eight suites on every push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS.
+- `./setup` — the primary deliverable — went from zero coverage to 17 behavioral tests.
+- `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught.
+
+### Install through the Claude Code plugin marketplace (v3.2.0.0)
+- `./setup` registers idstack as a Claude Code plugin marketplace and installs from there. Recent Claude Code versions stopped discovering plugins from the bare symlink older setups created, so `/idstack:<skill>` commands silently never appeared in the slash picker. If that happened to you, pull the latest and re-run `./setup`.
+
+### `DESIGN.md` and design-system reconciliation (v3.1.0.0)
+- The visual system behind the report stylesheet and the landing page is documented at the repo root in `DESIGN.md` — fonts, colors, spacing, radii, motion, plus anti-patterns and a dated decisions log. Skills, contributors, and reviewers read it before touching anything visual.
+- Publication-grade type (Source Serif 4, Public Sans, JetBrains Mono), an ivory palette in place of parchment, sharper card corners, and a second annotation color mirroring the two-pen academic-editor convention. Reports written by older versions still render correctly.
+
 ### Branded HTML reports + per-course export folder (v3.0.0)
 - **HTML replaces Markdown for the human view.** Every skill that produces findings now writes a branded, self-contained HTML report at `.idstack/exports/<course-slug>/<skill>.html`. Visual contract: `templates/report.html.tmpl` + `templates/assets/idstack.css` (scholarly serif body, severity-colored finding cards, evidence-tier badges, print-friendly, auto light/dark via `prefers-color-scheme`). Content contract is unchanged — observation → evidence → why-it-matters → suggestion, severity + tier on every finding.
 - **One folder per course, by name.** All per-course artifacts — every per-skill HTML report, the pipeline `index.html` dashboard, the bundled CSS, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under `.idstack/exports/<course-slug>/`. The slug is derived from `project_name` via `bin/idstack-slugify` (NFKD-fold, kebab-case, ASCII-safe). Zip the folder to hand the whole deliverable to a stakeholder.
@@ -75,11 +95,11 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Coming soon
 
-### Gemini CLI support (v2.6)
-Add native Gemini CLI as a third target. `.tmpl` → `.toml` transform plus a `gemini-extension.json` manifest. Gemini's built-in `ask_user` tool maps cleanly to the AskUserQuestion concept (drop-in), and inline `!{cmd}` shell interpolation will speed up the manifest-merge call paths. Codex shipped first because its SKILL.md format is a 1:1 match; Gemini needs the file-format transform.
+### Gemini CLI support
+Add native Gemini CLI as a third target. `.tmpl` → `.toml` transform plus a `gemini-extension.json` manifest. Gemini's built-in `ask_user` tool maps cleanly to the AskUserQuestion concept (drop-in), and inline `!{cmd}` shell interpolation will speed up the manifest-merge call paths. Codex shipped first because its SKILL.md format is a 1:1 match; Gemini needs the file-format transform. Not yet scheduled to a release.
 
-### Marketplace publishing (v2.6)
-Publish idstack via `codex plugin marketplace add savvides/idstack` so users don't need to clone the repo. Requires building the proper two-tier marketplace.json + .codex-plugin/plugin.json schema. v2.5 ships with simpler per-skill auto-discovery at `$CODEX_HOME/skills/`, which works without a marketplace.
+### Codex marketplace publishing
+Publish idstack via `codex plugin marketplace add savvides/idstack` so Codex users don't need to clone the repo. Requires building the proper two-tier marketplace.json + .codex-plugin/plugin.json schema. Codex currently installs through simpler per-skill auto-discovery at `$CODEX_HOME/skills/`, which works without a marketplace. (Claude Code already installs through its marketplace as of v3.2.0.0.) Not yet scheduled to a release.
 
 ### More skills
 Four more skills based on the research synthesis:
