@@ -11,18 +11,19 @@ A full audit of the toolchain surfaced a set of bugs that broke user-visible beh
 - **Re-run detection was dead in five skills** (assessment-design, course-builder, course-export, course-import, course-quality-review): their "update or start fresh?" checks looked up manifest section names that don't exist. Corrected to the canonical names; smoke-test now bans the drifted tokens.
 - **`$_IDSTACK` resolution missed the marketplace cache** in `learn` and `course-export` — the way most users are installed — so their `bin/` calls pointed at a nonexistent directory. All bash blocks now splice one canonical resolution snippet (new `{{IDSTACK_RESOLVE}}` generator placeholder), re-derived per block because blocks run in separate shells.
 - **`bin/idstack-status` blanked the dashboard** when the course name contained an apostrophe (shell text interpolated into Python source). The name now travels via the environment; readiness failures print a message instead of vanishing. `course-import` counts as a pipeline entry for next-step suggestions.
+- **`bin/idstack-doctor` could report a broken install as healthy.** Its enabled-check read a fixed 4-line window of `claude plugin list`, so when another plugin was listed right after idstack, the neighbour's `enabled` line was attributed to idstack — a disabled install diagnosed as "installed and enabled". The check is now scoped to idstack's own entry. Doctor also parses the plugin version as JSON rather than by regex, and `--local` no longer scans `$HOME`.
 - **`setup`**: `--keep-legacy` is honored in all legacy-removal paths (was 1 of 3); `--local` no longer touches `$HOME/.claude/plugins`; `claude plugin` failures error loudly with manual-recovery steps instead of aborting silently.
 
 ### Changed
 
 - course-quality-review and course-export write their manifest sections through `bin/idstack-manifest-merge` (atomic, section-scoped); needs-analysis and learning-objectives document their Write-tool fallback.
 - learning-objectives reports gained the required "Top recommendations" section; `[Alignment-1]` is now correctly cited as T5.
-- The version classifier shared by `setup` and `bin/idstack-doctor` lives in `bin/lib/version-classify.sh`, sourced by both and by its unit test — the test now exercises the shipped code.
+- Logic that was duplicated or inlined and therefore untestable now lives in `bin/lib/` and is sourced by its callers: `version-classify.sh` (shared by `setup` and `bin/idstack-doctor`) and `plugin-status.sh` (the `claude plugin list` parser). Their unit tests exercise the shipped code rather than a copy — the version classifier had drifted across three PRs while a mirrored test passed green.
 
 ### Infrastructure
 
-- New GitHub Actions `test.yml` runs all five test suites on push and PR (ubuntu + macos, Python 3.9 + 3.12); `release.yml` refuses to publish unless the tag, `VERSION`, `plugin.json`, and `CHANGELOG.md` agree and the smoke test passes.
-- smoke-test grew from 272 to 365 assertions (version agreement, canonical section names, `/idstack:` namespacing, resolve-snippet lockstep, v1.1 migration) and prints failure diagnostics; integration-test proves it leaves the working tree untouched.
+- New GitHub Actions `test.yml` runs all six test suites on push and PR (ubuntu + macos, Python 3.9 + 3.12); `release.yml` refuses to publish unless the tag, `VERSION`, `plugin.json`, and `CHANGELOG.md` agree and the smoke test passes.
+- smoke-test grew from 272 to 370 assertions (version agreement, canonical section names, `/idstack:` namespacing, resolve-snippet lockstep, v1.1 migration) and prints failure diagnostics; integration-test proves it leaves the working tree untouched.
 
 ## v3.2.0.0 (2026-05-14)
 
