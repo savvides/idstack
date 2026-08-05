@@ -46,7 +46,14 @@ echo "Plugin manifests:"
 plugin_manifest="$IDSTACK_DIR/.claude-plugin/plugin.json"
 market_manifest="$IDSTACK_DIR/.claude-plugin/marketplace.json"
 if [ -f "$plugin_manifest" ]; then
-  version=$(grep -o '"version": *"[^"]*"' "$plugin_manifest" | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
+  # Prefer a real JSON parse (also catches a malformed manifest); fall back to
+  # grep|sed only when python3 is unavailable.
+  version=""
+  if command -v python3 >/dev/null 2>&1; then
+    version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("version",""))' "$plugin_manifest" 2>/dev/null || true)
+  else
+    version=$(grep -o '"version": *"[^"]*"' "$plugin_manifest" | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
+  fi
   if [ -n "$version" ]; then
     echo "  plugin.json present (version $version)"
   else
@@ -90,7 +97,16 @@ echo "Claude Code install:"
 if command -v claude >/dev/null 2>&1; then
   plugin_list=$(claude plugin list 2>/dev/null || true)
   if echo "$plugin_list" | grep -q "idstack@idstack"; then
-    if echo "$plugin_list" | grep -A4 "idstack@idstack" | grep -qi "enabled"; then
+    # Scope the enabled check to idstack's own entry: from the idstack@idstack
+    # line until a blank line or the next plugin id (name@marketplace). A fixed
+    # -A4 window could read a neighboring plugin's status line.
+    idstack_entry=$(echo "$plugin_list" | awk '
+      /idstack@idstack/ && !f { f = 1; print; next }
+      f {
+        if ($0 ~ /^[[:space:]]*$/ || $0 ~ /[A-Za-z0-9._-]+@[A-Za-z0-9._-]+/) { f = 0 }
+        else { print }
+      }')
+    if echo "$idstack_entry" | grep -qi "enabled"; then
       echo "  idstack@idstack installed and enabled"
     else
       echo "  PROBLEM: idstack@idstack is installed but not enabled."
@@ -116,14 +132,13 @@ legacy_problem=0
 
 # Vestigial bare symlink from the pre-marketplace setup method. Harmless on
 # current Claude Code (ignored), but worth removing so it stops confusing
-# diagnostics. Informational, not counted as a problem.
-for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
-  vestigial="$plugins_base/idstack"
-  if [ -L "$vestigial" ]; then
-    echo "  NOTE: vestigial symlink at $vestigial (pre-marketplace install method)."
-    echo "        Harmless — ./setup removes it. Or: rm \"$vestigial\""
-  fi
-done
+# diagnostics. Informational, not counted as a problem. Scope-aware: --local
+# checks only ./.claude/plugins, the default checks only $HOME/.claude/plugins.
+vestigial="$LEGACY_BASE/plugins/idstack"
+if [ -L "$vestigial" ]; then
+  echo "  NOTE: vestigial symlink at $vestigial (pre-marketplace install method)."
+  echo "        Harmless — ./setup removes it. Or: rm \"$vestigial\""
+fi
 
 # Pre-v2.0.1.0 dispatcher install — the failure mode that surfaced as
 # "Unknown skill: idstack:course-import" / "Unknown skill: course-import".

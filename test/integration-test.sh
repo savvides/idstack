@@ -105,6 +105,27 @@ check "shows quality trend" \
 check "suggests next skill" \
   "$IDSTACK_DIR/bin/idstack-status | grep -q 'Suggested next'"
 
+# Quote-injection regression: a project name with an apostrophe must render,
+# not blank the dashboard with a Python SyntaxError.
+cat > .idstack/project.json <<'EOF'
+{"version": "1.4", "project_name": "Bob's Advanced Course"}
+EOF
+
+check "apostrophe in project name renders" \
+  "'$IDSTACK_DIR/bin/idstack-status' | grep -qF \"Project: Bob's Advanced Course\""
+
+check "apostrophe in project name: no 'Error reading timeline'" \
+  "! '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Error reading timeline'"
+
+# course-import is an alternative pipeline entry: with only course-import
+# completed, the suggestion must be learning-objectives, not nothing.
+mkdir -p importcase && ( cd importcase && \
+  "$IDSTACK_DIR/bin/idstack-timeline-log" '{"skill":"course-import","event":"completed"}' )
+check "course-import alone suggests learning-objectives" \
+  "( cd importcase && '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Suggested next: /learning-objectives' )"
+
+rm -f .idstack/project.json
+
 echo ""
 
 # --- idstack-gen-skills ---
@@ -126,6 +147,11 @@ check "dry-run detects stale SKILL.md (sandbox)" \
 
 check "regenerate fixes staleness (sandbox)" \
   "'$SANDBOX/bin/idstack-gen-skills' && '$SANDBOX/bin/idstack-gen-skills' --dry-run"
+
+# A template missing {{PREAMBLE}} must be an error, not a silent SKIP that
+# lets --dry-run pass green over an absent or stale output.
+check "missing {{PREAMBLE}} placeholder fails dry-run and generation (sandbox)" \
+  "sed -i.bak 's/{{PREAMBLE}}/PREAMBLE_GONE/' '$SANDBOX/skills/learn/SKILL.md.tmpl' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run && ! '$SANDBOX/bin/idstack-gen-skills'"
 
 check "real tree untouched by gen-skills tests" \
   "[ -z \"\$(git -C '$IDSTACK_DIR' status --porcelain -- skills dist AGENTS.md)\" ]"
