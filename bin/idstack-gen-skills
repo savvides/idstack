@@ -15,15 +15,19 @@
 #                     allowlist.
 #   all (default):    both targets
 #
-# Source of truth is unchanged: skills/<name>/SKILL.md.tmpl with {{PREAMBLE}} and
-# {{MANIFEST_SCHEMA}} placeholders. The preamble defines the AskUserQuestion / Skill
-# / Agent concepts portably so skill bodies don't need per-target text substitution.
+# Source of truth is unchanged: skills/<name>/SKILL.md.tmpl with {{PREAMBLE}},
+# {{MANIFEST_SCHEMA}}, and {{IDSTACK_RESOLVE}} placeholders. The preamble defines
+# the AskUserQuestion / Skill / Agent concepts portably so skill bodies don't need
+# per-target text substitution; {{IDSTACK_RESOLVE}} splices the canonical
+# $_IDSTACK resolution (templates/snippets/idstack-resolve.sh) into each bash
+# block that needs it — blocks run in separate shells and must be self-contained.
 
 set -e
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PREAMBLE="$IDSTACK_DIR/templates/preamble.md"
 MANIFEST_SCHEMA="$IDSTACK_DIR/templates/manifest-schema.md"
+RESOLVE_SNIPPET="$IDSTACK_DIR/templates/snippets/idstack-resolve.sh"
 DRY_RUN=0
 TARGET="all"
 GENERATED=0
@@ -55,6 +59,11 @@ fi
 
 if [ ! -f "$MANIFEST_SCHEMA" ]; then
   echo "ERROR: templates/manifest-schema.md not found at $MANIFEST_SCHEMA" >&2
+  exit 1
+fi
+
+if [ ! -f "$RESOLVE_SNIPPET" ]; then
+  echo "ERROR: templates/snippets/idstack-resolve.sh not found at $RESOLVE_SNIPPET" >&2
   exit 1
 fi
 
@@ -99,6 +108,7 @@ render_template() {
   local result
   result=$(awk -v header="$HEADER" -v header2="$HEADER2" \
                -v preamble_file="$PREAMBLE" -v schema_file="$MANIFEST_SCHEMA" \
+               -v resolve_file="$RESOLVE_SNIPPET" \
                -v target="$target" '
     BEGIN {
       after_frontmatter = 0
@@ -142,6 +152,14 @@ render_template() {
     /\{\{MANIFEST_SCHEMA\}\}/ {
       while ((getline line < schema_file) > 0) print line
       close(schema_file)
+      next
+    }
+    # {{IDSTACK_RESOLVE}} appears many times per template (once per bash block
+    # that calls $_IDSTACK/bin/...); close() resets the read so each occurrence
+    # splices the full snippet.
+    /\{\{IDSTACK_RESOLVE\}\}/ {
+      while ((getline line < resolve_file) > 0) print line
+      close(resolve_file)
       next
     }
     { print }

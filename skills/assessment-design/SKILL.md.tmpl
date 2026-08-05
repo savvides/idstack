@@ -17,7 +17,7 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-**Skill-specific manifest check:** If the manifest `assessment_design` section already has data,
+**Skill-specific manifest check:** If the manifest `assessments` section already has data,
 ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
 
 # Assessment Design — Rubrics, Feedback Strategies & Formative Checkpoints
@@ -106,34 +106,18 @@ When multiple tiers apply, cite the strongest.
 
 ---
 
-## Preamble: Project Manifest
+## Manifest Inputs (skill-specific)
 
-Before starting assessment design, check for an existing project manifest.
-
-```bash
-if [ -f ".idstack/project.json" ]; then
-  echo "MANIFEST_EXISTS"
-  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
-else
-  echo "NO_MANIFEST"
-fi
-```
-
-**If MANIFEST_EXISTS:**
-- Read the manifest. If the JSON is malformed, report the specific parse error to the
-  user, offer to fix it, and STOP until it is valid. Never silently overwrite corrupt JSON.
-- If `assessments` section already has data (non-empty `items` array), ask:
-  "I see you've already designed assessments. Want to update them or start fresh?"
-- Preserve all existing sections when writing back.
+The shared preamble above already ran the manifest existence check
+(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
 
 **If NO_MANIFEST:**
-- Say: "I see you haven't run `/learning-objectives` yet. Running it first gives me
+- Say: "I see you haven't run `/idstack:learning-objectives` yet. Running it first gives me
   your ILOs with Bloom's classifications, which helps me recommend assessment types
   that actually measure your stated outcomes. Want to continue anyway, or run
-  `/learning-objectives` first?"
+  `/idstack:learning-objectives` first?"
 - If the user wants to continue, proceed without manifest context. You can still
   design assessments; you just won't have the upstream alignment data.
-- You will create the manifest at the end of this skill's workflow.
 
 ---
 
@@ -174,7 +158,7 @@ assessments to match."**
 
 For each objective provided, classify on both Bloom's dimensions (knowledge and
 cognitive process) before proceeding to assessment design. Use the same classification
-approach as the `/learning-objectives` skill: ask for clarification when verbs are
+approach as the `/idstack:learning-objectives` skill: ask for clarification when verbs are
 ambiguous [Alignment-12] [T2].
 
 ### Mode 3: Audit Existing Assessments
@@ -368,9 +352,9 @@ and close performance gaps before they matter [Assessment-9] [T5].
 - **Feedback type:** Immediate and elaborated whenever possible. Automated feedback
   is acceptable for remember/understand levels. Higher levels need human or
   structured peer feedback [Assessment-10] [T1].
-- **Purpose:** Close the gap between current and desired performance [Assessment-9]
-  [T5]. Each checkpoint should give students evidence of where they stand relative
-  to the rubric criteria.
+- **Purpose:** Close the gap between current and desired performance
+  [Assessment-9] [T5]. Each checkpoint should give students evidence of where they
+  stand relative to the rubric criteria.
 
 **Student-initiated formative assessment:**
 Where possible, design checkpoints that students can initiate on their own (practice
@@ -450,6 +434,7 @@ Consider adding a formative peer review checkpoint to partially address the gap.
 Before writing the manifest, generate an HTML report so the designer has a single document to read. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
 
 ```bash
+{{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
 _PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
@@ -490,6 +475,7 @@ first, merge in your changes, then pass the full updated section as the payload.
 The `assessments` payload must include `report_path` set to the value of `$_REPORT_PATH` from the bash block above (e.g., `.idstack/exports/<course-slug>/assessment-design.html`).
 
 ```bash
+{{IDSTACK_RESOLVE}}
 # Section 1: assessments
 "$_IDSTACK/bin/idstack-manifest-merge" --section assessments --payload - <<'PAYLOAD'
 <the assessments payload — see field shape below>
@@ -590,7 +576,7 @@ Write the manifest, then confirm to the user:
   alignment notes. Open it in any browser; the folder is self-contained.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
-**Next step:** Run `/course-builder` to generate the full course content including
+**Next step:** Run `/idstack:course-builder` to generate the full course content including
 assessment documents, rubric handouts, and assignment instructions."
 
 ---
@@ -608,6 +594,7 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
+{{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"assessment-design","event":"completed"}'
 ```
 
@@ -618,5 +605,6 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
+{{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-learnings-log" '{"skill":"assessment-design","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

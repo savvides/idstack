@@ -41,23 +41,17 @@ These are **directives to the model**, not magic words — interpret them as the
 ## Preamble: Update Check
 
 ```bash
-# Locate the idstack install. Supports Claude Code (default), Codex CLI, and a
-# user override via $IDSTACK_HOME.
-if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-  _IDSTACK="$CLAUDE_PLUGIN_ROOT"
-elif [ -n "${IDSTACK_HOME:-}" ]; then
-  _IDSTACK="$IDSTACK_HOME"
-elif [ -d "$HOME/.agents/plugins/idstack" ]; then
-  _IDSTACK="$HOME/.agents/plugins/idstack"
-elif [ -d "$HOME/.agents/skills/idstack" ]; then
-  _IDSTACK="$HOME/.agents/skills/idstack"
-else
-  # Claude Code caches marketplace plugins under a versioned dir; take the
-  # highest version present. Empty if idstack was never installed this way —
-  # every "$_IDSTACK/bin/..." call below is guarded, so that degrades quietly.
-  _IDSTACK=$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)
-  _IDSTACK="${_IDSTACK%/}"
-fi
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache (highest version). Empty if none found;
+# guard "$_IDSTACK/bin/..." calls accordingly.
+# Canonical copy: templates/snippets/idstack-resolve.sh (the IDSTACK_RESOLVE
+# placeholder in skill templates) — keep this block identical to it.
+_IDSTACK=""
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
@@ -69,6 +63,11 @@ If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of ids
 Before starting, check for an existing project manifest.
 
 ```bash
+# (fresh shell — re-derive the install dir; see Preamble: Update Check)
+_IDSTACK=""
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
   "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
@@ -138,6 +137,11 @@ Check for session history and learnings from prior runs.
 
 ```bash
 # Context recovery: timeline + learnings
+# (fresh shell — re-derive the install dir; see Preamble: Update Check)
+_IDSTACK=""
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 _HAS_TIMELINE=0
 _HAS_LEARNINGS=0
 if [ -f ".idstack/timeline.jsonl" ]; then
@@ -171,7 +175,9 @@ completed = set()
 for e in events:
     if e.get('event') == 'completed':
         completed.add(e.get('skill', ''))
-print(f'SKILLS_COMPLETED: {','.join(sorted(completed))}')
+# No f-string here: nesting same-type quotes in a replacement field is a
+# SyntaxError before Python 3.12, and macOS system python3 is 3.9.
+print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))
 
 # Last skill run
 last_completed = [e for e in events if e.get('event') == 'completed']
@@ -179,9 +185,11 @@ if last_completed:
     last = last_completed[-1]
     print(f'LAST_SKILL: {last.get(\"skill\",\"?\")} at {last.get(\"ts\",\"?\")}')
 
-# Pipeline progression
+# Pipeline progression. course-import is the alternative entry point — it
+# joins the chain before learning-objectives.
 pipeline = [
     ('needs-analysis', 'learning-objectives'),
+    ('course-import', 'learning-objectives'),
     ('learning-objectives', 'assessment-design'),
     ('assessment-design', 'course-builder'),
     ('course-builder', 'course-quality-review'),
@@ -225,7 +233,7 @@ Example: "Reminder: this Canvas instance uses custom rubric formatting (discover
 
 ---
 
-**Skill-specific manifest check:** If the manifest `course_export` section already has data,
+**Skill-specific manifest check:** If the manifest `export_metadata` section already has data,
 ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
 
 ## Pre-Export Readiness Check
@@ -233,7 +241,15 @@ ask the user: "I see you've already run this skill. Want to update the results o
 Before starting the export workflow, run the readiness dashboard:
 
 ```bash
-for _p in "$CLAUDE_PLUGIN_ROOT" "$IDSTACK_HOME" "$HOME/.claude/plugins/idstack" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack"; do [ -n "$_p" ] && [ -d "$_p" ] && _IDSTACK="$_p" && break; done; : "${_IDSTACK:=$HOME/.claude/plugins/idstack}"
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache (highest version). Empty if none found;
+# guard "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-status" --readiness
 ```
 
@@ -247,7 +263,7 @@ This is advisory — the user can always choose to export regardless.
 # Course Export — IMS Common Cartridge & Canvas API
 
 You are a course export partner. Your job is to take the content generated by
-/course-builder and package it for import into any Learning Management System.
+/idstack:course-builder and package it for import into any Learning Management System.
 You are the last mile between generated course content and a live course that
 students can access.
 
@@ -267,7 +283,7 @@ manifest that ties them together. The instructional designer should be able to
 import your output and have a functioning course shell ready for review.
 
 You read from two sources:
-- The `.idstack/course-content/` directory, where /course-builder writes its
+- The `.idstack/course-content/` directory, where /idstack:course-builder writes its
   generated files (syllabus, module content, assessments, rubrics)
 - The `.idstack/project.json` manifest, which contains the course structure,
   learning objectives, and alignment data from upstream skills
@@ -285,18 +301,12 @@ When multiple tiers apply, cite the strongest.
 
 ---
 
-## Preamble: Project Manifest and Course Content
+## Course Content Inputs
 
-Before starting the export, verify that generated course content exists.
+The shared preamble above already ran the manifest existence check
+(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
 
-```bash
-if [ -f ".idstack/project.json" ]; then
-  echo "MANIFEST_EXISTS"
-  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
-else
-  echo "NO_MANIFEST"
-fi
-```
+Before starting the export, verify that generated course content exists:
 
 ```bash
 if [ -d ".idstack/course-content" ]; then
@@ -308,20 +318,13 @@ fi
 ```
 
 **If NO_MANIFEST or NO_CONTENT:**
-Tell the user: "I need generated course content to export. Run `/course-builder`
+Tell the user: "I need generated course content to export. Run `/idstack:course-builder`
 first to generate your syllabus, modules, and assessments. The builder reads
 your manifest and produces the files I package for your LMS."
 
 **If MANIFEST_EXISTS but no `course_content` section:**
 Check whether `.idstack/course-content/` has files. If it does, proceed using
-the files directly. If not, nudge for /course-builder.
-
-**If both exist:**
-Read the manifest. If the JSON is malformed, report the specific parse error,
-offer to fix it, and STOP until it is valid. Never silently proceed with
-corrupt data.
-
-Preserve all existing manifest sections when writing back.
+the files directly. If not, nudge for /idstack:course-builder.
 
 ---
 
@@ -333,6 +336,15 @@ produced by the rest of the pipeline. Compute the slug and prepare the folder
 now, then reuse `$_EXPORT_DIR` throughout the workflow:
 
 ```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache (highest version). Empty if none found;
+# guard "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 # Course-slug-based export folder. Required before any artifact write.
 _PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
@@ -903,7 +915,7 @@ If any items failed:
 |------|------|-------|
 | {name} | {type} | {error message} |
 
-You can create these items manually in Canvas, or run `/course-export` again
+You can create these items manually in Canvas, or run `/idstack:course-export` again
 to retry the failed items.
 ```
 
@@ -920,7 +932,7 @@ find .idstack/course-content/ -type f | sort
 ```
 
 If no course content files exist, tell the user: "No course content found in
-`.idstack/course-content/`. Run `/course-builder` first to generate content."
+`.idstack/course-content/`. Run `/idstack:course-builder` first to generate content."
 
 ### C2. Create SCORM package structure
 
@@ -1060,7 +1072,7 @@ Total files: [count]
 - SCORM API tracking (completion, score reporting) is not included.
   The LMS will mark the SCO as complete when the learner opens it.
 - For richer interactivity, author in Articulate Rise or Storyline and
-  use idstack's /course-quality-review and /red-team on the exported package.
+  use idstack's /idstack:course-quality-review and /idstack:red-team on the exported package.
 ```
 
 ### C8. Cleanup
@@ -1092,18 +1104,36 @@ After the export completes (any path), write the HTML report at `$_REPORT_PATH` 
 After export completes (any path) and the report is written, update the project
 manifest with export metadata.
 
+Save results via the section-scoped merge tool — it validates the section name
+against the canonical schema, preserves every other section verbatim, bumps the
+top-level `updated` timestamp, and writes atomically:
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache (highest version). Empty if none found;
+# guard "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+# payload file holds ONLY the export_metadata section object (shape below)
+"$_IDSTACK/bin/idstack-manifest-merge" --section export_metadata --payload .idstack/.export_metadata-payload.json && rm -f .idstack/.export_metadata-payload.json
+```
+
+Write the payload object to `.idstack/.export_metadata-payload.json` with the
+Write tool first, then run the merge. **If no manifest exists yet** (unlikely
+for export, but possible), the merge tool exits with code 4 (`manifest not
+found`) — in that case fall back to creating `.idstack/project.json` with the
+Write tool, initializing ALL sections from the schema with empty/default values
+and placing your `export_metadata` data inside it.
+
 **CRITICAL -- Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first with the Read tool.
-2. Modify ONLY the `export_metadata` section and the `updated` timestamp.
-   Preserve all other sections unchanged — `context`, `needs_analysis`,
-   `learning_objectives`, `quality_review`, `import_metadata`, and any other
-   sections must remain exactly as they were.
-3. Before writing, verify the JSON is valid: matching braces, proper commas,
-   quoted strings, no trailing commas.
-4. Update the top-level `updated` timestamp to reflect the current time.
-5. If this is a new manifest (unlikely for export, but possible), initialize
-   ALL sections with empty/default values so downstream skills find the
-   expected structure.
+1. The payload must be valid JSON: matching braces, proper commas, quoted
+   strings, no trailing commas.
+2. NEVER write secrets (Canvas tokens, credentials) to the manifest or the
+   payload file.
 
 ### Readiness Info
 
@@ -1117,14 +1147,15 @@ Export readiness:
   Accessibility review: WCAG score 70/100, 1 AA violation
 ```
 
-If a section doesn't exist, show: "Not reviewed — run /[skill-name] for analysis."
+If a section doesn't exist, show: "Not reviewed — run /idstack:<skill-name> for analysis."
 
 This is informational. Export proceeds regardless. The user can choose to address
 findings first or export now, no AskUserQuestion needed, just show the info and continue.
 
 ### Write Export Metadata
 
-Add or update the `export_metadata` field at the root level:
+The payload file holds the `export_metadata` section object (shown here wrapped
+in its manifest key for context — the payload file contains only the inner object):
 
 ```json
 {
@@ -1163,7 +1194,7 @@ sections from the manifest (if they exist). The `verdict` is:
 - `export_blocked`: not used (export never blocks, advisory only)
 - Empty string if no reviews exist
 
-Write the manifest, then confirm:
+Run the merge, then confirm:
 
 "Your export metadata has been saved to `.idstack/project.json`.
 
@@ -1189,7 +1220,7 @@ Every skill that produces findings emits **both**:
 - a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
 - an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
 
-The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills and tools can find it.
+The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
 
 `<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
 
@@ -1578,6 +1609,15 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache (highest version). Empty if none found;
+# guard "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"course-export","event":"completed"}'
 ```
 
@@ -1588,5 +1628,14 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, Codex-style symlinks, then
+# the Claude Code marketplace cache (highest version). Empty if none found;
+# guard "$_IDSTACK/bin/..." calls accordingly.
+_IDSTACK=""
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$(ls -d "$HOME"/.claude/plugins/cache/idstack/idstack/*/ 2>/dev/null | sort | tail -1)"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
 "$_IDSTACK/bin/idstack-learnings-log" '{"skill":"course-export","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

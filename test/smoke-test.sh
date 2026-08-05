@@ -79,6 +79,8 @@ done
 
 # Check template system
 check "templates/preamble.md exists" "[ -f '$IDSTACK_DIR/templates/preamble.md' ]"
+check "templates/report-format.md exists" "[ -f '$IDSTACK_DIR/templates/report-format.md' ]"
+check "templates/snippets/idstack-resolve.sh exists" "[ -f '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh' ]"
 check "templates/manifest-schema.md exists" "[ -f '$IDSTACK_DIR/templates/manifest-schema.md' ]"
 check "templates/manifest-schema.md is non-empty" "[ -s '$IDSTACK_DIR/templates/manifest-schema.md' ]"
 check "templates/report.html.tmpl exists" "[ -f '$IDSTACK_DIR/templates/report.html.tmpl' ]"
@@ -141,7 +143,51 @@ for skill in $REPORT_PRODUCING_SKILLS; do
   check "$skill SKILL.md.tmpl references .idstack/exports/" "grep -q '\.idstack/exports/' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl calls idstack-slugify" "grep -q 'idstack-slugify' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl copies templates/assets/idstack.css" "grep -q 'templates/assets/idstack.css' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  # report-format.md requires a "Top recommendations" section in every report.
+  check "$skill SKILL.md.tmpl includes Top recommendations" "grep -qi 'Top recommendations' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
+
+# Manifest write-path contract: single-section owners go through the merge
+# tool; multi-section/first-run writers document the Write-tool fallback the
+# way course-import models it.
+for skill in learning-objectives course-quality-review course-export; do
+  check "$skill SKILL.md.tmpl uses idstack-manifest-merge" "grep -q 'idstack-manifest-merge' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+for skill in needs-analysis course-import; do
+  check "$skill SKILL.md.tmpl justifies its Write-tool fallback" "grep -q 'Write-tool fallback' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+
+# Canonical manifest section names only — these five non-canonical tokens once
+# shipped in re-run checks and prose, making re-run detection dead in 5 skills.
+for skill in $SKILLS; do
+  check "$skill SKILL.md.tmpl free of non-canonical section names" "! grep -E '\b(assessment_design|course_builder|course_export|course_import|course_quality_review)\b' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+
+# User-facing skill references must be namespaced /idstack:<skill> — the Codex
+# translation rule strips that prefix; a bare /skill renders as an invalid
+# command in both CLIs. (Frontmatter descriptions are exempt; this bans the
+# backticked in-body form.)
+BARE_SLASH_RE='`/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn)`'
+for skill in $SKILLS; do
+  check "$skill SKILL.md.tmpl free of bare backticked /skill refs" "! grep -E '$BARE_SLASH_RE' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+check "preamble free of bare backticked /skill refs" "! grep -E '$BARE_SLASH_RE' '$IDSTACK_DIR/templates/preamble.md'"
+check "no '/idstack <skill>' space typos in templates" "! grep -rE '/idstack [a-z]' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
+check "pipeline status table uses /idstack: prefixes" "grep -qF '[done] /idstack:needs-analysis' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+check "pipeline invokes children with the idstack: namespace" "grep -qF 'skill: \"idstack:needs-analysis\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+
+# Canonical $_IDSTACK resolution: templates use the {{IDSTACK_RESOLVE}}
+# placeholder, never a hand-rolled derivation (two skills once drifted to a
+# path list that missed the marketplace cache — the way most users install).
+RESOLVE_LINE="$(grep -m1 '^for _p in' "$IDSTACK_DIR/templates/snippets/idstack-resolve.sh" 2>/dev/null || true)"
+check "resolve snippet has the canonical for-chain" "[ -n \"\$RESOLVE_LINE\" ]"
+check "resolve snippet includes the marketplace cache path" "grep -q 'plugins/cache/idstack' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
+check "preamble embeds the snippet's resolve chain verbatim (x3)" "[ \"\$(grep -cF \"\$RESOLVE_LINE\" '$IDSTACK_DIR/templates/preamble.md')\" -eq 3 ]"
+for skill in $SKILLS; do
+  check "$skill SKILL.md.tmpl uses {{IDSTACK_RESOLVE}}" "grep -q '{{IDSTACK_RESOLVE}}' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl does not hand-roll _IDSTACK" "! grep -Eq '_IDSTACK:?=' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+check "no legacy .claude/plugins/idstack path in skill templates" "! grep -rF '.claude/plugins/idstack' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
 
 # Pipeline orchestrator must produce index.html under the course folder.
 # Use -E (extended regex) so the `|` alternation works under BSD grep too;
@@ -216,14 +262,22 @@ for skill in $SKILLS; do
   check "$skill has context recovery" "grep -q 'Context Recovery' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
-# Check pipeline-originated skills have timeline logging
-TIMELINE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team"
+# Check pipeline-originated skills have timeline logging (pipeline logs its
+# own completion so "the pipeline was run" is recoverable)
+TIMELINE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline"
 for skill in $TIMELINE_SKILLS; do
   check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
 # Check preamble uses CLAUDE_PLUGIN_ROOT
 check "preamble supports CLAUDE_PLUGIN_ROOT" "grep -q 'CLAUDE_PLUGIN_ROOT' '$IDSTACK_DIR/templates/preamble.md'"
+
+# The preamble's embedded python must run on the oldest supported interpreter
+# (macOS system python3 is 3.9) — a SyntaxError there dies silently behind
+# `2>/dev/null || true` in every generated skill.
+if [ -x "$IDSTACK_DIR/test/test-preamble-python.sh" ]; then
+  check "preamble embedded-python tests pass" "'$IDSTACK_DIR/test/test-preamble-python.sh'"
+fi
 
 # Migration tests. One tempdir root cleaned by trap; every cp + migrate runs
 # inside a check so a migrate failure records a FAIL instead of killing the

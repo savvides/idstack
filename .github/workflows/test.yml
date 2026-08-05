@@ -35,3 +35,5 @@ jobs:
         run: ./test/test-manifest-merge.sh
       - name: Version-classifier unit tests
         run: ./test/test-version-classifier.sh
+      - name: Preamble embedded-python tests
+        run: ./test/test-preamble-python.sh

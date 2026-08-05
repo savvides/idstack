@@ -52,33 +52,15 @@ When multiple tiers apply, cite the strongest.
 
 ---
 
-## Preamble: Project Manifest
+## Manifest Inputs (skill-specific)
 
-Before starting the review, check for an existing project manifest.
+The shared preamble above already ran the manifest existence check
+(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
 
-```bash
-if [ -f ".idstack/project.json" ]; then
-  echo "MANIFEST_EXISTS"
-  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
-else
-  echo "NO_MANIFEST"
-fi
-```
-
-**If MANIFEST_EXISTS:**
-- Read the manifest. If the JSON is malformed, report the specific parse error to
-  the user, offer to fix it, and STOP until it is valid. Never silently overwrite
-  corrupt JSON.
 - Check which sections are populated. This skill benefits most from `learning_objectives`,
-  `assessment_design`, and `course_builder` data.
-- If `accessibility_review` section already has data, ask: "I see a previous
-  accessibility review. Want to update it or start fresh?"
-- Preserve all existing sections when writing back.
-
-**If NO_MANIFEST:**
-- That is fine. This skill works standalone. Gather course information through
-  AskUserQuestion. You will create the manifest at the end if the user wants to
-  save results.
+  `assessments`, and `course_content` data.
+- If no manifest: this skill works standalone. Gather course information through
+  AskUserQuestion.
 
 ---
 
@@ -308,6 +290,7 @@ Calculate the accessibility score (0-100):
 Generate an HTML report so the designer has a single document covering both compliance (WCAG, the Must Fix layer) and inclusion (UDL, the Should Improve layer). The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
 
 ```bash
+{{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
 _PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
@@ -340,6 +323,7 @@ and atomically updates the top-level `updated` timestamp. The payload must inclu
 `report_path` set to the value of `$_REPORT_PATH` from the bash block above (e.g., `.idstack/exports/<course-slug>/accessibility-review.html`).
 
 ```bash
+{{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-manifest-merge" --section accessibility_review --payload - <<'PAYLOAD'
 {
   "updated": "<ISO-8601 timestamp>",
@@ -412,6 +396,7 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
+{{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"accessibility-review","event":"completed"}'
 ```
 
@@ -422,5 +407,6 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
+{{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-learnings-log" '{"skill":"accessibility-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

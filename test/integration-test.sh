@@ -11,6 +11,11 @@ TEST_DIR=$(mktemp -d)
 # Single-quoted so expansion happens at trap time and a path with spaces survives.
 trap 'rm -rf "$TEST_DIR"' EXIT
 
+# Snapshot the working-tree state so the suite can prove it mutated nothing —
+# compared before/after rather than against a clean tree, so a developer's own
+# uncommitted work doesn't trip the check.
+TREE_BEFORE=$(git -C "$IDSTACK_DIR" status --porcelain 2>/dev/null || true)
+
 check() {
   TOTAL=$((TOTAL + 1))
   local _out
@@ -153,8 +158,8 @@ check "regenerate fixes staleness (sandbox)" \
 check "missing {{PREAMBLE}} placeholder fails dry-run and generation (sandbox)" \
   "sed -i.bak 's/{{PREAMBLE}}/PREAMBLE_GONE/' '$SANDBOX/skills/learn/SKILL.md.tmpl' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run && ! '$SANDBOX/bin/idstack-gen-skills'"
 
-check "real tree untouched by gen-skills tests" \
-  "[ -z \"\$(git -C '$IDSTACK_DIR' status --porcelain -- skills dist AGENTS.md)\" ]"
+check "real tree untouched by this suite" \
+  "[ \"\$(git -C '$IDSTACK_DIR' status --porcelain 2>/dev/null || true)\" = \"\$TREE_BEFORE\" ]"
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
