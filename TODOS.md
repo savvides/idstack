@@ -1,15 +1,16 @@
 # TODOS
 
 ## ~~v2.4: Dual-Output Report Contract + Pipeline Aggregator~~ SHIPPED (v2.4.0.0)
-Shipped in v2.4.0.0. Every finding-producing skill now writes both
-`.idstack/project.json` (system state) and `.idstack/reports/<skill>.md` (human view)
-following the canonical observation → evidence → why-it-matters → suggestion structure
-in `templates/report-format.md`. `/idstack:pipeline` produces `.idstack/reports/pipeline.md`
-— a cross-cutting aggregate over per-skill reports with top recurring issues, evidence
-themes, and where to start. `bin/idstack-status` lists every report under
-`.idstack/reports/` with `pipeline.md` first. Plus install-hygiene fix: setup actively
-removes pre-v2.0.1.0 dispatcher clones, smoke-test catches the regression, new
-`bin/idstack-doctor` for diagnostics.
+Shipped in v2.4.0.0 with Markdown reports under `.idstack/reports/` (historical —
+later releases replaced that path with self-contained HTML reports under
+`.idstack/exports/<course-slug>/`, which is the current contract). Every
+finding-producing skill writes both `.idstack/project.json` (system state) and a
+human-view report following the canonical observation → evidence → why-it-matters
+→ suggestion structure in `templates/report-format.md`. `/idstack:pipeline`
+produces the cross-cutting aggregate (now `index.html` in the export folder)
+with top recurring issues, evidence themes, and where to start. Plus
+install-hygiene fix: setup actively removes pre-v2.0.1.0 dispatcher clones,
+smoke-test catches the regression, new `bin/idstack-doctor` for diagnostics.
 
 ## ~~v1.1: Manifest Versioning~~ SHIPPED (v1.2.0)
 Shipped in v1.2.0. `bin/idstack-migrate` handles schema migrations.
