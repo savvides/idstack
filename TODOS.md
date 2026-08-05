@@ -14,7 +14,7 @@ smoke-test catches the regression, new `bin/idstack-doctor` for diagnostics.
 
 ## ~~v1.1: Manifest Versioning~~ SHIPPED (v1.2.0)
 Shipped in v1.2.0. `bin/idstack-migrate` handles schema migrations.
-All 7 skill preambles call it automatically.
+Every skill preamble calls it automatically (7 skills at the time; 11 now).
 
 ## ~~v2: Cross-Domain Quality Checks~~ SHIPPED (v1.2.0)
 Shipped in v1.2.0. Four checks added to /course-quality-review:

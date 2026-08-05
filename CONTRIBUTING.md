@@ -97,6 +97,8 @@ Phrase recommendations as suggestions ("consider…"), not directives. Cite ever
 - **Own your section only.** Read the full manifest, modify only the section your skill owns, preserve everything else.
 - **Update the `updated` timestamp** on every write.
 - **Use `bin/idstack-manifest-merge`** for the write path. It's section-scoped, atomic (tempfile + rename), preserves foreign sections, and validates against the canonical schema in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback.
+- **One documented exception.** `needs-analysis` and `course-import` keep the Read-modify-Write path because each writes several co-owned sections in one pass, which whole-section merge cannot express. Both say so inline. Don't convert them, and don't copy the pattern into a skill that owns a single section.
+- **Standalone runs need `bin/idstack-migrate --init` first.** On a missing manifest, plain `idstack-migrate` is a no-op, so the merge that follows exits 4 and the skill's results are silently never persisted. `--init` creates a canonical manifest with every section at its default.
 
 ## Evidence standards
 

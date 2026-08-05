@@ -55,23 +55,23 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - Schema migration v1.4 fixes drifted field names (`red_team_audit.summary.*_count` → `findings_summary.*`, `_import_quality_flags` → `import_metadata.quality_flag_details`).
 
 ### idstack v2 — Pipeline orchestrator, intelligence, sub-agents
-- **`/idstack pipeline`** — chains all 8 skills automatically. Auto-skips completed skills, shows pipeline status, pause and resume anytime.
-- **Namespace refactor** — all skills now invoked via `/idstack <skill>` (e.g., `/idstack needs-analysis`). No more name collisions with other skill packages.
+- **`/idstack:pipeline`** — chains all 8 skills automatically. Auto-skips completed skills, shows pipeline status, pause and resume anytime.
+- **Namespace refactor** — all skills now invoked via `/idstack:<skill>` (e.g., `/idstack:needs-analysis`). No more name collisions with other skill packages.
 - **Cross-course intelligence** — learnings from one course appear in another. Global store at `~/.idstack/global/learnings.jsonl` with keyword search.
-- **`/idstack learn`** — search, delete, promote, and export learnings.
-- **Course readiness dashboard** — pre-export gate showing quality/red-team/accessibility status. Integrated into `/idstack course-export`.
+- **`/idstack:learn`** — search, delete, promote, and export learnings.
+- **Course readiness dashboard** — pre-export gate showing quality/red-team/accessibility status. Integrated into `/idstack:course-export`.
 - **Designer profile** — `~/.idstack/profile.yaml` with experience level. Skills adapt explanation depth (novice/intermediate/expert).
 - **Manifest preferences** — schema v1.3 adds verbosity, export format, preferred LMS settings.
-- **Sub-agent architecture** — `/idstack red-team` (5 parallel agents), `/idstack accessibility-review` (2 parallel), `/idstack course-quality-review` (3 parallel). Claude Code only, graceful degradation elsewhere.
-- **Spec review loop** — `/idstack course-builder` validates alignment via adversarial subagent after generating content.
+- **Sub-agent architecture** — `/idstack:red-team` (5 parallel agents), `/idstack:accessibility-review` (2 parallel), `/idstack:course-quality-review` (3 parallel). Claude Code only, graceful degradation elsewhere.
+- **Spec review loop** — `/idstack:course-builder` validates alignment via adversarial subagent after generating content.
 - **IDSTACK_HOME** — all paths portable via env var. Foundation for multi-platform support.
 
 ### Bidirectional pipeline + evidence depth (v1.5.1)
 - All 9 skills now write back to the manifest. Downstream skills get richer input from upstream analysis.
-- Score trending: run `/idstack course-quality-review` multiple times and see your score improve over sessions.
-- `/idstack accessibility-review` expanded to full WCAG 2.1 AA coverage with course-specific guidance for videos, quizzes, forums, PDFs, and simulations.
-- `/idstack red-team` all 5 adversarial dimensions now cite their research evidence.
-- `/idstack course-export` shows readiness info (quality, accessibility, red-team scores) before export.
+- Score trending: run `/idstack:course-quality-review` multiple times and see your score improve over sessions.
+- `/idstack:accessibility-review` expanded to full WCAG 2.1 AA coverage with course-specific guidance for videos, quizzes, forums, PDFs, and simulations.
+- `/idstack:red-team` all 5 adversarial dimensions now cite their research evidence.
+- `/idstack:course-export` shows readiness info (quality, accessibility, red-team scores) before export.
 - Schema migration v1.2 with chained upgrades (any version → latest in one pass).
 
 ### Course memory (v1.5.0)
@@ -85,13 +85,13 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - Skills check for updates and notify when a new version is available.
 
 ### SCORM import and export (v1.4.0)
-- `/course-import` now accepts SCORM 1.2/2004 packages from Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, and any SCORM-compliant authoring tool
-- `/course-export` now generates SCORM 1.2 packages for any LMS or corporate training platform
+- `/idstack:course-import` now accepts SCORM 1.2/2004 packages from Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, and any SCORM-compliant authoring tool
+- `/idstack:course-export` now generates SCORM 1.2 packages for any LMS or corporate training platform
 - PDF and document file import also added for Rise course exports and syllabi
 
 ### Accessibility review + Red team audit (v1.3.0)
-- `/accessibility-review` — WCAG 2.1 AA compliance plus Universal Design for Learning (UDL 3.0). Two-tier output: "Must Fix" for legal compliance, "Should Improve" for inclusive design.
-- `/red-team` — Adversarial course audit. Assumes the course is broken and tries to prove it. Five dimensions: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Produces a confidence score.
+- `/idstack:accessibility-review` — WCAG 2.1 AA compliance plus Universal Design for Learning (UDL 3.0). Two-tier output: "Must Fix" for legal compliance, "Should Improve" for inclusive design.
+- `/idstack:red-team` — Adversarial course audit. Assumes the course is broken and tries to prove it. Five dimensions: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Produces a confidence score.
 
 ## Coming soon
 
@@ -119,7 +119,7 @@ Direct API connections to Blackboard, Moodle, and D2L (beyond the IMS Common Car
 ## The big vision
 
 ### Push changes back to your LMS
-After `/course-quality-review` identifies issues and `/learning-objectives` generates better objectives, push the improvements directly back to Canvas (and eventually other LMS platforms). No more copy-pasting between a design document and your LMS. The output IS the course.
+After `/idstack:course-quality-review` identifies issues and `/idstack:learning-objectives` generates better objectives, push the improvements directly back to Canvas (and eventually other LMS platforms). No more copy-pasting between a design document and your LMS. The output IS the course.
 
 This is the 10x goal. It depends on stable import/export, Canvas API write support, conflict handling, and institutional partnerships. It's a ways out, but it's where we're headed.
 

@@ -74,6 +74,13 @@ Manifest write rules:
 - Use `bin/idstack-manifest-merge` for the write path: section-scoped, atomic (tempfile +
   rename), preserves foreign sections, validates against the canonical schema in
   `templates/manifest-schema.md`. Inline full-manifest edit is the deprecated fallback.
+- **The one documented exception:** `needs-analysis` and `course-import` keep the
+  Read-modify-Write path because each writes several co-owned sections in one pass, which
+  whole-section merge cannot express. Both state why inline. Don't "fix" them to use the
+  merge tool, and don't copy their pattern into a single-section writer.
+- Running standalone, call `bin/idstack-migrate --init` before merging. On a missing
+  manifest plain `idstack-migrate` is a no-op, so the merge that follows exits 4 and the
+  results are silently never persisted.
 
 Report write rules:
 
@@ -163,6 +170,7 @@ takes precedence when tiers conflict.
 ./setup                          # Install for the detected CLI(s)
 ./setup --local                  # Install at project scope instead of user scope
 ./setup --codex / --no-codex     # Force or skip the Codex bundle
+./setup --keep-legacy            # Leave pre-v2.0.1.0 installs in place
 bin/idstack-gen-skills           # Regenerate skill files for all targets
 bin/idstack-gen-skills --target codex    # Regenerate Codex flavor only
 bin/idstack-gen-skills --dry-run         # Check if generated files are up to date

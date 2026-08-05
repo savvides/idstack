@@ -13,6 +13,7 @@ An open source set of skills for evidence-based instructional design. Runs in Cl
 ./setup --local      # Install at project scope (./.claude/) instead of user scope
 ./setup --codex      # Force-install the Codex bundle even if codex isn't on PATH
 ./setup --no-codex   # Skip the Codex install
+./setup --keep-legacy # Leave pre-v2.0.1.0 installs in place instead of removing them
 bin/idstack-gen-skills                     # Regenerate skill files for all targets (claude + codex)
 bin/idstack-gen-skills --target claude     # Regenerate Claude flavor only (skills/<name>/SKILL.md)
 bin/idstack-gen-skills --target codex      # Regenerate Codex flavor only (dist/codex/skills/idstack-<name>/)
@@ -89,6 +90,8 @@ Rules for writing the manifest:
 - Own your section only. Read full manifest, modify only your skill's section, preserve everything else.
 - Update the `updated` timestamp on every write.
 - Use `bin/idstack-manifest-merge` for the write path: it's section-scoped, atomic (tempfile + rename), preserves foreign sections, and validates against the canonical schema in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback only.
+- **The one documented exception:** `needs-analysis` and `course-import` keep the Read-modify-Write path because each writes several co-owned sections in one pass, which whole-section merge cannot express. Both state why inline. Don't "fix" them to use the merge tool, and don't copy their pattern into a single-section writer.
+- Running standalone, call `bin/idstack-migrate --init` before merging. On a missing manifest plain `idstack-migrate` is a no-op, so the merge that follows exits 4 and the results are silently never persisted.
 
 Rules for writing the report:
 
