@@ -152,6 +152,10 @@ Setup is idempotent — re-run it any time.
 
 You should see:
 ```
+  regenerated skill files for all targets
+Installing idstack (user)...
+  source: /path/to/idstack
+
 idstack installed (Claude Code) — scope: user.
 
   If Claude Code is already running, restart it (plugins load at session start).
