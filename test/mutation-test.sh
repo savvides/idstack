@@ -149,6 +149,14 @@ open(p,'w').write(s)
 PY
 expect_fail "plugin-status fixed-window regression" "$WORK/r/test/test-plugin-status.sh"
 
+# 7b. doctor stops flagging a disabled install -> test-doctor must fail.
+# doctor exists to explain why /idstack:<skill> is missing; a branch that stops
+# reporting turns it into a script that always says everything is fine.
+fresh
+sed -i.bak 's|echo "  PROBLEM: idstack@idstack is installed but not enabled."|echo "  OK: installed"|' \
+  "$WORK/r/bin/idstack-doctor"
+expect_fail "doctor silently passes a disabled install" "$WORK/r/test/test-doctor.sh"
+
 # 8. version disagreement -> smoke-test must fail
 fresh
 printf '9.9.9.9\n' > "$WORK/r/VERSION"

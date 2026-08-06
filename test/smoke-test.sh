@@ -274,6 +274,11 @@ check "idstack-doctor no longer uses a fixed -A4 window" "! grep -q 'grep -A4' '
 if [ -x "$IDSTACK_DIR/test/test-plugin-status.sh" ]; then
   check "plugin-status unit tests pass" "'$IDSTACK_DIR/test/test-plugin-status.sh'"
 fi
+# Hooked in here as well as in CI because release.yml's gate runs only
+# smoke-test.sh — doctor's branches would otherwise be unverified at release.
+if [ -x "$IDSTACK_DIR/test/test-doctor.sh" ]; then
+  check "doctor behavioral tests pass" "'$IDSTACK_DIR/test/test-doctor.sh'"
+fi
 
 # ./setup is what a new user runs first; it is exercised against a repo copy
 # with a fake $HOME and a stub `claude`, never the real install.
