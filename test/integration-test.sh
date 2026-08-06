@@ -8,15 +8,25 @@ TOTAL=0
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TEST_DIR=$(mktemp -d)
-trap "rm -rf $TEST_DIR" EXIT
+# Single-quoted so expansion happens at trap time and a path with spaces survives.
+trap 'rm -rf "$TEST_DIR"' EXIT
+
+# Snapshot the working-tree state so the suite can prove it mutated nothing —
+# compared before/after rather than against a clean tree, so a developer's own
+# uncommitted work doesn't trip the check.
+TREE_BEFORE=$(git -C "$IDSTACK_DIR" status --porcelain 2>/dev/null || true)
 
 check() {
   TOTAL=$((TOTAL + 1))
-  if eval "$2" 2>/dev/null; then
+  local _out
+  if _out=$(eval "$2" 2>&1); then
     echo "  PASS: $1"
     PASS=$((PASS + 1))
   else
     echo "  FAIL: $1"
+    if [ -n "$_out" ]; then
+      printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
+    fi
     FAIL=$((FAIL + 1))
   fi
 }
@@ -114,8 +124,8 @@ check "no timeline shows empty state message" \
 $IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"needs-analysis","event":"completed","training_justified":true}'
 $IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"course-quality-review","event":"completed","score":65,"dimensions":{"teaching_presence":7,"social_presence":3,"cognitive_presence":5}}'
 
-check "shows skills completed checkboxes" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q '\[x\] /needs-analysis'"
+check "shows skills completed checkboxes (namespaced)" \
+  "$IDSTACK_DIR/bin/idstack-status | grep -q '\[x\] /idstack:needs-analysis'"
 
 check "shows quality trend" \
   "$IDSTACK_DIR/bin/idstack-status | grep -q 'Quality trend: 65'"
@@ -123,20 +133,117 @@ check "shows quality trend" \
 check "suggests next skill" \
   "$IDSTACK_DIR/bin/idstack-status | grep -q 'Suggested next'"
 
+# Quote-injection regression: a project name with an apostrophe must render,
+# not blank the dashboard with a Python SyntaxError.
+cat > .idstack/project.json <<'EOF'
+{"version": "1.4", "project_name": "Bob's Advanced Course"}
+EOF
+
+check "apostrophe in project name renders" \
+  "'$IDSTACK_DIR/bin/idstack-status' | grep -qF \"Project: Bob's Advanced Course\""
+
+check "apostrophe in project name: no 'Error reading timeline'" \
+  "! '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Error reading timeline'"
+
+# course-import is an alternative pipeline entry: with only course-import
+# completed, the suggestion must be learning-objectives, not nothing.
+mkdir -p importcase && ( cd importcase && \
+  "$IDSTACK_DIR/bin/idstack-timeline-log" '{"skill":"course-import","event":"completed"}' )
+check "course-import alone suggests learning-objectives" \
+  "( cd importcase && '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Suggested next: /idstack:learning-objectives' )"
+
+# Everything idstack-status prints is text a user may type back. It must carry
+# the /idstack: prefix for the same reason skill templates do — a bare /skill
+# is not a valid command in either CLI.
+check "idstack-status never prints a bare /skill command" \
+  "! '$IDSTACK_DIR/bin/idstack-status' | grep -Eq '(^|[^:])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline)\b'"
+
+rm -f .idstack/project.json
+
 echo ""
 
 # --- idstack-gen-skills ---
+# The staleness test mutates a generated SKILL.md, so it runs against a
+# disposable copy of the repo under $TEST_DIR — never against the real tree
+# (an interrupted run used to leave the working tree dirty).
 echo "## idstack-gen-skills"
 
 check "dry-run passes when fresh" \
-  "$IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+  "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
 
-check "dry-run detects stale SKILL.md" \
-  "echo 'stale content' >> $IDSTACK_DIR/skills/needs-analysis/SKILL.md && ! $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+SANDBOX="$TEST_DIR/repo"
+mkdir -p "$SANDBOX"
+cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/skills" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/dist" "$SANDBOX/"
+cp "$IDSTACK_DIR/AGENTS.md" "$SANDBOX/AGENTS.md"
 
-check "regenerate fixes staleness" \
-  "$IDSTACK_DIR/bin/idstack-gen-skills && $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+check "dry-run detects stale SKILL.md (sandbox)" \
+  "echo 'stale content' >> '$SANDBOX/skills/needs-analysis/SKILL.md' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run"
+
+check "regenerate fixes staleness (sandbox)" \
+  "'$SANDBOX/bin/idstack-gen-skills' && '$SANDBOX/bin/idstack-gen-skills' --dry-run"
+
+# A template missing {{PREAMBLE}} must be an error, not a silent SKIP that
+# lets --dry-run pass green over an absent or stale output.
+check "missing {{PREAMBLE}} placeholder fails dry-run and generation (sandbox)" \
+  "sed -i.bak 's/{{PREAMBLE}}/PREAMBLE_GONE/' '$SANDBOX/skills/learn/SKILL.md.tmpl' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run && ! '$SANDBOX/bin/idstack-gen-skills'"
+
+check "real tree untouched by this suite" \
+  "[ \"\$(git -C '$IDSTACK_DIR' status --porcelain 2>/dev/null || true)\" = \"\$TREE_BEFORE\" ]"
 
 echo ""
+
+# --- idstack-learnings-delete ---
+echo "## idstack-learnings-delete"
+
+check "returns error if no arguments provided" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-delete"
+
+check "returns error if no file exists" \
+  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/bin/idstack-learnings-delete somekey"
+
+# Setup data for delete tests
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key1","insight":"one"}'
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key2","insight":"two"}'
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key1","insight":"three"}'
+
+check "returns error if key not found" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-delete missingkey"
+
+check "deletes the most recent entry with the key when there are duplicates" \
+  "$IDSTACK_DIR/bin/idstack-learnings-delete key1 && python3 -c \"import json,sys; lines=[json.loads(l) for l in open('.idstack/learnings.jsonl')]; assert len(lines)==2 and lines[0]['key']=='key1' and lines[0]['insight']=='one' and lines[1]['key']=='key2'\""
+
+check "deletes a specific learning" \
+  "$IDSTACK_DIR/bin/idstack-learnings-delete key2 && python3 -c \"import json,sys; lines=[json.loads(l) for l in open('.idstack/learnings.jsonl')]; assert len(lines)==1 and lines[0]['key']=='key1'\""
+
+echo ""
+# --- idstack-learnings-promote ---
+echo "## idstack-learnings-promote"
+
+FAKE_HOME="$TEST_DIR/fake_home"
+mkdir -p "$FAKE_HOME"
+
+check "fails if no key provided" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-promote"
+
+check "fails if no local learnings found" \
+  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/bin/idstack-learnings-promote my-key"
+
+mkdir -p .idstack
+echo '{"skill":"test-skill","key":"my-key","type":"pattern","insight":"hello"}' > .idstack/learnings.jsonl
+
+check "fails if key not found" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-promote wrong-key"
+
+check "promotes learning with unknown project" \
+  "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/bin/idstack-learnings-promote my-key && [ -f \"$FAKE_HOME/.idstack/global/learnings.jsonl\" ] && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'unknown'\""
+
+echo '{"project_name":"my-test-proj"}' > .idstack/project.json
+echo '{"skill":"test-skill","key":"key2","type":"pattern","insight":"hello2"}' >> .idstack/learnings.jsonl
+
+check "promotes learning with known project" \
+  "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/bin/idstack-learnings-promote key2 && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'my-test-proj'\""
+
+echo ""
+
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

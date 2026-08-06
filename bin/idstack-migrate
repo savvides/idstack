@@ -5,12 +5,64 @@
 # Prints "MIGRATED <from> <to>" to stderr when a migration is applied.
 # If the file does not exist, prints nothing and exits 0.
 # If python3 is unavailable, falls back to cat (graceful degradation).
+#
+# Usage:
+#   idstack-migrate [--init] [path]
+#
+#   --init   create a canonical manifest with every section at its default
+#            when none exists (still migrates in place when one does). Skills
+#            running standalone use this so a first run has something for
+#            bin/idstack-manifest-merge to merge into — that tool replaces one
+#            section and errors (exit 4) when the manifest is absent.
+#
+# The --init skeleton is produced by seeding a minimal v1.0 document and
+# running the normal migration chain over it, so there is exactly one
+# definition of "every section at its default" — the migrations themselves.
 
 set -e
 
 LATEST_VERSION="1.4"
 
-MANIFEST="${1:-.idstack/project.json}"
+INIT=0
+MANIFEST=""
+for arg in "$@"; do
+  case "$arg" in
+    --init) INIT=1 ;;
+    -h|--help)
+      sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0 ;;
+    -*) echo "idstack-migrate: unknown option: $arg" >&2; exit 2 ;;
+    *) [ -z "$MANIFEST" ] && MANIFEST="$arg" ;;
+  esac
+done
+MANIFEST="${MANIFEST:-.idstack/project.json}"
+
+# Seed a fresh manifest when asked. The migration chain below fills in every
+# section, so this only has to carry the fields migrations do not default.
+if [ ! -f "$MANIFEST" ] && [ "$INIT" = "1" ]; then
+  if ! command -v python3 &>/dev/null; then
+    echo "idstack-migrate: --init requires python3" >&2
+    exit 3
+  fi
+  mkdir -p "$(dirname "$MANIFEST")"
+  python3 -c "
+import json, sys, datetime
+ts = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+seed = {
+    'version': '1.0',
+    'project_name': '',
+    'created': ts,
+    'updated': ts,
+    'context': {},
+    'needs_analysis': {},
+    'learning_objectives': {},
+}
+with open(sys.argv[1], 'w') as f:
+    json.dump(seed, f, indent=2)
+    f.write('\n')
+" "$MANIFEST"
+  echo "INITIALIZED $MANIFEST" >&2
+fi
 
 # Nothing to do if no manifest exists
 [ -f "$MANIFEST" ] || exit 0

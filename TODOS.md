@@ -1,19 +1,20 @@
 # TODOS
 
 ## ~~v2.4: Dual-Output Report Contract + Pipeline Aggregator~~ SHIPPED (v2.4.0.0)
-Shipped in v2.4.0.0. Every finding-producing skill now writes both
-`.idstack/project.json` (system state) and `.idstack/reports/<skill>.md` (human view)
-following the canonical observation → evidence → why-it-matters → suggestion structure
-in `templates/report-format.md`. `/idstack:pipeline` produces `.idstack/reports/pipeline.md`
-— a cross-cutting aggregate over per-skill reports with top recurring issues, evidence
-themes, and where to start. `bin/idstack-status` lists every report under
-`.idstack/reports/` with `pipeline.md` first. Plus install-hygiene fix: setup actively
-removes pre-v2.0.1.0 dispatcher clones, smoke-test catches the regression, new
-`bin/idstack-doctor` for diagnostics.
+Shipped in v2.4.0.0 with Markdown reports under `.idstack/reports/` (historical —
+later releases replaced that path with self-contained HTML reports under
+`.idstack/exports/<course-slug>/`, which is the current contract). Every
+finding-producing skill writes both `.idstack/project.json` (system state) and a
+human-view report following the canonical observation → evidence → why-it-matters
+→ suggestion structure in `templates/report-format.md`. `/idstack:pipeline`
+produces the cross-cutting aggregate (now `index.html` in the export folder)
+with top recurring issues, evidence themes, and where to start. Plus
+install-hygiene fix: setup actively removes pre-v2.0.1.0 dispatcher clones,
+smoke-test catches the regression, new `bin/idstack-doctor` for diagnostics.
 
 ## ~~v1.1: Manifest Versioning~~ SHIPPED (v1.2.0)
 Shipped in v1.2.0. `bin/idstack-migrate` handles schema migrations.
-All 7 skill preambles call it automatically.
+Every skill preamble calls it automatically (7 skills at the time; 11 now).
 
 ## ~~v2: Cross-Domain Quality Checks~~ SHIPPED (v1.2.0)
 Shipped in v1.2.0. Four checks added to /course-quality-review:
@@ -61,13 +62,14 @@ plus a whole-repo symlink at `~/.agents/plugins/idstack/` for in-skill `bin/` re
 generator (`--target {claude|codex|all}`) emits the Codex flavor under `dist/codex/skills/` with
 `allowed-tools:` stripped. Concept-name preamble lets the same skill body run in both CLIs.
 
-**Gemini CLI: still pending (v2.6).** `.tmpl` → `.toml` transform, `gemini-extension.json`
-manifest, `ask_user` tool mapping. Gemini's built-in structured-question tool is a clean
-drop-in for the AskUserQuestion concept.
+**Gemini CLI: still pending, not yet scheduled to a release.** `.tmpl` → `.toml` transform,
+`gemini-extension.json` manifest, `ask_user` tool mapping. Gemini's built-in
+structured-question tool is a clean drop-in for the AskUserQuestion concept.
 
-**Marketplace publishing: still pending (v2.6).** v2.5 uses simpler per-skill auto-discovery;
-proper Codex marketplace.json + .codex-plugin/plugin.json packaging would let users do
-`codex plugin marketplace add savvides/idstack` without cloning.
+**Codex marketplace publishing: still pending, not yet scheduled to a release.** Codex installs
+through simpler per-skill auto-discovery; proper Codex marketplace.json + .codex-plugin/plugin.json
+packaging would let users do `codex plugin marketplace add savvides/idstack` without cloning.
+(Claude Code has installed through its own marketplace since v3.2.0.0.)
 
 **Why:** Expands addressable market beyond Claude Code.
 **Priority:** P2 (Codex done; Gemini next)

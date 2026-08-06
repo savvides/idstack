@@ -45,7 +45,7 @@ if [ ! -f "$TIMELINE" ]; then
     echo "No timeline data. Run pipeline skills first."
   else
     echo "No course data yet."
-    echo "Run /needs-analysis to start a new course, or /course-import to bring in an existing one."
+    echo "Run /idstack:needs-analysis to start a new course, or /idstack:course-import to bring in an existing one."
   fi
   exit 0
 fi
@@ -60,8 +60,11 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 if [ "$READINESS_ONLY" -eq 0 ]; then
-python3 -c "
-import json, sys
+# PROJECT_NAME travels via the environment, never interpolated into Python
+# source — a course name containing a quote character must not become a
+# SyntaxError that blanks the dashboard.
+PROJECT_NAME="$PROJECT_NAME" python3 -c "
+import json, sys, os
 
 lines = open('$TIMELINE').readlines()[-200:]
 events = []
@@ -75,7 +78,7 @@ if not events:
     print('No valid timeline entries.')
     sys.exit(0)
 
-print(f'Project: $PROJECT_NAME')
+print('Project: ' + os.environ.get('PROJECT_NAME', 'unknown'))
 print()
 
 # Skills completed
@@ -95,7 +98,7 @@ for s in pipeline:
     count = skills_run.get(s, 0)
     marker = 'x' if count > 0 else ' '
     suffix = f' ({count}x)' if count > 1 else ''
-    print(f'  [{marker}] /{s}{suffix}')
+    print(f'  [{marker}] /idstack:{s}{suffix}')
 print()
 
 # Quality score trend
@@ -115,10 +118,12 @@ if quality_reviews:
             print(f'Cross-domain: CogLoad={cd.get(\"cognitive_load\",\"?\")}/10  Multimedia={cd.get(\"multimedia\",\"?\")}/10  Feedback={cd.get(\"feedback_quality\",\"?\")}/10')
     print()
 
-# Pipeline progression
+# Pipeline progression. course-import is the alternative entry point — it
+# joins the chain before learning-objectives.
 completed = set(skills_run.keys())
 pipeline_order = [
     ('needs-analysis', 'learning-objectives'),
+    ('course-import', 'learning-objectives'),
     ('learning-objectives', 'assessment-design'),
     ('assessment-design', 'course-builder'),
     ('course-builder', 'course-quality-review'),
@@ -135,9 +140,9 @@ if not next_skill and 'needs-analysis' not in completed and 'course-import' not 
     next_skill = 'needs-analysis'
 
 if next_skill:
-    print(f'Suggested next: /{next_skill}')
+    print(f'Suggested next: /idstack:{next_skill}')
     print()
-" 2>/dev/null || echo "Error reading timeline."
+" || echo "Error reading timeline."
 fi
 
 # Learnings count
@@ -264,9 +269,9 @@ print()
 # with itemized reasons. Missing reviews produce INCOMPLETE.
 def verdict():
     missing = []
-    if not quality_reviewed: missing.append('/course-quality-review')
-    if not red_reviewed:     missing.append('/red-team')
-    if not access_reviewed:  missing.append('/accessibility-review')
+    if not quality_reviewed: missing.append('/idstack:course-quality-review')
+    if not red_reviewed:     missing.append('/idstack:red-team')
+    if not access_reviewed:  missing.append('/idstack:accessibility-review')
     if missing:
         return f\"INCOMPLETE (run {', '.join(missing)})\"
 
@@ -285,5 +290,5 @@ def verdict():
 
 print(f'  Verdict: {verdict()}')
 print()
-" 2>/dev/null || true
+" || echo "  (readiness computation failed)"
 fi
