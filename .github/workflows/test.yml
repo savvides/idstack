@@ -39,6 +39,8 @@ jobs:
         run: ./test/test-plugin-status.sh
       - name: Doctor behavioral tests
         run: ./test/test-doctor.sh
+      - name: Status / readiness behavioral tests
+        run: ./test/test-status.sh
       - name: Preamble embedded-python tests
         run: ./test/test-preamble-python.sh
       - name: Setup behavioral tests

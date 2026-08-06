@@ -157,6 +157,27 @@ sed -i.bak 's|echo "  PROBLEM: idstack@idstack is installed but not enabled."|ec
   "$WORK/r/bin/idstack-doctor"
 expect_fail "doctor silently passes a disabled install" "$WORK/r/test/test-doctor.sh"
 
+# 7c. readiness threshold drifts by one -> test-status must fail.
+# A fixture failing every threshold at once cannot catch this: some other
+# unmet condition keeps the verdict NOT-READY either way. The boundary cases
+# in test-status.sh hold the other two dimensions passing so the constant is
+# the only thing that can flip the verdict.
+fresh
+sed -i.bak 's|^READY_QUALITY_MIN=70|READY_QUALITY_MIN=69|' "$WORK/r/bin/idstack-status"
+expect_fail "readiness quality threshold off by one" "$WORK/r/test/test-status.sh"
+
+# 7d. WCAG Level-A override removed from the verdict -> test-status must fail.
+# The override exists in access_tier() and again in verdict(); deleting either
+# alone leaves the other reporting, so both are pinned.
+fresh
+python3 - "$WORK/r/bin/idstack-status" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace("    if level_a_violations:\n        issues.append(f'{len(level_a_violations)} WCAG Level-A violation(s)')\n", "")
+open(p, 'w').write(s)
+PY
+expect_fail "WCAG Level-A override dropped from verdict" "$WORK/r/test/test-status.sh"
+
 # 8. version disagreement -> smoke-test must fail
 fresh
 printf '9.9.9.9\n' > "$WORK/r/VERSION"

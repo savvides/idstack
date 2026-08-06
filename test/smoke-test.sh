@@ -279,6 +279,10 @@ fi
 if [ -x "$IDSTACK_DIR/test/test-doctor.sh" ]; then
   check "doctor behavioral tests pass" "'$IDSTACK_DIR/test/test-doctor.sh'"
 fi
+# --readiness is the pre-export gate; same reasoning as doctor above.
+if [ -x "$IDSTACK_DIR/test/test-status.sh" ]; then
+  check "idstack-status behavioral tests pass" "'$IDSTACK_DIR/test/test-status.sh'"
+fi
 
 # ./setup is what a new user runs first; it is exercised against a repo copy
 # with a fake $HOME and a stub `claude`, never the real install.
