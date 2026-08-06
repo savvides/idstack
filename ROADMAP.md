@@ -4,6 +4,26 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Course memory, pipeline orchestration, and re-run detection fixed (v3.3.0.0)
+- **Welcome-back messages work on stock macOS.** The session-memory code embedded in every skill contained an f-string that is a SyntaxError on any Python below 3.12 — including the 3.9 macOS ships. It failed silently, so context recovery, quality-score trends, and next-step suggestions produced nothing. Fixed, and now exercised on 3.9 in CI so the class of bug can't ship again.
+- **`/idstack:pipeline` invokes its child skills correctly.** It was calling them by an unnamespaced name that never resolved in Claude Code.
+- **Skills notice previous runs again.** Re-run detection ("update the results or start fresh?") was dead in five skills, which looked up manifest sections that don't exist.
+- **Marketplace installs resolve `bin/` correctly.** `learn` and `course-export` missed the marketplace cache — the way most users are installed — so their tool calls pointed at a nonexistent directory.
+- **Apostrophes no longer blank the dashboard**, imported courses get a proper next-step suggestion, and `bin/idstack-doctor` can no longer report a disabled install as healthy.
+- **Standalone runs persist.** `bin/idstack-migrate --init` creates a canonical manifest, so a skill run outside the pipeline has something to write into instead of silently discarding its results.
+
+### Test infrastructure and CI (v3.3.0.0, for contributors)
+- The suite had never run automatically. GitHub Actions now runs all eight suites on every push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS.
+- `./setup` — the primary deliverable — went from zero coverage to 17 behavioral tests.
+- `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught.
+
+### Install through the Claude Code plugin marketplace (v3.2.0.0)
+- `./setup` registers idstack as a Claude Code plugin marketplace and installs from there. Recent Claude Code versions stopped discovering plugins from the bare symlink older setups created, so `/idstack:<skill>` commands silently never appeared in the slash picker. If that happened to you, pull the latest and re-run `./setup`.
+
+### `DESIGN.md` and design-system reconciliation (v3.1.0.0)
+- The visual system behind the report stylesheet and the landing page is documented at the repo root in `DESIGN.md` — fonts, colors, spacing, radii, motion, plus anti-patterns and a dated decisions log. Skills, contributors, and reviewers read it before touching anything visual.
+- Publication-grade type (Source Serif 4, Public Sans, JetBrains Mono), an ivory palette in place of parchment, sharper card corners, and a second annotation color mirroring the two-pen academic-editor convention. Reports written by older versions still render correctly.
+
 ### Branded HTML reports + per-course export folder (v3.0.0)
 - **HTML replaces Markdown for the human view.** Every skill that produces findings now writes a branded, self-contained HTML report at `.idstack/exports/<course-slug>/<skill>.html`. Visual contract: `templates/report.html.tmpl` + `templates/assets/idstack.css` (scholarly serif body, severity-colored finding cards, evidence-tier badges, print-friendly, auto light/dark via `prefers-color-scheme`). Content contract is unchanged — observation → evidence → why-it-matters → suggestion, severity + tier on every finding.
 - **One folder per course, by name.** All per-course artifacts — every per-skill HTML report, the pipeline `index.html` dashboard, the bundled CSS, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under `.idstack/exports/<course-slug>/`. The slug is derived from `project_name` via `bin/idstack-slugify` (NFKD-fold, kebab-case, ASCII-safe). Zip the folder to hand the whole deliverable to a stakeholder.
@@ -35,23 +55,23 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - Schema migration v1.4 fixes drifted field names (`red_team_audit.summary.*_count` → `findings_summary.*`, `_import_quality_flags` → `import_metadata.quality_flag_details`).
 
 ### idstack v2 — Pipeline orchestrator, intelligence, sub-agents
-- **`/idstack pipeline`** — chains all 8 skills automatically. Auto-skips completed skills, shows pipeline status, pause and resume anytime.
-- **Namespace refactor** — all skills now invoked via `/idstack <skill>` (e.g., `/idstack needs-analysis`). No more name collisions with other skill packages.
+- **`/idstack:pipeline`** — chains all 8 skills automatically. Auto-skips completed skills, shows pipeline status, pause and resume anytime.
+- **Namespace refactor** — all skills now invoked via `/idstack:<skill>` (e.g., `/idstack:needs-analysis`). No more name collisions with other skill packages.
 - **Cross-course intelligence** — learnings from one course appear in another. Global store at `~/.idstack/global/learnings.jsonl` with keyword search.
-- **`/idstack learn`** — search, delete, promote, and export learnings.
-- **Course readiness dashboard** — pre-export gate showing quality/red-team/accessibility status. Integrated into `/idstack course-export`.
+- **`/idstack:learn`** — search, delete, promote, and export learnings.
+- **Course readiness dashboard** — pre-export gate showing quality/red-team/accessibility status. Integrated into `/idstack:course-export`.
 - **Designer profile** — `~/.idstack/profile.yaml` with experience level. Skills adapt explanation depth (novice/intermediate/expert).
 - **Manifest preferences** — schema v1.3 adds verbosity, export format, preferred LMS settings.
-- **Sub-agent architecture** — `/idstack red-team` (5 parallel agents), `/idstack accessibility-review` (2 parallel), `/idstack course-quality-review` (3 parallel). Claude Code only, graceful degradation elsewhere.
-- **Spec review loop** — `/idstack course-builder` validates alignment via adversarial subagent after generating content.
+- **Sub-agent architecture** — `/idstack:red-team` (5 parallel agents), `/idstack:accessibility-review` (2 parallel), `/idstack:course-quality-review` (3 parallel). Claude Code only, graceful degradation elsewhere.
+- **Spec review loop** — `/idstack:course-builder` validates alignment via adversarial subagent after generating content.
 - **IDSTACK_HOME** — all paths portable via env var. Foundation for multi-platform support.
 
 ### Bidirectional pipeline + evidence depth (v1.5.1)
 - All 9 skills now write back to the manifest. Downstream skills get richer input from upstream analysis.
-- Score trending: run `/idstack course-quality-review` multiple times and see your score improve over sessions.
-- `/idstack accessibility-review` expanded to full WCAG 2.1 AA coverage with course-specific guidance for videos, quizzes, forums, PDFs, and simulations.
-- `/idstack red-team` all 5 adversarial dimensions now cite their research evidence.
-- `/idstack course-export` shows readiness info (quality, accessibility, red-team scores) before export.
+- Score trending: run `/idstack:course-quality-review` multiple times and see your score improve over sessions.
+- `/idstack:accessibility-review` expanded to full WCAG 2.1 AA coverage with course-specific guidance for videos, quizzes, forums, PDFs, and simulations.
+- `/idstack:red-team` all 5 adversarial dimensions now cite their research evidence.
+- `/idstack:course-export` shows readiness info (quality, accessibility, red-team scores) before export.
 - Schema migration v1.2 with chained upgrades (any version → latest in one pass).
 
 ### Course memory (v1.5.0)
@@ -65,21 +85,21 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - Skills check for updates and notify when a new version is available.
 
 ### SCORM import and export (v1.4.0)
-- `/course-import` now accepts SCORM 1.2/2004 packages from Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, and any SCORM-compliant authoring tool
-- `/course-export` now generates SCORM 1.2 packages for any LMS or corporate training platform
+- `/idstack:course-import` now accepts SCORM 1.2/2004 packages from Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, and any SCORM-compliant authoring tool
+- `/idstack:course-export` now generates SCORM 1.2 packages for any LMS or corporate training platform
 - PDF and document file import also added for Rise course exports and syllabi
 
 ### Accessibility review + Red team audit (v1.3.0)
-- `/accessibility-review` — WCAG 2.1 AA compliance plus Universal Design for Learning (UDL 3.0). Two-tier output: "Must Fix" for legal compliance, "Should Improve" for inclusive design.
-- `/red-team` — Adversarial course audit. Assumes the course is broken and tries to prove it. Five dimensions: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Produces a confidence score.
+- `/idstack:accessibility-review` — WCAG 2.1 AA compliance plus Universal Design for Learning (UDL 3.0). Two-tier output: "Must Fix" for legal compliance, "Should Improve" for inclusive design.
+- `/idstack:red-team` — Adversarial course audit. Assumes the course is broken and tries to prove it. Five dimensions: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Produces a confidence score.
 
 ## Coming soon
 
-### Gemini CLI support (v2.6)
-Add native Gemini CLI as a third target. `.tmpl` → `.toml` transform plus a `gemini-extension.json` manifest. Gemini's built-in `ask_user` tool maps cleanly to the AskUserQuestion concept (drop-in), and inline `!{cmd}` shell interpolation will speed up the manifest-merge call paths. Codex shipped first because its SKILL.md format is a 1:1 match; Gemini needs the file-format transform.
+### Gemini CLI support
+Add native Gemini CLI as a third target. `.tmpl` → `.toml` transform plus a `gemini-extension.json` manifest. Gemini's built-in `ask_user` tool maps cleanly to the AskUserQuestion concept (drop-in), and inline `!{cmd}` shell interpolation will speed up the manifest-merge call paths. Codex shipped first because its SKILL.md format is a 1:1 match; Gemini needs the file-format transform. Not yet scheduled to a release.
 
-### Marketplace publishing (v2.6)
-Publish idstack via `codex plugin marketplace add savvides/idstack` so users don't need to clone the repo. Requires building the proper two-tier marketplace.json + .codex-plugin/plugin.json schema. v2.5 ships with simpler per-skill auto-discovery at `$CODEX_HOME/skills/`, which works without a marketplace.
+### Codex marketplace publishing
+Publish idstack via `codex plugin marketplace add savvides/idstack` so Codex users don't need to clone the repo. Requires building the proper two-tier marketplace.json + .codex-plugin/plugin.json schema. Codex currently installs through simpler per-skill auto-discovery at `$CODEX_HOME/skills/`, which works without a marketplace. (Claude Code already installs through its marketplace as of v3.2.0.0.) Not yet scheduled to a release.
 
 ### More skills
 Four more skills based on the research synthesis:
@@ -99,7 +119,7 @@ Direct API connections to Blackboard, Moodle, and D2L (beyond the IMS Common Car
 ## The big vision
 
 ### Push changes back to your LMS
-After `/course-quality-review` identifies issues and `/learning-objectives` generates better objectives, push the improvements directly back to Canvas (and eventually other LMS platforms). No more copy-pasting between a design document and your LMS. The output IS the course.
+After `/idstack:course-quality-review` identifies issues and `/idstack:learning-objectives` generates better objectives, push the improvements directly back to Canvas (and eventually other LMS platforms). No more copy-pasting between a design document and your LMS. The output IS the course.
 
 This is the 10x goal. It depends on stable import/export, Canvas API write support, conflict handling, and institutional partnerships. It's a ways out, but it's where we're headed.
 
