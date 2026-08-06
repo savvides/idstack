@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>idstack — Evidence-based instructional design, transparently cited</title>
-  <meta name="description" content="Open-source skills for evidence-based instructional design. 108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier, T1 (meta-analyses, RCTs) through T5 (expert opinion). Runs in Claude Code, OpenAI Codex CLI, and (soon) Gemini.">
-  <meta name="keywords" content="instructional design, evidence-based, course design, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, WCAG, UDL, open source, Claude Code, Codex CLI">
+  <meta name="description" content="Open-source skills for evidence-based instructional design. 108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier, T1 (meta-analyses, RCTs) through T5 (expert opinion). Runs in Claude Code.">
+  <meta name="keywords" content="instructional design, evidence-based, course design, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, WCAG, UDL, open source, Claude Code">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://idstack.org/">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -15,7 +15,7 @@
 
   <!-- Open Graph -->
   <meta property="og:title" content="idstack — Evidence-based instructional design, transparently cited">
-  <meta property="og:description" content="108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier. Open source, MIT-licensed. Runs in Claude Code and Codex CLI.">
+  <meta property="og:description" content="108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier. Open source, MIT-licensed. Runs in Claude Code.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://idstack.org/">
   <meta property="og:site_name" content="idstack">
@@ -28,7 +28,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="idstack — Evidence-based instructional design, transparently cited">
-  <meta name="twitter:description" content="108 peer-reviewed studies, 11 research domains, evidence tiers on every recommendation. Open source. Runs in Claude Code and OpenAI Codex CLI.">
+  <meta name="twitter:description" content="108 peer-reviewed studies, 11 research domains, evidence tiers on every recommendation. Open source. Runs in Claude Code.">
   <meta name="twitter:image" content="https://idstack.org/og-image.png">
   <meta name="twitter:image:alt" content="idstack — Evidence-based instructional design, transparently cited.">
 
@@ -38,11 +38,11 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "idstack",
-    "description": "Open-source instructional design skills backed by peer-reviewed research across 11 domains. Every recommendation cites its evidence tier. Runs in Claude Code and OpenAI Codex CLI.",
+    "description": "Open-source instructional design skills backed by peer-reviewed research across 11 domains. Every recommendation cites its evidence tier. Runs in Claude Code.",
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows",
-    "softwareVersion": "3.3.0",
+    "softwareVersion": "3.4.0",
     "datePublished": "2026-04-20",
     "dateModified": "2026-08-06",
     "offers": {
@@ -714,30 +714,6 @@
       white-space: nowrap;
     }
 
-    .detect-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin: 0.85rem 0 1.25rem;
-    }
-    .detect-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.85rem;
-      padding: 0.3rem 0.7rem;
-      border: 1px solid var(--rule);
-      border-radius: 2px;
-      color: var(--ink-soft);
-      background: var(--raised);
-    }
-    .detect-pill .check { color: var(--tier-1); font-weight: 700; }
-    .detect-pill.detect-pending {
-      color: var(--ink-muted);
-      border-style: dashed;
-    }
-    .detect-pill.detect-pending .check { color: var(--ink-muted); font-weight: 400; }
-
     .install-prose {
       font-size: 0.95rem;
       color: var(--ink-soft);
@@ -926,10 +902,10 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v3.3.0.4 — Course memory fixed</span>
+          <span>v3.4.0.0 — Claude Code only</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design, transparently cited.</h1>
-        <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier — <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code, OpenAI Codex CLI, and (soon) Gemini.</p>
+        <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier — <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code.</p>
 
         <div class="cta-row">
           <div class="install-pill" role="group" aria-label="Install command">
@@ -1094,7 +1070,7 @@
         </div>
       </div>
 
-      <p class="pipeline-foot">Run the full sequence with <code>/idstack:pipeline</code> in Claude Code or <code>$pipeline</code> in Codex CLI. The orchestrator auto-skips completed steps and resumes where you left off.</p>
+      <p class="pipeline-foot">Run the full sequence with <code>/idstack:pipeline</code>. The orchestrator auto-skips completed steps and resumes where you left off.</p>
     </section>
 
     <!-- ────────── Output ────────── -->
@@ -1157,23 +1133,24 @@
         <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
       </div>
 
-      <p class="install-prose"><code>./setup</code> auto-detects which CLIs are on your <code>PATH</code> and installs to whichever you have. Force one with <code>--codex</code> or <code>--no-codex</code>.</p>
+      <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 11 skills. Re-run it after a <code>git pull</code> to update.</p>
 
-      <div class="detect-row" aria-label="Supported CLIs">
-        <span class="detect-pill"><span class="check" aria-hidden="true">✓</span> Claude Code</span>
-        <span class="detect-pill"><span class="check" aria-hidden="true">✓</span> OpenAI Codex CLI</span>
-        <span class="detect-pill detect-pending"><span class="check" aria-hidden="true">○</span> Gemini CLI · v2.6</span>
-      </div>
-
-      <p class="install-prose">New to AI coding tools? Install one first — <a href="https://claude.ai/download" rel="noopener">Claude Code</a> (free download) or Codex CLI (<code>npm install -g @openai/codex</code>). Then paste the command above. When your CLI starts, run <code>/idstack:pipeline</code> (Claude) or <code>$pipeline</code> (Codex).</p>
+      <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:pipeline</code>.</p>
     </section>
 
     <!-- ────────── What's new ────────── -->
     <section class="section" id="whats-new" aria-labelledby="whatsnew-title">
       <header class="section-header">
         <p class="eyebrow">What's new</p>
-        <h2 id="whatsnew-title">v3.3.0.0 — Course memory that actually remembers.</h2>
+        <h2 id="whatsnew-title">v3.4.0.0 — idstack is a Claude Code plugin.</h2>
       </header>
+
+      <article class="release-card">
+        <p class="release-meta">August 6, 2026 · v3.4.0.0</p>
+        <h3>One host, supported properly.</h3>
+        <p>idstack shipped an OpenAI Codex CLI build from v2.5.0.0 through v3.3.0.4. It is removed. Every skill, the evidence base, the project manifest, and the HTML reports are unchanged — idstack now targets Claude Code and nothing else, which is the only place it was ever tested end to end.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: dated release note, not a capability claim -->
+        <p>If you installed the Codex build, <code>./setup</code> can no longer clean it up. Remove the leftover links yourself: <code>rm -f "${CODEX_HOME:-$HOME/.codex}"/skills/idstack-* "$HOME/.agents/plugins/idstack"</code>. To update everything else: <code>cd</code> into your idstack clone, then <code>git pull &amp;&amp; ./setup</code>.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: dated release note, not a capability claim -->
+      </article>
 
       <article class="release-card">
         <p class="release-meta">August 4, 2026 · v3.3.0.0 · patched through v3.3.0.4</p>
@@ -1185,7 +1162,7 @@
         <p><a href="https://github.com/savvides/idstack/releases" rel="noopener">→ All releases on GitHub</a></p>
       </article>
 
-      <p class="whats-next">Next: Gemini CLI, additional specialist skills (content sequencing, media selection, Kirkpatrick evaluation), and push-to-LMS so improvements land back in Canvas without copy-paste. See the <a href="https://github.com/savvides/idstack/blob/main/ROADMAP.md" rel="noopener">roadmap</a>.</p>
+      <p class="whats-next">Next: additional specialist skills (content sequencing, media selection, Kirkpatrick evaluation), and push-to-LMS so improvements land back in Canvas without copy-paste. See the <a href="https://github.com/savvides/idstack/blob/main/ROADMAP.md" rel="noopener">roadmap</a>.</p>
     </section>
 
   </main>

@@ -125,13 +125,13 @@ For each skill from the starting point onward:
 4. When the skill completes (logs to timeline), **execute Step 4 (Generate Course Dashboard) inline** to refresh `.idstack/exports/<course-slug>/index.html` against the new per-skill report. This keeps the dashboard fresh if the designer pauses partway through.
 5. Announce completion and move to next.
 
-**If the Skill tool is NOT available** (e.g., on Codex CLI or any host without a primitive
-to invoke a sibling skill in-process), degrade gracefully: after announcing the next skill,
-print exactly what the user should type to invoke it (e.g., "Type `$needs-analysis` to run
-the next stage, then resume the pipeline by typing `$pipeline` again") and STOP. The user
-runs the skill themselves; the pipeline picks up on the next `$pipeline` invocation by re-
-reading the timeline and continuing from the new starting point. Generate the course
-dashboard (Step 4) before stopping so the partial-run dashboard is up to date.
+**If the `Skill` invocation fails** (the tool is unavailable, or the child skill cannot be
+resolved), degrade gracefully rather than silently skipping the stage: print exactly what
+the user should type to run it themselves (e.g., "Type `/idstack:needs-analysis` to run the
+next stage, then resume by typing `/idstack:pipeline` again") and STOP. The pipeline picks
+up on the next `/idstack:pipeline` invocation by re-reading the timeline and continuing from
+the new starting point. Generate the course dashboard (Step 4) before stopping so the
+partial-run dashboard is up to date.
 
 **Between skills**, briefly announce the transition:
 "[skill-name] complete. Course dashboard refreshed. Moving to /idstack:<next-skill>..."

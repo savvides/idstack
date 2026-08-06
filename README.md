@@ -4,7 +4,7 @@
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 
-idstack is an open source set of skills for evidence-based instructional design that bring peer-reviewed research into your actual workflow. Runs in Claude Code and Codex CLI. Not a chatbot that summarizes papers — a design partner that checks your alignment matrix, flags cognitive load issues, classifies your objectives with Bloom's taxonomy, and tells you the evidence strength behind every recommendation.
+idstack is an open source set of skills for evidence-based instructional design that bring peer-reviewed research into your actual workflow. Runs in Claude Code. Not a chatbot that summarizes papers — a design partner that checks your alignment matrix, flags cognitive load issues, classifies your objectives with Bloom's taxonomy, and tells you the evidence strength behind every recommendation.
 
 Skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
@@ -94,7 +94,7 @@ You had a course in Canvas. Now you have an evidence-based audit with specific r
 
 ## Install — 30 seconds
 
-**Requirement:** [Claude Code](https://claude.ai/code) (desktop app, web app, or CLI) or [OpenAI Codex CLI](https://developers.openai.com/codex/cli). `./setup` detects whichever you have and installs for both if both are present.
+**Requirement:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI.
 
 Paste this into your terminal:
 
@@ -140,10 +140,8 @@ Claude clones the repo, runs setup, and confirms the skills are registered.
 <summary>All setup flags</summary>
 
 ```bash
-./setup                # Auto-detect Claude Code and codex on PATH, install for both
+./setup                # Register the plugin with Claude Code at user scope
 ./setup --local        # Install at project scope (./.claude/) instead of user scope
-./setup --codex        # Force-install the Codex bundle even if codex isn't on PATH
-./setup --no-codex     # Skip the Codex install
 ./setup --keep-legacy  # Leave pre-v2.0.1.0 installs in place instead of removing them
 ```
 
@@ -152,7 +150,7 @@ Setup is idempotent — re-run it any time.
 
 You should see:
 ```
-  regenerated skill files for all targets
+  regenerated skill files
 Installing idstack (user)...
   source: /path/to/idstack
 
@@ -178,8 +176,6 @@ idstack installed (Claude Code) — scope: user.
   More info: https://idstack.org
 ```
 
-If you also have Codex CLI on your `PATH`, you'll see an `idstack installed (Codex CLI).` block too, with `$<skill>` usage.
-
 ## Your design team
 
 idstack turns Claude Code into an evidence-based instructional design team. Each skill is a specialist. All invoked via `/idstack:<skill>`.
@@ -202,7 +198,7 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 
 Each skill feeds into the next. The project manifest is the thread.
 
-Skill names in the diagram below are shown unprefixed to keep the columns readable. To actually run one, use `/idstack:<skill>` in Claude Code or `$<skill>` in Codex CLI.
+Skill names in the diagram below are shown unprefixed to keep the columns readable. To actually run one, use the namespaced form: `/idstack:<skill>`.
 
 ```
 EXISTING COURSE                           NEW COURSE

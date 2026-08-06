@@ -191,8 +191,7 @@ check "dry-run passes when fresh" \
 
 SANDBOX="$TEST_DIR/repo"
 mkdir -p "$SANDBOX"
-cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/skills" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/dist" "$SANDBOX/"
-cp "$IDSTACK_DIR/AGENTS.md" "$SANDBOX/AGENTS.md"
+cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/skills" "$IDSTACK_DIR/templates" "$SANDBOX/"
 
 check "dry-run detects stale SKILL.md (sandbox)" \
   "echo 'stale content' >> '$SANDBOX/skills/needs-analysis/SKILL.md' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run"

@@ -20,29 +20,23 @@ allowed-tools:
 
 ## Preamble: Interaction Conventions
 
-idstack skills are designed to run in multiple CLIs (Claude Code, OpenAI Codex CLI, and
-others). To stay portable, skill bodies use a few **concept names** that have a CLI-specific
-implementation:
+idstack runs in Claude Code. Skill bodies use a few **concept names** for the tools they
+lean on:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
-  it means: present a single numbered multiple-choice question (e.g., "Which of these best
-  describes X? 1) ..., 2) ..., 3) Other") and stop, waiting for the user's next message
-  before proceeding. Ask **one** question at a time, never batch. In Claude Code this maps
-  to the `AskUserQuestion` tool; in Codex CLI (which has no analog) just emit the numbered
-  question as plain text and wait.
-- **Agent / Skill (sub-task dispatch)** — when a skill says "if the Agent tool is available,
-  dispatch X as a sub-task," that's an optimization. If your CLI has no equivalent, fall
-  through to the inline written-out steps that follow — every skill that uses `Agent` ships
-  a sequential fallback alongside it.
-- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`. In Claude Code this
-  invokes a child skill in-process via the `Skill` tool. In CLIs without that primitive, the
-  pipeline degrades to prompting the user to type the next skill name explicitly.
-- **Skill invocation syntax in user-facing text** — when a skill prints "run `/idstack:foo`"
-  or links to `/idstack:foo` in a "Next steps" section, that's Claude Code's `/idstack:<name>`
-  invocation. **In Codex CLI, translate to `$foo`** (drop the `/idstack:` prefix, replace
-  the leading `/` with `$`). Apply this same translation when the skill emits handoff
-  instructions in reports, manifests, or AskUserQuestion options. Same body text, two
-  hosts; the model translates per-CLI on output.
+  it means: present a single multiple-choice question (e.g., "Which of these best describes X?")
+  and stop, waiting for the user's answer before proceeding. Ask **one** question at a time,
+  never batch. This maps to the `AskUserQuestion` tool.
+- **Agent (sub-task dispatch)** — when a skill says "if the Agent tool is available, dispatch
+  X as a sub-task," that's an optimization. `Agent` is not in every skill's `allowed-tools`,
+  so when it isn't available, fall through to the inline written-out steps that follow —
+  every skill that uses `Agent` ships a sequential fallback alongside it.
+- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
+  child skill in-process via the `Skill` tool.
+- **Skill invocation syntax in user-facing text** — every skill is invoked as
+  `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
+  command. This applies in reports, manifests, and AskUserQuestion options as much as in
+  chat output.
 
 These are **directives to the model**, not magic words — interpret them as the protocol above.
 
@@ -51,9 +45,9 @@ These are **directives to the model**, not magic words — interpret them as the
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, Codex-style symlinks, then
-# the Claude Code marketplace cache (highest version). Empty if none found;
-# guard "$_IDSTACK/bin/..." calls accordingly.
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache (highest version). Empty if none found; guard
+# "$_IDSTACK/bin/..." calls accordingly.
 # Canonical copy: templates/snippets/idstack-resolve.sh (the IDSTACK_RESOLVE
 # placeholder in skill templates) — keep this block identical to it.
 _IDSTACK=""
@@ -66,7 +60,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
@@ -91,7 +85,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 if [ -f ".idstack/project.json" ]; then
@@ -174,7 +168,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 _HAS_TIMELINE=0
@@ -689,9 +683,9 @@ Before writing the manifest, generate an HTML report so the designer has a singl
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, Codex-style symlinks, then
-# the Claude Code marketplace cache. Empty if none found; guard
-# "$_IDSTACK/bin/..." calls accordingly.
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -702,7 +696,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 # Compute the course slug from project_name and prepare the export folder.
@@ -747,9 +741,9 @@ The `assessments` payload must include `report_path` set to the value of `$_REPO
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, Codex-style symlinks, then
-# the Claude Code marketplace cache. Empty if none found; guard
-# "$_IDSTACK/bin/..." calls accordingly.
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -760,7 +754,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 # Section 1: assessments
@@ -783,9 +777,9 @@ If `.idstack/project.json` does not exist yet — the standalone case, where the
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, Codex-style symlinks, then
-# the Claude Code marketplace cache. Empty if none found; guard
-# "$_IDSTACK/bin/..." calls accordingly.
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -796,7 +790,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 "$_IDSTACK/bin/idstack-migrate" --init .idstack/project.json >/dev/null
@@ -916,9 +910,9 @@ The HTML report follows the visual contract in `templates/report.html.tmpl` and 
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, Codex-style symlinks, then
-# the Claude Code marketplace cache. Empty if none found; guard
-# "$_IDSTACK/bin/..." calls accordingly.
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -929,7 +923,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 # Write a payload for your skill's section, then:
@@ -1316,9 +1310,9 @@ After the skill workflow completes successfully, log the session to the timeline
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, Codex-style symlinks, then
-# the Claude Code marketplace cache. Empty if none found; guard
-# "$_IDSTACK/bin/..." calls accordingly.
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -1329,7 +1323,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"assessment-design","event":"completed"}'
@@ -1344,9 +1338,9 @@ import format issue, course structure pattern), also log it as a learning:
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, Codex-style symlinks, then
-# the Claude Code marketplace cache. Empty if none found; guard
-# "$_IDSTACK/bin/..." calls accordingly.
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -1357,7 +1351,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$HOME/.agents/plugins/idstack" "$HOME/.agents/skills/idstack" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 "$_IDSTACK/bin/idstack-learnings-log" '{"skill":"assessment-design","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'

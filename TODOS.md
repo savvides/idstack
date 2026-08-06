@@ -66,30 +66,11 @@ Shipped in v1.5.0. Pipeline progression guidance now generates dynamic next-step
 recommendations based on timeline data. The shared preamble handles this consistently
 across all skills.
 
-## v2: Multi-Platform Install (Gemini CLI + Codex CLI) — PARTIALLY SHIPPED
-**Codex CLI: SHIPPED in v2.5.0.0.** Per-skill auto-discovery at `$CODEX_HOME/skills/idstack-<name>/`,
-plus a whole-repo symlink at `~/.agents/plugins/idstack/` for in-skill `bin/` resolution. Multi-target
-generator (`--target {claude|codex|all}`) emits the Codex flavor under `dist/codex/skills/` with
-`allowed-tools:` stripped. Concept-name preamble lets the same skill body run in both CLIs.
-
-**Gemini CLI: still pending, not yet scheduled to a release.** `.tmpl` → `.toml` transform,
-`gemini-extension.json` manifest, `ask_user` tool mapping. Gemini's built-in
-structured-question tool is a clean drop-in for the AskUserQuestion concept.
-
-**Codex marketplace publishing: still pending, not yet scheduled to a release.** Codex installs
-through simpler per-skill auto-discovery; proper Codex marketplace.json + .codex-plugin/plugin.json
-packaging would let users do `codex plugin marketplace add savvides/idstack` without cloning.
-(Claude Code has installed through its own marketplace since v3.2.0.0.)
-
-**Why:** Expands addressable market beyond Claude Code.
-**Priority:** P2 (Codex done; Gemini next)
-
 ## ~~v2: Sub-Agent Architecture for Context Efficiency~~ SHIPPED (v2.0–v2.2)
 Shipped across v2.0 and v2.2. /accessibility-review runs WCAG and UDL as parallel
 sub-agents; /course-quality-review parallelizes its QM/CoI/alignment dimensions; v2.2
 moved /red-team into a clean-context sub-agent that returns to the parent for a
-triage-and-fix loop (Critical / Critical+High / All / Skip). Claude Code only;
-graceful degradation elsewhere.
+triage-and-fix loop (Critical / Critical+High / All / Skip).
 
 ## v2: Config System
 Add `bin/idstack-config` for persistent user preferences (auto-update on/off, default

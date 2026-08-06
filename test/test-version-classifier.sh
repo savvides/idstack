@@ -73,7 +73,7 @@ check_version "19.0.0.0"  skip
 check_version "100.0.0.0" skip
 
 # Future major versions where the major itself is multi-digit but does not
-# start with 1. Caught by Gemini on PR #21 — the previous 1[0-9]* arm
+# start with 1. Caught by Gemini Code Assist on PR #21 — the previous 1[0-9]* arm
 # missed these and silently fell through to "unknown". Now classified by
 # [1-9][0-9]*.
 check_version "20.0.0.0"  skip

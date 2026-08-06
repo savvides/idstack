@@ -44,7 +44,8 @@ fresh() {
   mkdir -p "$WORK/r"
   # Copy only what the suites need; skip .git and any nested worktrees.
   for item in bin skills templates test evidence docs .claude-plugin \
-              VERSION CHANGELOG.md README.md TODOS.md AGENTS.md setup dist; do
+              VERSION CHANGELOG.md README.md TODOS.md CONTRIBUTING.md \
+              DESIGN.md ROADMAP.md CLAUDE.md setup; do
     [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/r/"
   done
   return 0
@@ -55,7 +56,7 @@ fresh() {
 # which means the mutation is caught by the staleness check rather than by the
 # assertion it is meant to exercise, and GUARDED proves nothing about that
 # assertion. Regenerating makes the specific guard the only thing that can fail.
-regen() { "$WORK/r/bin/idstack-gen-skills" --target all >/dev/null 2>&1 || true; }
+regen() { "$WORK/r/bin/idstack-gen-skills" >/dev/null 2>&1 || true; }
 
 # 1. f-string bug in the preamble -> test-preamble-python must fail.
 # Only meaningful on Python < 3.12; see PY_LT_312 above.
@@ -260,6 +261,45 @@ s = re.sub(r'  if ! claude plugin install idstack@idstack --scope "\$CLAUDE_SCOP
 open(p,'w').write(s)
 PY
 expect_fail "silent 'claude' failure" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 14. a retired-CLI reference creeps back into a doc -> smoke-test must fail.
+# This is the mutation that matters for the v3.4.0.0 removal: the 47 assertions
+# that used to name the second target are gone, so a green suite proves nothing
+# unless the repo-wide sweep that replaced them actually bites. Mutating README
+# rather than a code file also proves the sweep is not narrowed to bin/.
+fresh
+python3 - "$WORK/r/README.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace("**Requirement:** [Claude Code](https://claude.ai/code)",
+              "**Requirement:** [Claude Code](https://claude.ai/code) or OpenAI Codex CLI", 1)  # IDSTACK_CLI_LEAK_ALLOW
+open(p,'w').write(s)
+PY
+expect_fail "retired-CLI reference back in README" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 15. the second-CLI output bundle returns -> smoke-test must fail.
+# A directory, not a string: the sweep greps file *contents*, so an empty
+# bundle directory would slip past it. The explicit -e check is what catches it.
+fresh
+mkdir -p "$WORK/r/dist/skills"
+expect_fail "second-CLI dist/ bundle returns" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 16. an untagged reference inside a file that legitimately carries tagged lines
+# -> smoke-test must fail. docs/index.html holds two IDSTACK_CLI_LEAK_ALLOW
+# release-note lines. The tag has to exempt those *lines* and nothing else; the
+# obvious "simplification" is to exclude the whole file, which would silently
+# reopen the landing page — the single most user-visible surface — to stale
+# capability claims. This is the mutation that catches that rewrite.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace("<h2 id=\"install-title\">Install in about five minutes.</h2>",
+              "<h2 id=\"install-title\">Install in about five minutes.</h2>\n"
+              "      <p>Also runs in OpenAI Codex CLI.</p>", 1)  # IDSTACK_CLI_LEAK_ALLOW
+open(p,'w').write(s)
+PY
+expect_fail "untagged reference in a file with tagged lines" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

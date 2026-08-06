@@ -1,5 +1,37 @@
 # Changelog
 
+## v3.4.0.0 (2026-08-06)
+
+idstack is a Claude Code plugin now, and only that. The OpenAI Codex CLI target that shipped in v2.5.0.0 is removed, and the Gemini CLI target that was planned is off the roadmap. Nothing about the 11 skills, the evidence base, the manifest schema, or the report contract changes.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`. Restart Claude Code afterward — plugins load at session start.
+
+### Removed — the second CLI target
+
+- **Codex CLI is no longer supported.** `./setup` no longer detects `codex` on `PATH`, and the `--codex` / `--no-codex` flags are gone (passing either is now an unknown-argument error). `dist/codex/` is deleted, along with the repo-root `AGENTS.md` and `templates/agent-context.md`, the file it was generated from.
+- **If you had the Codex install, `./setup` will not clean it up** — it no longer knows those paths, and with `dist/codex/` deleted the symlinks it created now dangle. Remove them yourself:
+
+  ```bash
+  rm -f "${CODEX_HOME:-$HOME/.codex}"/skills/idstack-* "$HOME/.agents/plugins/idstack"
+  ```
+
+  For a `--local` install the same two live under the project: `./.codex/skills/idstack-*` and `./.agents/plugins/idstack`.
+- **Gemini CLI support is off the roadmap.** It was never implemented; the ROADMAP and TODOS entries planning it are removed.
+
+### Changed
+
+- **`bin/idstack-gen-skills` takes no `--target`.** One output layout, `skills/<name>/SKILL.md`. A caller passing `--target all` now exits 2 — `setup` and `test/mutation-test.sh` were updated.
+- **`$_IDSTACK` resolution dropped two paths.** `~/.agents/plugins/idstack` and `~/.agents/skills/idstack` existed only for the Codex install layout. The chain is now `CLAUDE_PLUGIN_ROOT`, `IDSTACK_HOME`, then the Claude Code marketplace cache. All five copies move together: the canonical snippet, the preamble's three inline blocks, and the longhand copy spliced from `templates/manifest-schema.md`.
+- **The preamble's Interaction Conventions no longer describe two hosts.** `AskUserQuestion`, `Agent`, and `Skill` are still named as concepts, and `Agent`'s inline fallback stays — it is genuinely absent from some skills' `allowed-tools`. What goes is the per-CLI translation rule that told the model to rewrite `/idstack:foo` as `$foo`. `/idstack:pipeline`'s degradation branch now prints `/idstack:<skill>` instructions and fires on a failed `Skill` call rather than on a host without the tool.
+
+### For contributors
+
+- **A regression gate replaces the Codex assertions.** smoke-test lost the 47 assertions covering the Codex bundle and gained 7: `dist/`, `AGENTS.md`, and `templates/agent-context.md` must not exist; the generator must accept no `--target`; the resolve snippet and preamble must not carry the `~/.agents` fallbacks; and a repo-wide grep must find no `codex`/`gemini` outside `CHANGELOG.md`. That last one is the assertion that matters — a green suite proves nothing once you delete the checks that were doing the looking. 393 → 353 assertions.
+- **One deliberate exemption in that sweep.** `test/smoke-test.sh` and `test/test-version-classifier.sh` credit "Gemini Code Assist", the GitHub PR-review bot that flagged the version classifier on #15, #19, #20, and #21. That attribution is why those cases exist and has nothing to do with Gemini CLI, so it stays; the sweep filters on the bot's full name, and both mentions were rewritten to spell it out so one filter covers them.
+- `test/mutation-test.sh`'s `regen()` called `--target all` under `|| true`. Left alone, the flag removal would have turned every regeneration into a silent no-op, and the mutations would have been caught by the staleness gate instead of by the assertions they exist to exercise. Fixed. Its fixture now also copies `CLAUDE.md`, `CONTRIBUTING.md`, `DESIGN.md`, and `ROADMAP.md` so the new sweep can see them.
+- `test/test-setup.sh` no longer passes `--no-codex`, and `test/integration-test.sh` no longer builds `dist/` and `AGENTS.md` into its sandbox.
+- Three new mutations prove the gate bites: a reference reintroduced into README, an empty `dist/` directory (which the content grep alone would miss), and an untagged reference inside `docs/index.html`, the one file carrying legitimate tagged lines — that last one catches a future "simplification" from exempting lines to exempting the whole landing page. Mutation suite 18 → 21.
+
 ## v3.3.0.4 (2026-08-06)
 
 No user-facing change — this release is test coverage for the two scripts a user runs when something has gone wrong.
