@@ -168,5 +168,30 @@ check "real tree untouched by this suite" \
   "[ \"\$(git -C '$IDSTACK_DIR' status --porcelain 2>/dev/null || true)\" = \"\$TREE_BEFORE\" ]"
 
 echo ""
+
+# --- idstack-learnings-delete ---
+echo "## idstack-learnings-delete"
+
+check "returns error if no arguments provided" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-delete"
+
+check "returns error if no file exists" \
+  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/bin/idstack-learnings-delete somekey"
+
+# Setup data for delete tests
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key1","insight":"one"}'
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key2","insight":"two"}'
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key1","insight":"three"}'
+
+check "returns error if key not found" \
+  "! $IDSTACK_DIR/bin/idstack-learnings-delete missingkey"
+
+check "deletes the most recent entry with the key when there are duplicates" \
+  "$IDSTACK_DIR/bin/idstack-learnings-delete key1 && python3 -c \"import json,sys; lines=[json.loads(l) for l in open('.idstack/learnings.jsonl')]; assert len(lines)==2 and lines[0]['key']=='key1' and lines[0]['insight']=='one' and lines[1]['key']=='key2'\""
+
+check "deletes a specific learning" \
+  "$IDSTACK_DIR/bin/idstack-learnings-delete key2 && python3 -c \"import json,sys; lines=[json.loads(l) for l in open('.idstack/learnings.jsonl')]; assert len(lines)==1 and lines[0]['key']=='key1'\""
+
+echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
