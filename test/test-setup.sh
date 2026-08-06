@@ -12,26 +12,11 @@
 # Usage: test/test-setup.sh [path-to-repo]
 set -u
 
-PASS=0
-FAIL=0
-TOTAL=0
+. "$(dirname "$0")/test-helper.sh"
 
 SRC="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
-
-check() {
-  TOTAL=$((TOTAL + 1))
-  local name="$1" cmd="$2" _out
-  if _out=$(eval "$cmd" 2>&1); then
-    echo "  PASS: $name"
-    PASS=$((PASS + 1))
-  else
-    echo "  FAIL: $name"
-    [ -n "$_out" ] && printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
-    FAIL=$((FAIL + 1))
-  fi
-}
 
 # Build an isolated environment: repo copy + fake HOME + stub claude/codex that
 # log their arguments instead of touching the real install.

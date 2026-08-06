@@ -21,9 +21,7 @@
 
 set -e
 
-PASS=0
-FAIL=0
-TOTAL=0
+. "$(dirname "$0")/test-helper.sh"
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 TEST_ROOT="$(mktemp -d)"
@@ -77,29 +75,6 @@ mock_claude_output() {
 }
 
 remove_mock_claude() { rm -f "$MOCK_BIN/claude"; }
-
-# check <desc> <cmd> [expected_exit] [expected_grep]
-check() {
-  TOTAL=$((TOTAL + 1))
-  local desc="$1" cmd="$2" expected_exit="${3:-0}" expected_grep="${4:-}"
-  local out exit_code=0
-  out=$(eval "$cmd" 2>&1) || exit_code=$?
-
-  if [ "$exit_code" -ne "$expected_exit" ]; then
-    FAIL=$((FAIL + 1))
-    echo "  FAIL: $desc (expected exit $expected_exit, got $exit_code)"
-    printf '%s\n' "$out" | head -8 | sed 's/^/        | /'
-    return
-  fi
-  if [ -n "$expected_grep" ] && ! printf '%s\n' "$out" | grep -qE "$expected_grep"; then
-    FAIL=$((FAIL + 1))
-    echo "  FAIL: $desc (exit $exit_code correct, output missing /$expected_grep/)"
-    printf '%s\n' "$out" | head -8 | sed 's/^/        | /'
-    return
-  fi
-  PASS=$((PASS + 1))
-  echo "  PASS: $desc"
-}
 
 echo "idstack doctor tests"
 echo ""

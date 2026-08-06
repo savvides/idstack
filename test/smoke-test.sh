@@ -2,9 +2,7 @@
 # idstack smoke test — verifies installation is correct
 set -e
 
-PASS=0
-FAIL=0
-TOTAL=0
+. "$(dirname "$0")/test-helper.sh"
 
 # Verify the repo this script lives in (test/smoke-test.sh -> repo root is "..").
 # Override with $1 to point at a different checkout (CI fixtures, etc.).
@@ -14,21 +12,6 @@ IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 # derive from VERSION so a release bump can't leave this test stale.
 VER="$(tr -d '[:space:]' < "$IDSTACK_DIR/VERSION" 2>/dev/null || true)"
 VER3="${VER%.*}"  # 4-component 3.2.0.0 -> 3-component 3.2.0 (JSON-LD softwareVersion)
-
-check() {
-  TOTAL=$((TOTAL + 1))
-  local _out
-  if _out=$(eval "$2" 2>&1); then
-    echo "  PASS: $1"
-    PASS=$((PASS + 1))
-  else
-    echo "  FAIL: $1"
-    if [ -n "$_out" ]; then
-      printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
-    fi
-    FAIL=$((FAIL + 1))
-  fi
-}
 
 echo "idstack smoke test"
 echo "  idstack dir: $IDSTACK_DIR"
@@ -73,8 +56,21 @@ for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack
 done
 
 # Bash syntax gate for the shell entry points (idstack-manifest-merge is python).
-for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/version-classify.sh bin/lib/plugin-status.sh; do
+for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/version-classify.sh bin/lib/plugin-status.sh test/test-helper.sh; do
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
+done
+
+# Every suite takes its counters from test/test-helper.sh. Nine suites had
+# each grown their own copy, and they had already drifted — two spelled the
+# helper `assert`, and one swallowed failure output entirely, so CI reported a
+# bare FAIL with no diagnostics. A local `PASS=0` is how that regrows.
+check "test-helper.sh exists" "[ -f '$IDSTACK_DIR/test/test-helper.sh' ]"
+for suite in smoke-test integration-test test-manifest-merge test-version-classifier \
+             test-plugin-status test-preamble-python test-setup test-doctor test-status; do
+  check "test/$suite.sh sources the shared helper" \
+    "grep -q 'test-helper.sh' '$IDSTACK_DIR/test/$suite.sh'"
+  check "test/$suite.sh defines no local counters" \
+    "! grep -qE '^(PASS|FAIL|TOTAL)=0' '$IDSTACK_DIR/test/$suite.sh'"
 done
 
 # Check template system

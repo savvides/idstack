@@ -12,15 +12,16 @@
 # Run from the repo root or via smoke-test.sh.
 set -e
 
-PASS=0
-FAIL=0
-TOTAL=0
+. "$(dirname "$0")/test-helper.sh"
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 . "$IDSTACK_DIR/bin/lib/plugin-status.sh"
 
-# check <name> <expected: enabled|disabled> <listing>
-check() {
+# Domain-specific shape: feeds a `claude plugin list` listing to
+# plugin_is_enabled and compares the result. Takes only the counters from
+# test-helper.sh, and is named check_listing so it cannot shadow check().
+# check_listing <name> <expected: enabled|disabled> <listing>
+check_listing() {
   TOTAL=$((TOTAL + 1))
   local name="$1" expected="$2" listing="$3" got
   if printf '%s\n' "$listing" | plugin_is_enabled "idstack@idstack"; then
@@ -40,25 +41,25 @@ check() {
 echo "test-plugin-status"
 echo ""
 
-check "enabled, only plugin installed" enabled \
+check_listing "enabled, only plugin installed" enabled \
 'idstack@idstack
   Status: enabled
   Version: 3.3.0.0'
 
-check "disabled, only plugin installed" disabled \
+check_listing "disabled, only plugin installed" disabled \
 'idstack@idstack
   Status: disabled
   Version: 3.3.0.0'
 
 # The regression the fixed window caused: the neighbour's "enabled" was inside
 # the -A4 window, so a disabled idstack read as enabled.
-check "disabled, next plugin enabled two lines later" disabled \
+check_listing "disabled, next plugin enabled two lines later" disabled \
 'idstack@idstack
   Status: disabled
 superpowers@marketplace
   Status: enabled'
 
-check "disabled, next plugin enabled after a blank line" disabled \
+check_listing "disabled, next plugin enabled after a blank line" disabled \
 'idstack@idstack
   Status: disabled
   Version: 3.3.0.0
@@ -66,14 +67,14 @@ check "disabled, next plugin enabled after a blank line" disabled \
 superpowers@marketplace
   Status: enabled'
 
-check "disabled, a PRECEDING plugin is enabled" disabled \
+check_listing "disabled, a PRECEDING plugin is enabled" disabled \
 'superpowers@marketplace
   Status: enabled
 
 idstack@idstack
   Status: disabled'
 
-check "enabled, listed between two disabled plugins" enabled \
+check_listing "enabled, listed between two disabled plugins" enabled \
 'airtable@marketplace
   Status: disabled
 
@@ -84,14 +85,14 @@ superpowers@marketplace
   Status: disabled'
 
 # Single-line listing formats.
-check "single-line format, enabled" enabled 'idstack@idstack (enabled)'
-check "single-line format, disabled with enabled neighbour" disabled \
+check_listing "single-line format, enabled" enabled 'idstack@idstack (enabled)'
+check_listing "single-line format, disabled with enabled neighbour" disabled \
 'idstack@idstack (disabled)
 superpowers@marketplace (enabled)'
 
 # Not installed at all — doctor gates on a separate grep, but the parser must
 # not invent an enabled verdict from someone else's entry.
-check "idstack absent, another plugin enabled" disabled \
+check_listing "idstack absent, another plugin enabled" disabled \
 'superpowers@marketplace
   Status: enabled'
 

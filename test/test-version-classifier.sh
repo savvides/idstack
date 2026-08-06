@@ -20,14 +20,16 @@
 
 set -e
 
-PASS=0
-FAIL=0
-TOTAL=0
+. "$(dirname "$0")/test-helper.sh"
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 . "$IDSTACK_DIR/bin/lib/version-classify.sh"
 
-check() {
+# Domain-specific shape: this compares a version string to an expected
+# classification rather than running a command, so it takes only the counters
+# from test-helper.sh. Named check_version so it cannot shadow the shared
+# check() — a same-named local wrapper is how the two would drift apart again.
+check_version() {
   TOTAL=$((TOTAL + 1))
   local version="$1"
   local expected="$2"
@@ -46,41 +48,41 @@ echo "test-version-classifier"
 echo ""
 
 # Legacy versions that ever shipped.
-check "0.1.0"     legacy
-check "0.5.0"     legacy
-check "1.0.0"     legacy
-check "1.9.0"     legacy
-check "2.0.0"     legacy
-check "2.0.0.0"   legacy
-check "2.0.0.1"   legacy
+check_version "0.1.0"     legacy
+check_version "0.5.0"     legacy
+check_version "1.0.0"     legacy
+check_version "1.9.0"     legacy
+check_version "2.0.0"     legacy
+check_version "2.0.0.0"   legacy
+check_version "2.0.0.1"   legacy
 
 # Modern versions — including multi-digit components that broke the
 # previous patterns.
-check "2.0.1.0"   skip
-check "2.0.1.5"   skip
-check "2.0.10.0"  skip
-check "2.0.99.0"  skip
-check "2.1.0.0"   skip
-check "2.4.0.0"   skip
-check "2.10.0.0"  skip
-check "2.99.0.0"  skip
-check "3.0.0.0"   skip
-check "9.0.0.0"   skip
-check "10.0.0.0"  skip
-check "19.0.0.0"  skip
-check "100.0.0.0" skip
+check_version "2.0.1.0"   skip
+check_version "2.0.1.5"   skip
+check_version "2.0.10.0"  skip
+check_version "2.0.99.0"  skip
+check_version "2.1.0.0"   skip
+check_version "2.4.0.0"   skip
+check_version "2.10.0.0"  skip
+check_version "2.99.0.0"  skip
+check_version "3.0.0.0"   skip
+check_version "9.0.0.0"   skip
+check_version "10.0.0.0"  skip
+check_version "19.0.0.0"  skip
+check_version "100.0.0.0" skip
 
 # Future major versions where the major itself is multi-digit but does not
 # start with 1. Caught by Gemini on PR #21 — the previous 1[0-9]* arm
 # missed these and silently fell through to "unknown". Now classified by
 # [1-9][0-9]*.
-check "20.0.0.0"  skip
-check "21.5.0"    skip
-check "25.99.0"   skip
-check "29.0.0"    skip
-check "30.0.0"    skip
-check "200.0.0"   skip
-check "999.0.0"   skip
+check_version "20.0.0.0"  skip
+check_version "21.5.0"    skip
+check_version "25.99.0"   skip
+check_version "29.0.0"    skip
+check_version "30.0.0"    skip
+check_version "200.0.0"   skip
+check_version "999.0.0"   skip
 
 echo ""
 echo "  $PASS/$TOTAL passed"

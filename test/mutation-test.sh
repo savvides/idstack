@@ -178,6 +178,20 @@ open(p, 'w').write(s)
 PY
 expect_fail "WCAG Level-A override dropped from verdict" "$WORK/r/test/test-status.sh"
 
+# 7e. a suite regrows its own counters -> smoke-test must fail.
+# This is how the nine copies of check() drifted apart in the first place: each
+# suite kept a private PASS=0 and its own body, and one of them ended up
+# swallowing failure output entirely.
+fresh
+python3 - "$WORK/r/test/test-doctor.sh" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace('. "$(dirname "$0")/test-helper.sh"',
+              'PASS=0\nFAIL=0\nTOTAL=0\ncheck() { TOTAL=$((TOTAL+1)); eval "$2" >/dev/null 2>&1 && PASS=$((PASS+1)) || FAIL=$((FAIL+1)); }', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "suite regrows private test counters" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 # 8. version disagreement -> smoke-test must fail
 fresh
 printf '9.9.9.9\n' > "$WORK/r/VERSION"
