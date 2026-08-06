@@ -61,8 +61,11 @@ check "handles empty arg without error" \
 check "handles no arg without error" \
   "$IDSTACK_DIR/bin/idstack-timeline-log"
 
-check "multiple appends create multiple lines" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -gt 1 ]"
+# Exact count, not `-gt 1`. Every preceding write in this section contributes a
+# line (5 by here); a loose comparison still passes when four of the five are
+# lost, which is the regression this assertion exists to catch.
+check "multiple appends create exactly one line each" \
+  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 5 ]"
 
 echo ""
 
