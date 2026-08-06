@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.3.0.4 (2026-08-06)
+
+No user-facing change — this release is test coverage for the two scripts a user runs when something has gone wrong.
+
+### For contributors
+
+- **`bin/idstack-doctor` now has execution coverage.** It had none: smoke-test checked only that the file existed and parsed. Since doctor's entire job is telling a user why `/idstack:<skill>` is missing, every branch it prints is one somebody acts on. 13 cases covering both missing manifests, an unparseable `plugin.json` (doctor parses it as JSON, so a regex-shaped test would miss this), missing `SKILL.md`, absent `claude` as a WARNING rather than a failure, installed-but-disabled, not-installed, all three legacy-conflict shapes, and an unrecognized directory being warned about rather than claimed.
+- **`bin/idstack-status --readiness` now has coverage** — roughly 100 lines deciding whether a course is fit to export. Each threshold is probed at its own boundary with the other two held passing (quality 70 vs 69, accessibility 80 vs 79, red-team 0 vs 1 critical), because a fixture failing everything at once still passes when a single constant is wrong. The WCAG Level-A override is asserted in both places it is implemented; removing either one alone leaves the other reporting.
+- **One shared assertion helper.** Nine suites each carried their own `PASS`/`FAIL`/`TOTAL` and copy of `check()`, and they had drifted: two spelled it `assert`, and one ran assertions with `>/dev/null 2>&1` and printed a bare `FAIL` — a red CI run that said something broke but not what. `test/test-helper.sh` owns it now. Two suites keep a differently-shaped wrapper, named so they cannot shadow the shared one. smoke-test asserts no suite regrows private counters, and a mutation proves that guard works.
+- Test suites 9 → 11 in CI. smoke-test 371 → 393 assertions, mutation suite 14 → 18.
+
 ## v3.3.0.3 (2026-08-06)
 
 To get this fix: `cd` into your idstack clone, then `git pull && ./setup`. Restart Claude Code afterward — plugins load at session start.
