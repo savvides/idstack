@@ -8,9 +8,10 @@ lean on:
   and stop, waiting for the user's answer before proceeding. Ask **one** question at a time,
   never batch. This maps to the `AskUserQuestion` tool.
 - **Agent (sub-task dispatch)** — when a skill says "if the Agent tool is available, dispatch
-  X as a sub-task," that's an optimization. `Agent` is not in every skill's `allowed-tools`,
-  so when it isn't available, fall through to the inline written-out steps that follow —
-  every skill that uses `Agent` ships a sequential fallback alongside it.
+  X as a sub-task," that is a parallelization shortcut, never the definition of the work.
+  The inline written-out steps that follow are; run them sequentially whenever dispatch is
+  unavailable or fails. Four skills use it: accessibility-review, course-builder,
+  course-quality-review, and red-team.
 - **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
   child skill in-process via the `Skill` tool.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as

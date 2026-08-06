@@ -421,7 +421,7 @@ Have feedback or a feature request? [Fill out this form](https://forms.gle/6LDgD
 
 Found a bug? You can also [open an issue on GitHub](https://github.com/savvides/idstack/issues).
 
-Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. The architecture is simple: create a directory with a `SKILL.md.tmpl` template, run `bin/idstack-gen-skills` to generate the per-CLI skill files, then `./setup`.
+Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. The architecture is simple: create a directory with a `SKILL.md.tmpl` template, run `bin/idstack-gen-skills` to generate its `SKILL.md`, then `./setup`.
 
 ## More
 

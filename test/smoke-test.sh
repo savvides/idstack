@@ -251,7 +251,7 @@ fi
 
 # Version classifier (shared by setup + bin/idstack-doctor) must classify
 # multi-digit versions correctly. Pinned to catch the pattern-fragility
-# regression Gemini Code Assist flagged twice. The classifier itself lives in
+# regression Gemini Code Assist flagged twice. The classifier itself lives in  # IDSTACK_CLI_LEAK_ALLOW
 # bin/lib/version-classify.sh — one definition sourced by setup, doctor, and
 # the unit test, so the test exercises the shipped code, never a copy.
 check "bin/lib/version-classify.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/version-classify.sh' ]"
@@ -370,25 +370,25 @@ check "generator takes no --target flag" "! grep -q -- '--target' '$IDSTACK_DIR/
 check "resolve chain drops the ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
 check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/preamble.md'"
 
-# Repo-wide sweep for the retired CLI's name. Three exemptions, each narrow:
+# Repo-wide sweep for the retired CLI's name. Two exemptions:
 #
 #   1. CHANGELOG.md — the release record, which has to keep describing what was
 #      removed and how to clean up after it.
-#   2. "Gemini Code Assist" — a GitHub PR-review bot that flagged the version
-#      classifier four times. Unrelated to the CLI, and the attribution is the
-#      reason those test cases exist. Both mentions spell the bot's full name
-#      so one filter covers them; write it that way if you add a third.
-#   3. Lines tagged IDSTACK_CLI_LEAK_ALLOW — this block's own patterns, and the
-#      dated release note on the landing page that tells anyone who installed
-#      the retired build how to clean it up. Tagging individual lines rather
-#      than excluding whole files keeps the rest of each file under the sweep.
-#      A tag is for a dated, historical mention. It is never for a line that
-#      claims idstack runs somewhere it does not.
+#   2. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Three kinds of line carry the tag:
+#      this block's own patterns, the dated release note on the landing page,
+#      and the comments crediting "Gemini Code Assist" — a PR-review bot  # IDSTACK_CLI_LEAK_ALLOW
+#      that flagged the version classifier four times, unrelated to the CLI and
+#      the reason those test cases exist.
+#
+#      A tag is for a dated, historical mention. It is NEVER for a line that
+#      claims idstack runs somewhere it does not. Tag individual lines, never
+#      whole files, and never filter on a bare string: an earlier draft dropped
+#      every line containing the bot's name repo-wide, which would have
+#      let an untagged capability claim through anywhere it appeared.
 CLI_LEAK_RE='codex|gemini'            # IDSTACK_CLI_LEAK_ALLOW
-CLI_LEAK_BOT='Gemini Code Assist'     # IDSTACK_CLI_LEAK_ALLOW
 CLI_LEAK="$(grep -rIiE "$CLI_LEAK_RE" "$IDSTACK_DIR" \
   --exclude-dir=.git --exclude-dir=.gstack --exclude-dir=.idstack \
-  --exclude=CHANGELOG.md 2>/dev/null | grep -vF "$CLI_LEAK_BOT" || true)"
+  --exclude-dir=.claude --exclude=CHANGELOG.md 2>/dev/null || true)"
 CLI_LEAK="$(printf '%s' "$CLI_LEAK" | grep -vF 'IDSTACK_CLI_LEAK_ALLOW' || true)"
 # Printed through the command itself, not tested with -z, so a failure names
 # the offending lines instead of just saying the string was non-empty.

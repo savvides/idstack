@@ -56,7 +56,16 @@ fresh() {
 # which means the mutation is caught by the staleness check rather than by the
 # assertion it is meant to exercise, and GUARDED proves nothing about that
 # assertion. Regenerating makes the specific guard the only thing that can fail.
-regen() { "$WORK/r/bin/idstack-gen-skills" >/dev/null 2>&1 || true; }
+# Failure is fatal, not swallowed. A `|| true` here is how the --target
+# removal could have silently no-opped every regeneration: the mutation then
+# trips the staleness gate instead of its own assertion, and GUARDED means
+# nothing. No mutation in this file is supposed to break generation.
+regen() {
+  if ! "$WORK/r/bin/idstack-gen-skills" >/dev/null 2>&1; then
+    echo "  ERROR: regen failed — a mutation broke generation; the GUARDED results below are meaningless" >&2
+    exit 1
+  fi
+}
 
 # 1. f-string bug in the preamble -> test-preamble-python must fail.
 # Only meaningful on Python < 3.12; see PY_LT_312 above.
@@ -300,6 +309,23 @@ s = s.replace("<h2 id=\"install-title\">Install in about five minutes.</h2>",
 open(p,'w').write(s)
 PY
 expect_fail "untagged reference in a file with tagged lines" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 17. a capability claim that happens to contain the PR-review bot's name ->
+# smoke-test must fail. The first draft of the sweep filtered the bot's name as
+# a bare string across the whole repo, so this exact line passed: it names the
+# retired CLI, it is untagged, and it sat on the landing page. The exemption is
+# a line tag now, and this mutation is what keeps it from regressing to a
+# string filter.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace("<h2 id=\"install-title\">Install in about five minutes.</h2>",
+              "<h2 id=\"install-title\">Install in about five minutes.</h2>\n"
+              "      <p>Reviewed by Gemini Code Assist. Also runs in Codex CLI.</p>", 1)  # IDSTACK_CLI_LEAK_ALLOW
+open(p,'w').write(s)
+PY
+expect_fail "claim carrying the bot's name is not exempt" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
