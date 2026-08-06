@@ -77,14 +77,37 @@ echo "## idstack-learnings-search"
 # Add a second learning of different type
 $IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"review","type":"pattern","key":"test2","insight":"pattern insight","confidence":7}'
 
+# Add more learnings to test keyword search
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"export","type":"technical","key":"canvas_export","insight":"Canvas requires specific API tokens","confidence":9}'
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"review","type":"pattern","key":"rubric_design","insight":"Rubrics should be simple","confidence":8}'
+
 check "returns results with --limit" \
   "[ \$($IDSTACK_DIR/bin/idstack-learnings-search --limit 1 | wc -l | tr -d ' ') -eq 1 ]"
 
 check "returns all when limit exceeds count" \
-  "[ \$($IDSTACK_DIR/bin/idstack-learnings-search --limit 99 | wc -l | tr -d ' ') -eq 2 ]"
+  "[ \$($IDSTACK_DIR/bin/idstack-learnings-search --limit 99 | wc -l | tr -d ' ') -eq 4 ]"
 
 check "filters by --type" \
   "$IDSTACK_DIR/bin/idstack-learnings-search --limit 10 --type operational | python3 -c \"import json,sys; d=json.loads(sys.stdin.readline()); assert d['type']=='operational'\""
+
+check "filters by --keyword (hit)" \
+  "$IDSTACK_DIR/bin/idstack-learnings-search --keyword canvas | grep -q 'canvas_export'"
+
+check "filters by --keyword (case insensitive)" \
+  "$IDSTACK_DIR/bin/idstack-learnings-search --keyword RuBrIc | grep -q 'rubric_design'"
+
+check "filters by --keyword (miss)" \
+  "[ -z \"\$($IDSTACK_DIR/bin/idstack-learnings-search --keyword nonexistent_string)\" ]"
+
+# Setup fake home and global learnings
+mkdir -p "$TEST_DIR/fake_home/.idstack/global"
+echo '{"skill":"import","type":"technical","key":"global_canvas","insight":"Global canvas insight","confidence":5}' > "$TEST_DIR/fake_home/.idstack/global/learnings.jsonl"
+
+check "cross-project includes global learnings" \
+  "HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/bin/idstack-learnings-search --cross-project --keyword global_canvas | grep -q '\"_source\": \"global\"'"
+
+check "without cross-project excludes global learnings" \
+  "[ -z \"\$(HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/bin/idstack-learnings-search --keyword global_canvas)\" ]"
 
 check "no file returns empty" \
   "rm -f .idstack/learnings.jsonl && [ -z \"\$($IDSTACK_DIR/bin/idstack-learnings-search --limit 3)\" ]"
