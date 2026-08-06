@@ -98,9 +98,12 @@ def load_payload(payload_arg):
         except Exception as exc:
             die(6, f"failed to read payload file {payload_arg!r}: {exc}")
     try:
-        return json.loads(text)
+        data = json.loads(text)
     except json.JSONDecodeError as exc:
         die(1, f"payload is not valid JSON: {exc}")
+    if not isinstance(data, dict):
+        die(1, f"payload root must be a JSON object: got {type(data).__name__}")
+    return data
 
 
 def load_manifest(manifest_path):

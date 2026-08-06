@@ -28,19 +28,19 @@ skipping skills that have already been completed.
 The canonical pipeline order is:
 
 ```
-1. /needs-analysis         — Three-level needs assessment
-2. /learning-objectives    — Evidence-based ILO development
-3. /assessment-design      — Assessment & rubric design
-4. /course-builder         — Generate course content
-5. /course-quality-review  — Quality audit (QM + CoI)
-6. /accessibility-review   — WCAG + UDL review
-7. /red-team               — Adversarial audit
-8. /course-export          — Package for LMS
+1. /idstack:needs-analysis         — Three-level needs assessment
+2. /idstack:learning-objectives    — Evidence-based ILO development
+3. /idstack:assessment-design      — Assessment & rubric design
+4. /idstack:course-builder         — Generate course content
+5. /idstack:course-quality-review  — Quality audit (QM + CoI)
+6. /idstack:accessibility-review   — WCAG + UDL review
+7. /idstack:red-team               — Adversarial audit
+8. /idstack:course-export          — Package for LMS
 ```
 
-**Alternative entry point:** If the user has run `/course-import` (visible in timeline),
-the pipeline starts at `/learning-objectives` (skipping /needs-analysis, since the import
-populated the manifest with equivalent data).
+**Alternative entry point:** If the user has run `/idstack:course-import` (visible in
+timeline), the pipeline starts at `/idstack:learning-objectives` (skipping
+`/idstack:needs-analysis`, since the import populated the manifest with equivalent data).
 
 ## Determining Completed Skills
 
@@ -97,17 +97,17 @@ Show the user a status table before starting:
 
 ```
 Pipeline Status:
-  [done] /needs-analysis
-  [done] /learning-objectives
-  [next] /assessment-design      <-- starting here
-  [    ] /course-builder
-  [    ] /course-quality-review
-  [    ] /accessibility-review
-  [    ] /red-team
-  [    ] /course-export
+  [done] /idstack:needs-analysis
+  [done] /idstack:learning-objectives
+  [next] /idstack:assessment-design      <-- starting here
+  [    ] /idstack:course-builder
+  [    ] /idstack:course-quality-review
+  [    ] /idstack:accessibility-review
+  [    ] /idstack:red-team
+  [    ] /idstack:course-export
 ```
 
-Ask: "Ready to continue the pipeline from /assessment-design?" (using AskUserQuestion
+Ask: "Ready to continue the pipeline from /idstack:assessment-design?" (using AskUserQuestion
 with options: "Yes, continue" / "Start from a different skill" / "Re-run a completed skill")
 
 If the user picks "Start from a different skill" or "Re-run a completed skill",
@@ -117,8 +117,10 @@ ask which one using AskUserQuestion with the skill list as options.
 
 For each skill from the starting point onward:
 
-1. Announce: "Starting /skill-name..."
-2. Invoke the skill using the `Skill` tool with the skill name (e.g., `skill: "needs-analysis"`)
+1. Announce: "Starting /idstack:<skill-name>..."
+2. Invoke the skill using the `Skill` tool with the **plugin-namespaced** skill name
+   (e.g., `skill: "idstack:needs-analysis"`). Plugin skills are addressed as
+   `plugin:skill` — a bare `"needs-analysis"` does not resolve in Claude Code.
 3. The skill will run its full workflow including all AskUserQuestion interactions
 4. When the skill completes (logs to timeline), **execute Step 4 (Generate Course Dashboard) inline** to refresh `.idstack/exports/<course-slug>/index.html` against the new per-skill report. This keeps the dashboard fresh if the designer pauses partway through.
 5. Announce completion and move to next.
@@ -132,7 +134,7 @@ reading the timeline and continuing from the new starting point. Generate the co
 dashboard (Step 4) before stopping so the partial-run dashboard is up to date.
 
 **Between skills**, briefly announce the transition:
-"[skill-name] complete. Course dashboard refreshed. Moving to /next-skill..."
+"[skill-name] complete. Course dashboard refreshed. Moving to /idstack:<next-skill>..."
 
 ### Step 4: Generate Course Dashboard
 
@@ -146,6 +148,7 @@ After each skill completes (or after the orchestrator finishes the run, includin
 **Prep.** Compute the course slug and prepare the export folder:
 
 ```bash
+{{IDSTACK_RESOLVE}}
 _PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
@@ -186,8 +189,14 @@ The dashboard is overwritten on every pipeline run — historical dashboards are
 When all remaining skills have been executed:
 - Announce: "Pipeline complete. Your course has been through all 8 stages."
 - Confirm the dashboard path: "Course dashboard at `.idstack/exports/<course-slug>/index.html` — open it in any browser for the cross-cutting view; the per-skill HTML reports in the same folder carry the full detail. Zip the folder to hand it to a stakeholder."
-- If `/course-quality-review` produced a score, show it.
+- If `/idstack:course-quality-review` produced a score, show it.
 - Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.
+- Log the pipeline run so "the pipeline was run" is recoverable from the timeline:
+
+```bash
+{{IDSTACK_RESOLVE}}
+[ -n "$_IDSTACK" ] && "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"pipeline","event":"completed"}'
+```
 
 ## Important Rules
 
@@ -197,6 +206,6 @@ When all remaining skills have been executed:
   questions or commentary between the skill's AskUserQuestion prompts.
 - **Respect the user.** If at any point the user says "stop", "pause", or "that's
   enough for now", stop the pipeline gracefully. Their progress is saved in
-  timeline.jsonl and they can resume later with `/idstack pipeline`.
+  timeline.jsonl and they can resume later with `/idstack:pipeline`.
 - **No quality gate yet.** In v2.0, skip logic is purely completion-based. Quality-gated
   skipping (only skip if score > threshold) is planned for a future version.

@@ -8,15 +8,25 @@ TOTAL=0
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TEST_DIR=$(mktemp -d)
-trap "rm -rf $TEST_DIR" EXIT
+# Single-quoted so expansion happens at trap time and a path with spaces survives.
+trap 'rm -rf "$TEST_DIR"' EXIT
+
+# Snapshot the working-tree state so the suite can prove it mutated nothing —
+# compared before/after rather than against a clean tree, so a developer's own
+# uncommitted work doesn't trip the check.
+TREE_BEFORE=$(git -C "$IDSTACK_DIR" status --porcelain 2>/dev/null || true)
 
 check() {
   TOTAL=$((TOTAL + 1))
-  if eval "$2" 2>/dev/null; then
+  local _out
+  if _out=$(eval "$2" 2>&1); then
     echo "  PASS: $1"
     PASS=$((PASS + 1))
   else
     echo "  FAIL: $1"
+    if [ -n "$_out" ]; then
+      printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
+    fi
     FAIL=$((FAIL + 1))
   fi
 }
@@ -91,8 +101,8 @@ check "no timeline shows empty state message" \
 $IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"needs-analysis","event":"completed","training_justified":true}'
 $IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"course-quality-review","event":"completed","score":65,"dimensions":{"teaching_presence":7,"social_presence":3,"cognitive_presence":5}}'
 
-check "shows skills completed checkboxes" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q '\[x\] /needs-analysis'"
+check "shows skills completed checkboxes (namespaced)" \
+  "$IDSTACK_DIR/bin/idstack-status | grep -q '\[x\] /idstack:needs-analysis'"
 
 check "shows quality trend" \
   "$IDSTACK_DIR/bin/idstack-status | grep -q 'Quality trend: 65'"
@@ -100,19 +110,62 @@ check "shows quality trend" \
 check "suggests next skill" \
   "$IDSTACK_DIR/bin/idstack-status | grep -q 'Suggested next'"
 
+# Quote-injection regression: a project name with an apostrophe must render,
+# not blank the dashboard with a Python SyntaxError.
+cat > .idstack/project.json <<'EOF'
+{"version": "1.4", "project_name": "Bob's Advanced Course"}
+EOF
+
+check "apostrophe in project name renders" \
+  "'$IDSTACK_DIR/bin/idstack-status' | grep -qF \"Project: Bob's Advanced Course\""
+
+check "apostrophe in project name: no 'Error reading timeline'" \
+  "! '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Error reading timeline'"
+
+# course-import is an alternative pipeline entry: with only course-import
+# completed, the suggestion must be learning-objectives, not nothing.
+mkdir -p importcase && ( cd importcase && \
+  "$IDSTACK_DIR/bin/idstack-timeline-log" '{"skill":"course-import","event":"completed"}' )
+check "course-import alone suggests learning-objectives" \
+  "( cd importcase && '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Suggested next: /idstack:learning-objectives' )"
+
+# Everything idstack-status prints is text a user may type back. It must carry
+# the /idstack: prefix for the same reason skill templates do — a bare /skill
+# is not a valid command in either CLI.
+check "idstack-status never prints a bare /skill command" \
+  "! '$IDSTACK_DIR/bin/idstack-status' | grep -Eq '(^|[^:])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline)\b'"
+
+rm -f .idstack/project.json
+
 echo ""
 
 # --- idstack-gen-skills ---
+# The staleness test mutates a generated SKILL.md, so it runs against a
+# disposable copy of the repo under $TEST_DIR — never against the real tree
+# (an interrupted run used to leave the working tree dirty).
 echo "## idstack-gen-skills"
 
 check "dry-run passes when fresh" \
-  "$IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+  "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
 
-check "dry-run detects stale SKILL.md" \
-  "echo 'stale content' >> $IDSTACK_DIR/skills/needs-analysis/SKILL.md && ! $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+SANDBOX="$TEST_DIR/repo"
+mkdir -p "$SANDBOX"
+cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/skills" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/dist" "$SANDBOX/"
+cp "$IDSTACK_DIR/AGENTS.md" "$SANDBOX/AGENTS.md"
 
-check "regenerate fixes staleness" \
-  "$IDSTACK_DIR/bin/idstack-gen-skills && $IDSTACK_DIR/bin/idstack-gen-skills --dry-run"
+check "dry-run detects stale SKILL.md (sandbox)" \
+  "echo 'stale content' >> '$SANDBOX/skills/needs-analysis/SKILL.md' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run"
+
+check "regenerate fixes staleness (sandbox)" \
+  "'$SANDBOX/bin/idstack-gen-skills' && '$SANDBOX/bin/idstack-gen-skills' --dry-run"
+
+# A template missing {{PREAMBLE}} must be an error, not a silent SKIP that
+# lets --dry-run pass green over an absent or stale output.
+check "missing {{PREAMBLE}} placeholder fails dry-run and generation (sandbox)" \
+  "sed -i.bak 's/{{PREAMBLE}}/PREAMBLE_GONE/' '$SANDBOX/skills/learn/SKILL.md.tmpl' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run && ! '$SANDBOX/bin/idstack-gen-skills'"
+
+check "real tree untouched by this suite" \
+  "[ \"\$(git -C '$IDSTACK_DIR' status --porcelain 2>/dev/null || true)\" = \"\$TREE_BEFORE\" ]"
 
 echo ""
 

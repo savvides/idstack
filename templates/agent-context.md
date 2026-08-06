@@ -74,6 +74,13 @@ Manifest write rules:
 - Use `bin/idstack-manifest-merge` for the write path: section-scoped, atomic (tempfile +
   rename), preserves foreign sections, validates against the canonical schema in
   `templates/manifest-schema.md`. Inline full-manifest edit is the deprecated fallback.
+- **The one documented exception:** `needs-analysis` and `course-import` keep the
+  Read-modify-Write path because each writes several co-owned sections in one pass, which
+  whole-section merge cannot express. Both state why inline. Don't "fix" them to use the
+  merge tool, and don't copy their pattern into a single-section writer.
+- Running standalone, call `bin/idstack-migrate --init` before merging. On a missing
+  manifest plain `idstack-migrate` is a no-op, so the merge that follows exits 4 and the
+  results are silently never persisted.
 
 Report write rules:
 
@@ -99,11 +106,33 @@ Every skill template follows this pattern:
 2. **`{{PREAMBLE}}`** placeholder (replaced by `templates/preamble.md` during generation)
 3. **Workflow** (Markdown defining the conversational flow, decision trees, outputs)
 4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`)
-5. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
+5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`).
+   Unlike the other two it appears many times per template — once at the top of every
+   bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so
+   `_IDSTACK` must be re-derived in each. The snippet is the single definition of that
+   resolution order: `CLAUDE_PLUGIN_ROOT`, `IDSTACK_HOME`, the Codex symlinks, then the
+   Claude Code marketplace cache. `templates/manifest-schema.md` is spliced verbatim and
+   writes the resolution out longhand; smoke-test keeps the two in lockstep.
+6. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
 
 The shared preamble includes: update check, manifest check, preferences check, designer
 profile check, and context recovery (reads timeline + learnings for welcome-back messages
 and pipeline guidance).
+
+Python embedded in the preamble must parse on Python 3.9 — the version macOS ships.
+`test/test-preamble-python.sh` runs every embedded block on 3.9 and 3.12; a syntax error
+there dies silently at runtime, which is how context recovery stayed broken for several
+releases.
+
+### Shared shell libraries
+
+Logic used by more than one script — or that deserves a unit test — lives in `bin/lib/`
+and is sourced by its callers rather than inlined:
+
+- `bin/lib/version-classify.sh` — version comparison, shared by `setup` and `bin/idstack-doctor`
+- `bin/lib/plugin-status.sh` — parses `claude plugin list` output into idstack's own entry
+
+Test the shipped file, never a copy.
 
 ### Course memory
 
@@ -139,14 +168,38 @@ takes precedence when tiers conflict.
 
 ```bash
 ./setup                          # Install for the detected CLI(s)
-./test/smoke-test.sh             # Verify installation and generated artifacts
+./setup --local                  # Install at project scope instead of user scope
+./setup --codex / --no-codex     # Force or skip the Codex bundle
+./setup --keep-legacy            # Leave pre-v2.0.1.0 installs in place
 bin/idstack-gen-skills           # Regenerate skill files for all targets
 bin/idstack-gen-skills --target codex    # Regenerate Codex flavor only
 bin/idstack-gen-skills --dry-run         # Check if generated files are up to date
 bin/idstack-doctor               # Diagnose installs across CLIs
 bin/idstack-status               # Course health dashboard (run in a project dir)
 bin/idstack-status --readiness   # Pre-export readiness check only
+bin/idstack-migrate              # Migrate .idstack/project.json to the latest schema
+bin/idstack-migrate --init       # Also create a canonical manifest when none exists
+bin/idstack-manifest-merge --section <s> --payload <f>  # Canonical manifest write path
+bin/idstack-slugify "<project name>"     # Derive the <course-slug> for .idstack/exports/
 ```
+
+Tests — all eight run in CI on every push and PR (`.github/workflows/test.yml`,
+ubuntu on Python 3.9 + 3.12, macOS on 3.12):
+
+```bash
+./test/smoke-test.sh              # Install, SKILL.md freshness, frontmatter, version agreement,
+                                  # canonical section names, namespacing, resolve-snippet lockstep
+./test/integration-test.sh        # End-to-end; proves the suite leaves the working tree untouched
+./test/test-setup.sh              # ./setup behavior: flags, scope, legacy cleanup, failure handling
+./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
+./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
+./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
+./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
+./test/mutation-test.sh           # Reintroduces each fixed defect, asserts its guarding test fails
+```
+
+Python 3.9 is the oldest interpreter in the field (macOS system python3) and the
+leg that catches modern-only syntax reaching the preamble's embedded scripts.
 
 No build step for users. No dependencies beyond bash (python3 recommended for full
 features). Skills are plain Markdown files.
