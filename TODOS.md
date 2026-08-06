@@ -1,5 +1,15 @@
 # TODOS
 
+> **Also check the open GitHub issues.** This file holds the long-lived feature
+> backlog. Work that came out of a specific code review or PR triage is tracked
+> as an issue instead, so it stays next to the evidence that produced it:
+>
+> - [#60](https://github.com/savvides/idstack/issues/60) — an interrupted `idstack-learnings-delete` can destroy the whole log (truncate-in-place)
+> - [#61](https://github.com/savvides/idstack/issues/61) — decide whether `--cross-project` lets global learnings outrank local ones; the code and the comment above it disagree
+> - [#62](https://github.com/savvides/idstack/issues/62) — remaining test-coverage gaps, one of which is a silent regression today
+>
+> The issue is authoritative for its own detail; don't copy it here.
+
 ## ~~v2.4: Dual-Output Report Contract + Pipeline Aggregator~~ SHIPPED (v2.4.0.0)
 Shipped in v2.4.0.0 with Markdown reports under `.idstack/reports/` (historical —
 later releases replaced that path with self-contained HTML reports under

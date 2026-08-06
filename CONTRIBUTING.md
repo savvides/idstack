@@ -129,13 +129,15 @@ bin/idstack-gen-skills --dry-run  # Generated files up to date? Run this first.
 ./test/smoke-test.sh              # Verify installation across all targets
 ```
 
-Eight suites run in CI (`.github/workflows/test.yml`) on every push and pull request. Run whichever ones your change touches locally; CI runs them all:
+Ten suites run in CI (`.github/workflows/test.yml`) on every push and pull request. Run whichever ones your change touches locally; CI runs them all:
 
 | Suite | Covers |
 |-------|--------|
 | `test/smoke-test.sh` | Install, `SKILL.md` freshness, YAML frontmatter, version agreement across `VERSION` / `plugin.json` / `CHANGELOG.md`, canonical manifest section names, `/idstack:` namespacing, resolve-snippet lockstep, schema migrations, `bash -n` on every script |
-| `test/integration-test.sh` | End-to-end run; asserts the suite leaves your working tree untouched |
+| `test/integration-test.sh` | Behavioral tests across the `bin/` scripts; also asserts the suite leaves your working tree untouched |
 | `test/test-setup.sh` | `./setup` behavior — flag parsing, scope selection, all three legacy-cleanup shapes, failure handling. Runs against a repo copy with a fake `$HOME` and a stub `claude` |
+| `test/test-doctor.sh` | `bin/idstack-doctor` — every PROBLEM/WARNING branch and the exit contract. Runs against a repo copy with a pinned `PATH`, so "claude not found" means genuinely not found |
+| `test/test-status.sh` | `bin/idstack-status`, including the `--readiness` export gate. Each threshold is probed at its own boundary with the other two held passing |
 | `test/test-manifest-merge.sh` | `bin/idstack-manifest-merge` |
 | `test/test-version-classifier.sh` | `bin/lib/version-classify.sh` |
 | `test/test-plugin-status.sh` | `bin/lib/plugin-status.sh` |
@@ -143,6 +145,22 @@ Eight suites run in CI (`.github/workflows/test.yml`) on every push and pull req
 | `test/mutation-test.sh` | Reintroduces each known defect into a throwaway copy and asserts the guarding test fails. Add a mutation here whenever you fix a bug — it is what proves your new test would have caught it |
 
 The CI matrix is ubuntu on Python 3.9 and 3.12, plus macOS on 3.12 for BSD `grep`/`sed`/`awk` differences. `mutation-test.sh` runs once, pinned to 3.9. Do not skip hooks or push with a red suite.
+
+### Writing a new assertion
+
+`test/test-helper.sh` is sourced by every suite and owns the counters and the assertion:
+
+```bash
+. "$(dirname "$0")/test-helper.sh"
+
+check "description"            "some-command"              # must exit 0
+check "rejects a bad payload"  "$MERGE --section bogus"  3  # must exit 3
+check "names the failing skill" "$STATUS --readiness"    0  "INCOMPLETE"
+```
+
+Arguments 3 and 4 are optional: an expected exit code, and an ERE the output must match. On failure the first five lines of output are printed. Do not add a private `PASS=0`/`check()` to a suite — smoke-test asserts none exist, and a mutation proves that guard works. Nine suites each had their own copy once and they drifted: two spelled it `assert`, and one swallowed failure output entirely, so CI reported a bare `FAIL` with nothing to act on.
+
+Two suites keep a differently-shaped wrapper because their assertion is not "run a command": `check_version` compares a version string to a classification, `check_listing` feeds a `claude plugin list` listing to `plugin_is_enabled`. Both are named so they cannot shadow `check`.
 
 Then test manually:
 - Claude Code: `/idstack:your-skill`
@@ -159,7 +177,9 @@ Then test manually:
 
 ## Looking for something to work on?
 
-[TODOS.md](TODOS.md) is the backlog — deferred work with the reasoning and dependencies attached. [ROADMAP.md](ROADMAP.md) is the user-facing view of the same thing. Read [DESIGN.md](DESIGN.md) before changing anything visual; it is the source of truth for the report stylesheet and the landing page.
+Two places, on purpose. [TODOS.md](TODOS.md) is the long-lived feature backlog — deferred work with the reasoning and dependencies attached. [Open issues](https://github.com/savvides/idstack/issues) hold work that came out of a specific code review or PR triage, so it stays next to the evidence that produced it; TODOS.md links the current ones. [ROADMAP.md](ROADMAP.md) is the user-facing view.
+
+Read [DESIGN.md](DESIGN.md) before changing anything visual; it is the source of truth for the report stylesheet and the landing page.
 
 ## Questions or feedback?
 

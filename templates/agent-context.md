@@ -183,20 +183,26 @@ bin/idstack-manifest-merge --section <s> --payload <f>  # Canonical manifest wri
 bin/idstack-slugify "<project name>"     # Derive the <course-slug> for .idstack/exports/
 ```
 
-Tests — all eight run in CI on every push and PR (`.github/workflows/test.yml`,
+Tests — all ten run in CI on every push and PR (`.github/workflows/test.yml`,
 ubuntu on Python 3.9 + 3.12, macOS on 3.12):
 
 ```bash
 ./test/smoke-test.sh              # Install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, namespacing, resolve-snippet lockstep
-./test/integration-test.sh        # End-to-end; proves the suite leaves the working tree untouched
+./test/integration-test.sh        # Behavioral tests across bin/; proves the suite leaves the tree untouched
 ./test/test-setup.sh              # ./setup behavior: flags, scope, legacy cleanup, failure handling
+./test/test-doctor.sh             # bin/idstack-doctor PROBLEM/WARNING branches
+./test/test-status.sh             # bin/idstack-status, including the --readiness export gate
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
 ./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
 ./test/mutation-test.sh           # Reintroduces each fixed defect, asserts its guarding test fails
 ```
+
+`test/test-helper.sh` is sourced by every suite rather than run: it owns the
+shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion. A suite must
+not define its own counters — smoke-test fails on one.
 
 Python 3.9 is the oldest interpreter in the field (macOS system python3) and the
 leg that catches modern-only syntax reaching the preamble's embedded scripts.
