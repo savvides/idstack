@@ -1,5 +1,21 @@
 # Changelog
 
+## v3.3.0.3 (2026-08-06)
+
+To get this fix: `cd` into your idstack clone, then `git pull && ./setup`. Restart Claude Code afterward — plugins load at session start.
+
+### Fixed — searching learnings by type returned nothing without python3
+
+- **Only affects machines without python3.** `bin/idstack-learnings-search` falls back to `grep` when python3 is absent, and that fallback filtered on `"type":"technical"` while `bin/idstack-learnings-log` writes `"type": "technical"` — `json.dumps` puts a space after the colon. So `--type` matched nothing idstack had ever written and returned zero results rather than filtering. The pattern now tolerates whitespace around the colon. Found by writing the first test that ever exercised the fallback (#43, redone as #63).
+- A keyword beginning with `-` was passed to `grep` without an end-of-options `--`, so it was read as an option bundle rather than a search term (#38).
+
+### For contributors
+
+- The grep fallback existed in two byte-identical copies and had zero coverage, which is why a bug could sit in it unnoticed. Collapsed into one `search_fallback` function with four assertions driving it via a PATH with no python3.
+- First behavioral coverage for `bin/idstack-learnings-delete` (#41), `bin/idstack-learnings-promote` (#37), `bin/idstack-learnings-search` flags (#42), and three untested branches of `bin/idstack-timeline-log` (#47). `test/integration-test.sh` 25 → 48 assertions.
+- #47 also loosened an existing timeline-count assertion from `-eq 2` to `-gt 1`, which passes when four of five writes are lost; restored to an exact count.
+- These were the last mergeable PRs from the May/June bot queue. CI had never run on any of them — all were updated against main and passed the full matrix before landing.
+
 ## v3.3.0.2 (2026-08-06)
 
 To get these fixes: `cd` into your idstack clone, then `git pull && ./setup`. Restart Claude Code afterward — plugins load at session start.
