@@ -36,6 +36,30 @@ fi
 
 [ -z "$SOURCES" ] && exit 0
 
+# Fallback search, used when python3 is absent and when the python block fails.
+# Line-oriented and filter-poor by design: it can match --keyword or --type but
+# not both, and it cannot set _source. Callers get approximate results rather
+# than none.
+#
+# $SOURCES is deliberately unquoted — it is a space-separated file list that
+# must word-split. `--` stops a keyword beginning with `-` being read as a grep
+# option; `tail -n` is the portable spelling of the obsolescent `tail -"$N"`.
+#
+# The --type pattern tolerates whitespace around the colon: idstack-learnings-log
+# writes via json.dumps, whose default separators emit `"type": "x"` with a
+# space, while this grep looked for `"type":"x"` without one — so the fallback's
+# type filter matched nothing idstack had written. $TYPE is a short identifier
+# from --type, treated as an ERE fragment here.
+search_fallback() {
+  if [ -n "$KEYWORD" ]; then
+    cat $SOURCES 2>/dev/null | grep -i -- "$KEYWORD" | tail -n "$LIMIT"
+  elif [ -n "$TYPE" ]; then
+    cat $SOURCES 2>/dev/null | grep -E -- "\"type\"[[:space:]]*:[[:space:]]*\"$TYPE\"" | tail -n "$LIMIT"
+  else
+    cat $SOURCES 2>/dev/null | tail -n "$LIMIT"
+  fi
+}
+
 if command -v python3 &>/dev/null; then
   python3 -c "
 import json, sys
@@ -72,22 +96,7 @@ for src in sources:
 # Local learnings first (take precedence), then global
 for m in matches[-limit:]:
     print(m)
-" "$SOURCES" "$TYPE" "$KEYWORD" "$LIMIT" 2>/dev/null || {
-  # Fallback: basic grep
-  if [ -n "$KEYWORD" ]; then
-    cat $SOURCES 2>/dev/null | grep -i -- "$KEYWORD" | tail -n "$LIMIT"
-  elif [ -n "$TYPE" ]; then
-    cat $SOURCES 2>/dev/null | grep -- "\"type\":\"$TYPE\"" | tail -n "$LIMIT"
-  else
-    cat $SOURCES 2>/dev/null | tail -n "$LIMIT"
-  fi
-}
+" "$SOURCES" "$TYPE" "$KEYWORD" "$LIMIT" 2>/dev/null || search_fallback
 else
-  if [ -n "$KEYWORD" ]; then
-    cat $SOURCES 2>/dev/null | grep -i -- "$KEYWORD" | tail -n "$LIMIT"
-  elif [ -n "$TYPE" ]; then
-    cat $SOURCES 2>/dev/null | grep -- "\"type\":\"$TYPE\"" | tail -n "$LIMIT"
-  else
-    cat $SOURCES 2>/dev/null | tail -n "$LIMIT"
-  fi
+  search_fallback
 fi
