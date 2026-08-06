@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Unit tests for the legacy-VERSION classifier shared by setup and
-# bin/idstack-doctor. Both files use the same two-arm case statement to
-# decide whether a VERSION file under the legacy install path means
-# "modern install — leave alone" (skip) or "pre-v2.0.1.0 install — flag
-# for cleanup" (legacy).
+# bin/idstack-doctor. The classifier decides whether a VERSION file under the
+# legacy install path means "modern install — leave alone" (skip) or
+# "pre-v2.0.1.0 install — flag for cleanup" (legacy).
 #
 # Why this test exists: Gemini Code Assist has flagged this case statement
 # three times (PR #15 → PR #19 → PR #20 → PR #21). The patterns are subtle
@@ -11,6 +10,11 @@
 # flips classifications for multi-digit components. This test pins the
 # contract so it can't drift again. Cases that once silently fell through
 # to "unknown" — notably 20.x and 200.x — are now pinned here explicitly.
+#
+# The single definition lives in bin/lib/version-classify.sh and is sourced
+# here, so this suite exercises the exact code setup and doctor run — a local
+# mirror of the case statement once passed green while the real call sites
+# could drift.
 #
 # Run from the repo root or via smoke-test.sh.
 
@@ -20,15 +24,8 @@ PASS=0
 FAIL=0
 TOTAL=0
 
-# Mirror of the case statement in setup and bin/idstack-doctor. Keep these
-# patterns in lockstep with both files — if you change one, change all three.
-classify_version() {
-  case "$1" in
-    2.0.[1-9]*|2.[1-9]*|[3-9]*|[1-9][0-9]*) echo "skip" ;;
-    0.*|1.*|2.0.0.*|2.0.0) echo "legacy" ;;
-    *) echo "unknown" ;;
-  esac
-}
+IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
+. "$IDSTACK_DIR/bin/lib/version-classify.sh"
 
 check() {
   TOTAL=$((TOTAL + 1))

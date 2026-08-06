@@ -7,11 +7,16 @@ set -e
 # the new plugin symlink pointing at a deleted target.
 IDSTACK_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
+# Shared legacy-VERSION classifier (also sourced by bin/idstack-doctor; pinned
+# by test/test-version-classifier.sh).
+. "$IDSTACK_DIR/bin/lib/version-classify.sh"
+
 # Default install: user-scope plugin so /idstack:<skill> is discovered.
 LEGACY_SKILLS_DIR="$HOME/.claude/skills"
 SCOPE="global"
 CLAUDE_SCOPE="user"  # claude plugin scope: user (global) or project (--local)
 CODEX_OPT_IN=""      # "" = auto-detect, "yes" = force-install, "no" = skip
+KEEP_LEGACY=0        # --keep-legacy: leave every legacy install shape in place
 
 for arg in "$@"; do
   case "$arg" in
@@ -22,13 +27,15 @@ for arg in "$@"; do
       ;;
     --codex)    CODEX_OPT_IN="yes" ;;
     --no-codex) CODEX_OPT_IN="no" ;;
-    --keep-legacy) ;;  # consumed later in the legacy-cleanup branch
+    --keep-legacy) KEEP_LEGACY=1 ;;
     -h|--help)
       echo "Usage: ./setup [--local] [--codex|--no-codex] [--keep-legacy]"
       echo "  --local       install at project scope (./.claude/) instead of user scope"
       echo "  --codex       force Codex install even if codex is not on PATH"
       echo "  --no-codex    skip Codex install even if codex is on PATH"
-      echo "  --keep-legacy keep pre-v2 install at \$HOME/.claude/skills/idstack (default: remove)"
+      echo "  --keep-legacy keep legacy installs in place — the pre-v2.0.1.0 dispatcher"
+      echo "                dir, the v2.0 dispatcher symlink, and pre-v2 per-skill"
+      echo "                symlinks under \$HOME/.claude/skills/ (default: remove)"
       exit 0
       ;;
     *) echo "ERROR: unknown argument: $arg" >&2; echo "Run ./setup --help for usage." >&2; exit 2 ;;
@@ -68,15 +75,12 @@ fi
 LEGACY_SKILLS_LINK="$LEGACY_SKILLS_DIR/idstack"
 if [ -L "$LEGACY_SKILLS_LINK" ]; then
   legacy_target=$(readlink "$LEGACY_SKILLS_LINK" 2>/dev/null || true)
-  legacy_resolved=$(cd "$LEGACY_SKILLS_LINK" 2>/dev/null && pwd -P || true)
-  if [ "$legacy_resolved" = "$IDSTACK_DIR" ]; then
-    # The legacy symlink points at the same physical repo we're installing
-    # from. Removing it is fine — the new plugin symlink replaces it.
-    rm "$LEGACY_SKILLS_LINK"
-    echo "  removed legacy symlink: $LEGACY_SKILLS_LINK (was -> $legacy_target)"
+  if [ "$KEEP_LEGACY" = "1" ]; then
+    echo "  KEEPING legacy symlink: $LEGACY_SKILLS_LINK (--keep-legacy)"
+    echo "           NOTE: this shadows the plugin namespace; /idstack:<skill> may fail."
   else
     rm "$LEGACY_SKILLS_LINK"
-    echo "  removed legacy symlink: $LEGACY_SKILLS_LINK"
+    echo "  removed legacy symlink: $LEGACY_SKILLS_LINK${legacy_target:+ (was -> $legacy_target)}"
   fi
 elif [ -d "$LEGACY_SKILLS_LINK" ] && [ "$LEGACY_SKILLS_LINK" != "$IDSTACK_DIR" ]; then
   # Pre-v2.0.1.0 install was a real clone with a top-level dispatcher
@@ -92,17 +96,14 @@ elif [ -d "$LEGACY_SKILLS_LINK" ] && [ "$LEGACY_SKILLS_LINK" != "$IDSTACK_DIR" ]
   legacy_is_old_version=0
   if [ -f "$LEGACY_SKILLS_LINK/VERSION" ]; then
     legacy_version=$(tr -d '[:space:]' < "$LEGACY_SKILLS_LINK/VERSION")
-    # Two arms: explicitly skip modern/future versions first, then flag the
-    # legacy ones. Patterns avoid literal dots and single-digit ranges so
-    # multi-digit components (2.0.10.0, 2.10.0.0, 20.x, 100.0.0, 200.0.0)
-    # work. Covered by test/test-version-classifier.sh.
-    case "$legacy_version" in
-      2.0.[1-9]*|2.[1-9]*|[3-9]*|[1-9][0-9]*) ;;
-      0.*|1.*|2.0.0.*|2.0.0) legacy_is_old_version=1 ;;
-    esac
+    # Classified by the shared classifier in bin/lib/version-classify.sh
+    # (pinned by test/test-version-classifier.sh).
+    if [ "$(classify_version "$legacy_version")" = "legacy" ]; then
+      legacy_is_old_version=1
+    fi
   fi
   if [ "$legacy_is_dispatcher" = "1" ] || [ "$legacy_is_old_version" = "1" ]; then
-    if [[ " $* " == *" --keep-legacy "* ]]; then
+    if [ "$KEEP_LEGACY" = "1" ]; then
       echo "  KEEPING legacy install dir: $LEGACY_SKILLS_LINK (--keep-legacy)"
       echo "           NOTE: this will shadow the plugin namespace; /idstack:<skill> may fail."
     else
@@ -123,8 +124,12 @@ for skill in $LEGACY_SKILLS; do
   if [ -L "$legacy" ]; then
     link_target=$(readlink "$legacy" 2>/dev/null || true)
     if echo "$link_target" | grep -q "idstack"; then
-      rm "$legacy"
-      echo "  cleaned up legacy: $legacy"
+      if [ "$KEEP_LEGACY" = "1" ]; then
+        echo "  KEEPING legacy symlink: $legacy (--keep-legacy)"
+      else
+        rm "$legacy"
+        echo "  cleaned up legacy: $legacy"
+      fi
     fi
   fi
 done
@@ -133,23 +138,39 @@ done
 # ~/.claude/plugins/idstack (or ./.claude/plugins/idstack for --local). Current
 # Claude Code discovers plugins through the marketplace registry, not bare
 # symlinks, so that link is dead weight. Only ever removes a *symlink* — a real
-# directory there might be someone's clone, and is left untouched.
-for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
-  vestigial="$plugins_base/idstack"
-  if [ -L "$vestigial" ]; then
-    rm "$vestigial"
-    echo "  removed vestigial symlink: $vestigial (pre-marketplace install method)"
-  fi
-done
+# directory there might be someone's clone, and is left untouched. Scope-aware:
+# a --local install cleans only ./.claude/plugins and never mutates $HOME.
+if [ "$SCOPE" = "local" ]; then
+  vestigial="$(pwd)/.claude/plugins/idstack"
+else
+  vestigial="$HOME/.claude/plugins/idstack"
+fi
+if [ -L "$vestigial" ]; then
+  rm "$vestigial"
+  echo "  removed vestigial symlink: $vestigial (pre-marketplace install method)"
+fi
 
 # Claude Code install — register this repo as a single-plugin marketplace, then
 # install from it. Both commands are idempotent, so re-running setup is safe.
 # The marketplace source is this repo's path; `marketplace update` re-reads it,
 # and `plugin update` picks up a newer committed version on `git pull && ./setup`.
 if command -v claude >/dev/null 2>&1; then
-  claude plugin marketplace add "$IDSTACK_DIR"
+  # The two required calls fail loud with a manual-recovery hint — under
+  # `set -e` a bare nonzero exit here used to abort setup silently, before
+  # the Codex block, with no message at all.
+  if ! claude plugin marketplace add "$IDSTACK_DIR"; then
+    echo "" >&2
+    echo "ERROR: 'claude plugin marketplace add' failed. Register manually, then re-run ./setup:" >&2
+    echo "    claude plugin marketplace add \"$IDSTACK_DIR\"" >&2
+    exit 1
+  fi
   claude plugin marketplace update idstack >/dev/null 2>&1 || true
-  claude plugin install idstack@idstack --scope "$CLAUDE_SCOPE"
+  if ! claude plugin install idstack@idstack --scope "$CLAUDE_SCOPE"; then
+    echo "" >&2
+    echo "ERROR: 'claude plugin install' failed. Install manually:" >&2
+    echo "    claude plugin install idstack@idstack --scope $CLAUDE_SCOPE" >&2
+    exit 1
+  fi
   claude plugin update idstack@idstack --scope "$CLAUDE_SCOPE" >/dev/null 2>&1 || true
   echo ""
   echo "idstack installed (Claude Code) — scope: $CLAUDE_SCOPE."
@@ -196,6 +217,7 @@ if [ "$CODEX_INSTALL" = "1" ]; then
   else
     # Part 1: per-skill symlinks for auto-discovery.
     mkdir -p "$CODEX_SKILLS_DIR"
+    linked_count=0
     for skill_dir in "$CODEX_BUNDLE_SKILLS"/idstack-*; do
       [ -d "$skill_dir" ] || continue
       skill_name=$(basename "$skill_dir")
@@ -209,8 +231,9 @@ if [ "$CODEX_INSTALL" = "1" ]; then
         rm -rf "$target"
       fi
       ln -snf "$skill_dir" "$target"
+      linked_count=$((linked_count + 1))
     done
-    echo "  linked 11 skills into: $CODEX_SKILLS_DIR/idstack-*"
+    echo "  linked $linked_count skills into: $CODEX_SKILLS_DIR/idstack-*"
 
     # Part 2: whole-repo symlink so $_IDSTACK/bin/idstack-* resolves in skill bodies.
     mkdir -p "$CODEX_BIN_PARENT"

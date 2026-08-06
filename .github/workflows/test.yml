@@ -1,0 +1,60 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 3.9 is the oldest interpreter in the field (macOS system python3);
+          # it is the leg that catches modern-only Python syntax creeping into
+          # the preamble's embedded scripts.
+          - os: ubuntu-latest
+            python-version: '3.9'
+          - os: ubuntu-latest
+            python-version: '3.12'
+          # macOS leg covers BSD grep/sed/awk differences. Pinned to 3.12:
+          # setup-python has no reliable arm64 3.9 build for macos-latest.
+          - os: macos-latest
+            python-version: '3.12'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Smoke test
+        run: ./test/smoke-test.sh
+      - name: Integration test
+        run: ./test/integration-test.sh
+      - name: Manifest-merge unit tests
+        run: ./test/test-manifest-merge.sh
+      - name: Version-classifier unit tests
+        run: ./test/test-version-classifier.sh
+      - name: Plugin-status unit tests
+        run: ./test/test-plugin-status.sh
+      - name: Preamble embedded-python tests
+        run: ./test/test-preamble-python.sh
+      - name: Setup behavioral tests
+        run: ./test/test-setup.sh
+
+  # Confirms the guards above actually fail when their bugs return. Slower
+  # (copies the repo per mutation), so it runs once rather than per matrix leg.
+  #
+  # Pinned to 3.9, the oldest supported interpreter: some defects only exist
+  # below a given version. PEP 701 (3.12) legalized reusing a quote inside an
+  # f-string replacement field, so mutating the preamble f-string bug is a
+  # no-op on 3.12 and the suite would skip that case.
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Mutation test
+        run: ./test/mutation-test.sh

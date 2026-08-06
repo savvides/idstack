@@ -123,7 +123,16 @@
             <td>{{course_export_signal}}</td>
             <td><a href="course-export.html">course-export.html</a></td>
           </tr>
-          <!-- Optional course-import row, only when present -->
+          <!-- Optional course-import row — include only when course-import.html
+               is present in the export folder. Shape:
+          <tr>
+            <td><code>/idstack:course-import</code></td>
+            <td class="status-{{course_import_status}}">{{course_import_status_label}}</td>
+            <td>{{course_import_signal}}</td>
+            <td><a href="course-import.html">course-import.html</a></td>
+          </tr>
+          -->
+
         </tbody>
       </table>
     </section>

@@ -1,8 +1,6 @@
 # idstack
 
-> **Status: beta.** Skills work end-to-end and ship behind a versioned plugin (`v2.5.0`), but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
-
-> **New in v2.5.0:** native support for **OpenAI Codex CLI** alongside Claude Code. Same 11 skills, same evidence base, same `.idstack/` manifest. Run `./setup` and idstack auto-detects which CLIs you have installed. (Gemini CLI on the v2.6 roadmap.)
+> **Status: beta.** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 
@@ -85,7 +83,7 @@ idstack: Reading your manifest... I have 12 modules, 6 objectives,
 
          ### Top 3 Recommendations
          1. Add rubrics to all assessments with elaborated feedback
-            [Assessment-8] [T1] — Run /learning-objectives to align
+            [Assessment-8] [T1] — Run /idstack:learning-objectives
          2. Design collaborative activities for at least 4 modules
             [Online-15] [T2]
          3. Add learner support section with office hours, tutoring,
@@ -96,7 +94,7 @@ You had a course in Canvas. Now you have an evidence-based audit with specific r
 
 ## Install — 30 seconds
 
-**Requirement:** [Claude Code](https://claude.ai/code) (desktop app, web app, or CLI).
+**Requirement:** [Claude Code](https://claude.ai/code) (desktop app, web app, or CLI) or [OpenAI Codex CLI](https://developers.openai.com/codex/cli). `./setup` detects whichever you have and installs for both if both are present.
 
 Paste this into your terminal:
 
@@ -138,24 +136,49 @@ Claude clones the repo, runs setup, and confirms the skills are registered.
 ```
 </details>
 
+<details>
+<summary>All setup flags</summary>
+
+```bash
+./setup                # Auto-detect Claude Code and codex on PATH, install for both
+./setup --local        # Install at project scope (./.claude/) instead of user scope
+./setup --codex        # Force-install the Codex bundle even if codex isn't on PATH
+./setup --no-codex     # Skip the Codex install
+./setup --keep-legacy  # Leave pre-v2.0.1.0 installs in place instead of removing them
+```
+
+Setup is idempotent — re-run it any time.
+</details>
+
 You should see:
 ```
-Installing idstack...
-  linked: /idstack → /path/to/idstack
+  regenerated skill files for all targets
+Installing idstack (user)...
+  source: /path/to/idstack
 
-idstack installed successfully.
+idstack installed (Claude Code) — scope: user.
+
+  If Claude Code is already running, restart it (plugins load at session start).
 
   Usage: /idstack:<skill>
 
   Have an existing course?
-    /idstack:course-import → /idstack:course-quality-review
+    /idstack:course-import -> /idstack:course-quality-review
 
   Starting fresh?
     /idstack:needs-analysis
 
   Run the full pipeline:
     /idstack:pipeline
+
+  All skills: needs-analysis, learning-objectives, assessment-design,
+    course-builder, course-quality-review, accessibility-review,
+    red-team, course-export, course-import, pipeline, learn
+
+  More info: https://idstack.org
 ```
+
+If you also have Codex CLI on your `PATH`, you'll see an `idstack installed (Codex CLI).` block too, with `$<skill>` usage.
 
 ## Your design team
 
@@ -178,6 +201,8 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 ## The workflow
 
 Each skill feeds into the next. The project manifest is the thread.
+
+Skill names in the diagram below are shown unprefixed to keep the columns readable. To actually run one, use `/idstack:<skill>` in Claude Code or `$<skill>` in Codex CLI.
 
 ```
 EXISTING COURSE                           NEW COURSE
@@ -272,6 +297,8 @@ Any skill works independently. Run `/idstack:pipeline` to chain them all, or inv
 |  bin/idstack-migrate  bin/idstack-timeline-log        |
 |  bin/idstack-learnings-log  bin/idstack-status        |
 |  bin/idstack-slugify  bin/idstack-update-check        |
+|  bin/idstack-doctor  bin/lib/version-classify.sh      |
+|  bin/lib/plugin-status.sh                             |
 +-------------------------------------------------------+
 ```
 
@@ -313,7 +340,7 @@ Every recommendation includes an evidence tier so you know how strong the backin
 When the skill says "add elaborated feedback to your quizzes," it tells you that's T1 evidence from multiple meta-analyses, not someone's blog post.
 
 ### Using skills independently
-Any skill works on its own. `/course-quality-review` works without a manifest by asking you questions directly. `/learning-objectives` works without a needs analysis. The pipeline adds context and makes recommendations sharper, but every skill is self-contained.
+Any skill works on its own. `/idstack:course-quality-review` works without a manifest by asking you questions directly. `/idstack:learning-objectives` works without a needs analysis. The pipeline adds context and makes recommendations sharper, but every skill is self-contained.
 
 ## The evidence base
 
@@ -398,7 +425,7 @@ Have feedback or a feature request? [Fill out this form](https://forms.gle/6LDgD
 
 Found a bug? You can also [open an issue on GitHub](https://github.com/savvides/idstack/issues).
 
-Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. The architecture is simple: create a directory with a SKILL.md file and run `./setup`.
+Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. The architecture is simple: create a directory with a `SKILL.md.tmpl` template, run `bin/idstack-gen-skills` to generate the per-CLI skill files, then `./setup`.
 
 ## More
 
