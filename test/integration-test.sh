@@ -2,9 +2,7 @@
 # idstack integration tests — behavioral tests for bin scripts
 set -e
 
-PASS=0
-FAIL=0
-TOTAL=0
+. "$(dirname "$0")/test-helper.sh"
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TEST_DIR=$(mktemp -d)
@@ -15,21 +13,6 @@ trap 'rm -rf "$TEST_DIR"' EXIT
 # compared before/after rather than against a clean tree, so a developer's own
 # uncommitted work doesn't trip the check.
 TREE_BEFORE=$(git -C "$IDSTACK_DIR" status --porcelain 2>/dev/null || true)
-
-check() {
-  TOTAL=$((TOTAL + 1))
-  local _out
-  if _out=$(eval "$2" 2>&1); then
-    echo "  PASS: $1"
-    PASS=$((PASS + 1))
-  else
-    echo "  FAIL: $1"
-    if [ -n "$_out" ]; then
-      printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
-    fi
-    FAIL=$((FAIL + 1))
-  fi
-}
 
 echo "idstack integration tests"
 echo "  test dir: $TEST_DIR"

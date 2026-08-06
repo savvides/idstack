@@ -149,6 +149,49 @@ open(p,'w').write(s)
 PY
 expect_fail "plugin-status fixed-window regression" "$WORK/r/test/test-plugin-status.sh"
 
+# 7b. doctor stops flagging a disabled install -> test-doctor must fail.
+# doctor exists to explain why /idstack:<skill> is missing; a branch that stops
+# reporting turns it into a script that always says everything is fine.
+fresh
+sed -i.bak 's|echo "  PROBLEM: idstack@idstack is installed but not enabled."|echo "  OK: installed"|' \
+  "$WORK/r/bin/idstack-doctor"
+expect_fail "doctor silently passes a disabled install" "$WORK/r/test/test-doctor.sh"
+
+# 7c. readiness threshold drifts by one -> test-status must fail.
+# A fixture failing every threshold at once cannot catch this: some other
+# unmet condition keeps the verdict NOT-READY either way. The boundary cases
+# in test-status.sh hold the other two dimensions passing so the constant is
+# the only thing that can flip the verdict.
+fresh
+sed -i.bak 's|^READY_QUALITY_MIN=70|READY_QUALITY_MIN=69|' "$WORK/r/bin/idstack-status"
+expect_fail "readiness quality threshold off by one" "$WORK/r/test/test-status.sh"
+
+# 7d. WCAG Level-A override removed from the verdict -> test-status must fail.
+# The override exists in access_tier() and again in verdict(); deleting either
+# alone leaves the other reporting, so both are pinned.
+fresh
+python3 - "$WORK/r/bin/idstack-status" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace("    if level_a_violations:\n        issues.append(f'{len(level_a_violations)} WCAG Level-A violation(s)')\n", "")
+open(p, 'w').write(s)
+PY
+expect_fail "WCAG Level-A override dropped from verdict" "$WORK/r/test/test-status.sh"
+
+# 7e. a suite regrows its own counters -> smoke-test must fail.
+# This is how the nine copies of check() drifted apart in the first place: each
+# suite kept a private PASS=0 and its own body, and one of them ended up
+# swallowing failure output entirely.
+fresh
+python3 - "$WORK/r/test/test-doctor.sh" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace('. "$(dirname "$0")/test-helper.sh"',
+              'PASS=0\nFAIL=0\nTOTAL=0\ncheck() { TOTAL=$((TOTAL+1)); eval "$2" >/dev/null 2>&1 && PASS=$((PASS+1)) || FAIL=$((FAIL+1)); }', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "suite regrows private test counters" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 # 8. version disagreement -> smoke-test must fail
 fresh
 printf '9.9.9.9\n' > "$WORK/r/VERSION"

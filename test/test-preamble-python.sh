@@ -9,26 +9,9 @@
 # Run from the repo root or via smoke-test.sh; CI runs it on Python 3.9 and 3.12.
 set -e
 
-PASS=0
-FAIL=0
-TOTAL=0
+. "$(dirname "$0")/test-helper.sh"
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
-
-check() {
-  TOTAL=$((TOTAL + 1))
-  local _out
-  if _out=$(eval "$2" 2>&1); then
-    echo "  PASS: $1"
-    PASS=$((PASS + 1))
-  else
-    echo "  FAIL: $1"
-    if [ -n "$_out" ]; then
-      printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
-    fi
-    FAIL=$((FAIL + 1))
-  fi
-}
 
 echo "test-preamble-python"
 echo "  python3: $(python3 --version 2>&1 || echo 'not found')"
