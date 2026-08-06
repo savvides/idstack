@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.3.0.2 (2026-08-06)
+
+To get these fixes: `cd` into your idstack clone, then `git pull && ./setup`. Restart Claude Code afterward — plugins load at session start.
+
+### Fixed — learnings search returned wrong results for apostrophes
+
+- **Searching your learnings for a term with an apostrophe returned the wrong answer, silently.** `bin/idstack-learnings-search` spliced `$SOURCES`, `$TYPE`, `$KEYWORD` and `$LIMIT` straight into Python source. A search for `Bloom's` or `learner's` made that source a SyntaxError, `2>/dev/null` swallowed it, and the script fell through to a `grep` fallback that has no `--type` filter — so it answered with a record of the wrong type rather than failing. In a tool for instructional designers, those are ordinary search terms. The values now travel as `sys.argv` arguments, and a non-numeric `--limit` falls back to 3 instead of reaching `tail -"abc"`. This is the same defect class v3.3.0.0 fixed in `bin/idstack-status`; that pass missed this file. Thanks to the Jules bot run that flagged it (#33).
+- **A malformed payload could corrupt the manifest.** `bin/idstack-manifest-merge` validated that the *manifest* root was a JSON object but never checked the *payload* root, so a bare JSON array merged in cleanly and surfaced much later as `AttributeError: 'list' object has no attribute 'get'` inside `bin/idstack-status --readiness`. It now rejects a non-object payload with exit 1 (#48).
+
+### For contributors
+
+- `test/test-manifest-merge.sh` covers non-object payload roots (list and string): 21 → 23 assertions.
+- Closed 15 stale bot PRs from May/June that the v3.3.0.0 audit had already superseded, that duplicated a better sibling, or that were incorrect (deleting live migration code, converting a clean exit into a traceback, a benchmark that does not reproduce, and one whose pty assertion deadlocks `smoke-test.sh` under CI).
+
 ## v3.3.0.1 (2026-08-05)
 
 To get this fix: `cd` into your idstack clone, then `git pull && ./setup`. Restart Claude Code afterward — plugins load at session start.
