@@ -46,14 +46,26 @@ check "creates .idstack/ and timeline.jsonl" \
 check "appends valid JSON with ts field" \
   "python3 -c \"import json; d=json.loads(open('.idstack/timeline.jsonl').readline()); assert 'ts' in d and d['skill']=='test'\""
 
+check "preserves caller-supplied ts field" \
+  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"test\",\"ts\":\"2020-01-01T00:00:00Z\"}' && grep -q '\"ts\": \"2020-01-01T00:00:00Z\"' .idstack/timeline.jsonl"
+
+check "handles invalid JSON gracefully" \
+  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"bad\",}' && grep -q '\"raw\": \"{\\\\\\\"skill\\\\\\\":\\\\\\\"bad\\\\\\\",}\"' .idstack/timeline.jsonl"
+
+check "fallback to bash works when python3 is missing" \
+  "mkdir -p mockbin && for cmd in bash sed date mkdir env tr wc grep echo cat ls rm pwd dirname chmod; do ln -s \$(which \$cmd) mockbin/\$cmd 2>/dev/null || true; done && PATH=\"\$PWD/mockbin\" $IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"no_py\"}' && grep -q '\"skill\":\"no_py\",\"ts\":' .idstack/timeline.jsonl"
+
 check "handles empty arg without error" \
   "$IDSTACK_DIR/bin/idstack-timeline-log ''"
 
 check "handles no arg without error" \
   "$IDSTACK_DIR/bin/idstack-timeline-log"
 
-check "multiple appends create multiple lines" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 2 ]"
+# Exact count, not `-gt 1`. Every preceding write in this section contributes a
+# line (5 by here); a loose comparison still passes when four of the five are
+# lost, which is the regression this assertion exists to catch.
+check "multiple appends create exactly one line each" \
+  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 5 ]"
 
 echo ""
 
@@ -108,6 +120,29 @@ check "cross-project includes global learnings" \
 
 check "without cross-project excludes global learnings" \
   "[ -z \"\$(HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/bin/idstack-learnings-search --keyword global_canvas)\" ]"
+
+# --- grep fallback (python3 absent) ---
+# Both call sites share one search_fallback function. Nothing exercised this
+# path before, so the dedupe that created the function was unverifiable. Drive
+# it by putting a PATH in front that has no python3.
+mkdir -p "$TEST_DIR/nopy"
+for _c in bash sh cat grep tail sed tr wc mkdir date env dirname ls rm pwd chmod; do
+  ln -sf "$(command -v $_c)" "$TEST_DIR/nopy/$_c" 2>/dev/null || true
+done
+
+check "fallback: --keyword matches when python3 is absent" \
+  "PATH=\"$TEST_DIR/nopy\" $IDSTACK_DIR/bin/idstack-learnings-search --keyword canvas | grep -q 'canvas_export'"
+
+check "fallback: --type matches when python3 is absent" \
+  "PATH=\"$TEST_DIR/nopy\" $IDSTACK_DIR/bin/idstack-learnings-search --type technical | grep -q 'canvas_export'"
+
+check "fallback: bare search respects --limit when python3 is absent" \
+  "[ \$(PATH=\"$TEST_DIR/nopy\" $IDSTACK_DIR/bin/idstack-learnings-search --limit 2 | wc -l | tr -d ' ') -eq 2 ]"
+
+# A keyword starting with '-' is why the fallback greps use `--`. Without it
+# grep reads the keyword as an option bundle and errors instead of matching.
+check "fallback: leading-dash keyword is not read as a grep option" \
+  "! PATH=\"$TEST_DIR/nopy\" $IDSTACK_DIR/bin/idstack-learnings-search --keyword -canvas 2>&1 | grep -qiE 'illegal option|invalid option|unrecognized option'"
 
 check "no file returns empty" \
   "rm -f .idstack/learnings.jsonl && [ -z \"\$($IDSTACK_DIR/bin/idstack-learnings-search --limit 3)\" ]"
@@ -242,6 +277,12 @@ echo '{"skill":"test-skill","key":"key2","type":"pattern","insight":"hello2"}' >
 
 check "promotes learning with known project" \
   "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/bin/idstack-learnings-promote key2 && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'my-test-proj'\""
+
+# Carried over from PR #30, which was closed in favour of #37. #37 pins
+# _source_project but not the _promoted marker, and downstream readers use that
+# marker to tell a promoted record from a natively-global one.
+check "promoted record carries the _promoted marker" \
+  "python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_promoted'] is True\""
 
 echo ""
 
