@@ -27,19 +27,24 @@ bin/idstack-manifest-merge --section <s> --payload <f>   # Canonical manifest wr
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
 ```
 
-Tests (all eight run in CI on every push and PR — see `.github/workflows/test.yml`):
+Tests (all ten run in CI on every push and PR — see `.github/workflows/test.yml`):
 
 ```bash
-./test/smoke-test.sh              # 371 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 393 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n
-./test/integration-test.sh        # End-to-end run; proves the suite leaves the working tree untouched
+./test/integration-test.sh        # 48 behavioral tests across the bin/ scripts; also proves the suite
+                                  # leaves the working tree untouched
 ./test/test-setup.sh              # 17 behavioral tests for ./setup (flags, scope, legacy cleanup, failure handling)
+./test/test-doctor.sh             # 13 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
+./test/test-status.sh             # 22 tests for bin/idstack-status, incl. the --readiness export gate
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
 ./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails
 ```
+
+`test/test-helper.sh` is not a suite — it is sourced by all of them and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion. Do not add a local counter block to a suite; smoke-test fails on one, and a mutation proves that guard works.
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9.
 

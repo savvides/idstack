@@ -4,6 +4,11 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Follow-up fixes to the v3.3.0.0 audit (v3.3.0.1–v3.3.0.4)
+- **Skills stopped suggesting commands that don't exist.** Welcome-back and next-step messages named things like `/assessment-design`, which resolves in neither CLI. It landed inside the context-recovery message v3.3.0.0 had just repaired, so it was the first thing you saw once those messages started working again (v3.3.0.1).
+- **Searching your learnings for a word with an apostrophe returned the wrong answer.** `Bloom's` or `learner's` made the search code a syntax error, which was swallowed, and the fallback that took over ignores the `--type` filter — so it answered with a record of the wrong type instead of failing. Those are ordinary search terms in this tool (v3.3.0.2).
+- Smaller: a malformed payload can no longer corrupt the manifest, and on machines without python3 the search fallback's `--type` filter works at all (it had never matched anything idstack wrote).
+
 ### Course memory, pipeline orchestration, and re-run detection fixed (v3.3.0.0)
 - **Welcome-back messages work on stock macOS.** The session-memory code embedded in every skill contained an f-string that is a SyntaxError on any Python below 3.12 — including the 3.9 macOS ships. It failed silently, so context recovery, quality-score trends, and next-step suggestions produced nothing. Fixed, and now exercised on 3.9 in CI so the class of bug can't ship again.
 - **`/idstack:pipeline` invokes its child skills correctly.** It was calling them by an unnamespaced name that never resolved in Claude Code.
@@ -12,10 +17,11 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **Apostrophes no longer blank the dashboard**, imported courses get a proper next-step suggestion, and `bin/idstack-doctor` can no longer report a disabled install as healthy.
 - **Standalone runs persist.** `bin/idstack-migrate --init` creates a canonical manifest, so a skill run outside the pipeline has something to write into instead of silently discarding its results.
 
-### Test infrastructure and CI (v3.3.0.0, for contributors)
-- The suite had never run automatically. GitHub Actions now runs all eight suites on every push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS.
+### Test infrastructure and CI (v3.3.0.0–v3.3.0.4, for contributors)
+- The suite had never run automatically. GitHub Actions runs every suite on each push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, ten today.
 - `./setup` — the primary deliverable — went from zero coverage to 17 behavioral tests.
-- `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught.
+- `bin/idstack-doctor` and `bin/idstack-status --readiness` gained their first execution coverage in v3.3.0.4. Both are what a user reaches for when something has already gone wrong, and neither had any.
+- `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught. 18 mutations, all guarded.
 
 ### Install through the Claude Code plugin marketplace (v3.2.0.0)
 - `./setup` registers idstack as a Claude Code plugin marketplace and installs from there. Recent Claude Code versions stopped discovering plugins from the bare symlink older setups created, so `/idstack:<skill>` commands silently never appeared in the slash picker. If that happened to you, pull the latest and re-run `./setup`.
