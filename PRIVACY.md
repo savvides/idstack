@@ -20,13 +20,20 @@ Designer profile and cross-project learnings are stored locally:
 - `~/.idstack/profile.yaml` — your experience level preference
 - `~/.idstack/global/learnings.jsonl` — learnings promoted across projects
 
-No data is sent to external servers by idstack. No analytics, no tracking, no telemetry.
+idstack adds no analytics, no tracking, and no telemetry. Two things do reach the network, both only when you ask for them, and both are listed under Third-party services below: the Canvas API calls made by `/idstack:course-import` and `/idstack:course-export`, and an update check against this repository on GitHub.
 
 ## Third-party services
 
 idstack runs inside Claude Code, which is operated by Anthropic. Your conversation with Claude Code is subject to [Anthropic's privacy policy](https://www.anthropic.com/privacy). idstack itself does not add any data collection beyond what Claude Code already does.
 
-If you use `/idstack:course-import` with the Canvas API, your Canvas access token is used locally to fetch course data. idstack does not store or transmit your token beyond the API call.
+**Canvas API.** Two skills talk to the Canvas instance you point them at, using the access token you supply:
+
+- `/idstack:course-import` **downloads** your course data from Canvas.
+- `/idstack:course-export` **uploads** generated course content to Canvas — modules, pages, assignments, and discussions are POSTed to your Canvas instance so they appear in the course.
+
+Both run only when you invoke that skill and confirm the target course. Your token is used for those API calls and is neither stored by idstack nor sent anywhere else. The receiving Canvas instance is your institution's, not ours.
+
+**Update check.** On skill startup idstack runs `git fetch` against this repository to see whether a newer version exists, at most once an hour. That is a request to GitHub carrying nothing but the fetch itself; it never uploads your course data. It only runs for git installs, and removing the repo's `.git` directory disables it.
 
 ## Questions
 

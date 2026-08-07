@@ -902,7 +902,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v3.4.0.0 — Claude Code only</span>
+          <span>v3.4.0.1 — Claude Code only</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design, transparently cited.</h1>
         <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier — <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code.</p>
@@ -950,7 +950,7 @@
         <article class="evidence-card" role="listitem">
           <h3 class="evidence-card-title">Needs Analysis</h3>
           <p class="evidence-card-body">Three layers — organizational, task, learner — analyzed before any content gets written. When this step is skipped, courses tend to teach what the designer found interesting rather than what the audience came for.</p>
-          <p class="evidence-card-meta">7 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T2–T5</span></p>
+          <p class="evidence-card-meta">7 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T3</span></p>
         </article>
 
         <article class="evidence-card" role="listitem">
@@ -980,7 +980,7 @@
         <article class="evidence-card" role="listitem">
           <h3 class="evidence-card-title">Evaluation Models</h3>
           <p class="evidence-card-body">Evaluation only measures what it was designed to measure, so the design has to happen alongside the course. Kirkpatrick's four levels (reaction, learning, behavior, results) map what's possible; most courses report only the first.</p>
-          <p class="evidence-card-meta">8 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T2–T5</span></p>
+          <p class="evidence-card-meta">8 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T3–T5</span></p>
         </article>
 
         <article class="evidence-card" role="listitem">
@@ -992,7 +992,7 @@
         <article class="evidence-card" role="listitem">
           <h3 class="evidence-card-title">Online Course Quality Frameworks</h3>
           <p class="evidence-card-body">Quality Matters' eight standards and the Community of Inquiry framework (teaching, social, cognitive presence) are the two rubrics with the most published validation studies behind them. idstack's quality audit runs against both.</p>
-          <p class="evidence-card-meta">10 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T1–T5</span></p>
+          <p class="evidence-card-meta">10 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T1–T4</span></p>
         </article>
 
         <article class="evidence-card" role="listitem">
@@ -1146,10 +1146,11 @@
       </header>
 
       <article class="release-card">
-        <p class="release-meta">August 6, 2026 · v3.4.0.0</p>
+        <p class="release-meta">August 6, 2026 · v3.4.0.0 · patched through v3.4.0.1</p>
         <h3>One host, supported properly.</h3>
         <p>idstack shipped an OpenAI Codex CLI build from v2.5.0.0 through v3.3.0.4. It is removed. Every skill, the evidence base, the project manifest, and the HTML reports are unchanged — idstack now targets Claude Code and nothing else, which is the only place it was ever tested end to end.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: dated release note, not a capability claim -->
         <p>To update: <code>cd</code> into your idstack clone, then <code>git pull &amp;&amp; ./setup</code>. If you had the Codex build installed, <code>./setup</code> can no longer clean it up — the <a href="https://github.com/savvides/idstack/blob/main/CHANGELOG.md" rel="noopener">release notes</a> carry the two paths to remove.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: dated release note, not a capability claim -->
+        <p>Patched in v3.4.0.1 (August 7): three evidence cards on this page overstated their domain's evidence tier. They are derived from <code>evidence/references.md</code> now, and the test suite fails if they ever disagree again.</p>
       </article>
 
       <article class="release-card">

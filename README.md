@@ -123,7 +123,8 @@ Claude clones the repo, runs setup, and confirms the skills are registered.
 
 1. Click the green "Code" button on GitHub, then "Download ZIP"
 2. Unzip the file
-3. Open Terminal (Mac) or PowerShell (Windows)
+3. Open a bash shell: Terminal on macOS or Linux; WSL or Git Bash on Windows.
+   `./setup` is a bash script, so PowerShell and `cmd` cannot run it.
 4. Navigate to the folder: `cd path/to/idstack`
 5. Run: `./setup`
 </details>

@@ -327,6 +327,42 @@ open(p,'w').write(s)
 PY
 expect_fail "claim carrying the bot's name is not exempt" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 18. an evidence card overstates its domain's tier strength -> smoke-test must
+# fail. Three cards had drifted this way before v3.4.0.1, two of them claiming
+# T2 for domains whose strongest reference is T3. idstack's whole claim is that
+# it labels evidence honestly, so a card advertising better evidence than the
+# repo holds is the most expensive inaccuracy it can ship. Mutating toward
+# OVERSTATES rather than a harmless typo pins the direction that matters.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import io, sys
+p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
+old = '<span class="meta-tier">T3</span>'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+io.open(p, 'w', encoding='utf-8').write(s.replace(old, '<span class="meta-tier">T1–T5</span>'))
+PY
+expect_fail "evidence card overstates its tier range" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 19. a domain's study count drifts from the reference file -> smoke-test must
+# fail. The count and the tier range are separate assertions; a checker that
+# only compared tiers would let "108 peer-reviewed studies" rot silently.
+fresh
+python3 - "$WORK/r/evidence/references.md" <<'PY'
+import io, sys
+p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
+lines = s.split('\n')
+for i, line in enumerate(lines):
+    if line.startswith('## Domain 3: '):
+        # Drop the first citation line under this heading.
+        for j in range(i + 1, len(lines)):
+            if '[Needs-' in lines[j]:
+                del lines[j]
+                break
+        break
+io.open(p, 'w', encoding='utf-8').write('\n'.join(lines))
+PY
+expect_fail "domain study count drifts from the cards" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

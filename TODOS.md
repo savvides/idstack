@@ -90,12 +90,13 @@ vs project-local learnings interact.
 **Priority:** P2
 
 ## v2: Interactive Landing Page Demo
-Upgrade the "See it work" section on idstack.org from static text to an interactive
-pre-install demo. The current section shows a text transcript of /course-import and
-/course-quality-review. A richer version could include: animated terminal replay
-(CSS-only, building on the existing typing animation), clickable pipeline explorer
-showing what each of the 11 skills does, or expanded sample output with evidence
-citations. The goal is to let prospective users experience the value before installing.
+Give idstack.org a pre-install demo. The redesign removed the old "See it work"
+transcript section, so today a visitor sees the evidence cards, the pipeline diagram,
+and a sample report excerpt, but never watches a skill run. Options: animated terminal
+replay (CSS-only, building on the existing typing animation), a clickable pipeline
+explorer showing what each of the 11 skills does, or expanded sample output with
+evidence citations. The goal is to let prospective users experience the value before
+installing.
 **Why:** CEO review killed a post-install /demo command because IDs always have a course.
 The real TTHW problem is pre-install: visitors on idstack.org need to understand the
 value before committing to install. The landing page demo is where that conversion happens.
