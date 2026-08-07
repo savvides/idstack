@@ -4,7 +4,7 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
 
 ## Product context
 
-- **What this is:** Open-source set of skills for evidence-based instructional design. Runs in Claude Code and OpenAI Codex CLI. 11 skills, 108 peer-reviewed studies across 11 research domains, every recommendation tagged with its evidence tier T1–T5.
+- **What this is:** Open-source set of skills for evidence-based instructional design. Runs in Claude Code. 11 skills, 108 peer-reviewed studies across 11 research domains, every recommendation tagged with its evidence tier T1–T5.
 - **Who it's for:** Instructional designers (university, K-12, corporate L&D), faculty doing their own course design, course-design teams. **Downstream stakeholders:** deans, faculty senates, accreditation reviewers — they read the HTML reports the designer hands them.
 - **Space:** Edtech / instructional design. Adjacent inspiration: open-access academic publishing (eLife), evidence-based-medicine reference (UpToDate, Cochrane), modern dev tools (Linear, Cursor).
 - **Project type:** Hybrid — three surfaces share one system:

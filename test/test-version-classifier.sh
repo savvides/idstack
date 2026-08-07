@@ -4,7 +4,7 @@
 # legacy install path means "modern install — leave alone" (skip) or
 # "pre-v2.0.1.0 install — flag for cleanup" (legacy).
 #
-# Why this test exists: Gemini Code Assist has flagged this case statement
+# Why this test exists: Gemini Code Assist has flagged this case statement  # IDSTACK_CLI_LEAK_ALLOW
 # three times (PR #15 → PR #19 → PR #20 → PR #21). The patterns are subtle
 # (bash globs, not regex) and an off-by-one in a character class silently
 # flips classifications for multi-digit components. This test pins the
@@ -73,7 +73,7 @@ check_version "19.0.0.0"  skip
 check_version "100.0.0.0" skip
 
 # Future major versions where the major itself is multi-digit but does not
-# start with 1. Caught by Gemini on PR #21 — the previous 1[0-9]* arm
+# start with 1. Caught by Gemini Code Assist on PR #21 — the previous 1[0-9]* arm  # IDSTACK_CLI_LEAK_ALLOW
 # missed these and silently fell through to "unknown". Now classified by
 # [1-9][0-9]*.
 check_version "20.0.0.0"  skip

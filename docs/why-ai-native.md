@@ -21,7 +21,7 @@ idstack is AI-native on all four counts.
 
 ## How idstack scores
 
-**Core workflow is impossible without AI.** idstack skills are structured instructions for an AI agent. Without Claude Code (or Gemini CLI, or Codex CLI), the SKILL.md files are just Markdown. There is no "normal way" to use idstack without AI. The AI IS the product.
+**Core workflow is impossible without AI.** idstack skills are structured instructions for an AI agent. Without Claude Code, the SKILL.md files are just Markdown. There is no "normal way" to use idstack without AI. The AI IS the product.
 
 **It gets better as models improve.** When Claude gets better at following complex multi-step instructions, at understanding educational research, at generating course content... every idstack skill gets better for free. No code changes needed. You're riding the model improvement curve automatically.
 

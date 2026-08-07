@@ -1,22 +1,18 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. The same project also ships a Codex CLI flavor (see `AGENTS.md`); skill bodies are CLI-agnostic and small per-CLI shims handle interaction primitives.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What is idstack
 
-An open source set of skills for evidence-based instructional design. Runs in Claude Code and OpenAI Codex CLI (Gemini CLI is on the roadmap, not yet scheduled). Each skill is a SKILL.md file that defines a conversational workflow backed by evidence from peer-reviewed research across 11 domains.
+An open source set of skills for evidence-based instructional design. Runs in Claude Code. Each skill is a SKILL.md file that defines a conversational workflow backed by evidence from peer-reviewed research across 11 domains.
 
 ## Commands
 
 ```bash
-./setup              # Install idstack — auto-detects Claude Code and codex on PATH
+./setup              # Install idstack — registers the plugin with Claude Code
 ./setup --local      # Install at project scope (./.claude/) instead of user scope
-./setup --codex      # Force-install the Codex bundle even if codex isn't on PATH
-./setup --no-codex   # Skip the Codex install
 ./setup --keep-legacy # Leave pre-v2.0.1.0 installs in place instead of removing them
-bin/idstack-gen-skills                     # Regenerate skill files for all targets (claude + codex)
-bin/idstack-gen-skills --target claude     # Regenerate Claude flavor only (skills/<name>/SKILL.md)
-bin/idstack-gen-skills --target codex      # Regenerate Codex flavor only (dist/codex/skills/idstack-<name>/)
+bin/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.md from the .tmpl sources
 bin/idstack-gen-skills --dry-run           # Check if generated files are up to date
 bin/idstack-doctor                         # Diagnose plugin install (presence, manifest version, legacy-install conflicts)
 bin/idstack-status                         # Course health dashboard (run in a project dir)
@@ -30,8 +26,9 @@ bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .
 Tests (all ten run in CI on every push and PR — see `.github/workflows/test.yml`):
 
 ```bash
-./test/smoke-test.sh              # 393 assertions: install, SKILL.md freshness, frontmatter, version agreement,
-                                  # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n
+./test/smoke-test.sh              # 353 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+                                  # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n,
+                                  # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 48 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 17 behavioral tests for ./setup (flags, scope, legacy cleanup, failure handling)
@@ -109,14 +106,14 @@ Rules for writing the report:
 
 Every skill template follows this pattern:
 
-1. **YAML frontmatter** with `name`, `description`, and (Claude target only) `allowed-tools` fields. The generator strips `allowed-tools` for the Codex target — Codex has no per-skill allowlist; restrictions are session-global.
+1. **YAML frontmatter** with `name`, `description`, and `allowed-tools` fields.
 2. **`{{PREAMBLE}}`** placeholder (replaced by `templates/preamble.md` during generation)
 3. **Workflow** (Markdown defining the conversational flow, decision trees, outputs)
 4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`)
-5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`CLAUDE_PLUGIN_ROOT`, `IDSTACK_HOME`, the Codex symlinks, then the Claude Code marketplace cache). `templates/manifest-schema.md` is spliced verbatim and so writes the resolution out longhand — smoke-test keeps the two in lockstep.
+5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`CLAUDE_PLUGIN_ROOT`, `IDSTACK_HOME`, then the Claude Code marketplace cache). `templates/manifest-schema.md` is spliced verbatim and so writes the resolution out longhand — smoke-test keeps the two in lockstep.
 6. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
 
-The shared preamble includes: interaction conventions (defines `AskUserQuestion` / `Agent` / `Skill` as portable concept names so the same body runs in both CLIs), update check, manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
+The shared preamble includes: interaction conventions (defines how skills use `AskUserQuestion`, `Agent`, and `Skill`), update check, manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
 
 Python embedded in the preamble must parse on Python 3.9 — the version macOS ships. `test/test-preamble-python.sh` runs every embedded block on 3.9 and 3.12; a syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases.
 
@@ -149,10 +146,10 @@ Format: `[DomainCode-Number] [Tier]` (e.g., `[Alignment-14] [T1]`). Stronger evi
 
 ### Interaction pattern
 
-- Ask one structured question at a time. In Claude Code this maps to the `AskUserQuestion` tool; in Codex CLI (which has no analog) emit a numbered multiple-choice question in plain text and wait. The preamble's "Interaction Conventions" section defines this protocol.
+- Ask one structured question at a time, using the `AskUserQuestion` tool. The preamble's "Interaction Conventions" section defines this protocol.
 - Never batch multiple questions
 - Skills must work without a manifest (fallback to asking questions directly)
-- When emitting next-step text like "/idstack:foo", translate to "$foo" on Codex output (drop the `/idstack:` prefix, replace leading `/` with `$`)
+- Write next-step text in the namespaced form, `/idstack:foo`. A bare `/foo` does not resolve, and smoke-test fails on one
 
 ## Skill routing
 
@@ -170,8 +167,7 @@ When working in this repo, route user requests to the appropriate idstack skill:
 - Search, prune, promote, or export cross-project learnings → `/idstack:learn`
 
 Skills are auto-discovered by Claude Code via the plugin manifest at
-`.claude-plugin/plugin.json`. In Codex CLI, drop the `/idstack:` prefix and use
-`$<skill>` (e.g., `$needs-analysis`).
+`.claude-plugin/plugin.json`.
 
 ## Design system
 

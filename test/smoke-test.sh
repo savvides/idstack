@@ -159,9 +159,9 @@ for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl free of non-canonical section names" "! grep -E '\b(assessment_design|course_builder|course_export|course_import|course_quality_review)\b' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
-# User-facing skill references must be namespaced /idstack:<skill> — the Codex
-# translation rule strips that prefix; a bare /skill renders as an invalid
-# command in both CLIs. (Frontmatter descriptions are exempt.)
+# User-facing skill references must be namespaced /idstack:<skill>. A bare
+# /skill is not a command Claude Code resolves — plugin skills are addressed
+# as plugin:skill. (Frontmatter descriptions are exempt.)
 #
 # This matched only the backticked form until v3.3.0.1, which let three
 # unbackticked examples sit in the preamble's context-recovery section — the
@@ -251,7 +251,7 @@ fi
 
 # Version classifier (shared by setup + bin/idstack-doctor) must classify
 # multi-digit versions correctly. Pinned to catch the pattern-fragility
-# regression Gemini flagged twice. The classifier itself lives in
+# regression Gemini Code Assist flagged twice. The classifier itself lives in  # IDSTACK_CLI_LEAK_ALLOW
 # bin/lib/version-classify.sh — one definition sourced by setup, doctor, and
 # the unit test, so the test exercises the shipped code, never a copy.
 check "bin/lib/version-classify.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/version-classify.sh' ]"
@@ -354,25 +354,46 @@ if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
   fi
 fi
 
-# Template freshness check (covers all targets: claude + codex)
-check "generated files are up to date for all targets" "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
+# Template freshness check
+check "generated SKILL.md files are up to date" "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
 
-# Codex bundle — generated artifacts for Codex CLI consumers.
-# AGENTS.md lives at the repo root (Codex memory file for sessions inside the
-# idstack repo). End-user skill installs go into $CODEX_HOME/skills/idstack-<name>/
-# via per-skill symlinks created by setup; Codex auto-discovers skills there.
-# SKILL.md files are generated under dist/codex/skills/idstack-<name>/.
-CODEX_SKILLS_DIR="$IDSTACK_DIR/dist/codex/skills"
-check "Codex AGENTS.md at repo root exists" "[ -f '$IDSTACK_DIR/AGENTS.md' ]"
-check "AGENTS.md matches templates/agent-context.md" "cmp -s '$IDSTACK_DIR/templates/agent-context.md' '$IDSTACK_DIR/AGENTS.md'"
-check "Codex skills dir exists" "[ -d '$CODEX_SKILLS_DIR' ]"
-for skill in $SKILLS; do
-  check "Codex skills/idstack-$skill/SKILL.md exists" "[ -f '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md' ]"
-  check "Codex $skill has name: $skill" "grep -q '^name: $skill' '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md'"
-  check "Codex $skill has description: field" "grep -q '^description:' '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md'"
-  # Codex has no per-skill tool allowlist; the field must be stripped.
-  check "Codex $skill has allowed-tools: stripped" "! grep -q '^allowed-tools:' '$CODEX_SKILLS_DIR/idstack-$skill/SKILL.md'"
-done
+# Claude-Code-only invariant (v3.4.0.0). idstack shipped a second CLI target
+# from v2.5.0.0 to v3.3.0.4 and dropped it. The machinery is easy to reintroduce
+# by accident — a cherry-pick from an older branch, a doc paragraph copied
+# forward — and each piece fails differently: a dangling `dist/` ships dead
+# files, a `--target` flag in a caller exits 2, a doc line sends a user to an
+# install path that no longer exists. Pin all of it.
+check "no second-CLI distribution bundle" "[ ! -e '$IDSTACK_DIR/dist' ]"
+check "no repo-root AGENTS.md" "[ ! -e '$IDSTACK_DIR/AGENTS.md' ]"
+check "no templates/agent-context.md" "[ ! -e '$IDSTACK_DIR/templates/agent-context.md' ]"
+check "generator takes no --target flag" "! grep -q -- '--target' '$IDSTACK_DIR/bin/idstack-gen-skills'"
+check "resolve chain drops the ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
+check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/preamble.md'"
+
+# Repo-wide sweep for the retired CLI's name. Two exemptions:
+#
+#   1. CHANGELOG.md — the release record, which has to keep describing what was
+#      removed and how to clean up after it.
+#   2. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Three kinds of line carry the tag:
+#      this block's own patterns, the dated release note on the landing page,
+#      and the comments crediting "Gemini Code Assist" — a PR-review bot  # IDSTACK_CLI_LEAK_ALLOW
+#      that flagged the version classifier four times, unrelated to the CLI and
+#      the reason those test cases exist.
+#
+#      A tag is for a dated, historical mention. It is NEVER for a line that
+#      claims idstack runs somewhere it does not. Tag individual lines, never
+#      whole files, and never filter on a bare string: an earlier draft dropped
+#      every line containing the bot's name repo-wide, which would have
+#      let an untagged capability claim through anywhere it appeared.
+CLI_LEAK_RE='codex|gemini'            # IDSTACK_CLI_LEAK_ALLOW
+CLI_LEAK="$(grep -rIiE "$CLI_LEAK_RE" "$IDSTACK_DIR" \
+  --exclude-dir=.git --exclude-dir=.gstack --exclude-dir=.idstack \
+  --exclude-dir=.claude --exclude=CHANGELOG.md 2>/dev/null || true)"
+CLI_LEAK="$(printf '%s' "$CLI_LEAK" | grep -vF 'IDSTACK_CLI_LEAK_ALLOW' || true)"
+# Printed through the command itself, not tested with -z, so a failure names
+# the offending lines instead of just saying the string was non-empty.
+check "retired-CLI references confined to CHANGELOG.md" \
+  "if [ -n \"\$CLI_LEAK\" ]; then printf '%s\n' \"\$CLI_LEAK\"; false; fi"
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

@@ -18,13 +18,13 @@ SRC="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
-# Build an isolated environment: repo copy + fake HOME + stub claude/codex that
-# log their arguments instead of touching the real install.
+# Build an isolated environment: repo copy + fake HOME + a stub `claude` that
+# logs its arguments instead of touching the real install.
 setup_env() {
   rm -rf "$WORK/env"
   mkdir -p "$WORK/env/home" "$WORK/env/bin" "$WORK/env/idstack"
   for item in bin skills templates evidence docs .claude-plugin \
-              VERSION setup dist AGENTS.md; do
+              VERSION setup; do
     [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/env/idstack/"
   done
   cat > "$WORK/env/bin/claude" <<'EOF'
@@ -43,7 +43,7 @@ run_setup() {
            PATH="$WORK/env/bin:$PATH" \
            CLAUDE_STUB_LOG="$WORK/env/claude.log" \
            CLAUDE_STUB_EXIT="${STUB_EXIT:-0}"
-    cd "$WORK/env/idstack" && ./setup --no-codex "$@" ) >"$WORK/env/out.log" 2>&1
+    cd "$WORK/env/idstack" && ./setup "$@" ) >"$WORK/env/out.log" 2>&1
 }
 
 echo "test-setup"
@@ -150,7 +150,7 @@ check "default scope removes the \$HOME vestigial symlink" \
 # --- failure handling: a nonzero `claude` must fail loudly, not silently ---
 setup_env
 check "a failing 'claude' call makes setup exit nonzero" \
-  "! STUB_EXIT=1 raw_setup --no-codex >/dev/null 2>&1"
+  "! STUB_EXIT=1 raw_setup >/dev/null 2>&1"
 
 setup_env
 STUB_EXIT=1 run_setup

@@ -1,26 +1,16 @@
 #!/usr/bin/env bash
-# Generate SKILL.md files from .tmpl templates, for one or more CLI targets.
+# Generate the Claude Code SKILL.md files from their .tmpl templates.
 #
 # Usage:
-#   idstack-gen-skills [--target {claude|codex|all}] [--dry-run]
+#   idstack-gen-skills [--dry-run]
 #
-# Targets:
-#   claude:           writes skills/<name>/SKILL.md (the existing Claude Code layout)
-#   codex:            writes dist/codex/skills/idstack-<name>/SKILL.md (Codex CLI layout)
-#                     plus repo-root AGENTS.md (memory file generated from
-#                     templates/agent-context.md). Skills are installed via per-skill
-#                     symlinks into $CODEX_HOME/skills/idstack-<name>/ at setup time —
-#                     Codex auto-discovers skills there. The frontmatter
-#                     `allowed-tools:` block is stripped — Codex has no per-skill
-#                     allowlist.
-#   all (default):    both targets
+# Writes skills/<name>/SKILL.md — the layout Claude Code's plugin loader reads.
 #
-# Source of truth is unchanged: skills/<name>/SKILL.md.tmpl with {{PREAMBLE}},
-# {{MANIFEST_SCHEMA}}, and {{IDSTACK_RESOLVE}} placeholders. The preamble defines
-# the AskUserQuestion / Skill / Agent concepts portably so skill bodies don't need
-# per-target text substitution; {{IDSTACK_RESOLVE}} splices the canonical
-# $_IDSTACK resolution (templates/snippets/idstack-resolve.sh) into each bash
-# block that needs it — blocks run in separate shells and must be self-contained.
+# Source of truth is skills/<name>/SKILL.md.tmpl with {{PREAMBLE}},
+# {{MANIFEST_SCHEMA}}, and {{IDSTACK_RESOLVE}} placeholders. {{IDSTACK_RESOLVE}}
+# splices the canonical $_IDSTACK resolution (templates/snippets/idstack-resolve.sh)
+# into each bash block that needs it — blocks run in separate shells and must be
+# self-contained.
 
 set -e
 
@@ -29,15 +19,12 @@ PREAMBLE="$IDSTACK_DIR/templates/preamble.md"
 MANIFEST_SCHEMA="$IDSTACK_DIR/templates/manifest-schema.md"
 RESOLVE_SNIPPET="$IDSTACK_DIR/templates/snippets/idstack-resolve.sh"
 DRY_RUN=0
-TARGET="all"
 GENERATED=0
 ERRORS=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1; shift ;;
-    --target)  TARGET="$2"; shift 2 ;;
-    --target=*) TARGET="${1#--target=}"; shift ;;
     -h|--help)
       # Print the header comment block (line 2 through first blank line) as help.
       # Pattern-based range — robust to header edits.
@@ -46,11 +33,6 @@ while [ $# -gt 0 ]; do
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
-
-case "$TARGET" in
-  claude|codex|all) ;;
-  *) echo "ERROR: --target must be one of: claude, codex, all (got: $TARGET)" >&2; exit 2 ;;
-esac
 
 if [ ! -f "$PREAMBLE" ]; then
   echo "ERROR: templates/preamble.md not found at $PREAMBLE" >&2
@@ -87,13 +69,12 @@ done
 HEADER="<!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->"
 HEADER2="<!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->"
 
-# render_template <tmpl_path> <output_path> <target>
-# Substitutes {{PREAMBLE}} and {{MANIFEST_SCHEMA}}, injects auto-generated header
-# after frontmatter, and (for codex target) strips the `allowed-tools:` block.
+# render_template <tmpl_path> <output_path>
+# Substitutes {{PREAMBLE}}, {{MANIFEST_SCHEMA}}, and {{IDSTACK_RESOLVE}}, and
+# injects the auto-generated header after the frontmatter.
 render_template() {
   local tmpl="$1"
   local output="$2"
-  local target="$3"
   local skill_name
   skill_name="$(basename "$(dirname "$tmpl")")"
 
@@ -108,12 +89,9 @@ render_template() {
   local result
   result=$(awk -v header="$HEADER" -v header2="$HEADER2" \
                -v preamble_file="$PREAMBLE" -v schema_file="$MANIFEST_SCHEMA" \
-               -v resolve_file="$RESOLVE_SNIPPET" \
-               -v target="$target" '
+               -v resolve_file="$RESOLVE_SNIPPET" '
     BEGIN {
-      after_frontmatter = 0
       frontmatter_count = 0
-      in_allowed_tools = 0
     }
     /^---$/ {
       frontmatter_count++
@@ -123,26 +101,7 @@ render_template() {
         print header2
         print ""
       }
-      in_allowed_tools = 0
       next
-    }
-    # Strip the `allowed-tools:` block from frontmatter for codex target.
-    # The block runs from `allowed-tools:` until the next non-indented sibling
-    # key or the closing `---`. Match is case-insensitive and rejects leading
-    # whitespace so a stray indented duplicate cannot bypass the strip.
-    frontmatter_count == 1 && target == "codex" {
-      if (in_allowed_tools) {
-        if ($0 ~ /^[^ \t-]/) {
-          in_allowed_tools = 0
-          # fall through to print this line (the next sibling key)
-        } else {
-          next  # still inside allowed-tools list, skip
-        }
-      }
-      if (tolower($0) ~ /^allowed-tools:[[:space:]]*$/) {
-        in_allowed_tools = 1
-        next
-      }
     }
     /\{\{PREAMBLE\}\}/ {
       while ((getline line < preamble_file) > 0) print line
@@ -187,66 +146,12 @@ render_template() {
   return 0
 }
 
-# render_target <target> — iterate templates and dispatch render_template
-render_target() {
-  local target="$1"
-  echo "=== target: $target ==="
-  for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
-    [ -f "$tmpl" ] || continue
-    local skill_dir skill_name output
-    skill_dir="$(dirname "$tmpl")"
-    skill_name="$(basename "$skill_dir")"
-
-    case "$target" in
-      claude) output="$skill_dir/SKILL.md" ;;
-      codex)  output="$IDSTACK_DIR/dist/codex/skills/idstack-$skill_name/SKILL.md" ;;
-    esac
-
-    if render_template "$tmpl" "$output" "$target"; then
-      GENERATED=$((GENERATED + 1))
-    fi
-  done
-
-  # Codex target: also emit AGENTS.md (memory file). Renders in dry-run too,
-  # comparing against on-disk content so drift is visible to the smoke test.
-  if [ "$target" = "codex" ]; then
-    render_codex_assets
+for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
+  [ -f "$tmpl" ] || continue
+  if render_template "$tmpl" "$(dirname "$tmpl")/SKILL.md"; then
+    GENERATED=$((GENERATED + 1))
   fi
-}
-
-# render_codex_assets — emit AGENTS.md at the repo root.
-# AGENTS.md describes idstack for Codex sessions running inside the idstack repo
-# itself (devs working on idstack). End-users who install idstack via setup get
-# per-skill symlinks at $CODEX_HOME/skills/idstack-<name>/ which Codex auto-
-# discovers; no marketplace.json or plugin manifest is needed for that path.
-#
-# Honors $DRY_RUN: renders to a tempfile and reports STALE/OK without touching
-# the on-disk file (matches the SKILL.md dry-run contract).
-render_codex_assets() {
-  local agents_src="$IDSTACK_DIR/templates/agent-context.md"
-  local agents_dst="$IDSTACK_DIR/AGENTS.md"
-
-  if [ -f "$agents_src" ]; then
-    if [ "$DRY_RUN" -eq 1 ]; then
-      if [ -f "$agents_dst" ] && cmp -s "$agents_src" "$agents_dst"; then
-        echo "  OK: AGENTS.md (up to date)"
-      else
-        echo "  STALE: AGENTS.md (would be updated)"
-        ERRORS=$((ERRORS + 1))
-      fi
-    else
-      cp "$agents_src" "$agents_dst"
-      echo "  GENERATED: AGENTS.md"
-    fi
-  fi
-}
-
-# Dispatch
-case "$TARGET" in
-  claude) render_target claude ;;
-  codex)  render_target codex ;;
-  all)    render_target claude; render_target codex ;;
-esac
+done
 
 if [ "$GENERATED" -eq 0 ] && [ "$ERRORS" -eq 0 ]; then
   echo "No .tmpl files found."
@@ -259,7 +164,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
   if [ "$ERRORS" -gt 0 ]; then exit 1; fi
 else
   echo ""
-  echo "$GENERATED skill files generated (target: $TARGET)."
+  echo "$GENERATED skill files generated."
   if [ "$ERRORS" -gt 0 ]; then
     echo "ERROR: $ERRORS template(s) failed to render." >&2
     exit 1
