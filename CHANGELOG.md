@@ -1,5 +1,33 @@
 # Changelog
 
+## v3.4.0.1 (2026-08-07)
+
+Accuracy pass over the public surfaces before sharing the project more widely. No skill behavior changes.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`.
+
+### Fixed — three evidence cards claimed better evidence than idstack holds
+
+- **Two cards on idstack.org advertised T2 for domains whose strongest reference is T3**, and a third advertised T5 for a domain that bottoms out at T4. Needs Analysis showed `T2–T5` when all 7 of its references are T3; Evaluation Models showed `T2–T5` against an actual `T3–T5`; Online Course Quality Frameworks showed `T1–T5` against an actual `T1–T4`. The other eight cards were correct, and every study count already matched.
+
+  Overstating a tier is the one inaccuracy this project cannot ship — labelling evidence honestly is the entire claim. The cards are no longer hand-maintained: `test/check-evidence-cards.py` derives every count and tier span from `evidence/references.md` and smoke-test fails on any disagreement, naming the domain and flagging when a card overstates. Two mutations pin it, one per direction (tier drift, count drift).
+
+### Fixed — PRIVACY.md did not disclose two outbound calls
+
+- **`/idstack:course-export` uploads to Canvas and the privacy policy never said so.** PRIVACY.md stated "No data is sent to external servers by idstack" and carved out only `/idstack:course-import` *fetching* from Canvas. But `course-export` POSTs modules, pages, assignments, and discussions to the Canvas instance you point it at. That is your institution's server rather than ours, and it only runs when you invoke the skill and confirm the target course, but an undisclosed upload in a privacy policy is a defect regardless of where the bytes land.
+- **The hourly update check was also undisclosed.** `bin/idstack-update-check` runs `git fetch` against this repository. It carries nothing but the fetch and never touches course data, and it only runs for git installs, but it is a network call and now says so.
+- Both are listed under Third-party services. Audited by enumerating every outbound host across `bin/`, `templates/`, and `skills/`: the Canvas API and that `git fetch` are the only two.
+
+### Fixed — the Windows install path could not work
+
+- **`README.md` told Windows users to open PowerShell and run `./setup`.** `setup` is an extensionless bash script; PowerShell cannot execute it, and no `.ps1` ships. The ZIP instructions now name the shell that works (WSL or Git Bash) and say why PowerShell does not. This lived in the collapsed "Download ZIP" block, the path written for people who cannot use `git clone`.
+
+### For contributors
+
+- `ROADMAP.md` claimed "18 mutations" against an actual 24. The count is gone rather than corrected, so it cannot drift a third time; run the suite to see the number.
+- `TODOS.md`'s landing-page demo item described a "See it work" transcript section that a redesign had already removed, so the task read as an upgrade to something that no longer existed. Rewritten against the page as it stands.
+- v3.4.0.0 was merged but never tagged, so `.github/workflows/release.yml` never fired and GitHub still listed v3.3.0.4 as the latest release. Tagged retroactively at its merge commit.
+
 ## v3.4.0.0 (2026-08-06)
 
 idstack is a Claude Code plugin now, and only that. The OpenAI Codex CLI target that shipped in v2.5.0.0 is removed, and the Gemini CLI target that was planned is off the roadmap. Nothing about the 11 skills, the evidence base, the manifest schema, or the report contract changes.

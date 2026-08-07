@@ -113,6 +113,23 @@ check "landing: Output section present" "grep -q 'id=.output.' '$LANDING'"
 check "landing: gradient text keeps a color fallback (no bare 'color: transparent')" \
   "! grep -Eq '[^-]color: *transparent' '$LANDING'"
 
+# The landing page's evidence cards restate evidence/references.md: a study count
+# and a tier range per domain. They were hand-maintained and three had drifted —
+# two advertised T2 for domains whose strongest evidence is T3, which is the one
+# error idstack cannot afford, since tier honesty is the whole product. Derived
+# from the reference file now, so the numbers cannot disagree.
+#
+# Skipped without python3 rather than silently passing; a crash in the checker
+# becomes drift text so it fails loudly instead of vacuously.
+EVIDENCE_DRIFT=""
+if command -v python3 &>/dev/null; then
+  EVIDENCE_DRIFT="$(python3 "$IDSTACK_DIR/test/check-evidence-cards.py" "$IDSTACK_DIR" 2>&1)" \
+    || EVIDENCE_DRIFT="evidence-card checker failed:
+$EVIDENCE_DRIFT"
+  check "landing evidence cards match evidence/references.md" \
+    "if [ -n \"\$EVIDENCE_DRIFT\" ]; then printf '%s\n' \"\$EVIDENCE_DRIFT\"; false; fi"
+fi
+
 # Open Graph card template (docs/og-template.html) - same gradient-text fallback rule.
 OG_TEMPLATE="$IDSTACK_DIR/docs/og-template.html"
 check "og-template.html exists" "[ -f '$OG_TEMPLATE' ]"

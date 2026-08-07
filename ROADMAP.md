@@ -21,7 +21,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - The suite had never run automatically. GitHub Actions runs every suite on each push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, ten today.
 - `./setup` — the primary deliverable — went from zero coverage to 17 behavioral tests.
 - `bin/idstack-doctor` and `bin/idstack-status --readiness` gained their first execution coverage in v3.3.0.4. Both are what a user reaches for when something has already gone wrong, and neither had any.
-- `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught. 18 mutations, all guarded.
+- `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught. Every mutation in it is guarded; the suite prints the current count when you run it.
 
 ### Install through the Claude Code plugin marketplace (v3.2.0.0)
 - `./setup` registers idstack as a Claude Code plugin marketplace and installs from there. Recent Claude Code versions stopped discovering plugins from the bare symlink older setups created, so `/idstack:<skill>` commands silently never appeared in the slash picker. If that happened to you, pull the latest and re-run `./setup`.
