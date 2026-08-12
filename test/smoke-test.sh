@@ -130,6 +130,9 @@ $EVIDENCE_DRIFT"
     "if [ -n \"\$EVIDENCE_DRIFT\" ]; then printf '%s\n' \"\$EVIDENCE_DRIFT\"; false; fi"
 fi
 
+check "doc accuracy check passes" "python3 '$IDSTACK_DIR/test/check-doc-accuracy.py' '$IDSTACK_DIR'"
+
+
 # Open Graph card template (docs/og-template.html) - same gradient-text fallback rule.
 OG_TEMPLATE="$IDSTACK_DIR/docs/og-template.html"
 check "og-template.html exists" "[ -f '$OG_TEMPLATE' ]"
