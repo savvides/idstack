@@ -82,9 +82,8 @@ def check_public_surfaces(root, problems):
     with open(v_file, "r", encoding="utf-8") as f:
         version = f.read().strip()
 
-    ver3 = ".".join(version.split(".")[:3])
     expected_ver = "v%s" % version
-    expected_software_ver = '"softwareVersion": "%s"' % ver3
+    expected_software_ver = '"softwareVersion": "%s"' % version
 
     index_html = os.path.join(root, "docs", "index.html")
     if os.path.isfile(index_html):
@@ -93,7 +92,7 @@ def check_public_surfaces(root, problems):
             if expected_ver not in content:
                 problems.append("docs/index.html does not carry version %s" % expected_ver)
             if expected_software_ver not in content:
-                problems.append("docs/index.html LD+JSON metadata does not match softwareVersion %s" % ver3)
+                problems.append("docs/index.html LD+JSON metadata does not match softwareVersion %s" % version)
     else:
         problems.append("missing docs/index.html file")
 

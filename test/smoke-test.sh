@@ -105,7 +105,7 @@ check "landing: indigo gradient present" "grep -q 'linear-gradient' '$LANDING'"
 check "landing: marketplace install command present" "grep -q 'github.com/savvides/idstack.git' '$LANDING' && grep -q 'cd idstack' '$LANDING'"
 check "landing: no legacy plugins-dir install string" "! grep -q '.claude/plugins/idstack' '$LANDING'"
 check "landing: current version v$VER present" "grep -qF 'v$VER' '$LANDING'"
-check "landing: structured-data softwareVersion $VER3" "grep -qF '\"softwareVersion\": \"$VER3\"' '$LANDING'"
+check "landing: structured-data softwareVersion $VER" "grep -qF '\"softwareVersion\": \"$VER\"' '$LANDING'"
 check "landing: Output section present" "grep -q 'id=.output.' '$LANDING'"
 # Gradient-clipped text (hero h1, eyebrow) must keep a solid color fallback so it
 # stays visible where `background-clip: text` is unsupported. Guards against a bare
