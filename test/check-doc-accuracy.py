@@ -67,12 +67,12 @@ def check_binaries_and_flags(root, problems):
         text = f.read()
 
     # Look for bin/ paths referenced in README
-    bin_refs = set(re.findall(r"\bbin/[a-zA-Z0-9_-]+(?:\.[a-z]+)?", text))
+    bin_refs = set(re.findall(r"\bbin/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+(?:\.[a-z]+)?", text))
     for ref in sorted(bin_refs):
         full_path = os.path.join(root, ref)
-        if not os.path.exists(full_path):
-            problems.append("README.md references missing binary: %s" % ref)
-        elif ref.startswith("bin/idstack-") and not os.access(full_path, os.X_OK):
+        if not os.path.isfile(full_path):
+            problems.append("README.md references missing binary or file: %s" % ref)
+        elif not os.access(full_path, os.X_OK):
             problems.append("README.md references non-executable binary: %s" % ref)
 
 
