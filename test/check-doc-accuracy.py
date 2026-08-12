@@ -18,13 +18,11 @@ def check_versions(root, problems):
     with open(v_file, "r", encoding="utf-8") as f:
         version = f.read().strip()
 
-    ver3 = ".".join(version.split(".")[:3])
-
     plugin_json = os.path.join(root, ".claude-plugin", "plugin.json")
     if os.path.isfile(plugin_json):
         with open(plugin_json, "r", encoding="utf-8") as f:
             content = f.read()
-            if ('"version": "%s"' % version) not in content and ('"version": "%s"' % ver3) not in content:
+            if ('"version": "%s"' % version) not in content:
                 problems.append(".claude-plugin/plugin.json version does not match VERSION (%s)" % version)
     else:
         problems.append("missing .claude-plugin/plugin.json file")
@@ -33,7 +31,7 @@ def check_versions(root, problems):
     if os.path.isfile(readme):
         with open(readme, "r", encoding="utf-8") as f:
             content = f.read()
-            if ("v%s" % version) not in content and ("v%s" % ver3) not in content and version not in content:
+            if ("v%s" % version) not in content:
                 problems.append("README.md does not reference current version v%s" % version)
     else:
         problems.append("missing README.md file")
@@ -42,7 +40,7 @@ def check_versions(root, problems):
     if os.path.isfile(index_html):
         with open(index_html, "r", encoding="utf-8") as f:
             content = f.read()
-            if ("v%s" % version) not in content and ("v%s" % ver3) not in content:
+            if ("v%s" % version) not in content:
                 problems.append("docs/index.html does not reference current version v%s" % version)
     else:
         problems.append("missing docs/index.html file")
@@ -84,7 +82,9 @@ def check_public_surfaces(root, problems):
     with open(v_file, "r", encoding="utf-8") as f:
         version = f.read().strip()
 
+    ver3 = ".".join(version.split(".")[:3])
     expected_ver = "v%s" % version
+    expected_software_ver = '"softwareVersion": "%s"' % ver3
 
     index_html = os.path.join(root, "docs", "index.html")
     if os.path.isfile(index_html):
@@ -92,6 +92,8 @@ def check_public_surfaces(root, problems):
             content = f.read()
             if expected_ver not in content:
                 problems.append("docs/index.html does not carry version %s" % expected_ver)
+            if expected_software_ver not in content:
+                problems.append("docs/index.html LD+JSON metadata does not match softwareVersion %s" % ver3)
     else:
         problems.append("missing docs/index.html file")
 
