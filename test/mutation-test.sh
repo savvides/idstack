@@ -363,6 +363,27 @@ io.open(p, 'w', encoding='utf-8').write('\n'.join(lines))
 PY
 expect_fail "domain study count drifts from the cards" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 20. version string in README mutated -> smoke-test must fail
+fresh
+python3 - "$WORK/r/README.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace("v3.4.0.1", "v9.9.9.9")
+open(p,'w').write(s)
+PY
+expect_fail "version string in README mutated" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 21. non-existent binary reference in README -> smoke-test must fail
+fresh
+python3 - "$WORK/r/README.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace("bin/idstack-doctor", "bin/idstack-fake-binary", 1)
+open(p,'w').write(s)
+PY
+expect_fail "non-existent binary reference in README" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
+
