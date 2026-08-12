@@ -4,6 +4,15 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Documentation accuracy & automated verification (v3.4.0.1)
+- **Evidence cards derived from research references.** `test/check-evidence-cards.py` verifies landing page cards against `evidence/references.md` in `smoke-test.sh` so study counts and tier spans match.
+- **Privacy policy disclosures updated.** `PRIVACY.md` discloses outbound Canvas API uploads in `/idstack:course-export` and `git fetch` operations in `bin/idstack-update-check`.
+- **Windows setup instructions fixed.** `README.md` specifies WSL or Git Bash for Windows installs (PowerShell does not run extensionless bash scripts).
+
+### Single-host Claude Code plugin architecture (v3.4.0.0)
+- **Claude Code plugin invariant.** Removed retired Codex CLI target and `dist/` bundle layout. `bin/idstack-gen-skills` operates on single canonical layout (`skills/<name>/SKILL.md`). <!-- IDSTACK_CLI_LEAK_ALLOW -->
+- **`$_IDSTACK` resolution cleaned.** In-skill path resolution dropped legacy `.agents/` fallbacks.
+
 ### Follow-up fixes to the v3.3.0.0 audit (v3.3.0.1–v3.3.0.4)
 - **Skills stopped suggesting commands that don't exist.** Welcome-back and next-step messages named things like `/assessment-design`, which resolves in neither CLI. It landed inside the context-recovery message v3.3.0.0 had just repaired, so it was the first thing you saw once those messages started working again (v3.3.0.1).
 - **Searching your learnings for a word with an apostrophe returned the wrong answer.** `Bloom's` or `learner's` made the search code a syntax error, which was swallowed, and the fallback that took over ignores the `--type` filter — so it answered with a record of the wrong type instead of failing. Those are ordinary search terms in this tool (v3.3.0.2).

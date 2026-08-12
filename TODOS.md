@@ -10,6 +10,9 @@
 >
 > The issue is authoritative for its own detail; don't copy it here.
 
+## ~~v3.4: Single-Host Claude Code Architecture & Automated Doc Verification~~ SHIPPED (v3.4.0.0, v3.4.0.1)
+Shipped in v3.4.0.0 and v3.4.0.1. Reconciled architecture to single-host Claude Code plugin. Removed retired Codex CLI target, deleted `dist/` and `AGENTS.md` artifacts. Added `test/check-doc-accuracy.py` validator script to enforce version parity (v3.4.0.1 / schema 1.4), binary executable permissions, flag accuracy, and relative link integrity across all documentation surfaces. Added `test/check-evidence-cards.py` to prevent evidence card tier overstatements. <!-- IDSTACK_CLI_LEAK_ALLOW -->
+
 ## ~~v2.4: Dual-Output Report Contract + Pipeline Aggregator~~ SHIPPED (v2.4.0.0)
 Shipped in v2.4.0.0 with Markdown reports under `.idstack/reports/` (historical —
 later releases replaced that path with self-contained HTML reports under

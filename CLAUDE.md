@@ -23,10 +23,10 @@ bin/idstack-manifest-merge --section <s> --payload <f>   # Canonical manifest wr
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
 ```
 
-Tests (all ten run in CI on every push and PR — see `.github/workflows/test.yml`):
+Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 
 ```bash
-./test/smoke-test.sh              # 353 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 355 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 48 behavioral tests across the bin/ scripts; also proves the suite
@@ -38,6 +38,8 @@ Tests (all ten run in CI on every push and PR — see `.github/workflows/test.ym
 ./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
+python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
+python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails
 ```
 

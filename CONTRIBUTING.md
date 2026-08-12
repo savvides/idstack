@@ -140,6 +140,8 @@ Ten suites run in CI (`.github/workflows/test.yml`) on every push and pull reque
 | `test/test-version-classifier.sh` | `bin/lib/version-classify.sh` |
 | `test/test-plugin-status.sh` | `bin/lib/plugin-status.sh` |
 | `test/test-preamble-python.sh` | The preamble's embedded Python, on 3.9 and 3.12 |
+| `python3 test/check-evidence-cards.py .` | Verifies landing page evidence card study counts and tier ranges against `evidence/references.md` |
+| `python3 test/check-doc-accuracy.py .` | Validates version agreement, manifest schema version, binary/flag references, link targets, and surface accuracy across docs |
 | `test/mutation-test.sh` | Reintroduces each known defect into a throwaway copy and asserts the guarding test fails. Add a mutation here whenever you fix a bug — it is what proves your new test would have caught it |
 
 The CI matrix is ubuntu on Python 3.9 and 3.12, plus macOS on 3.12 for BSD `grep`/`sed`/`awk` differences. `mutation-test.sh` runs once, pinned to 3.9. Do not skip hooks or push with a red suite.

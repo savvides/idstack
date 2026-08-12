@@ -107,6 +107,71 @@ def check_public_surfaces(root, problems):
         problems.append("missing README.md file")
 
 
+def check_developer_surfaces(root, problems):
+    dev_files = ["CLAUDE.md", "DESIGN.md", "CONTRIBUTING.md", "TODOS.md", "ROADMAP.md"]
+    for f in dev_files:
+        p = os.path.join(root, f)
+        if not os.path.isfile(p):
+            problems.append("missing developer surface file: %s" % f)
+
+    claude_md = os.path.join(root, "CLAUDE.md")
+    if os.path.isfile(claude_md):
+        with open(claude_md, "r", encoding="utf-8") as f:
+            content = f.read()
+            if "353 assertions" in content:
+                problems.append("CLAUDE.md contains stale assertion count (353 assertions)")
+
+            required_commands = [
+                "test/smoke-test.sh",
+                "test/mutation-test.sh",
+                "test/check-evidence-cards.py",
+                "test/check-doc-accuracy.py",
+            ]
+            for cmd in required_commands:
+                if cmd not in content:
+                    problems.append("CLAUDE.md missing test command reference: %s" % cmd)
+
+            test_refs = set(re.findall(r"\btest/[a-zA-Z0-9_-]+\.(?:sh|py)\b", content))
+            for ref in sorted(test_refs):
+                if not os.path.isfile(os.path.join(root, ref)):
+                    problems.append("CLAUDE.md references missing test file: %s" % ref)
+
+    contributing_md = os.path.join(root, "CONTRIBUTING.md")
+    if os.path.isfile(contributing_md):
+        with open(contributing_md, "r", encoding="utf-8") as f:
+            content = f.read()
+            required_commands = [
+                "test/smoke-test.sh",
+                "test/mutation-test.sh",
+                "test/check-evidence-cards.py",
+                "test/check-doc-accuracy.py",
+            ]
+            for cmd in required_commands:
+                if cmd not in content:
+                    problems.append("CONTRIBUTING.md missing test command reference: %s" % cmd)
+
+            test_refs = set(re.findall(r"\btest/[a-zA-Z0-9_-]+\.(?:sh|py)\b", content))
+            for ref in sorted(test_refs):
+                if not os.path.isfile(os.path.join(root, ref)):
+                    problems.append("CONTRIBUTING.md references missing test file: %s" % ref)
+
+    design_md = os.path.join(root, "DESIGN.md")
+    if os.path.isfile(design_md):
+        with open(design_md, "r", encoding="utf-8") as f:
+            content = f.read()
+            required_paths = [
+                "templates/assets/idstack.css",
+                "docs/index.html",
+                "templates/report.html.tmpl",
+                "templates/index.html.tmpl",
+            ]
+            for path_ref in required_paths:
+                if path_ref not in content:
+                    problems.append("DESIGN.md missing path reference: %s" % path_ref)
+                elif not os.path.isfile(os.path.join(root, path_ref)):
+                    problems.append("DESIGN.md references missing file: %s" % path_ref)
+
+
 def main():
     if len(sys.argv) != 2:
         print("usage: check-doc-accuracy.py <repo-root>")
@@ -122,6 +187,7 @@ def main():
     check_manifest_schema_version(root, problems)
     check_binaries_and_flags(root, problems)
     check_public_surfaces(root, problems)
+    check_developer_surfaces(root, problems)
 
     for p in problems:
         print(p)
