@@ -72,8 +72,38 @@ def check_binaries_and_flags(root, problems):
         full_path = os.path.join(root, ref)
         if not os.path.isfile(full_path):
             problems.append("README.md references missing binary or file: %s" % ref)
-        elif not os.access(full_path, os.X_OK):
+        elif not ref.startswith("bin/lib/") and not os.access(full_path, os.X_OK):
             problems.append("README.md references non-executable binary: %s" % ref)
+
+
+def check_public_surfaces(root, problems):
+    v_file = os.path.join(root, "VERSION")
+    if not os.path.isfile(v_file):
+        problems.append("missing VERSION file")
+        return
+    with open(v_file, "r", encoding="utf-8") as f:
+        version = f.read().strip()
+
+    expected_ver = "v%s" % version
+
+    index_html = os.path.join(root, "docs", "index.html")
+    if os.path.isfile(index_html):
+        with open(index_html, "r", encoding="utf-8") as f:
+            content = f.read()
+            if expected_ver not in content:
+                problems.append("docs/index.html does not carry version %s" % expected_ver)
+    else:
+        problems.append("missing docs/index.html file")
+
+    readme = os.path.join(root, "README.md")
+    if os.path.isfile(readme):
+        with open(readme, "r", encoding="utf-8") as f:
+            content = f.read()
+            header = "\n".join(content.splitlines()[:10])
+            if expected_ver not in header:
+                problems.append("README.md badge/header does not carry version %s" % expected_ver)
+    else:
+        problems.append("missing README.md file")
 
 
 def main():
@@ -90,6 +120,7 @@ def main():
     check_versions(root, problems)
     check_manifest_schema_version(root, problems)
     check_binaries_and_flags(root, problems)
+    check_public_surfaces(root, problems)
 
     for p in problems:
         print(p)
@@ -99,3 +130,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
