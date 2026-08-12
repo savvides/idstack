@@ -111,7 +111,8 @@ def main():
         want = tier_span(tiers)
         if card_tier != want:
             note = ""
-            if int(card_tier[1]) < tiers[0]:
+            card_tiers = [int(t) for t in TIER_RE.findall(card_tier)]
+            if card_tiers and card_tiers[0] < tiers[0]:
                 note = "  <- OVERSTATES: claims stronger evidence than the domain holds"
             problems.append(
                 "%s: card says %s, references.md spans %s%s"
