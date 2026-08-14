@@ -63,6 +63,7 @@ which accepts a single `path`. Add a staging step that copies `docs/`, removes t
 paths, and uploads the staged directory:
 
 ```yaml
+# ordering: after Checkout and Setup Pages, before Upload
 - name: Stage publishable files
   run: |
     rm -rf _site
@@ -75,6 +76,10 @@ paths, and uploads the staged directory:
   with:
     path: '_site'
 ```
+
+Step order matters: staging must run after `actions/checkout@v4` and before
+`upload-pages-artifact@v3`. Run verification item 6 (the three shell lines, locally) *before*
+editing the workflow, so a staging bug is caught without a deploy round-trip.
 
 **Why the exclusion is load-bearing and a `git mv` is not.** The brainstorming skill writes specs to
 `docs/superpowers/specs/` by default. Relocating today's two files without a build exclusion gets
@@ -102,12 +107,12 @@ request that sits open for a week, or a merge dated after the docs edit, red-lig
 reason unrelated to the change being made. CI here runs every suite on every push and pull request;
 a check that cries wolf is a check people learn to bypass.
 
-**Why deletion is not a downgrade.** Both fields are optional. Google's documented behaviour is to
-use sitemap `lastmod` only when it is consistently and verifiably accurate, and to disregard it
-otherwise — so a value three months stale earns nothing today. An absent field and an untrusted
-field are worth the same in search; the difference is that the absent one cannot mislead a human
-reading the page source. Under the scoring model both items are weight 1, "machine-readable only,
-invisible to humans."
+**Why deletion is not a downgrade.** Both fields are optional, and under the scoring model both
+items are weight 1 — "machine-readable only, invisible to humans." Whatever value a freshness
+signal carries, a value three months stale is not delivering it: the field currently asserts
+something false, and the choice is between an absent field and a wrong one. Absent wins. Search-
+engine treatment of `lastmod` is deliberately left out of this rationale; the argument does not
+need it and this document should not carry a third-party claim it cannot verify.
 
 > **Assumption, stated explicitly.** The approved scope was "fix `dateModified` and sitemap
 > `lastmod`." Deleting them is a *different action* that reaches the same score. Proceeding on the
@@ -144,11 +149,11 @@ Line numbers are as of `13db318`; anchor text is authoritative.
 
 | Anchor | Change | Closes |
 |---|---|---|
-| `"operatingSystem": "macOS, Linux, Windows"` (L44) | → `"macOS, Linux, Windows (WSL or Git Bash)"` | 5 |
+| `"operatingSystem": "macOS, Linux, Windows"` (L44) | → `"macOS, Linux, Windows (WSL or Git Bash)"`. **Secondary.** Schema.org expects OS names here; a parenthetical caveat is a precision improvement, not a machine-readable constraint. Do not treat this as the fix for 5 | 5 (partial) |
 | `"dateModified": "2026-08-06",` (L47) | delete the line | 2 |
 | `<h2 id="pipeline-title">` lede (L1013) | the lede accounts for 8 pipeline skills + 2 asides = 10; revise so `/idstack:pipeline` is counted as the eleventh rather than only appearing in the track label, so a reader who counts reaches eleven | 9 |
 | `<h2 id="install-title">Install in about five minutes.</h2>` (L1127) | → `Install in 30 seconds.` | 1 |
-| after `.install-prose` (L1136) | new `.install-prose` paragraph: bash shell required (WSL or Git Bash on Windows), python3 recommended; `bin/idstack-doctor` diagnoses a broken install, `bin/idstack-status` shows course health | 7, 8, and reinforces 5 in human-readable prose |
+| after `.install-prose` (L1136) | new `.install-prose` paragraph: bash shell required (WSL or Git Bash on Windows), python3 recommended; `bin/idstack-doctor` diagnoses a broken install, `bin/idstack-status` shows course health. **This is the primary fix for 5** — a Windows visitor is stopped by prose they can read, not by a JSON-LD string they never see | **5**, 7, 8 |
 | v3.4.0.1 patch paragraph (L1153) | add the two other shipped items per ROADMAP — `PRIVACY.md` disclosures for Canvas API uploads and `bin/idstack-update-check` git fetches, and the Windows/WSL install instructions | 4 |
 | `.footer-links` block (L1177) | add `<a>` to `PRIVACY.md` on `main`, beside MIT License / Contribute / Roadmap | 6 |
 
@@ -171,7 +176,8 @@ Add the staging step from D1; repoint `upload-pages-artifact` at `_site`. Closes
 
 `git mv docs/superpowers/specs/2026-08-12-documentation-accuracy-design.md` and
 `git mv docs/superpowers/plans/2026-08-12-documentation-accuracy.md` to the repo-root
-`superpowers/` tree. Closes 10.
+`superpowers/` tree. `superpowers/specs/` already exists (this document); `superpowers/plans/` must
+be created first — `git mv` will not create it. Remove the now-empty `docs/superpowers/`. Closes 10.
 
 ### `test/check-doc-accuracy.py`, `test/mutation-test.sh`
 
@@ -189,8 +195,8 @@ Success criteria, each independently checkable:
    mutation harness.
 6. Staging step simulated locally (`rm -rf _site && cp -R docs _site && rm -rf _site/superpowers &&
    rm -f _site/og-template.html`) → `_site` contains `index.html`, `sitemap.xml`, `robots.txt`,
-   `CNAME`, both favicons, `og-image.png`, and `why-ai-native.md`; contains neither `superpowers/`
-   nor `og-template.html`.
+   `CNAME`, both favicons, `og-image.png`, and `why-ai-native.md` (raw Markdown, intended public
+   content — see Non-goals); contains neither `superpowers/` nor `og-template.html`.
 7. Post-merge: `curl -o /dev/null -w "%{http_code}"` on
    `https://idstack.org/superpowers/specs/2026-08-12-documentation-accuracy-design.md` and on
    `https://idstack.org/og-template.html` → both 404. `https://idstack.org/` → 200.
