@@ -383,6 +383,19 @@ open(p,'w').write(s)
 PY
 expect_fail "non-existent binary reference in README" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 22. dateModified reintroduced into the landing page -> smoke-test must fail.
+# The field was deleted rather than corrected (spec D2); this proves the
+# absence assertion in check-doc-accuracy.py actually guards that decision.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace('"datePublished": "2026-04-20",',
+              '"datePublished": "2026-04-20",\n    "dateModified": "2026-08-06",', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "dateModified reintroduced into docs/index.html" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
