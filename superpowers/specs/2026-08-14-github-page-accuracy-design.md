@@ -51,7 +51,7 @@ strings; "108 peer-reviewed studies across 11 research domains" (108 unique refe
 `evidence/references.md`, 11 domains); all 11 evidence cards; every per-skill claim in the pipeline
 section (`UDL 3.0`, `WCAG 2.1 AA`, `SCORM 1.2`, red-team's 5 dimensions, Nicol's 7 feedback
 principles, three-level needs assessment — each matches its `SKILL.md`); `og-image.png` (no baked-in
-version, no reference to the retired Codex build); all 11 outbound links (HTTP 200); and the GitHub
+version, no reference to the retired CLI build); all 11 outbound links (HTTP 200); and the GitHub
 repo's description, topics, and homepage URL.
 
 ## Design decisions
