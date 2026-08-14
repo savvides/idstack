@@ -368,6 +368,8 @@ done
 Expected: every line starts `200`, and the list now includes
 `https://github.com/savvides/idstack/blob/main/PRIVACY.md` (added twice — the footer here and the release note in Task 2 — but `sort -u` collapses it to one row).
 
+That URL was verified against `main` while writing this plan: `PRIVACY.md` is tracked at the repo root and the blob URL returns 200. If the sweep 404s on it, the link was mistyped, not missing upstream.
+
 - [ ] **Step 4: Confirm no new CSS was introduced**
 
 ```bash
@@ -616,6 +618,8 @@ git status --porcelain
 
 Expected: empty output. The integration suite is documented to leave the working tree untouched; anything here is a bug worth reporting before merge.
 
+One exception: if `_site/` appears, that is an uncleaned staging dry-run from Task 4, not a suite bug. `rm -rf _site` and re-run. (It is gitignored as of Task 4 Step 1, so it should not appear at all.)
+
 - [ ] **Step 4: Walk the findings list**
 
 ```bash
@@ -625,7 +629,7 @@ echo "--- 2 dateModified (expect 0)"; grep -c "dateModified" docs/index.html
 echo "--- 3 lastmod (expect 0)"; grep -c "lastmod" docs/sitemap.xml
 echo "--- 4 release note (expect 1)"; grep -c "named WSL or Git Bash in the Windows install" docs/index.html
 echo "--- 5 windows caveat (expect 1 each)"; grep -c "WSL or Git Bash on Windows" docs/index.html; grep -c "Windows (WSL or Git Bash)" docs/index.html
-echo "--- 6 privacy link (expect 2: footer + release note)"; grep -c "blob/main/PRIVACY.md" docs/index.html
+echo "--- 6 privacy link (expect 2: footer + release note)"; grep -o "blob/main/PRIVACY.md" docs/index.html | wc -l
 echo "--- 7 tooling (expect 1 each)"; grep -c "bin/idstack-doctor" docs/index.html; grep -c "bin/idstack-status" docs/index.html
 echo "--- 8 python3 note (expect 1)"; grep -c "python3 is recommended" docs/index.html
 echo "--- 9 eleventh skill (expect 1)"; grep -c "orchestrates them" docs/index.html
