@@ -43,3 +43,20 @@ export function extractPageContent() {
   const url = typeof window !== 'undefined' && window.location ? window.location.href : '';
   return extractContentFromDOM(document, url);
 }
+
+export function detectCourseContext(url, docTitle) {
+  if (!url) return { isCourseRoot: false, courseId: null, origin: null };
+  try {
+    const parsedUrl = new URL(url);
+    const match = parsedUrl.pathname.match(/\/courses\/(\d+)(?:\/)?$/);
+    const anyCourseMatch = parsedUrl.pathname.match(/\/courses\/(\d+)/);
+    return {
+      isCourseRoot: !!match,
+      courseId: anyCourseMatch ? anyCourseMatch[1] : null,
+      origin: parsedUrl.origin
+    };
+  } catch (e) {
+    return { isCourseRoot: false, courseId: null, origin: null };
+  }
+}
+

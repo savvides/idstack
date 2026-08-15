@@ -1,7 +1,8 @@
-const { detectPageType, extractContentFromDOM, extractPageContent } = require('./extractor.js');
+const { detectPageType, extractContentFromDOM, extractPageContent, detectCourseContext } = require('./extractor.js');
 
 module.exports = {
   detectPageType,
   extractContentFromDOM,
-  extractPageContent
+  extractPageContent,
+  detectCourseContext
 };

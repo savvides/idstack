@@ -21,4 +21,18 @@ assert.ok(prompt.includes('Biology 101'), 'Prompt should include content title')
 assert.ok(prompt.includes("Bloom's"), "Prompt should require Bloom's classification");
 assert.ok(prompt.includes('JSON'), 'Prompt should enforce JSON format');
 
+const { buildCourseAuditPrompt } = require('../extension/shared/prompts.cjs');
+assert.strictEqual(typeof buildCourseAuditPrompt, 'function');
+const coursePrompt = buildCourseAuditPrompt({
+  title: 'Biology 101',
+  syllabus: 'Course objectives and grading policy...',
+  assignments: [
+    { title: 'Quiz 1', description: 'Recall cell parts', points: 10 },
+    { title: 'Final Project', description: 'Design an experiment', points: 100 }
+  ]
+});
+assert.ok(coursePrompt.includes('Biology 101'));
+assert.ok(coursePrompt.includes('Constructive Alignment'));
+assert.ok(coursePrompt.includes('courseAudit'));
+
 console.log('✅ Task 2 prompt engine tests passed.');
