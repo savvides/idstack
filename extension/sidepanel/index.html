@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>idstack — Course Co-Pilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo">idstack</span>
+      <span class="badge-version">v1.0</span>
+    </div>
+    <button id="settings-toggle" class="icon-btn" title="Settings & Privacy">⚙</button>
+  </header>
+
+  <main class="content-body">
+    <!-- Ready State -->
+    <section id="ready-state" class="state-panel active">
+      <div class="context-card">
+        <div class="page-meta">
+          <span id="page-type-tag" class="chip">Detecting page...</span>
+          <h2 id="page-title" class="page-heading">Loading page title...</h2>
+        </div>
+        <p class="summary-hint">Audit constructive alignment, Bloom's classification, and cognitive load with peer-reviewed evidence.</p>
+        <button id="audit-btn" class="primary-btn">
+          <span class="btn-text">Audit Page with Evidence</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Loading State -->
+    <section id="loading-state" class="state-panel">
+      <div class="loader-box">
+        <div class="spinner"></div>
+        <p id="loader-status" class="loader-status-text">Analyzing course structure...</p>
+      </div>
+    </section>
+
+    <!-- Results State -->
+    <section id="results-state" class="state-panel">
+      <div id="results-container"></div>
+    </section>
+
+    <!-- Settings Drawer -->
+    <section id="settings-drawer" class="drawer">
+      <div class="drawer-header">
+        <h3>Settings & Privacy</h3>
+        <button id="close-settings" class="icon-btn">✕</button>
+      </div>
+      <div class="drawer-body">
+        <div class="form-group">
+          <label for="api-key-input">Gemini / Claude API Key (Optional BYOK)</label>
+          <input type="password" id="api-key-input" placeholder="AIzaSy... or sk-ant-..." />
+          <p class="help-text">Leave blank to use the standard free demo tier.</p>
+        </div>
+        <button id="save-settings-btn" class="secondary-btn">Save Settings</button>
+        <hr class="divider" />
+        <div class="privacy-note">
+          <h4>Privacy & FERPA Commitment</h4>
+          <p>idstack processes only curriculum and assignment text. No student PII is ever collected, retained, or used for model training.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
