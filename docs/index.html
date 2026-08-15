@@ -1134,6 +1134,10 @@
 
       <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 11 skills. Re-run it after a <code>git pull</code> to update.</p>
 
+      <p class="install-prose">Requires a bash shell — Terminal on macOS or Linux, WSL or Git Bash on Windows. <code>./setup</code> is a bash script, so PowerShell and <code>cmd</code> can't run it. python3 is recommended but not required; without it, quality-score trends and search filtering are unavailable.</p>
+
+      <p class="install-prose">If something looks wrong afterwards, <code>bin/idstack-doctor</code> diagnoses the plugin registration, and <code>bin/idstack-status</code> reports course health from inside a project directory.</p>
+
       <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:pipeline</code>.</p>
     </section>
 
@@ -1176,6 +1180,7 @@
       <div class="footer-links">
         <a href="https://github.com/savvides/idstack" rel="noopener">GitHub</a>
         <a href="https://github.com/savvides/idstack/blob/main/LICENSE" rel="noopener">MIT License</a>
+        <a href="https://github.com/savvides/idstack/blob/main/PRIVACY.md" rel="noopener">Privacy</a>
         <a href="https://github.com/savvides/idstack/blob/main/CONTRIBUTING.md" rel="noopener">Contribute</a>
         <a href="https://github.com/savvides/idstack/blob/main/ROADMAP.md" rel="noopener">Roadmap</a>
         <a href="https://forms.gle/6LDgDD1M6WWyYvME8" rel="noopener">Feedback</a>
