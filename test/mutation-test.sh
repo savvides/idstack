@@ -303,8 +303,8 @@ fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace("<h2 id=\"install-title\">Install in about five minutes.</h2>",
-              "<h2 id=\"install-title\">Install in about five minutes.</h2>\n"
+s = s.replace("<h2 id=\"install-title\">Install in 30 seconds.</h2>",
+              "<h2 id=\"install-title\">Install in 30 seconds.</h2>\n"
               "      <p>Also runs in OpenAI Codex CLI.</p>", 1)  # IDSTACK_CLI_LEAK_ALLOW
 open(p,'w').write(s)
 PY
@@ -320,8 +320,8 @@ fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace("<h2 id=\"install-title\">Install in about five minutes.</h2>",
-              "<h2 id=\"install-title\">Install in about five minutes.</h2>\n"
+s = s.replace("<h2 id=\"install-title\">Install in 30 seconds.</h2>",
+              "<h2 id=\"install-title\">Install in 30 seconds.</h2>\n"
               "      <p>Reviewed by Gemini Code Assist. Also runs in Codex CLI.</p>", 1)  # IDSTACK_CLI_LEAK_ALLOW
 open(p,'w').write(s)
 PY
