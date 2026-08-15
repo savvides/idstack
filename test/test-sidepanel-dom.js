@@ -51,5 +51,18 @@ assert.ok(css.includes('JetBrains Mono'), 'CSS must use JetBrains Mono for citat
 assert.ok(css.includes('.error-card'), 'CSS must include .error-card class');
 assert.ok(css.includes('.error-actions'), 'CSS must include .error-actions class');
 
-console.log('✅ Task 5 side panel DOM and CSS token tests passed.');
+// Course Audit Button & Progress Bar in HTML
+assert.ok(html.includes('id="audit-course-btn"'), 'audit-course-btn must exist in index.html');
+assert.ok(html.includes('id="crawl-progress-card"'), 'crawl-progress-card must exist in index.html');
+assert.ok(html.includes('id="crawl-status-text"'), 'crawl-status-text must exist in index.html');
+assert.ok(html.includes('https://aistudio.google.com/app/apikey'), 'Link to free Google AI Studio key must exist in Settings');
+
+// Progress Card & Help Link Styles
+assert.ok(css.includes('.progress-card'), 'CSS must include .progress-card class');
+assert.ok(css.includes('.progress-bar-container'), 'CSS must include .progress-bar-container class');
+assert.ok(css.includes('.progress-bar-fill'), 'CSS must include .progress-bar-fill class');
+assert.ok(css.includes('.help-link'), 'CSS must include .help-link class');
+
+console.log('✅ Side panel DOM, progress bar, and CSS token tests passed.');
+
 

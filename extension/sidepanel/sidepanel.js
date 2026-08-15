@@ -1,7 +1,9 @@
 import { getSettings, saveSettings } from '../shared/storage.js';
 import { renderAuditHTML } from './renderer-helper.js';
+import { detectCourseContext } from '../content/extractor-core.js';
 
 let activePayload = null;
+let activeCourseContext = null;
 
 export async function refreshActiveTab() {
   if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.tabs.query) return;
@@ -10,13 +12,20 @@ export async function refreshActiveTab() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || !tab.id) return;
 
+    const url = tab.url || '';
+    activeCourseContext = detectCourseContext(url);
+    const auditCourseBtn = document.getElementById('audit-course-btn');
+    if (auditCourseBtn) {
+      auditCourseBtn.style.display = activeCourseContext.isCourseRoot ? 'block' : 'none';
+    }
+
     try {
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_CONTENT' });
       if (response) {
         activePayload = response;
         const pageTypeTag = document.getElementById('page-type-tag');
         const pageTitle = document.getElementById('page-title');
-        if (pageTypeTag) pageTypeTag.textContent = response.pageType;
+        if (pageTypeTag) pageTypeTag.textContent = activeCourseContext.isCourseRoot ? 'Canvas Course Root' : response.pageType;
         if (pageTitle) pageTitle.textContent = response.title;
         return;
       }
@@ -33,7 +42,7 @@ export async function refreshActiveTab() {
             activePayload = retryResponse;
             const pageTypeTag = document.getElementById('page-type-tag');
             const pageTitle = document.getElementById('page-title');
-            if (pageTypeTag) pageTypeTag.textContent = retryResponse.pageType;
+            if (pageTypeTag) pageTypeTag.textContent = activeCourseContext.isCourseRoot ? 'Canvas Course Root' : retryResponse.pageType;
             if (pageTitle) pageTitle.textContent = retryResponse.title;
             return;
           }
@@ -46,12 +55,12 @@ export async function refreshActiveTab() {
     // Fallback payload if content script extraction fails
     const pageTypeTag = document.getElementById('page-type-tag');
     const pageTitle = document.getElementById('page-title');
-    if (pageTypeTag) pageTypeTag.textContent = 'Web Page';
+    if (pageTypeTag) pageTypeTag.textContent = activeCourseContext.isCourseRoot ? 'Canvas Course Root' : 'Web Page';
     if (pageTitle) pageTitle.textContent = tab.title || 'Current Tab';
     activePayload = {
       url: tab.url || '',
       title: tab.title || 'Current Tab',
-      pageType: 'Web Page',
+      pageType: activeCourseContext.isCourseRoot ? 'Canvas Course Root' : 'Web Page',
       content: ''
     };
   } catch (e) {
@@ -152,11 +161,18 @@ export function renderError(errorMessage) {
   showState('results');
 }
 
-// Audit button click handler
+// Single-page Audit button click handler
 const auditBtn = document.getElementById('audit-btn');
 if (auditBtn) {
   auditBtn.addEventListener('click', async () => {
     if (!activePayload) await refreshActiveTab();
+
+    const progressCard = document.getElementById('crawl-progress-card');
+    if (progressCard) progressCard.style.display = 'none';
+
+    const loaderStatus = document.getElementById('loader-status');
+    if (loaderStatus) loaderStatus.textContent = 'Analyzing page content...';
+
     showState('loading');
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
@@ -179,6 +195,66 @@ if (auditBtn) {
   });
 }
 
+// Course-level Audit button click handler
+const auditCourseBtn = document.getElementById('audit-course-btn');
+if (auditCourseBtn) {
+  auditCourseBtn.addEventListener('click', async () => {
+    if (!activePayload) await refreshActiveTab();
+
+    const url = (activePayload && activePayload.url) || '';
+    const courseCtx = activeCourseContext || detectCourseContext(url);
+    const origin = courseCtx.origin || (url ? new URL(url).origin : '');
+    const courseId = courseCtx.courseId;
+
+    const progressCard = document.getElementById('crawl-progress-card');
+    const statusText = document.getElementById('crawl-status-text');
+    const progressFill = document.getElementById('crawl-progress-fill');
+    const loaderStatus = document.getElementById('loader-status');
+
+    if (loaderStatus) loaderStatus.textContent = 'Auditing Full Canvas Course...';
+    if (progressCard) progressCard.style.display = 'block';
+    if (statusText) statusText.textContent = 'Gathering syllabus...';
+    if (progressFill) progressFill.style.width = '25%';
+
+    showState('loading');
+
+    const timer1 = setTimeout(() => {
+      if (statusText) statusText.textContent = 'Fetching assignments...';
+      if (progressFill) progressFill.style.width = '60%';
+    }, 600);
+
+    const timer2 = setTimeout(() => {
+      if (statusText) statusText.textContent = 'Analyzing constructive alignment...';
+      if (progressFill) progressFill.style.width = '85%';
+    }, 1300);
+
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        chrome.runtime.sendMessage({
+          action: 'CRAWL_AND_AUDIT_COURSE',
+          payload: { origin, courseId }
+        }, (response) => {
+          clearTimeout(timer1);
+          clearTimeout(timer2);
+          if (progressFill) progressFill.style.width = '100%';
+          if (chrome.runtime.lastError) {
+            renderError(chrome.runtime.lastError.message);
+            return;
+          }
+          if (response && response.success) {
+            renderResults(response.data);
+          } else {
+            renderError(response?.error || 'Unknown error occurred during course audit.');
+          }
+        });
+      } catch (err) {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        renderError(err.message);
+      }
+    }
+  });
+}
 
 // Settings Drawer Management
 const settingsToggle = document.getElementById('settings-toggle');
@@ -245,3 +321,4 @@ if (typeof chrome !== 'undefined' && chrome.tabs) {
 if (typeof chrome !== 'undefined' && chrome.tabs) {
   refreshActiveTab();
 }
+

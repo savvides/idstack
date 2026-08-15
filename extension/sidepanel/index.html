@@ -27,9 +27,14 @@
           <h2 id="page-title" class="page-heading">Loading page title...</h2>
         </div>
         <p class="summary-hint">Audit constructive alignment, Bloom's classification, and cognitive load with peer-reviewed evidence.</p>
-        <button id="audit-btn" class="primary-btn">
-          <span class="btn-text">Audit Page with Evidence</span>
-        </button>
+        <div class="action-buttons">
+          <button id="audit-btn" class="primary-btn">
+            <span class="btn-text">Audit Page with Evidence</span>
+          </button>
+          <button id="audit-course-btn" class="secondary-btn course-audit-btn" style="display: none;">
+            <span class="btn-text">Audit Entire Course</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -38,6 +43,12 @@
       <div class="loader-box">
         <div class="spinner"></div>
         <p id="loader-status" class="loader-status-text">Analyzing course structure...</p>
+        <div id="crawl-progress-card" class="progress-card" style="display: none;">
+          <div class="progress-bar-container">
+            <div id="crawl-progress-fill" class="progress-bar-fill"></div>
+          </div>
+          <p id="crawl-status-text" class="progress-status-text">Gathering course syllabus...</p>
+        </div>
       </div>
     </section>
 
@@ -56,6 +67,7 @@
         <div class="form-group">
           <label for="api-key-input">Google AI Studio API Key (Optional BYOK)</label>
           <input type="password" id="api-key-input" placeholder="AIzaSy..." />
+          <a id="get-api-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" class="help-link">Get your free Google AI Studio key &rarr;</a>
           <p class="help-text">Leave blank to use the built-in free demo tier.</p>
         </div>
         <button id="save-settings-btn" class="secondary-btn">Save Settings</button>

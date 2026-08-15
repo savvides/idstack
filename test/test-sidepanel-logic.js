@@ -136,5 +136,16 @@ assert.ok(renderedUnsafe.includes('&lt;a href=&quot;javascript:alert(3)&quot;&gt
 assert.ok(renderedUnsafe.includes('&lt;tag&gt; in observation &amp; &quot;quotes&quot;'), 'Must escape observation properly');
 assert.ok(renderedUnsafe.includes('&lt;h1 onclick=alert(5)&gt;Unsafe Title&lt;/h1&gt;'), 'Must escape improvedDraft title properly');
 
-console.log('✅ Task 6 renderer & escaping tests passed.');
+// Test 7: Rendering Course-Wide Alignment Matrix
+const courseResult = {
+  summary: { bloomsLevel: 'Analyze', alignmentScore: 'High (88%)', keyTakeaway: 'Strong alignment.' },
+  findings: [{ tier: 'T1', severity: 'info', citation: '[Test-1]', observation: 'Good', evidence: 'Meta-analysis', recommendation: 'Keep it' }],
+  improvedDraft: { title: 'Course Alignment Matrix', content: '| Week | Outcome |' }
+};
+const renderedCourse = renderAuditHTML(courseResult);
+assert.ok(renderedCourse.includes('Course Alignment Matrix'));
+assert.ok(renderedCourse.includes('High (88%)'));
+
+console.log('✅ Side panel renderer, escaping & course matrix tests passed.');
+
 
