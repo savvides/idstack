@@ -390,11 +390,15 @@ check "generator takes no --target flag" "! grep -q -- '--target' '$IDSTACK_DIR/
 check "resolve chain drops the ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
 check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/preamble.md'"
 
-# Repo-wide sweep for the retired CLI's name. Two exemptions:
+# Repo-wide sweep for the retired CLI's name. Three exemptions:
 #
 #   1. CHANGELOG.md — the release record, which has to keep describing what was
 #      removed and how to clean up after it.
-#   2. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Three kinds of line carry the tag:
+#   2. .superpowers/, .gstack/, .idstack/, .claude/ — git-ignored tool scratch
+#      directories. Implementation reports and review notes written during
+#      development are not shipped and CI never sees them (fresh checkout), but
+#      they can discuss the sweep and trip it unreliably.
+#   3. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Three kinds of line carry the tag:
 #      this block's own patterns, the dated release note on the landing page,
 #      and the comments crediting "Gemini Code Assist" — a PR-review bot  # IDSTACK_CLI_LEAK_ALLOW
 #      that flagged the version classifier four times, unrelated to the CLI and
@@ -408,7 +412,7 @@ check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_
 CLI_LEAK_RE='codex|gemini'            # IDSTACK_CLI_LEAK_ALLOW
 CLI_LEAK="$(grep -rIiE "$CLI_LEAK_RE" "$IDSTACK_DIR" \
   --exclude-dir=.git --exclude-dir=.gstack --exclude-dir=.idstack \
-  --exclude-dir=.claude --exclude=CHANGELOG.md 2>/dev/null || true)"
+  --exclude-dir=.claude --exclude-dir=.superpowers --exclude=CHANGELOG.md 2>/dev/null || true)"
 CLI_LEAK="$(printf '%s' "$CLI_LEAK" | grep -vF 'IDSTACK_CLI_LEAK_ALLOW' || true)"
 # Printed through the command itself, not tested with -z, so a failure names
 # the offending lines instead of just saying the string was non-empty.

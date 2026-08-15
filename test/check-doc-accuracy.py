@@ -74,6 +74,37 @@ def check_binaries_and_flags(root, problems):
             problems.append("README.md references non-executable binary: %s" % ref)
 
 
+def check_no_stale_dates(root, problems):
+    """Assert two deleted date fields have not come back.
+
+    docs/index.html carried a JSON-LD "dateModified" and docs/sitemap.xml a
+    <lastmod>. Both were deleted rather than corrected: no CI check can assert
+    such a date is current without failing on commits that did not introduce
+    the defect (a PR left open a week, a merge dated after the docs edit), and
+    a check that cries wolf is one people learn to bypass. Absence is the only
+    assertion here that cannot false-positive.
+
+    See superpowers/specs/2026-08-14-github-page-accuracy-design.md, D2 and D3.
+    """
+    index_html = os.path.join(root, "docs", "index.html")
+    if os.path.isfile(index_html):
+        with open(index_html, "r", encoding="utf-8") as f:
+            if "dateModified" in f.read():
+                problems.append(
+                    "docs/index.html reintroduced dateModified; it was removed "
+                    "because it cannot be kept accurate (spec D2)"
+                )
+
+    sitemap = os.path.join(root, "docs", "sitemap.xml")
+    if os.path.isfile(sitemap):
+        with open(sitemap, "r", encoding="utf-8") as f:
+            if "lastmod" in f.read():
+                problems.append(
+                    "docs/sitemap.xml reintroduced lastmod; it was removed "
+                    "because it cannot be kept accurate (spec D2)"
+                )
+
+
 def check_public_surfaces(root, problems):
     v_file = os.path.join(root, "VERSION")
     if not os.path.isfile(v_file):
@@ -187,6 +218,7 @@ def main():
     check_manifest_schema_version(root, problems)
     check_binaries_and_flags(root, problems)
     check_public_surfaces(root, problems)
+    check_no_stale_dates(root, problems)
     check_developer_surfaces(root, problems)
 
     for p in problems:
