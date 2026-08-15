@@ -86,6 +86,53 @@ export function renderResults(data) {
   showState('results');
 }
 
+export function renderError(errorMessage) {
+  const container = document.getElementById('results-container');
+  if (!container) return;
+
+  const safeError = errorMessage
+    ? String(errorMessage)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+    : 'Unknown error occurred during audit.';
+
+  container.innerHTML = `
+    <div class="context-card error-card">
+      <div class="error-header">
+        <span class="error-icon">⚠️</span>
+        <h4>Audit Encountered an Issue</h4>
+      </div>
+      <p class="error-msg">${safeError}</p>
+      <div class="error-actions">
+        <button id="error-retry-btn" class="primary-btn">Retry Audit</button>
+        <button id="error-settings-btn" class="secondary-btn">Open Settings</button>
+      </div>
+    </div>
+  `;
+
+  const retryBtn = document.getElementById('error-retry-btn');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', () => {
+      showState('ready');
+      const btn = document.getElementById('audit-btn');
+      if (btn) btn.click();
+    });
+  }
+
+  const errorSettingsBtn = document.getElementById('error-settings-btn');
+  if (errorSettingsBtn) {
+    errorSettingsBtn.addEventListener('click', () => {
+      const drawer = document.getElementById('settings-drawer');
+      if (drawer) drawer.classList.add('open');
+    });
+  }
+
+  showState('results');
+}
+
 // Audit button click handler
 const auditBtn = document.getElementById('audit-btn');
 if (auditBtn) {
@@ -94,17 +141,25 @@ if (auditBtn) {
     showState('loading');
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-      chrome.runtime.sendMessage({ action: 'RUN_AUDIT', payload: activePayload }, (response) => {
-        if (response && response.success) {
-          renderResults(response.data);
-        } else {
-          alert(`Audit failed: ${response?.error || 'Unknown error'}`);
-          showState('ready');
-        }
-      });
+      try {
+        chrome.runtime.sendMessage({ action: 'RUN_AUDIT', payload: activePayload }, (response) => {
+          if (chrome.runtime.lastError) {
+            renderError(chrome.runtime.lastError.message);
+            return;
+          }
+          if (response && response.success) {
+            renderResults(response.data);
+          } else {
+            renderError(response?.error || 'Unknown error occurred during audit.');
+          }
+        });
+      } catch (err) {
+        renderError(err.message);
+      }
     }
   });
 }
+
 
 // Settings Drawer Management
 const settingsToggle = document.getElementById('settings-toggle');

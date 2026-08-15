@@ -1,6 +1,17 @@
 /**
  * idstack Side Panel HTML Renderer Helper (CommonJS)
  */
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function renderAuditHTML(data) {
   if (!data) return '';
   const summary = data.summary || { bloomsLevel: 'N/A', alignmentScore: 'N/A', keyTakeaway: '' };
@@ -8,13 +19,13 @@ function renderAuditHTML(data) {
   const improvedDraft = data.improvedDraft || { title: 'Improved Draft', content: '' };
 
   const findingsHTML = findings.map(f => {
-    const tier = f.tier || 'T1';
-    const tierClass = tier.toLowerCase();
-    const severity = f.severity || 'info';
-    const citation = f.citation || '';
-    const observation = f.observation || '';
-    const evidence = f.evidence || '';
-    const recommendation = f.recommendation || '';
+    const tier = escapeHtml(f.tier || 'T1');
+    const tierClass = escapeHtml((f.tier || 'T1').toLowerCase());
+    const severity = escapeHtml(f.severity || 'info');
+    const citation = escapeHtml(f.citation || '');
+    const observation = escapeHtml(f.observation || '');
+    const evidence = escapeHtml(f.evidence || '');
+    const recommendation = escapeHtml(f.recommendation || '');
 
     return `
     <div class="finding-card severity-${severity}">
@@ -29,13 +40,19 @@ function renderAuditHTML(data) {
   `;
   }).join('');
 
+  const bloomsLevel = escapeHtml(summary.bloomsLevel || 'N/A');
+  const alignmentScore = escapeHtml(summary.alignmentScore || 'N/A');
+  const keyTakeaway = escapeHtml(summary.keyTakeaway || '');
+  const draftTitle = escapeHtml(improvedDraft.title || 'Improved Draft');
+  const draftContent = escapeHtml(improvedDraft.content || '');
+
   return `
     <div class="context-card summary-card">
       <div class="score-row">
-        <span class="chip">Bloom's: <strong>${summary.bloomsLevel || 'N/A'}</strong></span>
-        <span class="chip">Alignment: <strong>${summary.alignmentScore || 'N/A'}</strong></span>
+        <span class="chip">Bloom's: <strong>${bloomsLevel}</strong></span>
+        <span class="chip">Alignment: <strong>${alignmentScore}</strong></span>
       </div>
-      <p class="key-takeaway">${summary.keyTakeaway || ''}</p>
+      <p class="key-takeaway">${keyTakeaway}</p>
     </div>
 
     <h3 class="section-title">Evidence-Based Findings (${findings.length})</h3>
@@ -43,10 +60,10 @@ function renderAuditHTML(data) {
 
     <div class="improved-box">
       <div class="improved-header">
-        <h4>${improvedDraft.title || 'Improved Draft'}</h4>
+        <h4>${draftTitle}</h4>
         <button id="copy-improved-btn" class="secondary-btn">📋 Copy to Clipboard</button>
       </div>
-      <pre class="improved-content"><code>${improvedDraft.content || ''}</code></pre>
+      <pre class="improved-content"><code>${draftContent}</code></pre>
     </div>
 
     <div class="feedback-row">
@@ -59,5 +76,7 @@ function renderAuditHTML(data) {
 }
 
 module.exports = {
+  escapeHtml,
   renderAuditHTML
 };
+

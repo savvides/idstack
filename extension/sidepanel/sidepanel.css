@@ -269,7 +269,48 @@ body {
   margin-bottom: 0;
 }
 
+/* Inline Error Card */
+.error-card {
+  border-left: 4px solid var(--severity-critical);
+  background: var(--raised);
+}
+
+.error-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.error-icon {
+  font-size: 16px;
+}
+
+.error-header h4 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--severity-critical);
+}
+
+.error-msg {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.error-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.error-actions button {
+  flex: 1;
+}
+
 /* Buttons */
+
 .primary-btn {
   width: 100%;
   padding: 10px 16px;

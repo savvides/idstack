@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { renderAuditHTML } = require('../extension/sidepanel/renderer-helper.cjs');
+const { renderAuditHTML, escapeHtml } = require('../extension/sidepanel/renderer-helper.cjs');
 
 // Test 1: Full mock audit data rendering
 const mockData = {
@@ -97,4 +97,44 @@ const partialRendered = renderAuditHTML(partialData);
 assert.ok(partialRendered.includes('Evaluate'), 'Must handle missing findings and improvedDraft');
 assert.ok(partialRendered.includes('Evidence-Based Findings (0)'), 'Must default findings to 0');
 
-console.log('✅ Task 6 renderer tests passed.');
+// Test 5: escapeHtml unit tests
+assert.strictEqual(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
+assert.strictEqual(escapeHtml("Tom & Jerry's"), 'Tom &amp; Jerry&#039;s');
+assert.strictEqual(escapeHtml(null), '');
+assert.strictEqual(escapeHtml(undefined), '');
+
+// Test 6: HTML Entity Escaping in all dynamic interpolations
+const unsafeData = {
+  summary: {
+    bloomsLevel: '<img src=x onerror=alert(1)>',
+    alignmentScore: '<b onmouseover=alert(2)>100%</b>',
+    keyTakeaway: '<script>evil()</script> & "quotes"'
+  },
+  findings: [
+    {
+      severity: 'warning',
+      tier: 'T1',
+      citation: '<a href="javascript:alert(3)">[Cite-1]</a>',
+      observation: 'Raw <tag> in observation & "quotes"',
+      evidence: '<svg onload=alert(4)> in evidence',
+      recommendation: '<iframe src=evil.com> in recommendation'
+    }
+  ],
+  improvedDraft: {
+    title: '<h1 onclick=alert(5)>Unsafe Title</h1>',
+    content: '<script>doBadThings()</script>'
+  }
+};
+
+const renderedUnsafe = renderAuditHTML(unsafeData);
+assert.ok(!renderedUnsafe.includes('<script>'), 'Must escape script tags');
+assert.ok(!renderedUnsafe.includes('<img src=x'), 'Must escape img tags');
+assert.ok(!renderedUnsafe.includes('<svg onload='), 'Must escape svg tags');
+assert.ok(!renderedUnsafe.includes('<iframe'), 'Must escape iframe tags');
+assert.ok(renderedUnsafe.includes('&lt;script&gt;evil()&lt;/script&gt; &amp; &quot;quotes&quot;'), 'Must escape keyTakeaway properly');
+assert.ok(renderedUnsafe.includes('&lt;a href=&quot;javascript:alert(3)&quot;&gt;[Cite-1]&lt;/a&gt;'), 'Must escape citation properly');
+assert.ok(renderedUnsafe.includes('&lt;tag&gt; in observation &amp; &quot;quotes&quot;'), 'Must escape observation properly');
+assert.ok(renderedUnsafe.includes('&lt;h1 onclick=alert(5)&gt;Unsafe Title&lt;/h1&gt;'), 'Must escape improvedDraft title properly');
+
+console.log('✅ Task 6 renderer & escaping tests passed.');
+

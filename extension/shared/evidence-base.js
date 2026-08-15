@@ -1,9 +1,9 @@
 export const TIER_METADATA = {
-  T1: { label: 'Meta-analysis', description: 'Systematic reviews / meta-analyses with large effect sizes', color: '#1d4e89' },
-  T2: { label: 'Controlled trial', description: 'Peer-reviewed empirical randomized or quasi-experimental studies', color: '#007791' },
-  T3: { label: 'Observational', description: 'Correlational, cohort, or longitudinal learning studies', color: '#588157' },
-  T4: { label: 'Case study', description: 'Single-institution or discipline-specific qualitative studies', color: '#c97a22' },
-  T5: { label: 'Expert guidance', description: 'Established instructional design frameworks (QM, OLC, Bloom)', color: '#6c757d' }
+  T1: { label: 'Meta-analysis', description: 'Systematic reviews / meta-analyses with large effect sizes', color: '#2f7a4a' },
+  T2: { label: 'Controlled trial', description: 'Peer-reviewed empirical randomized or quasi-experimental studies', color: '#2864a8' },
+  T3: { label: 'Observational', description: 'Correlational, cohort, or longitudinal learning studies', color: '#a87726' },
+  T4: { label: 'Case study', description: 'Single-institution or discipline-specific qualitative studies', color: '#b35a1f' },
+  T5: { label: 'Expert guidance', description: 'Established instructional design frameworks (QM, OLC, Bloom)', color: '#6b6b6b' }
 };
 
 export const EVIDENCE_DOMAINS = [

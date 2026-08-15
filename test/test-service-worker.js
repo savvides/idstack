@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { parseAuditResponse, cleanJsonResponse } = require('../extension/background/parser-helper.cjs');
+const { parseAuditResponse, cleanJsonResponse, getDemoAuditResult } = require('../extension/background/parser-helper.cjs');
 
 // Test 1: Markdown fenced JSON with '```json'
 const rawLlmResponse = "```json\n{\n  \"summary\": {\n    \"bloomsLevel\": \"Remember\",\n    \"alignmentScore\": \"Moderate\",\n    \"keyTakeaway\": \"Quiz focuses only on memorization.\"\n  },\n  \"findings\": [],\n  \"improvedDraft\": {\n    \"title\": \"Analysis Prompt\",\n    \"content\": \"Compare and contrast\"\n  }\n}\n```";
@@ -29,4 +29,26 @@ assert.strictEqual(typeof cleanJsonResponse, 'function');
 const cleaned = cleanJsonResponse('{"key": "value"}');
 assert.strictEqual(cleaned.key, 'value');
 
-console.log('✅ Task 4 response parser tests passed.');
+// Test 6: Demo fallback when API key is not configured
+assert.strictEqual(typeof getDemoAuditResult, 'function', 'getDemoAuditResult must be a function');
+const demoData = getDemoAuditResult({
+  title: 'Enzymes Lab Analysis',
+  pageType: 'Canvas Assignment'
+});
+
+assert.ok(demoData, 'Demo audit result must be returned');
+assert.ok(demoData.summary.bloomsLevel.includes('Analyze'), "Demo result must demonstrate Bloom's classification");
+assert.ok(demoData.summary.keyTakeaway.includes('Settings'), 'Demo result must note that Settings unlocks live audits');
+assert.ok(demoData.findings.length >= 2, 'Demo result must provide multiple evidence-based findings');
+
+const hasT1 = demoData.findings.some(f => f.tier === 'T1');
+const hasT2 = demoData.findings.some(f => f.tier === 'T2');
+assert.ok(hasT1, 'Demo findings must include T1 evidence tier badge');
+assert.ok(hasT2, 'Demo findings must include T2 evidence tier badge');
+
+assert.ok(demoData.improvedDraft.title, 'Demo draft must include title');
+assert.ok(demoData.improvedDraft.content.includes('Settings'), 'Demo draft must remind user to configure API key in Settings');
+assert.ok(demoData.improvedDraft.content.includes('Rubric'), 'Demo draft must provide an improved rubric draft');
+
+console.log('✅ Task 4 response parser & demo fallback tests passed.');
+

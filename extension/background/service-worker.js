@@ -1,6 +1,6 @@
 import { buildAuditPrompt } from '../shared/prompts.js';
 import { getSettings, saveAuditResult } from '../shared/storage.js';
-import { cleanJsonResponse } from './parser-helper.js';
+import { cleanJsonResponse, getDemoAuditResult } from './parser-helper.js';
 
 // Setup side panel behavior on action click
 if (typeof chrome !== 'undefined' && chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
@@ -39,21 +39,20 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
       (async () => {
         try {
           const settings = await getSettings();
-          const prompt = buildAuditPrompt(request.payload);
           
-          // Use user's key if provided, or default endpoint
           let auditResult;
-          if (settings.apiKey) {
-            auditResult = await callLlmApi(settings.apiKey, prompt);
+          if (settings && settings.apiKey && settings.apiKey.trim()) {
+            const prompt = buildAuditPrompt(request.payload);
+            auditResult = await callLlmApi(settings.apiKey.trim(), prompt);
           } else {
-            // Fallback demo mock or proxy endpoint
-            auditResult = await callLlmApi('YOUR_DEFAULT_API_KEY_OR_PROXY', prompt);
+            // Graceful demo fallback when no API key is provided
+            auditResult = getDemoAuditResult(request.payload);
           }
 
           await saveAuditResult({
-            url: request.payload.url,
-            title: request.payload.title,
-            pageType: request.payload.pageType,
+            url: request.payload?.url || '',
+            title: request.payload?.title || 'Current Tab',
+            pageType: request.payload?.pageType || 'Web Page',
             result: auditResult
           });
 
@@ -67,4 +66,5 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
   });
 }
 
-export { cleanJsonResponse, callLlmApi };
+export { cleanJsonResponse, getDemoAuditResult, callLlmApi };
+

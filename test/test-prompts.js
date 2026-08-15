@@ -4,6 +4,12 @@ const { EVIDENCE_DOMAINS, TIER_METADATA, buildAuditPrompt } = require('../extens
 assert.ok(EVIDENCE_DOMAINS.length >= 10, 'Should include all core idstack research domains');
 assert.ok(TIER_METADATA.T1, 'Tier 1 metadata must exist');
 assert.strictEqual(TIER_METADATA.T1.label, 'Meta-analysis');
+assert.strictEqual(TIER_METADATA.T1.color, '#2f7a4a', 'T1 must match canonical DESIGN.md color');
+assert.strictEqual(TIER_METADATA.T2.color, '#2864a8', 'T2 must match canonical DESIGN.md color');
+assert.strictEqual(TIER_METADATA.T3.color, '#a87726', 'T3 must match canonical DESIGN.md color');
+assert.strictEqual(TIER_METADATA.T4.color, '#b35a1f', 'T4 must match canonical DESIGN.md color');
+assert.strictEqual(TIER_METADATA.T5.color, '#6b6b6b', 'T5 must match canonical DESIGN.md color');
+
 
 const prompt = buildAuditPrompt({
   title: 'Biology 101 - Cell Division Assignment',

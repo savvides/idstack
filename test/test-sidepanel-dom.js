@@ -47,4 +47,9 @@ assert.ok(css.includes('Source Serif 4'), 'CSS must use Source Serif 4 typograph
 assert.ok(css.includes('Public Sans'), 'CSS must use Public Sans typography');
 assert.ok(css.includes('JetBrains Mono'), 'CSS must use JetBrains Mono for citations');
 
+// Error Card Styles
+assert.ok(css.includes('.error-card'), 'CSS must include .error-card class');
+assert.ok(css.includes('.error-actions'), 'CSS must include .error-actions class');
+
 console.log('✅ Task 5 side panel DOM and CSS token tests passed.');
+
