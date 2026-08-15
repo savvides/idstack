@@ -22,7 +22,6 @@
     {
       "matches": [
         "*://*.instructure.com/*",
-        "*://canvas.*.edu/*",
         "*://docs.google.com/document/*",
         "<all_urls>"
       ],
