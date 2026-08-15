@@ -21,7 +21,26 @@ export async function refreshActiveTab() {
         return;
       }
     } catch (err) {
-      // Content script not ready or page did not respond
+      // Content script may not be injected on pre-existing tabs. Attempt programmatic injection.
+      if (chrome.scripting && chrome.scripting.executeScript) {
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content/extractor.js']
+          });
+          const retryResponse = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_CONTENT' });
+          if (retryResponse) {
+            activePayload = retryResponse;
+            const pageTypeTag = document.getElementById('page-type-tag');
+            const pageTitle = document.getElementById('page-title');
+            if (pageTypeTag) pageTypeTag.textContent = retryResponse.pageType;
+            if (pageTitle) pageTitle.textContent = retryResponse.title;
+            return;
+          }
+        } catch (injectionErr) {
+          // Tab may be a chrome:// or restricted URL
+        }
+      }
     }
 
     // Fallback payload if content script extraction fails

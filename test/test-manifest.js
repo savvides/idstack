@@ -12,6 +12,7 @@ assert.strictEqual(manifest.name, 'idstack — Evidence-Based Course Design');
 assert.ok(manifest.permissions.includes('sidePanel'));
 assert.ok(manifest.permissions.includes('storage'));
 assert.ok(manifest.permissions.includes('activeTab'));
+assert.ok(manifest.host_permissions && manifest.host_permissions.includes('https://generativelanguage.googleapis.com/*'), 'host_permissions for AI API required');
 
 // Storage helper check
 const storagePath = path.join(__dirname, '../extension/shared/storage.js');
