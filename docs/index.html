@@ -41,7 +41,7 @@
     "description": "Open-source instructional design skills backed by peer-reviewed research across 11 domains. Every recommendation cites its evidence tier. Runs in Claude Code.",
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
-    "operatingSystem": "macOS, Linux, Windows",
+    "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
     "softwareVersion": "3.4.0.1",
     "datePublished": "2026-04-20",
     "offers": {
@@ -1009,7 +1009,7 @@
       <header class="section-header">
         <p class="eyebrow">Pipeline</p>
         <h2 id="pipeline-title">Eleven skills. Pipeline optional.</h2>
-        <p class="lede">Eight of them run end-to-end as the standard sequence; two utilities (course-import and learn) sit outside it. Use one command for the full pipeline, or invoke any skill on its own — none of them require an existing manifest.</p>
+        <p class="lede">Eight run end-to-end as the standard sequence, <code>/idstack:pipeline</code> orchestrates them, and two utilities (course-import and learn) sit outside the chain. Invoke any skill on its own — none of them require an existing manifest.</p>
       </header>
 
       <div class="pipeline-canvas">
@@ -1123,7 +1123,7 @@
     <section class="section" id="install" aria-labelledby="install-title">
       <header class="section-header">
         <p class="eyebrow">Install</p>
-        <h2 id="install-title">Install in about five minutes.</h2>
+        <h2 id="install-title">Install in 30 seconds.</h2>
       </header>
 
       <div class="install-block" role="group" aria-label="Install command">
@@ -1149,7 +1149,7 @@
         <h3>One host, supported properly.</h3>
         <p>idstack shipped an OpenAI Codex CLI build from v2.5.0.0 through v3.3.0.4. It is removed. Every skill, the evidence base, the project manifest, and the HTML reports are unchanged — idstack now targets Claude Code and nothing else, which is the only place it was ever tested end to end.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: dated release note, not a capability claim -->
         <p>To update: <code>cd</code> into your idstack clone, then <code>git pull &amp;&amp; ./setup</code>. If you had the Codex build installed, <code>./setup</code> can no longer clean it up — the <a href="https://github.com/savvides/idstack/blob/main/CHANGELOG.md" rel="noopener">release notes</a> carry the two paths to remove.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: dated release note, not a capability claim -->
-        <p>Patched in v3.4.0.1 (August 7): three evidence cards on this page overstated their domain's evidence tier. They are derived from <code>evidence/references.md</code> now, and the test suite fails if they ever disagree again.</p>
+        <p>Patched in v3.4.0.1 (August 7): three evidence cards on this page overstated their domain's evidence tier. They are derived from <code>evidence/references.md</code> now, and the test suite fails if they ever disagree again. The same patch added the outbound Canvas API upload in <code>/idstack:course-export</code> and the <code>git fetch</code> in <code>bin/idstack-update-check</code> to <a href="https://github.com/savvides/idstack/blob/main/PRIVACY.md" rel="noopener">the privacy policy</a>, and named WSL or Git Bash in the Windows install instructions.</p>
       </article>
 
       <article class="release-card">
