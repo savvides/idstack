@@ -177,6 +177,16 @@ idstack installed (Claude Code) — scope: user.
   More info: https://idstack.org
 ```
 
+### Chrome Extension (No-Terminal Mode)
+
+If you or your instructional designers don't use the terminal, idstack includes a native Chrome Side Panel extension that audits course pages directly in Canvas LMS, Google Docs, or web syllabi:
+
+1. Open Chrome and navigate to `chrome://extensions/`.
+2. Enable **Developer mode** in the top-right corner.
+3. Click **Load unpacked** and select the `extension/` directory from this repo.
+4. Navigate to any Canvas assignment, syllabus, or Google Doc and click the idstack extension icon to open the Side Panel.
+5. Click **"Audit Page with Evidence"** for instant Bloom's classification, constructive alignment reviews, and 1-click improved rubrics.
+
 ## Your design team
 
 idstack turns Claude Code into an evidence-based instructional design team. Each skill is a specialist. All invoked via `/idstack:<skill>`.

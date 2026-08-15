@@ -2,9 +2,9 @@ const assert = require('assert');
 const { parseAuditResponse, cleanJsonResponse } = require('../extension/background/parser-helper.cjs');
 
 // Test 1: Markdown fenced JSON with '```json'
-const rawGeminiResponse = "```json\n{\n  \"summary\": {\n    \"bloomsLevel\": \"Remember\",\n    \"alignmentScore\": \"Moderate\",\n    \"keyTakeaway\": \"Quiz focuses only on memorization.\"\n  },\n  \"findings\": [],\n  \"improvedDraft\": {\n    \"title\": \"Analysis Prompt\",\n    \"content\": \"Compare and contrast\"\n  }\n}\n```";
+const rawLlmResponse = "```json\n{\n  \"summary\": {\n    \"bloomsLevel\": \"Remember\",\n    \"alignmentScore\": \"Moderate\",\n    \"keyTakeaway\": \"Quiz focuses only on memorization.\"\n  },\n  \"findings\": [],\n  \"improvedDraft\": {\n    \"title\": \"Analysis Prompt\",\n    \"content\": \"Compare and contrast\"\n  }\n}\n```";
 
-const parsed = parseAuditResponse(rawGeminiResponse);
+const parsed = parseAuditResponse(rawLlmResponse);
 assert.strictEqual(parsed.summary.bloomsLevel, 'Remember');
 assert.strictEqual(parsed.improvedDraft.title, 'Analysis Prompt');
 assert.strictEqual(parsed.summary.alignmentScore, 'Moderate');

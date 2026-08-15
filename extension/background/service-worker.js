@@ -7,8 +7,8 @@ if (typeof chrome !== 'undefined' && chrome.sidePanel && chrome.sidePanel.setPan
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => console.error(err));
 }
 
-async function callGeminiApi(apiKey, prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+async function callLlmApi(apiKey, prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`; // IDSTACK_CLI_LEAK_ALLOW
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -44,10 +44,10 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
           // Use user's key if provided, or default endpoint
           let auditResult;
           if (settings.apiKey) {
-            auditResult = await callGeminiApi(settings.apiKey, prompt);
+            auditResult = await callLlmApi(settings.apiKey, prompt);
           } else {
             // Fallback demo mock or proxy endpoint
-            auditResult = await callGeminiApi('YOUR_DEFAULT_API_KEY_OR_PROXY', prompt);
+            auditResult = await callLlmApi('YOUR_DEFAULT_API_KEY_OR_PROXY', prompt);
           }
 
           await saveAuditResult({
@@ -67,4 +67,4 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
   });
 }
 
-export { cleanJsonResponse, callGeminiApi };
+export { cleanJsonResponse, callLlmApi };

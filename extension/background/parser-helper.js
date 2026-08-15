@@ -1,5 +1,5 @@
 /**
- * Helper to clean and parse JSON responses from LLM / Gemini API.
+ * Helper to clean and parse JSON responses from LLM API.
  */
 export function cleanJsonResponse(rawText) {
   let cleaned = rawText.trim();
