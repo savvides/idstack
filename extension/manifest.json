@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "idstack — Evidence-Based Course Design",
+  "version": "1.0.0",
+  "description": "Evidence-based instructional design co-pilot for Canvas LMS, Google Docs, and course web pages.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Open idstack Course Co-Pilot"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.instructure.com/*",
+        "*://canvas.*.edu/*",
+        "*://docs.google.com/document/*",
+        "<all_urls>"
+      ],
+      "js": ["content/extractor.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "activeTab",
+    "scripting"
+  ]
+}
