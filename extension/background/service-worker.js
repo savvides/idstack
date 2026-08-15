@@ -1,6 +1,7 @@
-import { buildAuditPrompt } from '../shared/prompts.js';
+import { buildAuditPrompt, buildCourseAuditPrompt } from '../shared/prompts.js';
 import { getSettings, saveAuditResult } from '../shared/storage.js';
-import { cleanJsonResponse, getDemoAuditResult } from './parser-helper.js';
+import { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } from './parser-helper.js';
+import { crawlCanvasCourse } from './canvas-crawler.js';
 
 // Setup side panel behavior on action click
 if (typeof chrome !== 'undefined' && chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
@@ -63,8 +64,40 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
       })();
       return true; // async reply
     }
+
+    if (request.action === 'CRAWL_AND_AUDIT_COURSE') {
+      (async () => {
+        try {
+          const { origin, courseId } = request.payload || {};
+          const courseData = await crawlCanvasCourse(origin, courseId);
+          const settings = await getSettings();
+
+          let auditResult;
+          if (settings && settings.apiKey && settings.apiKey.trim()) {
+            const prompt = buildCourseAuditPrompt(courseData);
+            auditResult = await callLlmApi(settings.apiKey.trim(), prompt);
+          } else {
+            // Graceful demo fallback for course audit
+            auditResult = getDemoCourseAuditResult(courseData);
+          }
+
+          await saveAuditResult({
+            url: `${origin}/courses/${courseId}`,
+            title: courseData.title || 'Canvas Course',
+            pageType: 'Canvas Course (Full Audit)',
+            result: auditResult
+          });
+
+          sendResponse({ success: true, data: auditResult, courseData });
+        } catch (err) {
+          sendResponse({ success: false, error: err.message });
+        }
+      })();
+      return true; // async reply
+    }
   });
 }
 
-export { cleanJsonResponse, getDemoAuditResult, callLlmApi };
+export { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult, crawlCanvasCourse, callLlmApi };
+
 

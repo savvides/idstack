@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { parseAuditResponse, cleanJsonResponse, getDemoAuditResult } = require('../extension/background/parser-helper.cjs');
+const { parseAuditResponse, cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } = require('../extension/background/parser-helper.cjs');
 
 // Test 1: Markdown fenced JSON with '```json'
 const rawLlmResponse = "```json\n{\n  \"summary\": {\n    \"bloomsLevel\": \"Remember\",\n    \"alignmentScore\": \"Moderate\",\n    \"keyTakeaway\": \"Quiz focuses only on memorization.\"\n  },\n  \"findings\": [],\n  \"improvedDraft\": {\n    \"title\": \"Analysis Prompt\",\n    \"content\": \"Compare and contrast\"\n  }\n}\n```";
@@ -50,5 +50,16 @@ assert.ok(demoData.improvedDraft.title, 'Demo draft must include title');
 assert.ok(demoData.improvedDraft.content.includes('Settings'), 'Demo draft must remind user to configure API key in Settings');
 assert.ok(demoData.improvedDraft.content.includes('Rubric'), 'Demo draft must provide an improved rubric draft');
 
+// Test 7: Demo course-level audit fallback
+assert.strictEqual(typeof getDemoCourseAuditResult, 'function', 'getDemoCourseAuditResult must be a function');
+const demoCourseData = getDemoCourseAuditResult({
+  title: 'Biology 101: Cell Systems'
+});
+assert.ok(demoCourseData, 'Demo course audit result must be returned');
+assert.ok(demoCourseData.summary.keyTakeaway.includes('Course-Level Demo'));
+assert.ok(demoCourseData.findings.length >= 2);
+assert.ok(demoCourseData.improvedDraft.title.includes('Matrix'));
+
 console.log('✅ Task 4 response parser & demo fallback tests passed.');
+
 

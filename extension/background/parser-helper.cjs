@@ -71,9 +71,58 @@ Analyze the core case scenario and formulate a structured recommendation address
   };
 }
 
+function getDemoCourseAuditResult(payload = {}) {
+  const title = payload.title || 'Sample Canvas Course';
+  return {
+    summary: {
+      bloomsLevel: 'Analyze & Evaluate (Levels 4-5)',
+      alignmentScore: 'Moderate (74%)',
+      keyTakeaway: `[Course-Level Demo] Full-course audit for "${title}". Alignment gaps identified between week 1-4 recall quizzes and week 12 analytical capstone.`
+    },
+    findings: [
+      {
+        severity: 'critical',
+        tier: 'T2',
+        citation: '[Alignment-3] Direct Constructive Alignment',
+        observation: 'Modules 1-6 assess solely lower-order factual recall, while the final course project demands high-order synthesis without intermediate scaffolding.',
+        evidence: 'Biggs (1996) & Liou et al. (2023) [T2 controlled trial]: Abrupt jumps in cognitive demand without progressive assessment scaffolding increase failure rates.',
+        recommendation: 'Introduce mid-semester milestone case studies in Module 4 to bridge the gap between quizzes and the final capstone.'
+      },
+      {
+        severity: 'warning',
+        tier: 'T1',
+        citation: '[Cognitive-2] Cognitive Load & Spaced Practice',
+        observation: 'Major assignment deadlines are clustered in Week 14-15 with no spaced formative checkpoints.',
+        evidence: 'Carpenter et al. (2022) [T1 meta-analysis, d=0.61]: Distributing assessments across spaced intervals produces significantly higher long-term retention.',
+        recommendation: 'Redistribute submission checkpoints into 3 progressive deliverables across weeks 6, 10, and 14.'
+      },
+      {
+        severity: 'info',
+        tier: 'T1',
+        citation: '[Assessment-8] Formative Rubric Transparency',
+        observation: 'Syllabus grading policy lacks explicit performance criteria for collaborative group deliverables.',
+        evidence: 'Wisniewski et al. (2020) [T1 meta-analysis]: Pre-distribution of analytic rubrics with milestone criteria boosts student self-regulation and achievement.',
+        recommendation: 'Publish the multi-tier analytic grading rubric during the initial module launch.'
+      }
+    ],
+    improvedDraft: {
+      title: 'Course-Wide Constructive Alignment Matrix',
+      content: `### Course Alignment Matrix: ${title}
+
+| Week / Module | Intended Learning Outcome | Formative Checkpoint [T1] | Summative Assessment [T2] |
+| :--- | :--- | :--- | :--- |
+| **Weeks 1-3** | Foundational Cell Structure | Spaced Knowledge Check (10 pts) | Module 1 Synthesis Quiz |
+| **Weeks 4-7** | Enzyme Kinetics & Modeling | Case Problem Milestone 1 [T2] | Lab Protocol Analysis |
+| **Weeks 8-11** | Experimental Troubleshooting | Peer Review Protocol [T1] | Milestone 2 Experimental Draft |
+| **Weeks 12-15**| Autonomous Investigation | Scaffolded Capstone Consult | Final Research Capstone |`
+    }
+  };
+}
+
 module.exports = {
   cleanJsonResponse,
   parseAuditResponse,
-  getDemoAuditResult
+  getDemoAuditResult,
+  getDemoCourseAuditResult
 };
 
