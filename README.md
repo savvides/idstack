@@ -187,6 +187,22 @@ If you or your instructional designers don't use the terminal, idstack includes 
 4. Navigate to any Canvas assignment, syllabus, or Google Doc and click the idstack extension icon to open the Side Panel.
 5. Click **"Audit Page with Evidence"** for instant Bloom's classification, constructive alignment reviews, and 1-click improved rubrics.
 
+#### Full Course Audit (Canvas LMS)
+
+When viewing any Canvas course homepage or modules list (`/courses/:id`), idstack automatically detects the course environment and presents an **"Audit Entire Course"** button:
+- **Zero Developer Tokens Required:** Crawls published syllabus items, modules, assignments, discussions, and quizzes in the background using your active browser session. No Canvas API keys, LMS admin setup, or command line required.
+- **Course Quality Matrix:** Synthesizes findings across all modules into an interactive course health dashboard, highlighting cognitive process distribution across Bloom's levels, constructive alignment gaps, and prioritized action items.
+- **Export Ready:** Download the full synthesized course audit as JSON or Markdown to share with instructional design teams and faculty stakeholders.
+
+#### Free Google AI Studio API Key Setup
+
+idstack includes a rich built-in simulation fallback mode for instant demonstration without API keys. To connect live LLM inference:
+1. Obtain a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. In the idstack Side Panel, click the **Settings** (gear) icon in the top header.
+3. Paste your API key into the input field and click **Save Settings**.
+4. All prompts execute client-side directly against Google's API (`gemini-2.5-flash`). Zero student PII or course content is stored or transmitted to external intermediary servers. <!-- IDSTACK_CLI_LEAK_ALLOW -->
+
+
 ## Your design team
 
 idstack turns Claude Code into an evidence-based instructional design team. Each skill is a specialist. All invoked via `/idstack:<skill>`.
