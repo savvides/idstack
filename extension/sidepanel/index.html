@@ -15,7 +15,14 @@
       <span class="logo">idstack</span>
       <span class="badge-version">v1.0</span>
     </div>
-    <button id="settings-toggle" class="icon-btn" title="Settings & Privacy">⚙</button>
+    <div class="header-actions">
+      <button id="dossier-toggle-btn" class="dossier-pill" title="Course Audit Dossier">
+        <span class="dossier-icon">📁</span>
+        <span class="dossier-label">Dossier</span>
+        <span id="dossier-count" class="dossier-count-badge">0</span>
+      </button>
+      <button id="settings-toggle" class="icon-btn" title="Settings & Privacy">⚙</button>
+    </div>
   </header>
 
   <main class="content-body">
@@ -54,7 +61,30 @@
 
     <!-- Results State -->
     <section id="results-state" class="state-panel">
+      <div class="result-actions-bar">
+        <button id="add-to-dossier-btn" class="secondary-btn">➕ Add to Dossier</button>
+        <button id="export-single-md-btn" class="secondary-btn">📥 Export .md</button>
+      </div>
       <div id="results-container"></div>
+    </section>
+
+    <!-- Dossier Drawer -->
+    <section id="dossier-drawer" class="drawer">
+      <div class="drawer-header">
+        <h3>Course Audit Dossier</h3>
+        <button id="close-dossier" class="icon-btn" title="Close Dossier">✕</button>
+      </div>
+      <div class="drawer-body">
+        <p class="drawer-intro">Collected audits for compiled course-level markdown export.</p>
+        <div id="dossier-list" class="dossier-list"></div>
+        <div class="dossier-drawer-actions">
+          <button id="export-dossier-md-btn" class="primary-btn">📥 Download Compiled .md</button>
+          <div class="dossier-secondary-actions">
+            <button id="copy-dossier-md-btn" class="secondary-btn">📋 Copy Markdown</button>
+            <button id="clear-dossier-btn" class="secondary-btn danger-btn">🗑️ Clear Dossier</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Settings Drawer -->
@@ -79,6 +109,7 @@
       </div>
     </section>
   </main>
+
 
   <script type="module" src="sidepanel.js"></script>
 </body>

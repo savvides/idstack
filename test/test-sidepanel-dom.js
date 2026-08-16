@@ -63,6 +63,22 @@ assert.ok(css.includes('.progress-bar-container'), 'CSS must include .progress-b
 assert.ok(css.includes('.progress-bar-fill'), 'CSS must include .progress-bar-fill class');
 assert.ok(css.includes('.help-link'), 'CSS must include .help-link class');
 
+// Dossier UI Elements & Styles
+assert.ok(html.includes('id="dossier-toggle-btn"'), 'dossier-toggle-btn must exist in header');
+assert.ok(html.includes('id="dossier-count"'), 'dossier-count element must exist');
+assert.ok(html.includes('id="add-to-dossier-btn"'), 'add-to-dossier-btn must exist');
+assert.ok(html.includes('id="export-single-md-btn"'), 'export-single-md-btn must exist');
+assert.ok(html.includes('id="dossier-drawer"'), 'dossier-drawer must exist');
+assert.ok(html.includes('id="export-dossier-md-btn"'), 'export-dossier-md-btn must exist in dossier drawer');
+assert.ok(html.includes('id="copy-dossier-md-btn"'), 'copy-dossier-md-btn must exist in dossier drawer');
+assert.ok(html.includes('id="clear-dossier-btn"'), 'clear-dossier-btn must exist in dossier drawer');
+
+assert.ok(css.includes('.dossier-pill'), 'CSS must include .dossier-pill class');
+assert.ok(css.includes('.result-actions-bar'), 'CSS must include .result-actions-bar class');
+assert.ok(css.includes('.dossier-list'), 'CSS must include .dossier-list class');
+assert.ok(css.includes('.dossier-item'), 'CSS must include .dossier-item class');
+assert.ok(css.includes('.dossier-delete-btn'), 'CSS must include .dossier-delete-btn class');
+
 console.log('✅ Side panel DOM, progress bar, and CSS token tests passed.');
 
 

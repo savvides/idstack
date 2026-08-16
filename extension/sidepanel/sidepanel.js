@@ -1,9 +1,65 @@
-import { getSettings, saveSettings } from '../shared/storage.js';
-import { renderAuditHTML } from './renderer-helper.js';
+import { getSettings, saveSettings, getDossier, addToDossier, removeFromDossier, clearDossier } from '../shared/storage.js';
+import { renderAuditHTML, renderDossierListHTML } from './renderer-helper.js';
 import { detectCourseContext } from '../content/extractor-core.js';
+import { compileSingleAuditToMarkdown, compileDossierToMarkdown } from '../shared/dossier-compiler.js';
 
 let activePayload = null;
 let activeCourseContext = null;
+let activeAuditResult = null;
+let activeAuditItem = null;
+
+function sanitizeFilename(name) {
+  return String(name || 'material')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || 'material';
+}
+
+function downloadMarkdownFile(filename, content) {
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export async function updateDossierBadge() {
+  const countEl = document.getElementById('dossier-count');
+  if (!countEl) return;
+  try {
+    const dossier = await getDossier();
+    countEl.textContent = String(dossier ? dossier.length : 0);
+  } catch (e) {
+    countEl.textContent = '0';
+  }
+}
+
+export async function updateDossierUI() {
+  await updateDossierBadge();
+  const listEl = document.getElementById('dossier-list');
+  if (!listEl) return;
+  try {
+    const dossier = await getDossier();
+    listEl.innerHTML = renderDossierListHTML(dossier);
+
+    listEl.querySelectorAll('.dossier-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-dossier-id');
+        if (id) {
+          await removeFromDossier(id);
+          await updateDossierUI();
+        }
+      });
+    });
+  } catch (e) {
+    listEl.innerHTML = '<div class="dossier-empty"><p>Error loading dossier.</p></div>';
+  }
+}
 
 export async function refreshActiveTab() {
   if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.tabs.query) return;
@@ -75,6 +131,21 @@ export function showState(stateName) {
 }
 
 export function renderResults(data) {
+  activeAuditResult = data;
+  activeAuditItem = {
+    id: activePayload?.url || `item-${Date.now()}`,
+    title: activePayload?.title || 'Course Material',
+    pageType: activePayload?.pageType || 'Web Page',
+    url: activePayload?.url || '',
+    result: data,
+    timestamp: new Date().toISOString()
+  };
+
+  const addToDossierBtn = document.getElementById('add-to-dossier-btn');
+  if (addToDossierBtn) {
+    addToDossierBtn.textContent = '➕ Add to Dossier';
+  }
+
   const container = document.getElementById('results-container');
   if (!container) return;
 
@@ -159,6 +230,30 @@ export function renderError(errorMessage) {
   }
 
   showState('results');
+}
+
+// Result Action Bar: Add to Dossier & Export Single .md
+const addToDossierBtn = document.getElementById('add-to-dossier-btn');
+if (addToDossierBtn) {
+  addToDossierBtn.addEventListener('click', async () => {
+    if (!activeAuditItem) return;
+    await addToDossier(activeAuditItem);
+    await updateDossierBadge();
+    addToDossierBtn.textContent = '✓ Added to Dossier';
+    setTimeout(() => {
+      addToDossierBtn.textContent = '➕ Add to Dossier';
+    }, 2000);
+  });
+}
+
+const exportSingleMdBtn = document.getElementById('export-single-md-btn');
+if (exportSingleMdBtn) {
+  exportSingleMdBtn.addEventListener('click', () => {
+    if (!activeAuditItem) return;
+    const md = compileSingleAuditToMarkdown(activeAuditItem);
+    const safeTitle = sanitizeFilename(activeAuditItem.title);
+    downloadMarkdownFile(`idstack-audit-${safeTitle}.md`, md);
+  });
 }
 
 // Single-page Audit button click handler
@@ -256,6 +351,67 @@ if (auditCourseBtn) {
   });
 }
 
+// Dossier Drawer Management & Actions
+const dossierToggleBtn = document.getElementById('dossier-toggle-btn');
+const closeDossier = document.getElementById('close-dossier');
+const dossierDrawer = document.getElementById('dossier-drawer');
+const exportDossierMdBtn = document.getElementById('export-dossier-md-btn');
+const copyDossierMdBtn = document.getElementById('copy-dossier-md-btn');
+const clearDossierBtn = document.getElementById('clear-dossier-btn');
+
+if (dossierToggleBtn && dossierDrawer) {
+  dossierToggleBtn.addEventListener('click', async () => {
+    const settingsDrawer = document.getElementById('settings-drawer');
+    if (settingsDrawer) settingsDrawer.classList.remove('open');
+    dossierDrawer.classList.toggle('open');
+    if (dossierDrawer.classList.contains('open')) {
+      await updateDossierUI();
+    }
+  });
+}
+
+if (closeDossier && dossierDrawer) {
+  closeDossier.addEventListener('click', () => {
+    dossierDrawer.classList.remove('open');
+  });
+}
+
+if (exportDossierMdBtn) {
+  exportDossierMdBtn.addEventListener('click', async () => {
+    const dossier = await getDossier();
+    const courseTitle = (activeCourseContext && activeCourseContext.courseId)
+      ? `Course ${activeCourseContext.courseId}`
+      : (activePayload?.title || 'Canvas Course');
+    const md = compileDossierToMarkdown(dossier, courseTitle);
+    const safeTitle = sanitizeFilename(courseTitle);
+    downloadMarkdownFile(`idstack-course-dossier-${safeTitle}.md`, md);
+  });
+}
+
+if (copyDossierMdBtn) {
+  copyDossierMdBtn.addEventListener('click', async () => {
+    const dossier = await getDossier();
+    const courseTitle = (activeCourseContext && activeCourseContext.courseId)
+      ? `Course ${activeCourseContext.courseId}`
+      : (activePayload?.title || 'Canvas Course');
+    const md = compileDossierToMarkdown(dossier, courseTitle);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(md);
+    }
+    copyDossierMdBtn.textContent = '✓ Copied!';
+    setTimeout(() => {
+      copyDossierMdBtn.textContent = '📋 Copy Markdown';
+    }, 2000);
+  });
+}
+
+if (clearDossierBtn) {
+  clearDossierBtn.addEventListener('click', async () => {
+    await clearDossier();
+    await updateDossierUI();
+  });
+}
+
 // Settings Drawer Management
 const settingsToggle = document.getElementById('settings-toggle');
 const closeSettings = document.getElementById('close-settings');
@@ -265,6 +421,7 @@ const apiKeyInput = document.getElementById('api-key-input');
 
 if (settingsToggle && settingsDrawer) {
   settingsToggle.addEventListener('click', () => {
+    if (dossierDrawer) dossierDrawer.classList.remove('open');
     settingsDrawer.classList.toggle('open');
   });
 }
@@ -287,7 +444,7 @@ if (saveSettingsBtn && apiKeyInput) {
   });
 }
 
-// Load initial settings
+// Load initial settings & dossier count
 (async () => {
   if (apiKeyInput) {
     try {
@@ -299,6 +456,7 @@ if (saveSettingsBtn && apiKeyInput) {
       // Ignored if storage not initialized
     }
   }
+  await updateDossierBadge();
 })();
 
 // Listen for tab switching / updates
@@ -321,4 +479,5 @@ if (typeof chrome !== 'undefined' && chrome.tabs) {
 if (typeof chrome !== 'undefined' && chrome.tabs) {
   refreshActiveTab();
 }
+
 

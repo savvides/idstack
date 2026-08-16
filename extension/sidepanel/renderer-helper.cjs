@@ -75,8 +75,42 @@ function renderAuditHTML(data) {
   `;
 }
 
+function renderDossierListHTML(dossierItems) {
+  if (!Array.isArray(dossierItems) || dossierItems.length === 0) {
+    return `
+      <div class="dossier-empty">
+        <p>No items in dossier yet.</p>
+        <p class="help-text">Audit pages and click &ldquo;Add to Dossier&rdquo; to build your course dossier.</p>
+      </div>
+    `;
+  }
+
+  return dossierItems.map((item) => {
+    const id = escapeHtml(item.id || '');
+    const title = escapeHtml(item.title || 'Untitled Material');
+    const pageType = escapeHtml(item.pageType || 'Page');
+    const blooms = escapeHtml(item.result?.summary?.bloomsLevel || 'N/A');
+    const alignment = escapeHtml(item.result?.summary?.alignmentScore || 'N/A');
+
+    return `
+      <div class="dossier-item" data-dossier-id="${id}">
+        <div class="dossier-item-header">
+          <span class="chip">${pageType}</span>
+          <button class="dossier-delete-btn icon-btn" data-dossier-id="${id}" title="Remove from Dossier">✕</button>
+        </div>
+        <h4 class="dossier-item-title">${title}</h4>
+        <div class="dossier-item-meta">
+          <span>Bloom's: <strong>${blooms}</strong></span>
+          <span>Alignment: <strong>${alignment}</strong></span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 module.exports = {
   escapeHtml,
-  renderAuditHTML
+  renderAuditHTML,
+  renderDossierListHTML
 };
 

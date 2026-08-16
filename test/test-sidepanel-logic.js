@@ -146,6 +146,35 @@ const renderedCourse = renderAuditHTML(courseResult);
 assert.ok(renderedCourse.includes('Course Alignment Matrix'));
 assert.ok(renderedCourse.includes('High (88%)'));
 
-console.log('✅ Side panel renderer, escaping & course matrix tests passed.');
+// Test 8: Dossier Item Rendering in Drawer
+const { renderDossierListHTML } = require('../extension/sidepanel/renderer-helper.cjs');
+assert.strictEqual(typeof renderDossierListHTML, 'function', 'renderDossierListHTML must be a function');
+const listHtml = renderDossierListHTML([
+  { id: '1', title: 'Week 1 Quiz', pageType: 'Assignment', result: { summary: { bloomsLevel: 'Remember', alignmentScore: 'Low' } } }
+]);
+assert.ok(listHtml.includes('Week 1 Quiz'), 'Must render item title');
+assert.ok(listHtml.includes('Assignment'), 'Must render item page type');
+assert.ok(listHtml.includes('data-dossier-id="1"'), 'Must include data-dossier-id attribute');
+
+// Empty and edge cases
+assert.ok(renderDossierListHTML([]).includes('No items in dossier yet'), 'Must handle empty array gracefully');
+assert.ok(renderDossierListHTML(null).includes('No items in dossier yet'), 'Must handle null gracefully');
+assert.ok(renderDossierListHTML(undefined).includes('No items in dossier yet'), 'Must handle undefined gracefully');
+
+// HTML Entity Escaping in Dossier List
+const unsafeDossier = [
+  {
+    id: 'xss-1',
+    title: '<script>alert(1)</script>',
+    pageType: '<img src=x>',
+    result: { summary: { bloomsLevel: '<b>Bold</b>', alignmentScore: '<i>Italic</i>' } }
+  }
+];
+const escapedDossierHtml = renderDossierListHTML(unsafeDossier);
+assert.ok(!escapedDossierHtml.includes('<script>'), 'Must escape script tags in dossier title');
+assert.ok(!escapedDossierHtml.includes('<img src=x>'), 'Must escape img tags in dossier page type');
+assert.ok(escapedDossierHtml.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), 'Must properly escape characters in dossier title');
+
+console.log('✅ Side panel renderer, escaping, course matrix & dossier tests passed.');
 
 

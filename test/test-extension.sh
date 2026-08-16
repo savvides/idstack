@@ -9,6 +9,7 @@ node "$DIR/test-prompts.js"
 node "$DIR/test-extractor.js"
 node "$DIR/test-crawler.js"
 node "$DIR/test-service-worker.js"
+node "$DIR/test-dossier-compiler.js"
 node "$DIR/test-sidepanel-dom.js"
 node "$DIR/test-sidepanel-logic.js"
 
