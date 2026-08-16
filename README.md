@@ -194,6 +194,13 @@ When viewing any Canvas course homepage or modules list (`/courses/:id`), idstac
 - **Course Quality Matrix:** Synthesizes findings across all modules into an interactive course health dashboard, highlighting cognitive process distribution across Bloom's levels, constructive alignment gaps, and prioritized action items.
 - **Export Ready:** Download the full synthesized course audit as JSON or Markdown to share with instructional design teams and faculty stakeholders.
 
+#### Multi-Page Course Dossier & Markdown Export
+
+Audit multiple pages across a course or syllabus and accumulate findings into a structured institutional deliverable:
+- **Incremental Dossier Accumulation:** Click **"Add to Dossier"** on any page audit (assignments, quizzes, syllabi, Google Docs). The header dossier badge tracks your collected course components across browsing sessions.
+- **1-Click Compiled Markdown Export (`.md`):** Open the Dossier drawer to download a synthesized multi-page Markdown report (`idstack-course-dossier-<title>.md`) containing executive summaries, cognitive demand tables, itemized empirical citations (T1–T5), and improved rubric drafts.
+- **Clipboard Ready:** Copy the compiled Markdown report directly to your clipboard for pasting into LMS course notes, Google Docs, Notion, or faculty review tickets.
+
 #### Free Google AI Studio API Key Setup
 
 idstack includes a rich built-in simulation fallback mode for instant demonstration without API keys. To connect live LLM inference:
