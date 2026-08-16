@@ -9,5 +9,6 @@ idstack/
 .gstack/
 _site/
 .superpowers/
+build/
 dist/
 *.zip

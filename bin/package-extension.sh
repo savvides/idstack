@@ -6,15 +6,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 EXT_DIR="$REPO_ROOT/extension"
-DIST_DIR="$REPO_ROOT/dist"
+BUILD_DIR="$REPO_ROOT/build"
 ZIP_NAME="idstack-chrome-extension-v1.0.0.zip"
-ZIP_PATH="$DIST_DIR/$ZIP_NAME"
+ZIP_PATH="$BUILD_DIR/$ZIP_NAME"
 
 echo "==> Verifying extension test suite..."
 "$REPO_ROOT/test/test-extension.sh"
 
-echo "==> Creating distribution directory: $DIST_DIR"
-mkdir -p "$DIST_DIR"
+echo "==> Creating build directory: $BUILD_DIR"
+mkdir -p "$BUILD_DIR"
 rm -f "$ZIP_PATH"
 
 echo "==> Packaging extension from $EXT_DIR..."
