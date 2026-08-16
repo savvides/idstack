@@ -21,6 +21,7 @@ bin/idstack-migrate                        # Migrate an existing .idstack/projec
 bin/idstack-migrate --init                 # Also create a canonical manifest when none exists (standalone skill runs)
 bin/idstack-manifest-merge --section <s> --payload <f>   # Canonical manifest write path (atomic, section-scoped)
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
+bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 ```
 
 Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
@@ -38,6 +39,7 @@ Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 ./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
+./test/test-extension.sh          # Chrome Extension packaging and static analysis tests
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails

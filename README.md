@@ -1,6 +1,6 @@
 # idstack
 
-> **Status: beta (v3.4.0.1).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
+> **Status: beta (v3.5.0.0).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 
@@ -208,6 +208,14 @@ idstack includes a rich built-in simulation fallback mode for instant demonstrat
 2. In the idstack Side Panel, click the **Settings** (gear) icon in the top header.
 3. Paste your API key into the input field and click **Save Settings**.
 4. All prompts execute client-side directly against Google's API (`gemini-2.5-flash`). Zero student PII or course content is stored or transmitted to external intermediary servers. <!-- IDSTACK_CLI_LEAK_ALLOW -->
+
+#### Packaging for Chrome Web Store
+
+To create a distribution bundle:
+```bash
+./bin/package-extension.sh
+```
+Produces `build/idstack-chrome-extension-v1.0.0.zip` ready for submission to the Chrome Web Store Developer Console.
 
 
 ## Your design team

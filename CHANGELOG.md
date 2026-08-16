@@ -1,5 +1,24 @@
 # Changelog
 
+## v3.5.0.0 (2026-08-16)
+
+Adds the native Chrome Side Panel extension for Canvas LMS and web course audits, the Course Dossier compiled Markdown export, and resolves open issues in learnings log management and test coverage.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`.
+
+### Added — Chrome Extension (No-Terminal Mode) & Canvas Course Crawler
+
+- **Native Chrome Side Panel extension.** Audits course pages directly inside Canvas LMS, Google Docs, or web syllabi. Evaluates cognitive demand across Bloom's levels, assesses constructive alignment against course outcomes, provides T1–T5 evidence citations, and generates 1-click improved rubrics.
+- **Background Canvas Course Crawler.** When viewing a Canvas course home or modules list (`/courses/:id`), idstack can audit the entire course hierarchy (syllabi, modules, assignments, discussions, quizzes) using your active browser session without requiring developer API tokens or command-line tools.
+- **Multi-Page Course Dossier & Compiled Markdown Export.** Incrementally collect audits across multiple course pages into an active Course Dossier drawer. Compiles into a single structured institutional deliverable (`.md`) or copies to the clipboard with executive summaries, cognitive demand matrices, and empirical citations.
+- **Automated Web Store Packaging.** Added `bin/package-extension.sh` to package clean `.zip` archives into `build/` for Chrome Web Store distribution.
+
+### Fixed — Learnings log atomicity & cross-project search precedence
+
+- **Atomic delete in `bin/idstack-learnings-delete` (#60).** Truncating in-place risked corrupted or lost learning records on mid-write interrupts. Deletions now write via `tempfile.mkstemp`, preserve original file mode permissions (`shutil.copymode`), and perform atomic `os.replace` with cleanup on exception.
+- **Local-over-global precedence in `bin/idstack-learnings-search` (#61).** Under `--cross-project`, global entries previously won when `--limit` truncated matches. Sources are now ordered global-first, local-last so local learnings take precedence across both Python and shell fallback search paths.
+- **Test coverage gaps closed (#62).** Added test coverage in `test/smoke-test.sh` for `bin/idstack-slugify` implicit and explicit (`-`) stdin pipelines and emoji/non-ASCII character stripping, and `bin/idstack-migrate` raw fallback on malformed JSON manifests. Corrected `bin/idstack-learnings-delete` header comment.
+
 ## v3.4.0.1 (2026-08-07)
 
 Accuracy pass over the public surfaces before sharing the project more widely. No skill behavior changes.
