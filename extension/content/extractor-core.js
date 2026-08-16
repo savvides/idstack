@@ -48,7 +48,7 @@ export function detectCourseContext(url, docTitle) {
   if (!url) return { isCourseRoot: false, courseId: null, origin: null };
   try {
     const parsedUrl = new URL(url);
-    const match = parsedUrl.pathname.match(/\/courses\/(\d+)(?:\/)?$/);
+    const match = parsedUrl.pathname.match(/\/courses\/(\d+)(?:\/(?:modules)?)?\/?$/);
     const anyCourseMatch = parsedUrl.pathname.match(/\/courses\/(\d+)/);
     return {
       isCourseRoot: !!match,

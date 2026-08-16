@@ -36,6 +36,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "*://*.instructure.com/*"
   ]
 }

@@ -7,7 +7,9 @@ const clean = stripHtml('<p>Hello <strong>World</strong> &amp; Students<br></p>'
 assert.strictEqual(clean, 'Hello World & Students');
 
 // Test 2: Mock Canvas Crawler
-const mockFetch = async (url) => {
+let fetchOptionsPassed = [];
+const mockFetch = async (url, options) => {
+  if (options) fetchOptionsPassed.push(options);
   if (url.includes('include[]=syllabus_body')) {
     return {
       ok: true,
@@ -32,6 +34,7 @@ const mockFetch = async (url) => {
 (async () => {
   const courseData = await crawlCanvasCourse('https://canvas.instructure.com', '12345', mockFetch);
   assert.strictEqual(courseData.title, 'Biology 101: Cell Systems');
+  assert.ok(fetchOptionsPassed.every(opt => opt && opt.credentials === 'include'), 'fetchImpl must include credentials');
   assert.ok(courseData.syllabus.includes('Analyze cellular metabolism'));
   assert.strictEqual(courseData.assignments.length, 2);
   assert.strictEqual(courseData.assignments[0].title, 'Quiz 1');

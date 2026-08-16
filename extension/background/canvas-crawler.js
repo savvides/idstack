@@ -20,7 +20,7 @@ export async function crawlCanvasCourse(origin, courseId, fetchImpl = fetch) {
 
   // 1. Fetch Course details & syllabus
   const courseUrl = `${origin}/api/v1/courses/${courseId}?include[]=syllabus_body`;
-  const courseRes = await fetchImpl(courseUrl);
+  const courseRes = await fetchImpl(courseUrl, { credentials: 'include' });
   if (!courseRes.ok) {
     throw new Error(`Failed to fetch Canvas course info (${courseRes.status})`);
   }
@@ -30,7 +30,7 @@ export async function crawlCanvasCourse(origin, courseId, fetchImpl = fetch) {
   const assignmentsUrl = `${origin}/api/v1/courses/${courseId}/assignments?per_page=50`;
   let assignments = [];
   try {
-    const assignRes = await fetchImpl(assignmentsUrl);
+    const assignRes = await fetchImpl(assignmentsUrl, { credentials: 'include' });
     if (assignRes.ok) {
       const assignJson = await assignRes.json();
       if (Array.isArray(assignJson)) {
