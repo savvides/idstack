@@ -369,11 +369,15 @@ expect_fail "domain study count drifts from the cards" "$WORK/r/test/smoke-test.
 
 # 20. version string in README mutated -> smoke-test must fail
 fresh
-python3 - "$WORK/r/README.md" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p).read()
-s = s.replace("v3.4.0.1", "v9.9.9.9")
-open(p,'w').write(s)
+python3 - "$WORK/r" <<'PY'
+import sys, os
+root = sys.argv[1]
+with open(os.path.join(root, "VERSION")) as vf:
+    v = vf.read().strip()
+p = os.path.join(root, "README.md")
+s = open(p).read()
+s = s.replace(f"v{v}", "v9.9.9.9")
+open(p, 'w').write(s)
 PY
 expect_fail "version string in README mutated" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
