@@ -27,11 +27,13 @@ done
 LOCAL_LEARNINGS=".idstack/learnings.jsonl"
 GLOBAL_LEARNINGS="$HOME/.idstack/global/learnings.jsonl"
 
-# Collect source files
+# Collect source files (global first if cross-project, so local comes last and takes precedence)
 SOURCES=""
-[ -f "$LOCAL_LEARNINGS" ] && SOURCES="$LOCAL_LEARNINGS"
 if [ "$CROSS_PROJECT" -eq 1 ] && [ -f "$GLOBAL_LEARNINGS" ]; then
-  SOURCES="$SOURCES $GLOBAL_LEARNINGS"
+  SOURCES="$GLOBAL_LEARNINGS"
+fi
+if [ -f "$LOCAL_LEARNINGS" ]; then
+  SOURCES="$SOURCES $LOCAL_LEARNINGS"
 fi
 
 [ -z "$SOURCES" ] && exit 0
@@ -93,7 +95,7 @@ for src in sources:
     except Exception:
         pass
 
-# Local learnings first (take precedence), then global
+# Local learnings come last in sources, so matches[-limit:] gives local precedence, backfilled by global
 for m in matches[-limit:]:
     print(m)
 " "$SOURCES" "$TYPE" "$KEYWORD" "$LIMIT" 2>/dev/null || search_fallback

@@ -104,6 +104,23 @@ check "cross-project includes global learnings" \
 check "without cross-project excludes global learnings" \
   "[ -z \"\$(HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/bin/idstack-learnings-search --keyword global_canvas)\" ]"
 
+# Setup multi-entry cross-project precedence test
+mkdir -p "$TEST_DIR/fake_home/.idstack/global"
+cat > "$TEST_DIR/fake_home/.idstack/global/learnings.jsonl" <<'EOF'
+{"skill":"review","type":"pattern","key":"g1","insight":"prec_test global 1","confidence":5}
+{"skill":"review","type":"pattern","key":"g2","insight":"prec_test global 2","confidence":6}
+EOF
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"review","type":"pattern","key":"l1","insight":"prec_test local 1","confidence":8}'
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"review","type":"pattern","key":"l2","insight":"prec_test local 2","confidence":9}'
+
+check "cross-project: local learnings outrank global learnings on limit truncation" \
+  "python3 -c \"
+import subprocess, json
+out = subprocess.check_output(['$IDSTACK_DIR/bin/idstack-learnings-search', '--cross-project', '--keyword', 'prec_test', '--limit', '2'], env={'HOME': '$TEST_DIR/fake_home', 'PATH': '$PATH'}).decode()
+keys = [json.loads(line)['key'] for line in out.strip().splitlines() if line.strip()]
+assert keys == ['l1', 'l2'], f'Expected local keys [l1, l2], got {keys}'
+\""
+
 # --- grep fallback (python3 absent) ---
 # Both call sites share one search_fallback function. Nothing exercised this
 # path before, so the dedupe that created the function was unverifiable. Drive
@@ -112,6 +129,14 @@ mkdir -p "$TEST_DIR/nopy"
 for _c in bash sh cat grep tail sed tr wc mkdir date env dirname ls rm pwd chmod; do
   ln -sf "$(command -v $_c)" "$TEST_DIR/nopy/$_c" 2>/dev/null || true
 done
+
+check "cross-project: local learnings take precedence in fallback mode" \
+  "python3 -c \"
+import subprocess, json
+out = subprocess.check_output(['$IDSTACK_DIR/bin/idstack-learnings-search', '--cross-project', '--keyword', 'prec_test', '--limit', '2'], env={'HOME': '$TEST_DIR/fake_home', 'PATH': '$TEST_DIR/nopy'}).decode()
+keys = [json.loads(line)['key'] for line in out.strip().splitlines() if line.strip()]
+assert keys == ['l1', 'l2'], f'Expected fallback local keys [l1, l2], got {keys}'
+\""
 
 check "fallback: --keyword matches when python3 is absent" \
   "PATH=\"$TEST_DIR/nopy\" $IDSTACK_DIR/bin/idstack-learnings-search --keyword canvas | grep -q 'canvas_export'"
