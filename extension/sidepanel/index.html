@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>idstack — Course Co-Pilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo">idstack</span>
+      <span class="badge-version">v1.0</span>
+    </div>
+    <div class="header-actions">
+      <button id="dossier-toggle-btn" class="dossier-pill" title="Course Audit Dossier">
+        <span class="dossier-icon">📁</span>
+        <span class="dossier-label">Dossier</span>
+        <span id="dossier-count" class="dossier-count-badge">0</span>
+      </button>
+      <button id="settings-toggle" class="icon-btn" title="Settings & Privacy">⚙</button>
+    </div>
+  </header>
+
+  <main class="content-body">
+    <!-- Ready State -->
+    <section id="ready-state" class="state-panel active">
+      <div class="context-card">
+        <div class="page-meta">
+          <span id="page-type-tag" class="chip">Detecting page...</span>
+          <h2 id="page-title" class="page-heading">Loading page title...</h2>
+        </div>
+        <p class="summary-hint">Audit constructive alignment, Bloom's classification, and cognitive load with peer-reviewed evidence.</p>
+        <div class="action-buttons">
+          <button id="audit-btn" class="primary-btn">
+            <span class="btn-text">Audit Page with Evidence</span>
+          </button>
+          <button id="audit-course-btn" class="secondary-btn course-audit-btn" style="display: none;">
+            <span class="btn-text">Audit Entire Course</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading State -->
+    <section id="loading-state" class="state-panel">
+      <div class="loader-box">
+        <div class="spinner"></div>
+        <p id="loader-status" class="loader-status-text">Analyzing course structure...</p>
+        <div id="crawl-progress-card" class="progress-card" style="display: none;">
+          <div class="progress-bar-container">
+            <div id="crawl-progress-fill" class="progress-bar-fill"></div>
+          </div>
+          <p id="crawl-status-text" class="progress-status-text">Gathering course syllabus...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results State -->
+    <section id="results-state" class="state-panel">
+      <div class="result-actions-bar">
+        <button id="add-to-dossier-btn" class="secondary-btn">➕ Add to Dossier</button>
+        <button id="export-single-md-btn" class="secondary-btn">📥 Export .md</button>
+      </div>
+      <div id="results-container"></div>
+    </section>
+
+    <!-- Dossier Drawer -->
+    <section id="dossier-drawer" class="drawer">
+      <div class="drawer-header">
+        <h3>Course Audit Dossier</h3>
+        <button id="close-dossier" class="icon-btn" title="Close Dossier">✕</button>
+      </div>
+      <div class="drawer-body">
+        <p class="drawer-intro">Collected audits for compiled course-level markdown export.</p>
+        <div id="dossier-list" class="dossier-list"></div>
+        <div class="dossier-drawer-actions">
+          <button id="export-dossier-md-btn" class="primary-btn">📥 Download Compiled .md</button>
+          <div class="dossier-secondary-actions">
+            <button id="copy-dossier-md-btn" class="secondary-btn">📋 Copy Markdown</button>
+            <button id="clear-dossier-btn" class="secondary-btn danger-btn">🗑️ Clear Dossier</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings Drawer -->
+    <section id="settings-drawer" class="drawer">
+      <div class="drawer-header">
+        <h3>Settings & Privacy</h3>
+        <button id="close-settings" class="icon-btn">✕</button>
+      </div>
+      <div class="drawer-body">
+        <div class="form-group">
+          <label for="api-key-input">Google AI Studio API Key (Optional BYOK)</label>
+          <input type="password" id="api-key-input" placeholder="AIzaSy..." />
+          <a id="get-api-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" class="help-link">Get your free Google AI Studio key &rarr;</a>
+          <p class="help-text">Leave blank to use the built-in free demo tier.</p>
+        </div>
+        <button id="save-settings-btn" class="secondary-btn">Save Settings</button>
+        <hr class="divider" />
+        <div class="privacy-note">
+          <h4>Privacy & FERPA Commitment</h4>
+          <p>idstack processes only curriculum and assignment text. No student PII is ever collected, retained, or used for model training.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>

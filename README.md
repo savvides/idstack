@@ -177,6 +177,39 @@ idstack installed (Claude Code) — scope: user.
   More info: https://idstack.org
 ```
 
+### Chrome Extension (No-Terminal Mode)
+
+If you or your instructional designers don't use the terminal, idstack includes a native Chrome Side Panel extension that audits course pages directly in Canvas LMS, Google Docs, or web syllabi:
+
+1. Open Chrome and navigate to `chrome://extensions/`.
+2. Enable **Developer mode** in the top-right corner.
+3. Click **Load unpacked** and select the `extension/` directory from this repo.
+4. Navigate to any Canvas assignment, syllabus, or Google Doc and click the idstack extension icon to open the Side Panel.
+5. Click **"Audit Page with Evidence"** for instant Bloom's classification, constructive alignment reviews, and 1-click improved rubrics.
+
+#### Full Course Audit (Canvas LMS)
+
+When viewing any Canvas course homepage or modules list (`/courses/:id`), idstack automatically detects the course environment and presents an **"Audit Entire Course"** button:
+- **Zero Developer Tokens Required:** Crawls published syllabus items, modules, assignments, discussions, and quizzes in the background using your active browser session. No Canvas API keys, LMS admin setup, or command line required.
+- **Course Quality Matrix:** Synthesizes findings across all modules into an interactive course health dashboard, highlighting cognitive process distribution across Bloom's levels, constructive alignment gaps, and prioritized action items.
+- **Export Ready:** Download the full synthesized course audit as JSON or Markdown to share with instructional design teams and faculty stakeholders.
+
+#### Multi-Page Course Dossier & Markdown Export
+
+Audit multiple pages across a course or syllabus and accumulate findings into a structured institutional deliverable:
+- **Incremental Dossier Accumulation:** Click **"Add to Dossier"** on any page audit (assignments, quizzes, syllabi, Google Docs). The header dossier badge tracks your collected course components across browsing sessions.
+- **1-Click Compiled Markdown Export (`.md`):** Open the Dossier drawer to download a synthesized multi-page Markdown report (`idstack-course-dossier-<title>.md`) containing executive summaries, cognitive demand tables, itemized empirical citations (T1–T5), and improved rubric drafts.
+- **Clipboard Ready:** Copy the compiled Markdown report directly to your clipboard for pasting into LMS course notes, Google Docs, Notion, or faculty review tickets.
+
+#### Free Google AI Studio API Key Setup
+
+idstack includes a rich built-in simulation fallback mode for instant demonstration without API keys. To connect live LLM inference:
+1. Obtain a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. In the idstack Side Panel, click the **Settings** (gear) icon in the top header.
+3. Paste your API key into the input field and click **Save Settings**.
+4. All prompts execute client-side directly against Google's API (`gemini-2.5-flash`). Zero student PII or course content is stored or transmitted to external intermediary servers. <!-- IDSTACK_CLI_LEAK_ALLOW -->
+
+
 ## Your design team
 
 idstack turns Claude Code into an evidence-based instructional design team. Each skill is a specialist. All invoked via `/idstack:<skill>`.

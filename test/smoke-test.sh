@@ -306,6 +306,11 @@ if [ -x "$IDSTACK_DIR/test/test-setup.sh" ]; then
   check "setup behavioral tests pass" "'$IDSTACK_DIR/test/test-setup.sh' '$IDSTACK_DIR'"
 fi
 
+# Chrome extension unit and integration tests
+if [ -x "$IDSTACK_DIR/test/test-extension.sh" ]; then
+  check "chrome extension tests pass" "'$IDSTACK_DIR/test/test-extension.sh'"
+fi
+
 # Check generated files have auto-generated header
 for skill in $SKILLS; do
   check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
@@ -412,7 +417,7 @@ check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_
 CLI_LEAK_RE='codex|gemini'            # IDSTACK_CLI_LEAK_ALLOW
 CLI_LEAK="$(grep -rIiE "$CLI_LEAK_RE" "$IDSTACK_DIR" \
   --exclude-dir=.git --exclude-dir=.gstack --exclude-dir=.idstack \
-  --exclude-dir=.claude --exclude-dir=.superpowers --exclude=CHANGELOG.md 2>/dev/null || true)"
+  --exclude-dir=.claude --exclude-dir=.superpowers --exclude-dir=superpowers --exclude=CHANGELOG.md 2>/dev/null || true)"
 CLI_LEAK="$(printf '%s' "$CLI_LEAK" | grep -vF 'IDSTACK_CLI_LEAK_ALLOW' || true)"
 # Printed through the command itself, not tested with -z, so a failure names
 # the offending lines instead of just saying the string was non-empty.

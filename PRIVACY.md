@@ -35,6 +35,15 @@ Both run only when you invoke that skill and confirm the target course. Your tok
 
 **Update check.** On skill startup idstack runs `git fetch` against this repository to see whether a newer version exists, at most once an hour. That is a request to GitHub carrying nothing but the fetch itself; it never uploads your course data. It only runs for git installs, and removing the repo's `.git` directory disables it.
 
+## idstack Chrome Extension
+
+The idstack Chrome Extension is designed with a strict privacy-first and FERPA-compliant architecture:
+
+- **Curriculum-Only Processing:** The extension only reads public or instructor-accessible course materials (syllabi, module structures, assignment guidelines, and rubrics). It never accesses student rosters, student submissions, student grades, or any Personally Identifiable Information (PII).
+- **Client-Side Storage:** Your optional Google AI Studio API key and saved course audit dossiers are stored locally on your device via `chrome.storage.local`. No audit history or credentials are ever sent to idstack servers.
+- **Direct AI Inference:** If you provide your own Google AI Studio API key, requests are sent directly from your browser to Google's API (`generativelanguage.googleapis.com`). Zero data is routed through intermediary proxy servers.
+- **No Tracking:** The extension contains zero analytics, tracking scripts, or telemetry.
+
 ## Questions
 
 If you have questions about privacy, [open an issue](https://github.com/savvides/idstack/issues) or [contact us](https://forms.gle/6LDgDD1M6WWyYvME8).
