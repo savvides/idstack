@@ -222,6 +222,11 @@ check "returns error if no file exists" \
 $IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key1","insight":"one"}'
 $IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key2","insight":"two"}'
 $IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key1","insight":"three"}'
+$IDSTACK_DIR/bin/idstack-learnings-log '{"skill":"test","type":"fact","key":"key3_mode","insight":"four"}'
+chmod 600 .idstack/learnings.jsonl
+
+check "preserves file mode on delete (mode 600)" \
+  "$IDSTACK_DIR/bin/idstack-learnings-delete key3_mode && python3 -c \"import os, stat; m = stat.S_IMODE(os.stat('.idstack/learnings.jsonl').st_mode); assert oct(m) == oct(0o600), f'Expected 0o600, got {oct(m)}'\""
 
 check "returns error if key not found" \
   "! $IDSTACK_DIR/bin/idstack-learnings-delete missingkey"
