@@ -151,6 +151,12 @@ check "idstack-slugify: '!!!' → untitled-course" \
   "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' '!!!')\" = 'untitled-course' ]"
 check "idstack-slugify: unicode ASCII-folds — 'Géographie I' → geographie-i" \
   "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Géographie I')\" = 'geographie-i' ]"
+check "idstack-slugify: implicit stdin pipeline" \
+  "[ \"\$(echo 'Course via Implicit Stdin' | '$IDSTACK_DIR/bin/idstack-slugify')\" = 'course-via-implicit-stdin' ]"
+check "idstack-slugify: explicit dash stdin pipeline" \
+  "[ \"\$(echo 'Course via Dash Stdin' | '$IDSTACK_DIR/bin/idstack-slugify' -)\" = 'course-via-dash-stdin' ]"
+check "idstack-slugify: emoji and non-ASCII characters stripped" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Course 🚀 101: Intro to AI ✨')\" = 'course-101-intro-to-ai' ]"
 
 # Skills that write per-skill HTML reports must reference the new export folder pattern
 # and use the slugify helper (not the legacy .idstack/reports/<skill>.md path).
@@ -377,6 +383,12 @@ if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
     check "v1.3-drifted→v1.4: red_team summary renamed to findings_summary" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); rt=d['red_team_audit']; assert 'summary' not in rt; assert rt['findings_summary']=={'critical': 3, 'warning': 5, 'info': 2}\""
     check "v1.3-drifted→v1.4: _import_quality_flags moved into import_metadata" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert '_import_quality_flags' not in d; details=d['import_metadata']['quality_flag_details']; assert len(details)==2 and details[0]['key']=='orphan_module_8'\""
   fi
+
+  # Test malformed manifest cat-fallback (bin/idstack-migrate:84)
+  MIG="$MIG_ROOT/malformed"; mkdir -p "$MIG"
+  echo "INVALID { JSON" > "$MIG/project.json"
+  check "migrate: malformed JSON falls back to raw cat and exits 0" \
+    "[ \"\$('$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json')\" = 'INVALID { JSON' ]"
 fi
 
 # Template freshness check
