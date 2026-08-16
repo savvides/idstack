@@ -4,11 +4,14 @@
 > backlog. Work that came out of a specific code review or PR triage is tracked
 > as an issue instead, so it stays next to the evidence that produced it:
 >
-> - [#60](https://github.com/savvides/idstack/issues/60) — an interrupted `idstack-learnings-delete` can destroy the whole log (truncate-in-place)
-> - [#61](https://github.com/savvides/idstack/issues/61) — decide whether `--cross-project` lets global learnings outrank local ones; the code and the comment above it disagree
-> - [#62](https://github.com/savvides/idstack/issues/62) — remaining test-coverage gaps, one of which is a silent regression today
+> - ~~[#60](https://github.com/savvides/idstack/issues/60) — an interrupted `idstack-learnings-delete` can destroy the whole log (truncate-in-place)~~ SHIPPED (v3.5.0.0)
+> - ~~[#61](https://github.com/savvides/idstack/issues/61) — decide whether `--cross-project` lets global learnings outrank local ones; the code and the comment above it disagree~~ SHIPPED (v3.5.0.0)
+> - ~~[#62](https://github.com/savvides/idstack/issues/62) — remaining test-coverage gaps, one of which is a silent regression today~~ SHIPPED (v3.5.0.0)
 >
 > The issue is authoritative for its own detail; don't copy it here.
+
+## ~~v3.5: Chrome Extension, Canvas Course Crawler & Course Dossier~~ SHIPPED (v3.5.0.0)
+Shipped in v3.5.0.0. Native Chrome Side Panel extension for in-browser audits in Canvas LMS and Google Docs, automated background Canvas course crawler for multi-page hierarchies, Course Dossier compiler and Markdown exporter, and `bin/package-extension.sh` packaging tool. Closed issues #60 (atomic learnings deletion with permission preservation), #61 (cross-project local-over-global search precedence), and #62 (slugify stdin/emoji and migrate fallback tests).
 
 ## ~~v3.4: Single-Host Claude Code Architecture & Automated Doc Verification~~ SHIPPED (v3.4.0.0, v3.4.0.1)
 Shipped in v3.4.0.0 and v3.4.0.1. Reconciled architecture to single-host Claude Code plugin. Removed retired Codex CLI target, deleted `dist/` and `AGENTS.md` artifacts. Added `test/check-doc-accuracy.py` validator script to enforce version parity (v3.4.0.1 / schema 1.4), binary executable permissions, flag accuracy, and relative link integrity across all documentation surfaces. Added `test/check-evidence-cards.py` to prevent evidence card tier overstatements. <!-- IDSTACK_CLI_LEAK_ALLOW -->

@@ -4,6 +4,14 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Chrome Extension, Course Dossier & Robustness (v3.5.0.0)
+- **Native Chrome Side Panel extension for Canvas LMS & Google Docs.** Audits course content and assignments with cognitive demand classification (Bloom's Revised Taxonomy) and empirical evidence citations directly in the browser.
+- **Automated background Canvas course crawler.** Audits entire Canvas courses in the background via active session cookies without requiring developer API keys.
+- **Course Dossier multi-page compiler & Markdown exporter.** Compiles multi-page course findings into unified structured markdown dossiers with TOC, reading time estimates, and metadata sidecars.
+- **Atomic learnings deletion with permission preservation (#60).** Replaced destructive file truncation in `bin/lib/idstack-learnings-delete` with an atomic tempfile-and-rename pattern that preserves POSIX permissions.
+- **Cross-project local-over-global search precedence (#61).** Enforces project-local learnings priority over global store records during cross-project searches in `bin/idstack-learnings-search`.
+- **Comprehensive test coverage for slugify stdin/emojis & migrate malformed manifest fallback (#62).** Added smoke tests for stdin piping, emoji handling in `bin/idstack-slugify`, and graceful fallback on malformed JSON manifests in `bin/idstack-migrate`.
+
 ### Documentation accuracy & automated verification (v3.4.0.1)
 - **Evidence cards derived from research references.** `test/check-evidence-cards.py` verifies landing page cards against `evidence/references.md` in `smoke-test.sh` so study counts and tier spans match.
 - **Privacy policy disclosures updated.** `PRIVACY.md` discloses outbound Canvas API uploads in `/idstack:course-export` and `git fetch` operations in `bin/idstack-update-check`.
