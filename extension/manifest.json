@@ -3,6 +3,7 @@
   "name": "idstack — Evidence-Based Course Design",
   "version": "1.0.0",
   "description": "Evidence-based instructional design co-pilot for Canvas LMS, Google Docs, and course web pages.",
+  "homepage_url": "https://idstack.org",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",

@@ -349,6 +349,48 @@
       align-items: stretch;
       max-width: 640px;
     }
+    .cta-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .btn-chrome {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      background: #2563eb;
+      color: #ffffff;
+      font-family: var(--font-ui);
+      font-weight: 600;
+      font-size: 0.88rem;
+      padding: 0.55rem 1rem;
+      border-radius: 2px;
+      text-decoration: none;
+      transition: background 0.15s ease;
+      flex-shrink: 0;
+    }
+    .btn-chrome:hover {
+      background: #1d4ed8;
+      color: #ffffff;
+      text-decoration: none;
+    }
+    .btn-chrome:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .btn-chrome .btn-badge {
+      font-size: 0.72rem;
+      background: rgba(255, 255, 255, 0.22);
+      padding: 0.1rem 0.4rem;
+      border-radius: 2px;
+      font-weight: 500;
+    }
+    .cta-or {
+      font-size: 0.82rem;
+      color: var(--ink-muted);
+      font-family: var(--font-ui);
+    }
     .cta-secondary {
       font-size: 0.92rem;
       color: var(--ink-muted);
@@ -684,6 +726,46 @@
     /* ──────────────────────────────────────────────
        Install
        ────────────────────────────────────────────── */
+    .install-tracks {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      max-width: 760px;
+    }
+    .install-track-card {
+      background: var(--raised);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      padding: clamp(1.25rem, 3vw, 1.75rem);
+    }
+    .install-track-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.85rem;
+    }
+    .install-track-header h3 {
+      font-family: var(--font-display);
+      font-size: 1.18rem;
+      font-weight: 600;
+      margin: 0;
+    }
+    .track-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.03em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 0.15rem 0.5rem;
+      border-radius: 2px;
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+    .install-track-card .btn-chrome {
+      margin-top: 1rem;
+    }
+
     .install-block {
       display: flex;
       align-items: center;
@@ -904,9 +986,23 @@
           <span>v3.5.0.0 — Claude Code &amp; Chrome Extension</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design, transparently cited.</h1>
-        <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier — <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code.</p>
+        <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation tagged with its evidence tier — <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code and as a native Chrome Extension.</p>
 
         <div class="cta-row">
+          <div class="cta-actions">
+            <a class="btn-chrome" href="https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm" target="_blank" rel="noopener">
+              <svg class="chrome-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="12" r="4" fill="currentColor"/>
+                <path d="M12 2a10 10 0 0 1 8.66 5H12" stroke="currentColor" stroke-width="2"/>
+                <path d="M20.66 7A10 10 0 0 1 12 22l4.33-7.5" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 22A10 10 0 0 1 3.34 7L12 12" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              <span>Add to Chrome</span>
+              <span class="btn-badge">Free</span>
+            </a>
+            <span class="cta-or">or via Claude Code:</span>
+          </div>
           <div class="install-pill" role="group" aria-label="Install command">
             <span class="prompt" aria-hidden="true">$</span>
             <code id="install-cmd">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
@@ -1123,22 +1219,49 @@
     <section class="section" id="install" aria-labelledby="install-title">
       <header class="section-header">
         <p class="eyebrow">Install</p>
-        <h2 id="install-title">Install in 30 seconds.</h2>
+        <h2 id="install-title">Get started in seconds.</h2>
       </header>
 
-      <div class="install-block" role="group" aria-label="Install command">
-        <span class="prompt" aria-hidden="true">$</span>
-        <code id="install-cmd-2">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
-        <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
+      <div class="install-tracks">
+        <div class="install-track-card">
+          <div class="install-track-header">
+            <h3>Chrome Extension</h3>
+            <span class="track-badge">In-Browser (Canvas / Docs)</span>
+          </div>
+          <p class="install-prose">Audit Canvas course modules, assignments, Google Docs syllabi, and web course pages directly in a native Side Panel. Zero command-line setup.</p>
+          <a class="btn-chrome" href="https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm" target="_blank" rel="noopener">
+            <svg class="chrome-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="4" fill="currentColor"/>
+              <path d="M12 2a10 10 0 0 1 8.66 5H12" stroke="currentColor" stroke-width="2"/>
+              <path d="M20.66 7A10 10 0 0 1 12 22l4.33-7.5" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 22A10 10 0 0 1 3.34 7L12 12" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Install from Chrome Web Store</span>
+            <span class="btn-badge">Free</span>
+          </a>
+        </div>
+
+        <div class="install-track-card">
+          <div class="install-track-header">
+            <h3>Claude Code Plugin</h3>
+            <span class="track-badge">CLI / Multi-Agent Pipeline</span>
+          </div>
+          <div class="install-block" role="group" aria-label="Install command">
+            <span class="prompt" aria-hidden="true">$</span>
+            <code id="install-cmd-2">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
+            <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
+          </div>
+
+          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 11 skills. Re-run it after a <code>git pull</code> to update.</p>
+
+          <p class="install-prose">Requires a bash shell — Terminal on macOS or Linux, WSL or Git Bash on Windows. <code>./setup</code> is a bash script, so PowerShell and <code>cmd</code> can't run it. python3 is recommended but not required; without it, quality-score trends and search filtering are unavailable.</p>
+
+          <p class="install-prose">If something looks wrong afterwards, <code>bin/idstack-doctor</code> diagnoses the plugin registration, and <code>bin/idstack-status</code> reports course health from inside a project directory.</p>
+
+          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:pipeline</code>.</p>
+        </div>
       </div>
-
-      <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 11 skills. Re-run it after a <code>git pull</code> to update.</p>
-
-      <p class="install-prose">Requires a bash shell — Terminal on macOS or Linux, WSL or Git Bash on Windows. <code>./setup</code> is a bash script, so PowerShell and <code>cmd</code> can't run it. python3 is recommended but not required; without it, quality-score trends and search filtering are unavailable.</p>
-
-      <p class="install-prose">If something looks wrong afterwards, <code>bin/idstack-doctor</code> diagnoses the plugin registration, and <code>bin/idstack-status</code> reports course health from inside a project directory.</p>
-
-      <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:pipeline</code>.</p>
     </section>
 
     <!-- ────────── What's new ────────── -->
@@ -1151,7 +1274,7 @@
       <article class="release-card">
         <p class="release-meta">August 16, 2026 · v3.5.0.0</p>
         <h3>Chrome Side Panel co-pilot &amp; Course Dossier export.</h3>
-        <p>For instructional designers working directly in the browser, idstack now includes a native Chrome Side Panel extension. Audit Canvas assignments, syllabi, Google Docs, and web course materials with 1-click Bloom's classification, constructive alignment reviews, and empirical citations (T1–T5) without touching the terminal.</p>
+        <p>For instructional designers working directly in the browser, idstack is now officially published as a native <a href="https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm" target="_blank" rel="noopener">Chrome Side Panel extension on the Chrome Web Store</a>. Audit Canvas assignments, syllabi, Google Docs, and web course materials with 1-click Bloom's classification, constructive alignment reviews, and empirical citations (T1–T5) without touching the terminal.</p>
         <p>Also in this release: an automated Canvas course crawler for whole-course audits, an active Course Dossier drawer that compiles multi-page findings into synthesized institutional Markdown (<code>.md</code>) reports, atomic file writes for project learnings logs (Issue #60), and local-over-global search precedence (Issue #61).</p>
       </article>
 

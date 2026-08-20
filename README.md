@@ -8,7 +8,7 @@ idstack is an open source set of skills for evidence-based instructional design 
 
 Skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
-Free, MIT licensed, open source. [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
+Free, MIT licensed, open source. Available as a [Claude Code plugin](#install--30-seconds) and a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 ## Quick start
 
@@ -179,13 +179,21 @@ idstack installed (Claude Code) — scope: user.
 
 ### Chrome Extension (No-Terminal Mode)
 
-If you or your instructional designers don't use the terminal, idstack includes a native Chrome Side Panel extension that audits course pages directly in Canvas LMS, Google Docs, or web syllabi:
+[![Available in the Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-idstack-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm)
 
+If you or your instructional designers don't use the terminal, idstack is available as a native Chrome Side Panel extension in the [Chrome Web Store](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm):
+
+1. Install [idstack from the Chrome Web Store](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm).
+2. Pin the extension to your Chrome toolbar.
+3. Navigate to any Canvas assignment, syllabus, or Google Doc and click the idstack icon to open the Side Panel.
+4. Click **"Audit Page with Evidence"** for instant Bloom's classification, constructive alignment reviews, and 1-click improved rubrics.
+
+#### Loading Unpacked (Local Development)
+
+If developing or modifying the extension locally:
 1. Open Chrome and navigate to `chrome://extensions/`.
 2. Enable **Developer mode** in the top-right corner.
 3. Click **Load unpacked** and select the `extension/` directory from this repo.
-4. Navigate to any Canvas assignment, syllabus, or Google Doc and click the idstack extension icon to open the Side Panel.
-5. Click **"Audit Page with Evidence"** for instant Bloom's classification, constructive alignment reviews, and 1-click improved rubrics.
 
 #### Full Course Audit (Canvas LMS)
 
