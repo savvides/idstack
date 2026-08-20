@@ -317,6 +317,11 @@ if [ -x "$IDSTACK_DIR/test/test-extension.sh" ]; then
   check "chrome extension tests pass" "'$IDSTACK_DIR/test/test-extension.sh'"
 fi
 
+# Responsive landing page test
+if [ -x "$IDSTACK_DIR/test/test-responsive-landing.js" ]; then
+  check "responsive landing page tests pass" "node '$IDSTACK_DIR/test/test-responsive-landing.js'"
+fi
+
 # Check generated files have auto-generated header
 for skill in $SKILLS; do
   check "$skill SKILL.md has auto-generated header" "grep -q 'AUTO-GENERATED from SKILL.md.tmpl' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
