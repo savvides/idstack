@@ -480,19 +480,19 @@
     .evidence-legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.85rem 1.75rem;
-      margin-bottom: 2.5rem;
-      padding-bottom: 1.5rem;
+      gap: 0.75rem clamp(1rem, 3vw, 1.75rem);
+      margin-bottom: 2.25rem;
+      padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--rule);
       font-family: var(--font-ui);
-      font-size: 0.88rem;
+      font-size: clamp(0.82rem, 1.8vw, 0.88rem);
       color: var(--ink-soft);
     }
     .evidence-legend-item {
       display: inline-flex;
       align-items: baseline;
-      gap: 0.5rem;
-      white-space: nowrap;
+      gap: 0.45rem;
+      flex-wrap: wrap;
     }
     .evidence-legend-item strong {
       font-family: var(--font-mono);
@@ -527,14 +527,14 @@
     }
 
     .evidence-card {
-      padding: 1.4rem 0;
+      padding: 1.25rem 0;
       border-bottom: 1px solid var(--rule);
     }
     .evidence-card:last-child { border-bottom: none; }
 
     .evidence-card-title {
       font-family: var(--font-display);
-      font-size: 1.12rem;
+      font-size: clamp(1.05rem, 2vw, 1.12rem);
       font-weight: 600;
       letter-spacing: -0.01em;
       color: var(--ink);
@@ -543,7 +543,7 @@
 
     .evidence-card-body {
       font-family: var(--font-body);
-      font-size: 0.98rem;
+      font-size: clamp(0.92rem, 1.6vw, 0.98rem);
       line-height: 1.55;
       color: var(--ink-soft);
       max-width: var(--prose);
@@ -573,7 +573,7 @@
 
     .evidence-foot {
       margin-top: 2rem;
-      font-size: 0.92rem;
+      font-size: clamp(0.88rem, 1.6vw, 0.92rem);
       color: var(--ink-muted);
       max-width: var(--prose);
     }
@@ -614,6 +614,9 @@
     @media (max-width: 640px) {
       .pipeline-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+    @media (max-width: 480px) {
+      .pipeline-flow { grid-template-columns: 1fr; }
+    }
 
     .pipeline-node {
       counter-increment: step;
@@ -647,6 +650,7 @@
       color: var(--accent);
       margin-bottom: 0.3rem;
       word-break: break-word;
+      padding-right: 1.5rem;
     }
     .pipeline-node .node-desc {
       font-size: 0.78rem;
@@ -665,8 +669,8 @@
     }
     .pipeline-aside {
       display: flex;
-      align-items: center;
-      gap: 0.6rem;
+      align-items: flex-start;
+      gap: 0.65rem;
     }
     .pipeline-aside .aside-tag {
       font-family: var(--font-mono);
@@ -676,11 +680,13 @@
       padding: 0.18em 0.5em;
       border-radius: 2px;
       background: var(--raised);
+      flex-shrink: 0;
+      margin-top: 0.1rem;
     }
 
     .pipeline-foot {
       margin-top: 1.75rem;
-      font-size: 0.95rem;
+      font-size: clamp(0.9rem, 1.6vw, 0.95rem);
       color: var(--ink-soft);
       max-width: var(--prose);
     }
@@ -712,16 +718,18 @@
       font-size: 0.74rem;
       color: var(--ink-muted);
       letter-spacing: 0.02em;
+      overflow-x: auto;
+      white-space: nowrap;
     }
     .output-body {
-      padding: 1.1rem 1.25rem;
-      font-size: 0.92rem;
+      padding: clamp(0.9rem, 2.5vw, 1.25rem);
+      font-size: clamp(0.88rem, 1.6vw, 0.92rem);
       line-height: 1.6;
       color: var(--ink-soft);
     }
     .output-body h3 {
       font-family: var(--font-display);
-      font-size: 1rem;
+      font-size: clamp(0.95rem, 2vw, 1rem);
       font-weight: 600;
       letter-spacing: -0.005em;
       color: var(--ink);
@@ -736,19 +744,21 @@
     .output-body strong { color: var(--ink); font-weight: 600; }
     .output-json {
       font-family: var(--font-mono);
-      font-size: 0.78rem;
+      font-size: clamp(0.72rem, 1.6vw, 0.78rem);
       line-height: 1.55;
       white-space: pre;
       overflow-x: auto;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
       color: var(--ink-soft);
-      padding: 1.1rem 1.25rem;
+      padding: clamp(0.9rem, 2.5vw, 1.25rem);
     }
     .output-json .key   { color: var(--accent); }
     .output-json .str   { color: var(--tier-2); }
     .output-json .punct { color: var(--ink-muted); }
     .output-foot {
       margin-top: 1.5rem;
-      font-size: 0.92rem;
+      font-size: clamp(0.88rem, 1.6vw, 0.92rem);
       color: var(--ink-muted);
       max-width: var(--prose);
     }
@@ -880,7 +890,9 @@
     .footer {
       max-width: var(--max);
       margin: 0 auto;
-      padding: 2.5rem var(--pad-x) 3rem;
+      padding: 2.5rem var(--pad-x) max(3rem, env(safe-area-inset-bottom));
+      padding-left: max(var(--pad-x), env(safe-area-inset-left));
+      padding-right: max(var(--pad-x), env(safe-area-inset-right));
       border-top: 1px solid var(--rule);
       font-size: 0.88rem;
     }
@@ -891,7 +903,7 @@
       align-items: start;
     }
     @media (max-width: 720px) {
-      .footer-top { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr; gap: 1.25rem; }
     }
     .footer-brand {
       font-family: var(--font-display);
@@ -915,6 +927,7 @@
     .footer-links a {
       color: var(--ink-soft);
       text-decoration: none;
+      padding: 0.2rem 0;
     }
     .footer-links a:hover { color: var(--ink); text-decoration: underline; }
 
@@ -926,10 +939,10 @@
       max-width: 460px;
       gap: 0;
     }
-    @media (max-width: 420px) {
+    @media (max-width: 480px) {
       .footer-signup { flex-direction: column; gap: 0.5rem; }
-      .footer-signup input[type="email"] { border-right: 1px solid var(--rule); border-radius: 2px; }
-      .footer-signup button { border-radius: 2px; }
+      .footer-signup input[type="email"] { border-right: 1px solid var(--rule); border-radius: 2px; min-height: 42px; }
+      .footer-signup button { border-radius: 2px; min-height: 42px; width: 100%; }
     }
     .footer-signup label {
       position: absolute;
