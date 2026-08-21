@@ -126,5 +126,14 @@ assert(
   'gradient text keeps solid color fallback (no bare color: transparent)'
 );
 
+// 15. Viewport horizontal overflow protection & grid min-width containment
+assert(
+  /html\s*\{[^}]*overflow-x:\s*(clip|hidden)/s.test(html) &&
+  /body\s*\{[^}]*overflow-x:\s*(clip|hidden)/s.test(html) &&
+  /\.install-track-card\s*\{[^}]*min-width:\s*0/s.test(html) &&
+  /\.output-panel\s*\{[^}]*min-width:\s*0/s.test(html),
+  'viewport horizontal overflow protection and grid item min-width containment are enforced'
+);
+
 console.log(`\nResults: ${passed}/${passed + failed} passed, ${failed} failed`);
 process.exit(failed === 0 ? 0 : 1);

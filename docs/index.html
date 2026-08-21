@@ -110,7 +110,10 @@
       --pad-y:  clamp(2.75rem, 5.5vw, 5.5rem);
     }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      overflow-x: clip;
+    }
 
     body {
       background: var(--bg);
@@ -120,6 +123,7 @@
       line-height: 1.65;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      overflow-x: clip;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -709,6 +713,7 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      min-width: 0;
     }
     .output-header {
       padding: 0.55rem 0.85rem;
@@ -777,6 +782,7 @@
       border: 1px solid var(--rule);
       border-radius: 2px;
       padding: clamp(1rem, 3.5vw, 1.75rem);
+      min-width: 0;
     }
     .install-track-header {
       display: flex;
@@ -817,6 +823,7 @@
       padding: 0.65rem 0.65rem 0.65rem 0.95rem;
       max-width: 760px;
       width: 100%;
+      min-width: 0;
       overflow: hidden;
     }
     .install-block .prompt {
