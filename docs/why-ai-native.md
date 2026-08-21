@@ -1,51 +1,48 @@
 # Why idstack is AI-native
 
-Most "AI-powered" education tools bolt a chatbot onto an existing product. idstack is different. The AI isn't a feature. It's the entire product.
+Most education tools add conversational chat interfaces to existing software. idstack is designed as an agentic workflow where skills, context management, and CLI pipelines require an LLM runtime to execute.
 
-## The difference matters
+## Architectural Distinctions
 
-Bolted-on AI products:
-- Add an AI button with sparkle icons to an existing interface
-- Include a chat pane where you can "ask the AI questions"
-- Have no memory or personalization beyond one conversation
-- Users try the AI feature once and go back to using the app the "normal" way
-- The product works fine without AI. The AI is optional.
+Conventional AI interfaces:
+- Add a conversational chat pane to an existing user interface
+- Maintain no structured memory or course state beyond a single conversation
+- Provide optional assistance while core workflows remain unchanged
 
-AI-native products:
-- Users spend real money on AI compute as they use the product ($10, $100, $1000 in tokens)
-- The product gets substantially better every 6 months as base models improve, without any code changes
-- The core workflow is impossible without AI, not just enhanced by it
-- Using the product creates genuine behavior change
+AI-native workflows:
+- Allocate compute directly to analytical tasks across course modules
+- Benefit directly from underlying model capability improvements without application code changes
+- Structure complex workflows around LLM reasoning rather than fixed heuristics
+- Influence how educators design and structure instructional materials
 
-idstack is AI-native on all four counts.
+idstack operates on all four criteria.
 
-## How idstack scores
+## idstack Implementation
 
-**Core workflow is impossible without AI.** idstack skills are structured instructions for an AI agent. Without Claude Code, the SKILL.md files are just Markdown. There is no "normal way" to use idstack without AI. The AI IS the product.
+**Agentic workflows require an LLM runtime.** idstack skills are structured markdown specifications executed by Claude Code. Without an agentic environment, the files function as passive documentation. The runtime executes the analytical steps, evaluates alignment, and generates structured deliverables.
 
-**It gets better as models improve.** When Claude gets better at following complex multi-step instructions, at understanding educational research, at generating course content... every idstack skill gets better for free. No code changes needed. You're riding the model improvement curve automatically.
+**Model capabilities enhance skill output.** As foundation models improve in instruction following, pedagogical reasoning, and domain analysis, idstack skill execution improves without code changes.
 
-**Real token spend.** Running the full pipeline (import, objectives, assessment, build, quality review, accessibility, red team, export) on a 20-module course is a real AI workload. The more you use it, the more value you get, and the more tokens you consume. This is AI creating genuine value, not performing the appearance of intelligence.
+**Substantial computational workloads.** Running the pipeline (import, learning objectives, assessment design, content construction, quality review, accessibility audit, red team analysis, and export) across a multi-week course represents a focused computational workload that automates detailed instructional audits.
 
-**Behavior change.** When an instructional designer sees that their T1 evidence says elaborated feedback outperforms correctness-only feedback, and their course has no elaborated feedback... that changes how they design the next course. When the red team audit shows a Bloom's level mismatch between objectives and assessments, that changes how they write objectives. The evidence tiers aren't decoration. They're decision-making tools.
+**Practical instructional design impact.** When an audit indicates that empirical T1 evidence favors elaborated feedback over simple correctness indicators, designers can adjust assessment structures accordingly. When an adversarial audit highlights cognitive process mismatches across Bloom's levels, designers can refine learning objectives. Evidence tiers provide objective decision criteria for course revisions.
 
-## Where skills sit in the AI tool hierarchy
+## Tool Integration and Context Efficiency
 
-Andrej Karpathy's hierarchy for connecting tools to AI agents: CLI at the top, API in the middle, MCP at the bottom. The distinction is context efficiency.
+Context management is critical when orchestrating agent tools:
 
-- **CLI tools** use zero context until the moment you call them. The AI invokes `gh pr create` and the context cost is one tool call.
-- **API integrations** have moderate overhead. Connection setup, authentication, response parsing.
-- **MCP servers** eat context the moment they connect. Every MCP you load sits in your context window doing nothing until you call it. Five MCPs can burn 15-20% of usable context before you've typed a message.
+- **CLI tools** require minimal upfront context. The agent invokes a shell command and consumes context only for the tool call and output.
+- **API integrations** involve connection setup, authentication, and structured payload exchange.
+- **MCP servers** expose tool schemas that persist in the active context window throughout a session.
 
-Skills are a fourth category. They load on-demand (like CLIs, zero cost until invoked) but execute inside the agent's context (like MCPs). The key difference: a skill loads, runs, and then its context can be reclaimed. An MCP stays connected.
+Skills represent an on-demand category. They load into the agent's context when invoked, execute their analytical instructions, write structured reports and manifest updates, and allow context to be reclaimed once completed.
 
-This matters for idstack because the skills are large (400-900 lines of structured instructions). They consume context while running, but they don't sit idle. When `/course-quality-review` finishes, that context is available for the next skill.
+This lifecycle is essential for idstack because skill instructions range from 400 to 900 lines of structured rules. On-demand execution prevents context exhaustion across multi-skill pipelines.
 
-## What this means for contributors
+## Contributor Guidelines
 
-When you build an idstack skill, you're not building a feature that gets bolted onto something else. You're building an AI workflow that wouldn't exist without the AI runtime. The skill IS the product.
+Building an idstack skill means defining an agentic workflow that leverages the LLM runtime:
 
-Design accordingly:
-- The AI should be doing work that would take a human expert hours. Not summarizing, not reformatting, not searching. Analyzing, synthesizing, challenging, evaluating.
-- Every recommendation should cite its evidence so the user can verify the AI's judgment. Trust but verify.
-- The skill should get better automatically as models improve. Don't hardcode workarounds for model limitations that will be fixed in 6 months.
+- Target complex analytical tasks that require domain synthesis, rubric alignment, and pedagogical evaluation rather than simple text transformations.
+- Reference empirical citations for every analytical recommendation so users can verify underlying research.
+- Design prompts around fundamental reasoning principles rather than fragile workarounds for transient model behaviors.

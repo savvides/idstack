@@ -659,7 +659,7 @@ module will resurface later.]
   worked examples
 - Provide less structured activities that require learners to draw on
   existing knowledge
-- Offer optional "deep dive" sections for further exploration
+- Offer optional advanced exploration sections for extended study
 - Remove redundant explanations that repeat what experts already know
 
 **Mixed audiences:**

@@ -11,7 +11,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **Automated Web Store packaging.** Added `bin/package-extension.sh` to package clean `.zip` bundles for the Chrome Web Store Developer Console.
 - **Atomic learnings deletion with permission preservation (#60).** Replaced destructive file truncation in `bin/lib/idstack-learnings-delete` with an atomic tempfile-and-rename pattern that preserves POSIX permissions.
 - **Cross-project local-over-global search precedence (#61).** Enforces project-local learnings priority over global store records during cross-project searches in `bin/idstack-learnings-search`.
-- **Comprehensive test coverage for slugify stdin/emojis & migrate malformed manifest fallback (#62).** Added smoke tests for stdin piping, emoji handling in `bin/idstack-slugify`, and graceful fallback on malformed JSON manifests in `bin/idstack-migrate`.
+- **Full test coverage for slugify stdin/emojis & migrate malformed manifest fallback (#62).** Added smoke tests for stdin piping, emoji handling in `bin/idstack-slugify`, and graceful fallback on malformed JSON manifests in `bin/idstack-migrate`.
 
 ### Documentation accuracy & automated verification (v3.4.0.1)
 - **Evidence cards derived from research references.** `test/check-evidence-cards.py` verifies landing page cards against `evidence/references.md` in `smoke-test.sh` so study counts and tier spans match.
@@ -118,7 +118,7 @@ Four more skills based on the research synthesis:
 - **Model selector** — recommends the right instructional design framework for your context (ADDIE, SAM, backward design, etc.) instead of defaulting to one
 - **Content sequencing** — organizes your modules and lessons to manage cognitive load, applying spacing, interleaving, and scaffolding principles
 - **Media selection** — flags multimedia principle violations (redundancy, split attention, coherence) and recommends when to use video, text, diagrams, or interactive elements
-- **Evaluation design** — plans how to measure whether your course actually worked, using Kirkpatrick's four levels and beyond
+- **Evaluation design** — plans how to measure whether the course met its learning outcomes, using Kirkpatrick's four levels and beyond
 
 ## Exploring
 

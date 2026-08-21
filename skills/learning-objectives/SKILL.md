@@ -527,7 +527,7 @@ an assessment or consider whether this objective is necessary."
 an unstated objective (add the ILO) or it's not contributing to course outcomes (consider
 removing it)."
 
-Present gaps prominently. These are the most actionable findings from the alignment check.
+Present gaps prominently. These are the primary findings from the alignment check.
 
 ---
 
@@ -598,7 +598,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Summary:** 2–3 sentences — how many ILOs you have, how many are well-aligned, the single most important gap or mismatch the designer should know about.
 - **Skill-specific section before Findings** — add a `<section class="alignment-table">` with `<h2>Alignment table</h2>` and an HTML `<table>` (columns: ID, Objective, Knowledge, Process, Activity, Assessment, Alignment). Alignment values: `aligned` / `MISMATCH` / `GAP`.
 - **Finding ids:** `align-1`, `bloom-1`, `expertise-1`, etc. Findings come from bidirectional alignment gaps, Bloom's-level mismatches, expertise-reversal flags, and ambiguous verbs that were clarified.
-- **Top recommendations:** the 3-5 highest-impact alignment fixes, ordered by leverage; cite each ([Domain-N] [TN]) and reference the finding id it addresses.
+- **Top recommendations:** the 3-5 highest-impact alignment fixes, ordered by priority; cite each ([Domain-N] [TN]) and reference the finding id it addresses.
 - **Limitations:** alignment is read from manifest descriptions, not from the actual rubric criteria; expertise-reversal flags are inferred from the learner profile without a learner survey.
 - **Next steps:** Run `/idstack:assessment-design` to design assessments aligned to these objectives with evidence-based rubrics and feedback strategies.
 

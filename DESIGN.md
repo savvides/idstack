@@ -27,7 +27,7 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
 
 - **Display + body:** **Source Serif 4** (Adobe / open source). Body-serif is the deliberate commitment — every paragraph reinforces the publication mood. Source Serif 4 has multiple optical sizes (`opsz` axis) so the same family handles 13px captions through 65px hero headlines without going off-design.
 - **UI / labels / badges / table cells:** **Public Sans** (USWDS / open source). Designed for US-government documents; reads as "official record" rather than "SaaS chrome." Anti-Inter.
-- **Citations / IDs / code / file paths:** **JetBrains Mono** (open source). Citations like `[Alignment-14] [T1]` are the academic-paper convention rendered in mono — load-bearing, not decorative.
+- **Citations / IDs / code / file paths:** **JetBrains Mono** (open source). Citations like `[Alignment-14] [T1]` are the academic-paper convention rendered in mono: functional reference notation, not decorative.
 - **Loading:** Google Fonts via one `<link>` in each HTML surface (`docs/index.html`, `templates/report.html.tmpl`, `templates/index.html.tmpl`). System-font fallbacks are preserved in `--font-*` tokens so the page is legible even when the network is unavailable. Total weight ~120kb woff2 for the variable axes used.
 - **Scale (modular, ratio 1.250 — major third), base 1rem = 17px:**
 
@@ -138,7 +138,7 @@ No medium / long durations. No scroll-driven animations. No parallax. No entranc
 
 ## Anti-patterns (NEVER ship)
 
-- Gradient mesh hero (Stripe owns it; copying = derivative AI-slop). _(Scope: this binds the report system. The marketing landing uses an indigo→purple gradient-ACCENT treatment by explicit decision — accent marks, not a full-bleed mesh hero background. See Decisions log, 2026-06-12.)_
+- Gradient mesh hero (Stripe owns it; copying creates derivative styling). _(Scope: this binds the report system. The marketing landing uses an indigo→purple gradient-ACCENT treatment by explicit decision — accent marks, not a full-bleed mesh hero background. See Decisions log, 2026-06-12.)_
 - Stock photo of person looking at laptop (Quality Matters does this; category cliché).
 - 3-column or 5-column badge-icon feature grid (Quality Matters has FIVE; category cliché).
 - Bright association blue + orange palette.

@@ -107,7 +107,7 @@ installing.
 The real TTHW problem is pre-install: visitors on idstack.org need to understand the
 value before committing to install. The landing page demo is where that conversion happens.
 **Depends on:** Design review of the current landing page to identify what's working
-and what's not. User feedback on whether the current "See it work" section is compelling.
+and what's not. User feedback on whether the current "See it work" section clearly demonstrates the workflow.
 **Priority:** P2
 
 ## v3: Bidirectional LMS Sync
