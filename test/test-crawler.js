@@ -40,6 +40,25 @@ const mockFetch = async (url, options) => {
   assert.strictEqual(courseData.assignments[0].title, 'Quiz 1');
   assert.strictEqual(courseData.assignments[0].description, 'Recall organelles');
 
+  // Test 2.5: Missing Error Path Test for crawlCanvasCourse
+  let caughtError1 = false;
+  try {
+    await crawlCanvasCourse(null, '12345', mockFetch);
+  } catch (err) {
+    caughtError1 = true;
+    assert.strictEqual(err.message, 'Canvas origin and courseId are required for course crawling.');
+  }
+  assert.ok(caughtError1, 'Should throw error when origin is missing');
+
+  let caughtError2 = false;
+  try {
+    await crawlCanvasCourse('https://canvas.instructure.com', null, mockFetch);
+  } catch (err) {
+    caughtError2 = true;
+    assert.strictEqual(err.message, 'Canvas origin and courseId are required for course crawling.');
+  }
+  assert.ok(caughtError2, 'Should throw error when courseId is missing');
+
   // Test 3: Demo Course Audit Fallback
   const demoResult = getDemoCourseAuditResult({ title: 'Biology 101: Cell Systems' });
   assert.ok(demoResult.summary.keyTakeaway.includes('Course-Level Demo'));

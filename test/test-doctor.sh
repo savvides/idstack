@@ -40,7 +40,7 @@ DOCTOR_CMD="$MOCK_IDSTACK_DIR/bin/idstack-doctor"
 # mock we drop in. `claude` is absent unless a test installs it.
 MOCK_BIN="$TEST_ROOT/bin"
 mkdir -p "$MOCK_BIN"
-for _c in bash sh env command dirname echo grep head python3 readlink sed tr awk cat ls rm mkdir ln chmod mktemp printf sort wc basename find touch cp; do
+for _c in bash sh env command dirname echo grep head python3 readlink sed tr awk cat ls rm mkdir ln chmod mktemp printf sort wc basename find touch cp cut; do
   _p=$(command -v "$_c" 2>/dev/null) && ln -sf "$_p" "$MOCK_BIN/$_c"
 done
 export PATH="$MOCK_BIN"
