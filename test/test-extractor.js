@@ -136,7 +136,7 @@ try {
   JSDOM = SimpleJSDOM;
 }
 
-const { detectPageType, extractContentFromDOM, extractPageContent } = require('../extension/content/extractor-core.cjs');
+const { detectPageType, extractContentFromDOM, extractPageContent, detectCourseContext } = require('../extension/shared/extractor-core.js');
 
 // Test 1: Canvas Assignment fixture
 const canvasAssignmentHTML = `
@@ -297,6 +297,7 @@ global.chrome = {
 };
 global.window = domAssignment.window;
 global.document = domAssignment.window.document;
+global.extractPageContent = extractPageContent;
 
 delete require.cache[require.resolve('../extension/content/extractor.js')];
 require('../extension/content/extractor.js');
@@ -314,9 +315,9 @@ assert.strictEqual(responseData.title, 'Enzymes Lab Analysis');
 delete global.chrome;
 delete global.window;
 delete global.document;
+delete global.extractPageContent;
 
 // Test 11: Canvas Course Root Detection
-const { detectCourseContext } = require('../extension/content/extractor-core.cjs');
 const rootCtx = detectCourseContext('https://canvas.instructure.com/courses/987654', 'Biology 101');
 assert.strictEqual(rootCtx.isCourseRoot, true);
 assert.strictEqual(rootCtx.courseId, '987654');

@@ -1,4 +1,7 @@
-export function detectPageType(url, document) {
+/**
+ * Core course content extraction logic for Canvas, Google Docs, and web pages.
+ */
+function detectPageType(url, document) {
   if (url.includes('instructure.com') || url.includes('/courses/')) {
     if (document.querySelector('#assignment_show')) return 'Canvas Assignment';
     if (document.querySelector('#syllabusContainer') || url.includes('/assignments/syllabus')) return 'Canvas Syllabus';
@@ -10,7 +13,7 @@ export function detectPageType(url, document) {
   return 'Web Syllabus / Course Page';
 }
 
-export function extractContentFromDOM(document, url = (typeof window !== 'undefined' && window.location ? window.location.href : '')) {
+function extractContentFromDOM(document, url = (typeof window !== 'undefined' && window.location ? window.location.href : '')) {
   const pageType = detectPageType(url, document);
   let title = (document && document.title) || 'Course Document';
   let content = '';
@@ -39,12 +42,12 @@ export function extractContentFromDOM(document, url = (typeof window !== 'undefi
   };
 }
 
-export function extractPageContent() {
+function extractPageContent() {
   const url = typeof window !== 'undefined' && window.location ? window.location.href : '';
   return extractContentFromDOM(document, url);
 }
 
-export function detectCourseContext(url, docTitle) {
+function detectCourseContext(url, docTitle) {
   if (!url) return { isCourseRoot: false, courseId: null, origin: null };
   try {
     const parsedUrl = new URL(url);
@@ -60,3 +63,11 @@ export function detectCourseContext(url, docTitle) {
   }
 }
 
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    detectPageType,
+    extractContentFromDOM,
+    extractPageContent,
+    detectCourseContext
+  };
+}

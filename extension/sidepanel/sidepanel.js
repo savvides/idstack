@@ -1,7 +1,8 @@
 import { getSettings, saveSettings, getDossier, addToDossier, removeFromDossier, clearDossier } from '../shared/storage.js';
 import { renderAuditHTML, renderDossierListHTML } from './renderer-helper.js';
-import { detectCourseContext } from '../content/extractor-core.js';
 import { compileSingleAuditToMarkdown, compileDossierToMarkdown } from '../shared/dossier-compiler.js';
+
+// detectCourseContext is now provided globally via ../shared/extractor-core.js
 
 let activePayload = null;
 let activeCourseContext = null;
