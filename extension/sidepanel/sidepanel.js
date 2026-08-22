@@ -173,7 +173,7 @@ export function renderResults(data) {
     });
   }
 
-  document.querySelectorAll('.feedback-btn').forEach(btn => {
+  container.querySelectorAll('.feedback-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const parent = e.target.parentElement;
       if (parent) {
