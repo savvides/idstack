@@ -41,7 +41,7 @@ done
 
 # Check YAML frontmatter has required fields (bare names, no idstack- prefix)
 for skill in $SKILLS; do
-  check "$skill has name: $skill" "grep -q '^name: $skill' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill has name: $skill" "grep -q '^name: $skill$' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
   check "$skill has description: field" "grep -q '^description:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
   check "$skill has allowed-tools: field" "grep -q '^allowed-tools:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
