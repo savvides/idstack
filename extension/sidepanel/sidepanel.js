@@ -460,18 +460,22 @@ if (saveSettingsBtn && apiKeyInput) {
 })();
 
 // Listen for tab switching / updates
+function handleTabActivated() {
+  refreshActiveTab();
+}
+
+function handleTabUpdated(tabId, changeInfo, tab) {
+  if (changeInfo.status === 'complete' && tab.active) {
+    refreshActiveTab();
+  }
+}
+
 if (typeof chrome !== 'undefined' && chrome.tabs) {
   if (chrome.tabs.onActivated) {
-    chrome.tabs.onActivated.addListener(() => {
-      refreshActiveTab();
-    });
+    chrome.tabs.onActivated.addListener(handleTabActivated);
   }
   if (chrome.tabs.onUpdated) {
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      if (changeInfo.status === 'complete' && tab.active) {
-        refreshActiveTab();
-      }
-    });
+    chrome.tabs.onUpdated.addListener(handleTabUpdated);
   }
 }
 
