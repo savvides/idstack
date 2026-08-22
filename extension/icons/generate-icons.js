@@ -87,4 +87,3 @@ const iconsDir = path.join(__dirname);
   const png = createPng(size);
   fs.writeFileSync(path.join(iconsDir, `icon-${size}.png`), png);
 });
-console.log('Icons generated successfully.');
