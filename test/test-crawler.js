@@ -46,5 +46,22 @@ const mockFetch = async (url, options) => {
   assert.ok(demoResult.findings.length >= 2);
   assert.ok(demoResult.improvedDraft.title.includes('Matrix'));
 
+  // Test 4: Error Path Test for course fetch failure
+  const mockFailedFetch = async (url) => {
+    return {
+      ok: false,
+      status: 404
+    };
+  };
+
+  let errorThrown = false;
+  try {
+    await crawlCanvasCourse('https://canvas.instructure.com', 'invalid-id', mockFailedFetch);
+  } catch (err) {
+    errorThrown = true;
+    assert.strictEqual(err.message, 'Failed to fetch Canvas course info (404)');
+  }
+  assert.ok(errorThrown, 'Expected an error to be thrown for failed fetch');
+
   console.log('✅ Task 2 Canvas crawler tests passed.');
 })();
