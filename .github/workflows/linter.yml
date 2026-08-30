@@ -1,10 +1,15 @@
+---
 name: Lint Code Base
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+
+permissions:
+  contents: read
+  statuses: write
 
 jobs:
   run-lint:
@@ -18,6 +23,16 @@ jobs:
       - name: Lint Code Base
         uses: super-linter/super-linter@v7
         env:
-          VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
+          # Naming any validator puts super-linter in opt-in mode, so only these
+          # three run. Leaving it on the default (every validator it can detect)
+          # fails this repo: jscpd uses a 0% duplicate threshold and flags the
+          # .cjs/.js module twins that CLAUDE.md requires, and checkov flags the
+          # workflows' missing permissions blocks. Bash is deliberately absent —
+          # shellcheck reports 52 findings across bin/ and test/, which is a
+          # cleanup of its own, not a merge gate.
+          VALIDATE_GITHUB_ACTIONS: true
+          VALIDATE_GITLEAKS: true
+          VALIDATE_YAML: true
