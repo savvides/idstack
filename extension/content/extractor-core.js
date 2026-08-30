@@ -35,7 +35,7 @@ export function extractContentFromDOM(document, url = (typeof window !== 'undefi
     title,
     pageType,
     content: content.slice(0, 15000),
-    wordCount: content.split(/\s+/).filter(Boolean).length
+    wordCount: (content.match(/\S+/g) || []).length
   };
 }
 
