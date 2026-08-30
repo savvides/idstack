@@ -312,14 +312,21 @@ if [ -x "$IDSTACK_DIR/test/test-setup.sh" ]; then
   check "setup behavioral tests pass" "'$IDSTACK_DIR/test/test-setup.sh' '$IDSTACK_DIR'"
 fi
 
-# Chrome extension unit and integration tests
-if [ -x "$IDSTACK_DIR/test/test-extension.sh" ]; then
+# The two node-dependent suites. Guarded on node, not on the files' exec bits — those are tracked
+# at 100755 so they never vary, while node is the part that can actually be absent. CI installs it
+# (see .github/workflows/test.yml); the guard is for a bare machine. The SKIP lines matter: without
+# them a node-less run just reports a smaller total than CLAUDE.md documents, with nothing saying why.
+if command -v node &>/dev/null; then
   check "chrome extension tests pass" "'$IDSTACK_DIR/test/test-extension.sh'"
-fi
-
-# Responsive landing page test
-if [ -x "$IDSTACK_DIR/test/test-responsive-landing.js" ]; then
   check "responsive landing page tests pass" "node '$IDSTACK_DIR/test/test-responsive-landing.js'"
+  # Renders the page in headless Chrome and asserts the OUTCOME (no sideways scroll, touch
+  # targets, column counts) rather than the CSS text. Skips loudly without a browser; the
+  # text suite above still runs. See test/test-rendered-landing.js for why both exist.
+  check "rendered landing page tests pass" "node '$IDSTACK_DIR/test/test-rendered-landing.js'"
+else
+  echo "  SKIP: chrome extension tests (node not installed)"
+  echo "  SKIP: responsive landing page tests (node not installed)"
+  echo "  SKIP: rendered landing page tests (node not installed)"
 fi
 
 # Check generated files have auto-generated header

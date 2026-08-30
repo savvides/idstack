@@ -127,7 +127,7 @@ bin/idstack-gen-skills --dry-run  # Generated files up to date? Run this first.
 ./test/smoke-test.sh              # Verify the install
 ```
 
-Ten suites run in CI (`.github/workflows/test.yml`) on every push and pull request. Run whichever ones your change touches locally; CI runs them all:
+Every suite below runs in CI (`.github/workflows/test.yml`) on every push and pull request. Run whichever ones your change touches locally; CI runs them all:
 
 | Suite | Covers |
 |-------|--------|
@@ -140,6 +140,9 @@ Ten suites run in CI (`.github/workflows/test.yml`) on every push and pull reque
 | `test/test-version-classifier.sh` | `bin/lib/version-classify.sh` |
 | `test/test-plugin-status.sh` | `bin/lib/plugin-status.sh` |
 | `test/test-preamble-python.sh` | The preamble's embedded Python, on 3.9 and 3.12 |
+| `test/test-extension.sh` | Chrome extension packaging and static analysis, plus eight node unit suites under `test/test-*.js` |
+| `test/test-rendered-landing.js` | Renders `docs/index.html` in headless Chrome across 11 widths and asserts the rendered outcome: no horizontal scroll, 44px touch targets, breakpoint column counts, sticky nav. Catches regressions the text suite cannot see (selector lists, `@container`, nested or print-only media queries, a `<style>` inside an HTML comment). Skips loudly with no browser |
+| `test/test-responsive-landing.js` | Responsive and mobile-ergonomics invariants for `docs/index.html` — fluid tokens, notch-safe gutters, breakpoint-scoped rules, touch targets. Runs on node, via `smoke-test.sh` |
 | `python3 test/check-evidence-cards.py .` | Verifies landing page evidence card study counts and tier ranges against `evidence/references.md` |
 | `python3 test/check-doc-accuracy.py .` | Validates version agreement, manifest schema version, binary/flag references, link targets, and surface accuracy across docs |
 | `test/mutation-test.sh` | Reintroduces each known defect into a throwaway copy and asserts the guarding test fails. Add a mutation here whenever you fix a bug — it is what proves your new test would have caught it |
@@ -148,7 +151,7 @@ The CI matrix is ubuntu on Python 3.9 and 3.12, plus macOS on 3.12 for BSD `grep
 
 ### Writing a new assertion
 
-`test/test-helper.sh` is sourced by every suite and owns the counters and the assertion:
+`test/test-helper.sh` is sourced by every bash suite that runs assertions itself and owns the counters and the assertion (`test-extension.sh` delegates to node and asserts nothing of its own; the node suites cannot source it and accumulate their own problems instead):
 
 ```bash
 . "$(dirname "$0")/test-helper.sh"

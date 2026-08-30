@@ -27,10 +27,10 @@ bin/package-extension.sh                   # Package Chrome extension into build
 Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 
 ```bash
-./test/smoke-test.sh              # 355 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 362 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
-./test/integration-test.sh        # 48 behavioral tests across the bin/ scripts; also proves the suite
+./test/integration-test.sh        # 51 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 17 behavioral tests for ./setup (flags, scope, legacy cleanup, failure handling)
 ./test/test-doctor.sh             # 13 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
@@ -40,12 +40,15 @@ Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
 ./test/test-extension.sh          # Chrome Extension packaging and static analysis tests
+./test/test-responsive-landing.js # Responsive/mobile invariants for docs/index.html, as CSS text (node; via smoke-test)
+./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
+                                  # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails
 ```
 
-`test/test-helper.sh` is not a suite — it is sourced by all of them and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion. Do not add a local counter block to a suite; smoke-test fails on one, and a mutation proves that guard works.
+`test/test-helper.sh` is not a suite — it is sourced by every **bash** suite that runs assertions itself and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion (`test-extension.sh` is the exception: it delegates to node and asserts nothing of its own). Do not add a local counter block to a bash suite; smoke-test fails on one, and a mutation proves that guard works. The node suites (`test-extension.sh`'s eight unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it; they accumulate their own problems and report a count, which is the same contract in another language.
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9.
 
