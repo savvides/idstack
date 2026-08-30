@@ -14,10 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify tag matches VERSION, plugin.json, and CHANGELOG
+        env:
+          TAG_NAME: ${{ github.ref_name }}
         run: |
           VER="$(tr -d '[:space:]' < VERSION)"
-          if [ "v$VER" != "${{ github.ref_name }}" ]; then
-            echo "Tag ${{ github.ref_name }} does not match VERSION ($VER)" >&2
+          if [ "v$VER" != "$TAG_NAME" ]; then
+            echo "Tag $TAG_NAME does not match VERSION ($VER)" >&2
             exit 1
           fi
           grep -qF "\"version\": \"$VER\"" .claude-plugin/plugin.json || {
