@@ -42,7 +42,7 @@
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
-    "softwareVersion": "3.5.0.0",
+    "softwareVersion": "3.5.1.0",
     "datePublished": "2026-04-20",
     "offers": {
       "@type": "Offer",
@@ -108,12 +108,13 @@
       --prose:  62ch;
       --pad-x:  clamp(1rem, 3.5vw, 2rem);
       --pad-y:  clamp(2.75rem, 5.5vw, 5.5rem);
+
+      /* Minimum interactive target. 44px is the Apple HIG / WCAG 2.5.5 figure; the page
+         previously carried three different ad-hoc floors (36/40/42px). */
+      --tap-min: 44px;
     }
 
-    html {
-      scroll-behavior: smooth;
-      overflow-x: clip;
-    }
+    html { scroll-behavior: smooth; }
 
     body {
       background: var(--bg);
@@ -123,7 +124,6 @@
       line-height: 1.65;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      overflow-x: clip;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -179,11 +179,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 0.85rem var(--pad-x);
-      padding-left: max(var(--pad-x), env(safe-area-inset-left));
-      padding-right: max(var(--pad-x), env(safe-area-inset-right));
+      padding-block: 0.85rem;
       gap: 1rem;
       flex-wrap: wrap;
     }
@@ -233,10 +229,18 @@
     /* ──────────────────────────────────────────────
        Layout primitives
        ────────────────────────────────────────────── */
-    .section {
+    /* Page containers share the max-width, centering, and notch-safe inline gutter.
+       Defining the gutter once means a new container cannot miss it — .section did,
+       so every content region sat under the notch once viewport-fit=cover landed. */
+    .nav, .section, .hero, .footer {
       max-width: var(--max);
-      margin: 0 auto;
-      padding: var(--pad-y) var(--pad-x);
+      margin-inline: auto;
+      padding-inline:
+        max(var(--pad-x), env(safe-area-inset-left))
+        max(var(--pad-x), env(safe-area-inset-right));
+    }
+    .section {
+      padding-block: var(--pad-y);
     }
     .section + .section { border-top: 1px solid var(--rule); }
 
@@ -270,11 +274,7 @@
        Hero — single column, generous whitespace
        ────────────────────────────────────────────── */
     .hero {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: clamp(2.5rem, 6vw, 5.5rem) var(--pad-x) clamp(2.25rem, 5vw, 4.5rem);
-      padding-left: max(var(--pad-x), env(safe-area-inset-left));
-      padding-right: max(var(--pad-x), env(safe-area-inset-right));
+      padding-block: clamp(2.5rem, 6vw, 5.5rem) clamp(2.25rem, 5vw, 4.5rem);
     }
     .hero-text { max-width: 56rem; }
 
@@ -306,7 +306,7 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 0.45rem 0.65rem;
-      font-size: clamp(0.74rem, 1.4vw, 0.78rem);
+      font-size: 0.78rem;
       letter-spacing: 0.03em;
       color: var(--ink-muted);
       margin-bottom: 1.25rem;
@@ -341,20 +341,19 @@
       border: none;
       padding: 0;
       color: var(--ink);
-      font-size: clamp(0.76rem, 1.6vw, 0.83rem);
+      font-size: 0.83rem;
       flex: 1 1 0;
       min-width: 0;
       overflow-x: auto;
       white-space: nowrap;
       scrollbar-width: thin;
-      -webkit-overflow-scrolling: touch;
     }
     .copy-btn {
       background: transparent;
       border: 1px solid var(--rule);
       border-radius: 2px;
       padding: 0.4rem 0.75rem;
-      min-height: 36px;
+      min-height: var(--tap-min);
       color: var(--ink-soft);
       font-family: var(--font-ui);
       font-weight: 600;
@@ -391,7 +390,7 @@
       font-weight: 600;
       font-size: 0.88rem;
       padding: 0.6rem 1rem;
-      min-height: 40px;
+      min-height: var(--tap-min);
       border-radius: 2px;
       text-decoration: none;
       transition: background 0.15s ease;
@@ -489,7 +488,7 @@
       padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--rule);
       font-family: var(--font-ui);
-      font-size: clamp(0.82rem, 1.8vw, 0.88rem);
+      font-size: 0.88rem;
       color: var(--ink-soft);
     }
     .evidence-legend-item {
@@ -538,7 +537,7 @@
 
     .evidence-card-title {
       font-family: var(--font-display);
-      font-size: clamp(1.05rem, 2vw, 1.12rem);
+      font-size: 1.12rem;
       font-weight: 600;
       letter-spacing: -0.01em;
       color: var(--ink);
@@ -547,7 +546,7 @@
 
     .evidence-card-body {
       font-family: var(--font-body);
-      font-size: clamp(0.92rem, 1.6vw, 0.98rem);
+      font-size: 0.98rem;
       line-height: 1.55;
       color: var(--ink-soft);
       max-width: var(--prose);
@@ -577,7 +576,7 @@
 
     .evidence-foot {
       margin-top: 2rem;
-      font-size: clamp(0.88rem, 1.6vw, 0.92rem);
+      font-size: 0.92rem;
       color: var(--ink-muted);
       max-width: var(--prose);
     }
@@ -690,7 +689,7 @@
 
     .pipeline-foot {
       margin-top: 1.75rem;
-      font-size: clamp(0.9rem, 1.6vw, 0.95rem);
+      font-size: 0.95rem;
       color: var(--ink-soft);
       max-width: var(--prose);
     }
@@ -698,13 +697,15 @@
     /* ──────────────────────────────────────────────
        Output pair (markdown / json)
        ────────────────────────────────────────────── */
+    /* minmax(0, …) rather than a bare 1fr: a grid item's automatic minimum size is its
+       min-content width, so a long unbreakable code string would otherwise widen the track. */
     .output-pair {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
     }
     @media (max-width: 880px) {
-      .output-pair { grid-template-columns: 1fr; }
+      .output-pair { grid-template-columns: minmax(0, 1fr); }
     }
     .output-panel {
       background: var(--raised);
@@ -713,7 +714,6 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      min-width: 0;
     }
     .output-header {
       padding: 0.55rem 0.85rem;
@@ -728,13 +728,13 @@
     }
     .output-body {
       padding: clamp(0.9rem, 2.5vw, 1.25rem);
-      font-size: clamp(0.88rem, 1.6vw, 0.92rem);
+      font-size: 0.92rem;
       line-height: 1.6;
       color: var(--ink-soft);
     }
     .output-body h3 {
       font-family: var(--font-display);
-      font-size: clamp(0.95rem, 2vw, 1rem);
+      font-size: 1rem;
       font-weight: 600;
       letter-spacing: -0.005em;
       color: var(--ink);
@@ -749,12 +749,11 @@
     .output-body strong { color: var(--ink); font-weight: 600; }
     .output-json {
       font-family: var(--font-mono);
-      font-size: clamp(0.72rem, 1.6vw, 0.78rem);
+      font-size: 0.78rem;
       line-height: 1.55;
       white-space: pre;
       overflow-x: auto;
       scrollbar-width: thin;
-      -webkit-overflow-scrolling: touch;
       color: var(--ink-soft);
       padding: clamp(0.9rem, 2.5vw, 1.25rem);
     }
@@ -763,7 +762,7 @@
     .output-json .punct { color: var(--ink-muted); }
     .output-foot {
       margin-top: 1.5rem;
-      font-size: clamp(0.88rem, 1.6vw, 0.92rem);
+      font-size: 0.92rem;
       color: var(--ink-muted);
       max-width: var(--prose);
     }
@@ -773,7 +772,7 @@
        ────────────────────────────────────────────── */
     .install-tracks {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       gap: 1.5rem;
       max-width: 760px;
     }
@@ -782,7 +781,6 @@
       border: 1px solid var(--rule);
       border-radius: 2px;
       padding: clamp(1rem, 3.5vw, 1.75rem);
-      min-width: 0;
     }
     .install-track-header {
       display: flex;
@@ -823,8 +821,6 @@
       padding: 0.65rem 0.65rem 0.65rem 0.95rem;
       max-width: 760px;
       width: 100%;
-      min-width: 0;
-      overflow: hidden;
     }
     .install-block .prompt {
       color: var(--accent);
@@ -843,11 +839,10 @@
       overflow-x: auto;
       white-space: nowrap;
       scrollbar-width: thin;
-      -webkit-overflow-scrolling: touch;
     }
 
     .install-prose {
-      font-size: clamp(0.9rem, 1.6vw, 0.95rem);
+      font-size: 0.95rem;
       color: var(--ink-soft);
       max-width: var(--prose);
       margin-top: 0.85rem;
@@ -895,11 +890,7 @@
        Footer
        ────────────────────────────────────────────── */
     .footer {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 2.5rem var(--pad-x) max(3rem, env(safe-area-inset-bottom));
-      padding-left: max(var(--pad-x), env(safe-area-inset-left));
-      padding-right: max(var(--pad-x), env(safe-area-inset-right));
+      padding-block: 2.5rem max(3rem, env(safe-area-inset-bottom));
       border-top: 1px solid var(--rule);
       font-size: 0.88rem;
     }
@@ -948,8 +939,8 @@
     }
     @media (max-width: 480px) {
       .footer-signup { flex-direction: column; gap: 0.5rem; }
-      .footer-signup input[type="email"] { border-right: 1px solid var(--rule); border-radius: 2px; min-height: 42px; }
-      .footer-signup button { border-radius: 2px; min-height: 42px; width: 100%; }
+      .footer-signup input[type="email"] { border-right: 1px solid var(--rule); border-radius: 2px; }
+      .footer-signup button { border-radius: 2px; width: 100%; }
     }
     .footer-signup label {
       position: absolute;
@@ -960,6 +951,7 @@
     }
     .footer-signup input[type="email"] {
       flex: 1;
+      min-height: var(--tap-min);
       padding: 0.55rem 0.85rem;
       font-family: var(--font-ui);
       font-size: 0.9rem;
@@ -973,6 +965,7 @@
     .footer-signup input[type="email"]:focus { border-color: var(--accent); }
     .footer-signup input[type="email"]::placeholder { color: var(--ink-muted); }
     .footer-signup button {
+      min-height: var(--tap-min);
       padding: 0.55rem 1rem;
       font-family: var(--font-ui);
       font-size: 0.85rem;
@@ -1037,7 +1030,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v3.5.0.0 · Claude Code &amp; Chrome Extension</span>
+          <span>v3.5.1.0 · Claude Code &amp; Chrome Extension</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design with peer-reviewed citations.</h1>
         <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation includes its evidence tier: <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code and as a native Chrome Extension.</p>

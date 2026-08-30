@@ -162,7 +162,7 @@ def check_developer_surfaces(root, problems):
                 if cmd not in content:
                     problems.append("CLAUDE.md missing test command reference: %s" % cmd)
 
-            test_refs = set(re.findall(r"\btest/[a-zA-Z0-9_-]+\.(?:sh|py)\b", content))
+            test_refs = set(re.findall(r"\btest/[a-zA-Z0-9_-]+\.(?:sh|py|js)\b", content))
             for ref in sorted(test_refs):
                 if not os.path.isfile(os.path.join(root, ref)):
                     problems.append("CLAUDE.md references missing test file: %s" % ref)
@@ -181,7 +181,7 @@ def check_developer_surfaces(root, problems):
                 if cmd not in content:
                     problems.append("CONTRIBUTING.md missing test command reference: %s" % cmd)
 
-            test_refs = set(re.findall(r"\btest/[a-zA-Z0-9_-]+\.(?:sh|py)\b", content))
+            test_refs = set(re.findall(r"\btest/[a-zA-Z0-9_-]+\.(?:sh|py|js)\b", content))
             for ref in sorted(test_refs):
                 if not os.path.isfile(os.path.join(root, ref)):
                     problems.append("CONTRIBUTING.md references missing test file: %s" % ref)

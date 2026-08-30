@@ -42,6 +42,13 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
   | `small` | 0.80 | 14 | Captions, mono citations, badges |
 
 - **Line heights:** 1.65 body · 1.20 display · 1.40 UI.
+- **When to use fluid `clamp()` type (landing page):** only where the size genuinely moves —
+  a total min→max span of roughly 1.5px or more. Below that the clamp is a three-term
+  declaration encoding a sub-pixel step, so use a fixed rem value instead. Seven declarations
+  in `docs/index.html` clear the bar (`.brand`, `.nav-links a`, `.section-header h2`,
+  `.hero h1`, `.hero .lede`, `.install-track-header h3`, `.install-block code`); the rest are
+  fixed. The layout tokens `--pad-x` / `--pad-y` stay fluid regardless: 16→32px (fluid across a
+  457–914px viewport) and 44→88px (800–1600px).
 
 ## Color
 
@@ -104,6 +111,14 @@ Restrained. Two-color annotation set (rust + prussian blue) for primary marks; t
 | `3xl` | 64 | Major page section spacing |
 | `4xl` | 96 | Hero spacing |
 
+- **Minimum interactive target (landing page only):** 44px, as `--tap-min` in `docs/index.html`.
+  44px is where Apple's HIG and WCAG 2.5.5 Target Size (Enhanced) both land; citing it is the source
+  of the number, not a claim that the page conforms to that AAA criterion. Applies to buttons and
+  form inputs at every viewport width, not only in stacked mobile layouts. Text links are not sized
+  to it — measured at 375px they run 18px in prose, 29-32px for nav, footer, `.brand` and
+  `.cta-secondary`, and 35px for `.skip-link`. They sit in running text where a 44px box would break
+  the line rhythm, and all clear WCAG 2.5.8 (AA) at 24px or fall under its inline-target exception.
+
 ## Layout
 
 - **Approach:** Hybrid. Grid-disciplined for marketing landing; single-column prose for reports.
@@ -160,3 +175,5 @@ No medium / long durations. No scroll-driven animations. No parallax. No entranc
 | 2026-05-13 | Background ivory `#faf8f3` (replaces parchment `#fbfaf6`) | Cleaner publication feel. Parchment-warm read as "old book"; ivory reads as "good paper." |
 | 2026-05-13 | Add prussian blue `#1d4a5e` as secondary accent | Two-color annotation set (red + blue) mirrors how academic editors marked manuscripts. |
 | 2026-06-12 | Landing reverted to original dark/indigo aesthetic, separate from the report system (owner request) | Reports retain scholarly ivory "Proof" identity. Landing uses indigo→purple gradient accents — a scoped exception to the no-gradient anti-pattern, which still binds reports. |
+| 2026-08-29 | Fluid `clamp()` type reserved for sizes that span ≥1.5px | The responsive pass put `clamp()` on 19 landing-page font sizes; 12 of them varied by at most 1.12px across their whole range, i.e. a fixed value written in three terms. Those 12 reverted to fixed rem. Cost: type on phones is up to 1.1px larger than the clamp gave; accepted, it reads slightly better. |
+| 2026-08-29 | Minimum interactive target fixed at 44px (`--tap-min`) | The landing page had grown three ad-hoc floors (36/40/42px), and the footer controls applied theirs only below 480px, leaving every width above 480px (desktop included) at 36.6px. One token, applied at every width. Cost: slightly taller controls on desktop; accepted in a product that ships a WCAG review skill. |
