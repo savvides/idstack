@@ -9,10 +9,13 @@ if (typeof chrome !== 'undefined' && chrome.sidePanel && chrome.sidePanel.setPan
 }
 
 async function callLlmApi(apiKey, prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`; // IDSTACK_CLI_LEAK_ALLOW
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`; // IDSTACK_CLI_LEAK_ALLOW
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
+    },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
