@@ -48,7 +48,7 @@ python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across 
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails
 ```
 
-`test/test-helper.sh` is not a suite — it is sourced by every **bash** suite and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion. Do not add a local counter block to a bash suite; smoke-test fails on one, and a mutation proves that guard works. The two node suites (`test-extension.sh`'s `test/test-*.js`, and `test/test-responsive-landing.js`) cannot source it; they accumulate their own problems and report a count, which is the same contract in another language.
+`test/test-helper.sh` is not a suite — it is sourced by every **bash** suite and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion. Do not add a local counter block to a bash suite; smoke-test fails on one, and a mutation proves that guard works. The node suites (`test-extension.sh`'s eight unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it; they accumulate their own problems and report a count, which is the same contract in another language.
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9.
 
