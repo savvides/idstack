@@ -151,7 +151,7 @@ The CI matrix is ubuntu on Python 3.9 and 3.12, plus macOS on 3.12 for BSD `grep
 
 ### Writing a new assertion
 
-`test/test-helper.sh` is sourced by every bash suite and owns the counters and the assertion (the node suites cannot source it and accumulate their own problems instead):
+`test/test-helper.sh` is sourced by every bash suite that runs assertions itself and owns the counters and the assertion (`test-extension.sh` delegates to node and asserts nothing of its own; the node suites cannot source it and accumulate their own problems instead):
 
 ```bash
 . "$(dirname "$0")/test-helper.sh"

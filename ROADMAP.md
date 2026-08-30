@@ -41,7 +41,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **Standalone runs persist.** `bin/idstack-migrate --init` creates a canonical manifest, so a skill run outside the pipeline has something to write into instead of silently discarding its results.
 
 ### Test infrastructure and CI (v3.3.0.0–v3.3.0.4, for contributors)
-- The suite had never run automatically. GitHub Actions runs every suite on each push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, and more since. `CONTRIBUTING.md` lists the current set; the count is not repeated here so it cannot drift again.
+- The suite had never run automatically. GitHub Actions runs every suite on each push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, and more since; `CONTRIBUTING.md` lists the current set.
 - `./setup` — the primary deliverable — went from zero coverage to 17 behavioral tests.
 - `bin/idstack-doctor` and `bin/idstack-status --readiness` gained their first execution coverage in v3.3.0.4. Both are what a user reaches for when something has already gone wrong, and neither had any.
 - `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught. Every mutation in it is guarded; the suite prints the current count when you run it.
