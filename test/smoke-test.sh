@@ -326,6 +326,7 @@ if command -v node &>/dev/null; then
 else
   echo "  SKIP: chrome extension tests (node not installed)"
   echo "  SKIP: responsive landing page tests (node not installed)"
+  echo "  SKIP: rendered landing page tests (node not installed)"
 fi
 
 # Check generated files have auto-generated header

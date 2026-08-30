@@ -32,7 +32,10 @@ jobs:
       # runner image that stops preinstalling node.
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # 22, not 20: test-rendered-landing.js drives Chrome over the global WebSocket,
+          # which node exposes unflagged only from 22.4. On 20 it fails with
+          # "WebSocket is not defined" and the rendered suite never runs.
+          node-version: '22'
       - name: Smoke test
         run: ./test/smoke-test.sh
       - name: Integration test
@@ -66,11 +69,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      # Mutations 23-31 are guarded only by the node landing-page suite. Without node,
-      # smoke-test skips it, those mutations report NOT-GUARDED and this job fails. node is
-      # a hard requirement here, not a hedge against a silent skip.
+      # Mutations 23-32 are guarded only by the node landing-page suites. Without node,
+      # smoke-test skips them, those mutations report NOT-GUARDED and this job fails. node is
+      # a hard requirement here, not a hedge against a silent skip. 22 for the same WebSocket
+      # reason as the test job; mutation 32 additionally needs Chrome.
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       - name: Mutation test
         run: ./test/mutation-test.sh

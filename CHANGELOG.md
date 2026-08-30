@@ -42,8 +42,9 @@ To update: `cd` into your idstack clone, then `git pull && ./setup`.
 - **`test/test-rendered-landing.js`** loads `docs/index.html` in headless Chrome and asserts what
   the page does at 11 widths: no sideways scroll, every control at least 44px, the pipeline and
   output grids collapsing at their breakpoints, the nav sticky and all its links reachable. It
-  needs no dependencies (Chrome over CDP with node's built-in `fetch` and `WebSocket`) and skips
-  loudly when no browser is present.
+  adds no npm dependency (Chrome over CDP with node's built-in `fetch` and `WebSocket`) and skips
+  loudly when no browser is present. It does require node 22.4+, which is where the global
+  `WebSocket` becomes available; CI pins node 22 for exactly this reason.
 
   The existing suite checks CSS as text, which can only forbid the spellings someone thought of.
   Six kinds of edit shipped a broken page past it — a selector list, an `:is()` wrapper, an
