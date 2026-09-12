@@ -272,6 +272,31 @@ body {
   color: var(--accent-blue);
 }
 
+a.citation {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+a.citation:hover {
+  color: var(--ink);
+}
+
+.consensus-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tier-t1);
+  background: var(--sev-suggestion-bg);
+  border: 1px solid var(--tier-t1);
+  padding: 1px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
 /* Severity Finding Cards */
 .finding-card {
   border-left: 4px solid var(--rule-strong);
@@ -298,6 +323,7 @@ body {
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .finding-obs, .finding-evi, .finding-rec {
