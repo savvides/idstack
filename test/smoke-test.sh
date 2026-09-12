@@ -50,7 +50,7 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
@@ -306,18 +306,24 @@ if [ -x "$IDSTACK_DIR/test/test-status.sh" ]; then
   check "idstack-status behavioral tests pass" "'$IDSTACK_DIR/test/test-status.sh'"
 fi
 
+# Consensus CLI unit tests
+if command -v python3 &>/dev/null; then
+  check "consensus cli unit tests pass" "python3 '$IDSTACK_DIR/test/test-consensus-cli.py'"
+fi
+
 # ./setup is what a new user runs first; it is exercised against a repo copy
 # with a fake $HOME and a stub `claude`, never the real install.
 if [ -x "$IDSTACK_DIR/test/test-setup.sh" ]; then
   check "setup behavioral tests pass" "'$IDSTACK_DIR/test/test-setup.sh' '$IDSTACK_DIR'"
 fi
 
-# The two node-dependent suites. Guarded on node, not on the files' exec bits — those are tracked
+# The node-dependent suites. Guarded on node, not on the files' exec bits — those are tracked
 # at 100755 so they never vary, while node is the part that can actually be absent. CI installs it
 # (see .github/workflows/test.yml); the guard is for a bare machine. The SKIP lines matter: without
 # them a node-less run just reports a smaller total than CLAUDE.md documents, with nothing saying why.
 if command -v node &>/dev/null; then
   check "chrome extension tests pass" "'$IDSTACK_DIR/test/test-extension.sh'"
+  check "consensus extension client tests pass" "node '$IDSTACK_DIR/test/test-consensus-extension.js'"
   check "responsive landing page tests pass" "node '$IDSTACK_DIR/test/test-responsive-landing.js'"
   # Renders the page in headless Chrome and asserts the OUTCOME (no sideways scroll, touch
   # targets, column counts) rather than the CSS text. Skips loudly without a browser; the
@@ -325,6 +331,7 @@ if command -v node &>/dev/null; then
   check "rendered landing page tests pass" "node '$IDSTACK_DIR/test/test-rendered-landing.js'"
 else
   echo "  SKIP: chrome extension tests (node not installed)"
+  echo "  SKIP: consensus extension client tests (node not installed)"
   echo "  SKIP: responsive landing page tests (node not installed)"
   echo "  SKIP: rendered landing page tests (node not installed)"
 fi
@@ -441,7 +448,8 @@ check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_
 CLI_LEAK_RE='codex|gemini'            # IDSTACK_CLI_LEAK_ALLOW
 CLI_LEAK="$(grep -rIiE "$CLI_LEAK_RE" "$IDSTACK_DIR" \
   --exclude-dir=.git --exclude-dir=.gstack --exclude-dir=.idstack \
-  --exclude-dir=.claude --exclude-dir=.superpowers --exclude-dir=superpowers --exclude=CHANGELOG.md 2>/dev/null || true)"
+  --exclude-dir=.claude --exclude-dir=.superpowers --exclude-dir=superpowers \
+  --exclude-dir=docs/designs --exclude-dir=designs --exclude=CHANGELOG.md 2>/dev/null || true)"
 CLI_LEAK="$(printf '%s' "$CLI_LEAK" | grep -vF 'IDSTACK_CLI_LEAK_ALLOW' || true)"
 # Printed through the command itself, not tested with -z, so a failure names
 # the offending lines instead of just saying the string was non-empty.
