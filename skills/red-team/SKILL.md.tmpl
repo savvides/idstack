@@ -285,6 +285,44 @@ Contextualize:
 
 ---
 
+## Evidence QA Gate
+
+Before compiling the confidence score and generating the audit report, pipe all candidate
+findings across the 5 dimensions through the Consensus evidence QA gate. This validates
+citations against `evidence/references.md`, verifies novel claims against Consensus literature,
+auto-corrects pedagogical neuromyths (e.g., rewriting learning-style matching to multimodal
+presentation or dual-coding), and calibrates evidence tiers:
+
+1. Stage candidate findings into a temporary JSON file at `.idstack/.staged-findings.json`:
+   ```json
+   {
+     "findings": [
+       {
+         "severity": "critical|warning|info",
+         "tier": "T1-T5",
+         "citation": "[Domain-N] Author (Year)",
+         "observation": "...",
+         "evidence": "...",
+         "recommendation": "..."
+       }
+     ]
+   }
+   ```
+2. Run the verification gate:
+   ```bash
+   {{IDSTACK_RESOLVE}}
+   "$_IDSTACK/bin/idstack-consensus" verify --findings .idstack/.staged-findings.json --output .idstack/.verified-findings.json
+   ```
+3. Read `.idstack/.verified-findings.json` and use the verified findings with calibrated tiers,
+   corrected recommendations, and consensus percentages when computing the confidence score
+   and writing the HTML report.
+4. Clean up temporary files:
+   ```bash
+   rm -f .idstack/.staged-findings.json .idstack/.verified-findings.json
+   ```
+
+---
+
 ## Output
 
 The orchestrator emits an HTML report. Follow the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.

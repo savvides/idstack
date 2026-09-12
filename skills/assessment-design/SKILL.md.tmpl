@@ -431,6 +431,45 @@ Consider adding a formative peer review checkpoint to partially address the gap.
 
 ---
 
+## Evidence QA Gate
+
+Before generating the report and writing the manifest, verify all candidate assessment
+findings, rubric criteria, and feedback recommendations through the Consensus evidence
+QA gate. This validates citations against the evidence base, queries Consensus for novel
+or domain-specific claims, auto-corrects pedagogical neuromyths (e.g., converting
+learning-style tailoring to multimodal presentation or dual-coding), and calibrates
+evidence tiers:
+
+1. Stage candidate findings (alignment gaps, feedback quality issues, rubric criteria flags)
+   into a temporary findings JSON file at `.idstack/.staged-findings.json`:
+   ```json
+   {
+     "findings": [
+       {
+         "severity": "critical|warning|info",
+         "tier": "T1-T5",
+         "citation": "[Domain-N] Author (Year)",
+         "observation": "...",
+         "evidence": "...",
+         "recommendation": "..."
+       }
+     ]
+   }
+   ```
+2. Run the verification gate:
+   ```bash
+   {{IDSTACK_RESOLVE}}
+   "$_IDSTACK/bin/idstack-consensus" verify --findings .idstack/.staged-findings.json --output .idstack/.verified-findings.json
+   ```
+3. Read `.idstack/.verified-findings.json` to apply calibrated tiers, verified citations, and
+   any auto-corrected recommendations to the assessment plan, HTML report, and manifest payload.
+4. Clean up temporary files:
+   ```bash
+   rm -f .idstack/.staged-findings.json .idstack/.verified-findings.json
+   ```
+
+---
+
 ## Generate Report
 
 Before writing the manifest, generate an HTML report so the designer has a single document to read. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.

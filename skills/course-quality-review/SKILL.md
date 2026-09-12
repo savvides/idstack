@@ -153,6 +153,33 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
 to adjust how much detail idstack provides."
 
+## Preamble: Evidence Engine & Consensus QA
+
+Check whether a Consensus API key is configured for live literature grounding.
+
+```bash
+# Consensus key detection
+# (fresh shell — re-derive the install dir; see Preamble: Update Check)
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _dir in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_dir" ] && [ -d "$_dir" ]; then _IDSTACK="${_dir%/}"; break; fi
+done
+_CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q '"api_key_configured": true' && echo "CONFIGURED" || echo "UNCONFIGURED")
+[ -n "$_CONSENSUS_KEY" ] && echo "CONSENSUS:$_CONSENSUS_KEY"
+```
+
+**If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
+subject-specific pedagogical claims will be verified against peer-reviewed research.
+**If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
+run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
+to enable live literature verification via Consensus."
+
 ## Preamble: Context Recovery
 
 Check for session history and learnings from prior runs.
@@ -897,6 +924,61 @@ When recommending fixes, point users to the appropriate idstack skill:
   which activities are core vs. reference."
 - Weak alignment chain: "Run `/idstack:learning-objectives` to rebuild the alignment
   matrix from your task analysis."
+
+---
+
+## Evidence QA Gate
+
+Before writing the manifest and generating the quality report, verify all candidate
+findings through the Consensus evidence QA gate. This validates citations against the
+evidence base, verifies novel claims against Consensus literature, auto-corrects
+pedagogical neuromyths (e.g., rewriting learning-style matching to multimodal presentation
+or dual-coding), and calibrates evidence tiers:
+
+1. Stage candidate findings (from QM review, CoI presence, alignment audit, and
+   cross-domain checks) into a JSON payload at `.idstack/.staged-findings.json`:
+   ```json
+   {
+     "findings": [
+       {
+         "severity": "critical|warning|info",
+         "tier": "T1-T5",
+         "citation": "[Domain-N] Author (Year)",
+         "observation": "...",
+         "evidence": "...",
+         "recommendation": "..."
+       }
+     ]
+   }
+   ```
+2. Run the verification gate:
+   ```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+   "$_IDSTACK/bin/idstack-consensus" verify --findings .idstack/.staged-findings.json --output .idstack/.verified-findings.json
+   ```
+3. Read `.idstack/.verified-findings.json` and incorporate verified citations, calibrated
+   tiers, and any auto-corrected recommendations into the manifest payload and quality report.
+4. Remove temporary staging files:
+   ```bash
+   rm -f .idstack/.staged-findings.json .idstack/.verified-findings.json
+   ```
 
 ---
 

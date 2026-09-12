@@ -654,6 +654,44 @@ When recommending fixes, point users to the appropriate idstack skill:
 
 ---
 
+## Evidence QA Gate
+
+Before writing the manifest and generating the quality report, verify all candidate
+findings through the Consensus evidence QA gate. This validates citations against the
+evidence base, verifies novel claims against Consensus literature, auto-corrects
+pedagogical neuromyths (e.g., rewriting learning-style matching to multimodal presentation
+or dual-coding), and calibrates evidence tiers:
+
+1. Stage candidate findings (from QM review, CoI presence, alignment audit, and
+   cross-domain checks) into a JSON payload at `.idstack/.staged-findings.json`:
+   ```json
+   {
+     "findings": [
+       {
+         "severity": "critical|warning|info",
+         "tier": "T1-T5",
+         "citation": "[Domain-N] Author (Year)",
+         "observation": "...",
+         "evidence": "...",
+         "recommendation": "..."
+       }
+     ]
+   }
+   ```
+2. Run the verification gate:
+   ```bash
+   {{IDSTACK_RESOLVE}}
+   "$_IDSTACK/bin/idstack-consensus" verify --findings .idstack/.staged-findings.json --output .idstack/.verified-findings.json
+   ```
+3. Read `.idstack/.verified-findings.json` and incorporate verified citations, calibrated
+   tiers, and any auto-corrected recommendations into the manifest payload and quality report.
+4. Remove temporary staging files:
+   ```bash
+   rm -f .idstack/.staged-findings.json .idstack/.verified-findings.json
+   ```
+
+---
+
 ## Write Manifest
 
 After completing the review, save results via the section-scoped merge tool — it
