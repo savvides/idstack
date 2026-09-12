@@ -363,7 +363,72 @@ class TestConsensusCLI(unittest.TestCase):
         ])
         self.assertEqual(proc.returncode, 1)
 
+    def test_sync_dry_run_all_domains(self):
+        proc = self.run_cli(["sync", "--dry-run"])
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("- [Assessment-", proc.stdout)
+        self.assertIn("- [ID-", proc.stdout)
+        self.assertIn("- [Alignment-", proc.stdout)
+        self.assertIn("- [CogLoad-", proc.stdout)
+        self.assertIn("- [Access-", proc.stdout)
+        self.assertIn("Dry run", proc.stdout)
+        self.assertIn("check-evidence-cards", proc.stdout)
+
+    def test_sync_domain_specific(self):
+        proc = self.run_cli(["sync", "--domain", "Assessment", "--dry-run"])
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("- [Assessment-", proc.stdout)
+        self.assertIn("Assessment", proc.stdout)
+        self.assertNotIn("- [CogLoad-", proc.stdout)
+        self.assertNotIn("- [Access-", proc.stdout)
+
+    def test_sync_invalid_domain_fails(self):
+        proc = self.run_cli(["sync", "--domain", "InvalidDomain", "--dry-run"])
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("Unknown domain", proc.stderr + proc.stdout)
+
+    def test_sync_default_is_dry_run(self):
+        proc = self.run_cli(["sync", "--domain", "Models"])
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("- [ID-", proc.stdout)
+        self.assertIn("Dry run", proc.stdout)
+
+    def test_sync_evidence_cards_compatibility(self):
+        proc = self.run_cli(["sync", "--dry-run"])
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("verified", proc.stdout.lower())
+
+    def test_sync_uses_cached_papers_when_available(self):
+        os.makedirs(self.cache_dir, exist_ok=True)
+        query = "formative assessment feedback higher education meta-analysis 2024..2026"
+        norm = "formative assessment feedback higher education meta-analysis 2024..2026"
+        q_hash = hashlib.sha256(norm.encode("utf-8")).hexdigest()
+        cached_record = {
+            "query": norm,
+            "query_hash": q_hash,
+            "cached_at": "2026-09-12T00:00:00Z",
+            "top_papers": [
+                {
+                    "title": "Custom Cached Formative Feedback Review",
+                    "authors": ["CachedAuthor, A."],
+                    "year": 2025,
+                    "journal": "Journal of Cached Studies",
+                    "study_design": "Meta-analysis",
+                    "tier": "T1",
+                }
+            ],
+        }
+        with open(os.path.join(self.cache_dir, q_hash + ".json"), "w") as f:
+            json.dump(cached_record, f)
+
+        proc = self.run_cli(["sync", "--domain", "Assessment", "--dry-run"])
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("Custom Cached Formative Feedback Review", proc.stdout)
+        self.assertIn("CachedAuthor", proc.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
 
