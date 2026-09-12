@@ -15,6 +15,7 @@ Because scientific consensus in education evolves deliberately, the architecture
 - **Pre-Response Evidence QA Gate**: An automated verification checkpoint that audits staged findings before they are rendered to the user, written to reports, or committed to `.idstack/project.json`.
 - **Zero-Waste / API Call Conservation**: Never burn API calls for queries that have already been resolved. Caching is persistent, cross-project, and deterministic.
 - **Full Platform Coverage**: Unified evidence quality across both Claude Code skills (`/idstack:*`) and the Chrome Extension sidepanel.
+- **Bring Your Own Key (BYOK)**: Since idstack is 100% open source, users supply their own Consensus API key. No keys are hardcoded or shared. Multiple convenient ways to configure keys (env var, user profile, project manifest, extension settings).
 - **Graceful Degradation**: Full functionality continues offline or without an API key by falling back to the curated static evidence catalog (`evidence/references.md`).
 
 ### 2. Out of Scope
@@ -57,7 +58,25 @@ Because scientific consensus in education evolves deliberately, the architecture
 
 ## Detailed Components
 
-### 1. Persistent Caching & Storage
+### 1. User API Key Configuration (BYOK — Bring Your Own Key)
+
+Because idstack is an open-source tool, users supply their own API key from Consensus (`https://consensus.app`). No centralized proxy or secret key is required.
+
+#### CLI & Claude Code Skills Resolution Order
+When running `/idstack:*` skills or CLI tools, idstack checks for a user-supplied key in this order:
+1. **Environment Variable**: `CONSENSUS_API_KEY` (standard for CI and power users).
+2. **User Profile**: `~/.idstack/profile.yaml` (`consensus_api_key: "your_key"`).
+3. **Project Manifest**: `.idstack/project.json` under `preferences.consensus_api_key`.
+4. **Interactive Setup**: `bin/idstack-consensus configure` prompts the user for their key and saves it to `~/.idstack/profile.yaml`.
+5. **No Key (Zero-Key Mode)**: If no key is set, skills execute with 100% functionality using the curated `references.md` base. On first run, a subtle one-line tip notes: *"Tip: Set CONSENSUS_API_KEY to enable live peer-reviewed verification via Consensus."*
+
+#### Chrome Extension BYOK
+- In the sidepanel **Settings Drawer**, users can enter their Consensus API key:
+  - Input: `Consensus API Key (Optional BYOK)` with a direct link: *"Get your Consensus API key at consensus.app &rarr;"*.
+  - Stored strictly client-side in `chrome.storage.sync` (never transmitted anywhere other than direct HTTPS calls to `api.consensus.app`).
+  - If omitted, the extension uses the curated `shared/evidence-base.js` without interruptions.
+
+### 2. Persistent Caching & Storage
 
 #### Global CLI Cache (`~/.idstack/cache/consensus/`)
 - Indexed by SHA-256 hash of normalized claim text: `~/.idstack/cache/consensus/<claim_hash>.json`.
@@ -94,7 +113,7 @@ Because scientific consensus in education evolves deliberately, the architecture
 
 ---
 
-### 2. Pre-Response Evidence QA Gate
+### 3. Pre-Response Evidence QA Gate
 
 #### The Verification Workflow
 Before findings are delivered to the user or rendered into `.idstack/exports/<course-slug>/<skill>.html`:
@@ -112,7 +131,7 @@ Before findings are delivered to the user or rendered into `.idstack/exports/<co
 
 ---
 
-### 3. CLI Engine: `bin/idstack-consensus`
+### 4. CLI Engine: `bin/idstack-consensus`
 
 A zero-dependency Python 3.9+ script with three primary interfaces:
 - `bin/idstack-consensus query --claim "<text>"`:
@@ -126,7 +145,7 @@ A zero-dependency Python 3.9+ script with three primary interfaces:
 
 ---
 
-### 4. Chrome Extension Integration
+### 5. Chrome Extension Integration
 
 #### Settings (`extension/sidepanel/index.html` & `storage.js`)
 - Adds `consensusApiKey` input to the Settings Drawer alongside the Google AI Studio key.
@@ -145,7 +164,7 @@ A zero-dependency Python 3.9+ script with three primary interfaces:
 
 ---
 
-### 5. Error Handling & Offline Fallbacks
+### 6. Error Handling & Offline Fallbacks
 
 - **Missing API Key**: Falls back silently to static `references.md` and `evidence-base.js`. No error alerts or broken audits.
 - **Network Outage / API 5xx / Timeout**: Gracefully falls back to local cache or unverified pass-through with tier capped at T5.
@@ -153,7 +172,7 @@ A zero-dependency Python 3.9+ script with three primary interfaces:
 
 ---
 
-### 6. Testing & Verification Strategy
+### 7. Testing & Verification Strategy
 
 - **CLI Unit Tests (`test/test-consensus-cli.py`)**:
   - Validated under Python 3.9 (macOS default interpreter floor).
