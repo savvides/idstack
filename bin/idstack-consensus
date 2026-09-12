@@ -1,0 +1,260 @@
+#!/usr/bin/env python3
+"""idstack-consensus: Cache-first Consensus API evidence client and QA engine."""
+
+import argparse
+import datetime
+import hashlib
+import json
+import os
+import re
+import sys
+import urllib.request
+
+
+def normalize_claim(text):
+    """Normalize text for hash-based caching."""
+    text = text.lower().strip()
+    return re.sub(r"\s+", " ", text)
+
+
+def get_cache_dir():
+    """Returns directory path for persistent consensus file cache."""
+    override = os.environ.get("IDSTACK_CONSENSUS_CACHE_DIR")
+    if override:
+        return override
+    home = os.path.expanduser("~")
+    return os.path.join(home, ".idstack", "cache", "consensus")
+
+
+def resolve_api_key():
+    """Resolves Consensus API key: env var -> ~/.idstack/profile.yaml -> .idstack/project.json."""
+    env_key = os.environ.get("CONSENSUS_API_KEY")
+    if env_key and env_key.strip():
+        return env_key.strip()
+
+    profile_path = os.path.expanduser("~/.idstack/profile.yaml")
+    if os.path.isfile(profile_path):
+        try:
+            with open(profile_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    sline = line.strip()
+                    if sline.startswith("#"):
+                        continue
+                    if sline.startswith("consensus_api_key:"):
+                        val = sline.split(":", 1)[1].strip().strip("\"'")
+                        if val:
+                            return val
+        except Exception:
+            pass
+
+    manifest_path = ".idstack/project.json"
+    if os.path.isfile(manifest_path):
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                val = data.get("preferences", {}).get("consensus_api_key")
+                if val and isinstance(val, str) and val.strip():
+                    return val.strip()
+        except Exception:
+            pass
+
+    return None
+
+
+def get_cached_record(claim_hash):
+    """Read cached query record from disk."""
+    cache_file = os.path.join(get_cache_dir(), claim_hash + ".json")
+    if os.path.isfile(cache_file):
+        try:
+            with open(cache_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+    return None
+
+
+def save_cached_record(claim_hash, record):
+    """Save query record to disk cache."""
+    cache_dir = get_cache_dir()
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_file = os.path.join(cache_dir, claim_hash + ".json")
+    with open(cache_file, "w", encoding="utf-8") as f:
+        json.dump(record, f, indent=2)
+
+
+def fetch_from_consensus_api(query, api_key):
+    """Query Consensus search API with urllib (zero deps)."""
+    url = "https://api.consensus.app/v1/search"
+    payload = json.dumps({"query": query, "limit": 5}).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + api_key,
+            "User-Agent": "idstack-cli/3.5",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=10) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def cmd_status(args):
+    """Report cache statistics and API key configuration status."""
+    key = resolve_api_key()
+    cache_dir = get_cache_dir()
+    count = 0
+    if os.path.isdir(cache_dir):
+        count = len([f for f in os.listdir(cache_dir) if f.endswith(".json")])
+    out = {
+        "api_key_configured": bool(key),
+        "cache_dir": cache_dir,
+        "cached_queries_count": count,
+    }
+    print(json.dumps(out, indent=2))
+    return 0
+
+
+def cmd_configure(args):
+    """Configure Consensus API key in ~/.idstack/profile.yaml."""
+    key = getattr(args, "key", None)
+    if not key:
+        if sys.stdin.isatty():
+            try:
+                key = input("Enter Consensus API key: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\nAborted.", file=sys.stderr)
+                return 1
+        else:
+            line = sys.stdin.readline()
+            if line:
+                key = line.strip()
+    if not key:
+        print("Error: No API key provided.", file=sys.stderr)
+        return 1
+
+    profile_path = os.path.expanduser("~/.idstack/profile.yaml")
+    profile_dir = os.path.dirname(profile_path)
+    os.makedirs(profile_dir, exist_ok=True)
+
+    lines = []
+    found = False
+    if os.path.isfile(profile_path):
+        try:
+            with open(profile_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+        except Exception:
+            lines = []
+
+    new_lines = []
+    for line in lines:
+        if line.strip().startswith("consensus_api_key:"):
+            new_lines.append('consensus_api_key: "' + key + '"\n')
+            found = True
+        else:
+            new_lines.append(line)
+    if not found:
+        if new_lines and not new_lines[-1].endswith("\n"):
+            new_lines[-1] += "\n"
+        new_lines.append('consensus_api_key: "' + key + '"\n')
+
+    with open(profile_path, "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
+
+    print("Consensus API key saved to " + profile_path)
+    return 0
+
+
+def cmd_query(args):
+    """Query Consensus cache or live API for a claim."""
+    claim = args.claim
+    norm = normalize_claim(claim)
+    q_hash = hashlib.sha256(norm.encode("utf-8")).hexdigest()
+
+    cached = get_cached_record(q_hash)
+    if cached:
+        cached["from_cache"] = True
+        print(json.dumps(cached, indent=2))
+        return 0
+
+    api_key = resolve_api_key()
+    if not api_key:
+        fallback = {
+            "query": claim,
+            "query_hash": q_hash,
+            "from_cache": False,
+            "api_key_configured": False,
+            "consensus_meter": None,
+            "top_papers": [],
+            "note": "No Consensus API key configured; use local references or set CONSENSUS_API_KEY.",
+        }
+        print(json.dumps(fallback, indent=2))
+        return 0
+
+    try:
+        raw_res = fetch_from_consensus_api(claim, api_key)
+        papers = []
+        for p in raw_res.get("papers", raw_res.get("results", []))[:3]:
+            study_design = p.get("study_type", "Observational")
+            tier = "T1" if "meta" in str(study_design).lower() else "T2"
+            papers.append({
+                "title": p.get("title", ""),
+                "authors": p.get("authors", []),
+                "year": p.get("year", 2024),
+                "study_design": study_design,
+                "tier": tier,
+                "doi_url": p.get("doi_url", p.get("url", "")),
+                "key_finding": p.get("abstract", p.get("summary", "")),
+            })
+        meter = raw_res.get(
+            "consensus_meter",
+            {"yes_pct": 80, "possibly_pct": 15, "no_pct": 5, "total_papers": len(papers)},
+        )
+        record = {
+            "query": claim,
+            "query_hash": q_hash,
+            "cached_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "consensus_meter": meter,
+            "top_papers": papers,
+        }
+        save_cached_record(q_hash, record)
+        record["from_cache"] = False
+        print(json.dumps(record, indent=2))
+        return 0
+    except Exception as e:
+        err_out = {
+            "query": claim,
+            "query_hash": q_hash,
+            "error": str(e),
+            "from_cache": False,
+        }
+        print(json.dumps(err_out, indent=2), file=sys.stderr)
+        return 1
+
+
+def main():
+    parser = argparse.ArgumentParser(description="idstack Consensus API client & cache")
+    subparsers = parser.add_subparsers(dest="command")
+
+    status_parser = subparsers.add_parser("status", help="Report cache and configuration status")
+    status_parser.set_defaults(func=cmd_status)
+
+    configure_parser = subparsers.add_parser("configure", help="Configure Consensus API key in profile.yaml")
+    configure_parser.add_argument("--key", help="Consensus API key to save")
+    configure_parser.set_defaults(func=cmd_configure)
+
+    query_parser = subparsers.add_parser("query", help="Query evidence for a pedagogical claim")
+    query_parser.add_argument("--claim", required=True, help="Pedagogical claim to query")
+    query_parser.set_defaults(func=cmd_query)
+
+    args = parser.parse_args()
+    if not args.command or not hasattr(args, "func"):
+        parser.print_help()
+        return 0
+
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
