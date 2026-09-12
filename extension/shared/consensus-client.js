@@ -302,8 +302,7 @@ export async function verifyFindingsWithConsensus(findings, apiKey, storage = nu
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey.trim()}`,
-            'User-Agent': 'idstack-extension/3.5'
+            'Authorization': `Bearer ${apiKey.trim()}`
           },
           body: JSON.stringify({ query: cleanQuery || claimText, limit: 5 })
         });
