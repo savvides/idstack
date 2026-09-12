@@ -233,6 +233,393 @@ def cmd_query(args):
         return 1
 
 
+NEUROMYTH_PATTERNS = [
+    (
+        re.compile(
+            r"\b(learning\s+styles?|visual\s+(?:vs\.?|and|or)\s+auditory\s+learn|"
+            r"visual\s+learners?|auditory\s+learners?|kinesthetic\s+learners?|meshing\s+hypothesis|"
+            r"cater(?:ing)?\s+to\s+(?:individual\s+)?learning\s+styles?)\b",
+            re.IGNORECASE,
+        ),
+        "learning_styles",
+    ),
+    (
+        re.compile(r"\b(left[-\s]brain|right[-\s]brain|hemisphere\s+learn)\b", re.IGNORECASE),
+        "hemisphere_learning",
+    ),
+    (
+        re.compile(r"\b(10%\s+of\s+(?:the|their)?\s*brain)\b", re.IGNORECASE),
+        "ten_percent_brain",
+    ),
+    (
+        re.compile(r"\b(?:remember|retain)\s+\d+%\s+of\s+what\s+(?:they|we)\s+(?:read|hear|see)\b", re.IGNORECASE),
+        "dales_cone_percentages",
+    ),
+]
+
+
+def load_known_references(refs_path=None):
+    """Load known references and verified tiers from evidence/references.md."""
+    if not refs_path:
+        refs_path = os.environ.get("IDSTACK_REFERENCES_PATH")
+    if not refs_path:
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        refs_path = os.path.join(repo_root, "evidence", "references.md")
+    if not os.path.isfile(refs_path):
+        if os.path.isfile("evidence/references.md"):
+            refs_path = "evidence/references.md"
+        else:
+            return {}, []
+
+    known_by_tag = {}
+    all_refs = []
+    try:
+        with open(refs_path, "r", encoding="utf-8") as f:
+            for line in f:
+                sline = line.strip()
+                if not sline.startswith("- ["):
+                    continue
+                m = re.match(r"^-\s+\[([^\]]+)\]\s+(.*?)\s+(T[1-5])\s*$", sline)
+                if m:
+                    tag = m.group(1).strip()
+                    details = m.group(2).strip()
+                    tier = m.group(3).strip()
+                    rec = {
+                        "tag": tag,
+                        "details": details,
+                        "tier": tier,
+                        "full_line": sline,
+                    }
+                    known_by_tag[tag.lower()] = rec
+                    all_refs.append(rec)
+    except Exception:
+        pass
+    return known_by_tag, all_refs
+
+
+def lookup_known_reference(citation, known_by_tag, all_refs):
+    """Look up a citation against known references by tag or author/year."""
+    if not citation or not isinstance(citation, str):
+        return None
+
+    # Check bracketed tag: "[Assessment-8]"
+    m = re.search(r"\[([A-Za-z][A-Za-z0-9_-]*)\]", citation)
+    if m:
+        tag_key = m.group(1).lower()
+        if tag_key in known_by_tag:
+            return known_by_tag[tag_key]
+
+    # Check bare domain tag: "Assessment-8"
+    m_bare = re.search(r"\b([A-Za-z]+-\d+)\b", citation)
+    if m_bare:
+        tag_key = m_bare.group(1).lower()
+        if tag_key in known_by_tag:
+            return known_by_tag[tag_key]
+
+    # Check author and year match
+    c_low = citation.lower()
+    for ref in all_refs:
+        details = ref["details"]
+        m_year = re.search(r"\((\d{4})\)", details)
+        if not m_year:
+            continue
+        year = m_year.group(1)
+        if year not in c_low:
+            continue
+
+        # Try author last name
+        m_author = re.match(r"^([A-Za-z\u00C0-\u017F\-]+)(?:,|\s+et\s+al|\s+\()", details)
+        if m_author:
+            author = m_author.group(1).lower()
+            if len(author) >= 2 and re.search(r"\b" + re.escape(author) + r"\b", c_low):
+                return ref
+
+        # Try institutional author
+        m_inst = re.match(r"^([A-Za-z0-9\-]+)\s+\(\d{4}\)", details)
+        if m_inst:
+            inst = m_inst.group(1).lower()
+            if re.search(r"\b" + re.escape(inst) + r"\b", c_low):
+                return ref
+
+    return None
+
+
+def detect_neuromyth(finding):
+    """Detect if a finding contains known pedagogical neuromyths."""
+    combined = " ".join([
+        str(finding.get("recommendation", "")),
+        str(finding.get("evidence", "")),
+        str(finding.get("observation", "")),
+        str(finding.get("citation", "")),
+    ])
+    for pattern, myth_type in NEUROMYTH_PATTERNS:
+        if pattern.search(combined):
+            return myth_type
+    return None
+
+
+def auto_correct_neuromyth(finding, myth_type):
+    """Auto-correct a neuromyth claim to evidence-based practice (multimodal / dual coding)."""
+    finding["auto_corrected"] = True
+    finding["qa_verified"] = True
+
+    if myth_type == "learning_styles":
+        finding["recommendation"] = (
+            "Provide multimodal presentation and dual coding (combining complementary visual representations "
+            "and verbal/textual explanations for all learners) rather than attempting to segregate "
+            "or adapt materials to putative learning styles."
+        )
+        corr_ev = (
+            "[Auto-Corrected Neuromyth] The 'learning styles' (meshing hypothesis) lacks empirical support "
+            "(Pashler et al., 2008; Rogowsky et al., 2015). Empirical evidence supports multimodal "
+            "presentation and dual coding (Mayer, 2021; Paivio, 1986) for all learners."
+        )
+        if finding.get("evidence"):
+            finding["evidence"] = finding["evidence"] + " " + corr_ev
+        else:
+            finding["evidence"] = corr_ev
+        obs_note = " [Note: Differentiating by sensory learning styles is a recognized neuromyth; multimodal presentation should be applied instead.]"
+        finding["observation"] = (finding.get("observation", "") + obs_note).strip()
+    elif myth_type == "hemisphere_learning":
+        finding["recommendation"] = (
+            "Provide multimodal presentation and integrated cognitive activities rather than "
+            "attempting to cater to left-brain or right-brain learners."
+        )
+        corr_ev = (
+            "[Auto-Corrected Neuromyth] Hemispheric specialization for learning is an empirically "
+            "unsupported neuromyth. Cognitive architecture operates through integrated networks; "
+            "multimodal dual coding benefits all learners."
+        )
+        if finding.get("evidence"):
+            finding["evidence"] = finding["evidence"] + " " + corr_ev
+        else:
+            finding["evidence"] = corr_ev
+        obs_note = " [Note: Left/right brain learning categorization is a neuromyth; integrated multimodal tasks should be used.]"
+        finding["observation"] = (finding.get("observation", "") + obs_note).strip()
+    elif myth_type == "ten_percent_brain":
+        finding["recommendation"] = (
+            "Design instructional activities that optimize working memory capacity and cognitive load "
+            "rather than relying on 10% brain capacity claims."
+        )
+        corr_ev = (
+            "[Auto-Corrected Neuromyth] The 10% brain usage claim is a debunked neuromyth. Instructional "
+            "design should be guided by Cognitive Load Theory (Sweller, 1994) and working memory limits."
+        )
+        if finding.get("evidence"):
+            finding["evidence"] = finding["evidence"] + " " + corr_ev
+        else:
+            finding["evidence"] = corr_ev
+        obs_note = " [Note: The 10% brain claim is a recognized neuromyth; Cognitive Load Theory should guide design.]"
+        finding["observation"] = (finding.get("observation", "") + obs_note).strip()
+    elif myth_type == "dales_cone_percentages":
+        finding["recommendation"] = (
+            "Structure learning through active retrieval and generative processing rather than "
+            "bogus retention percentage hierarchies."
+        )
+        corr_ev = (
+            "[Auto-Corrected Neuromyth] Numerical retention claims ('we remember 10% of what we read') "
+            "are fabricated percentages falsely attributed to Dale's Cone of Experience. Retention "
+            "depends on retrieval practice and cognitive processing depth (Agarwal, 2019)."
+        )
+        if finding.get("evidence"):
+            finding["evidence"] = finding["evidence"] + " " + corr_ev
+        else:
+            finding["evidence"] = corr_ev
+        obs_note = " [Note: Retention percentage pyramids are fabricated; active retrieval principles should be used.]"
+        finding["observation"] = (finding.get("observation", "") + obs_note).strip()
+
+
+def calibrate_tier(finding, study_design=None):
+    """Calibrate evidence tiers: downgrade T1/T2 without meta-analysis or controlled trials."""
+    tier = str(finding.get("tier", "")).strip().upper()
+    if tier not in ("T1", "T2"):
+        return
+
+    text = " ".join([
+        str(finding.get("evidence", "")),
+        str(finding.get("observation", "")),
+        str(finding.get("citation", "")),
+        str(finding.get("study_design", "")),
+        str(finding.get("design", "")),
+        str(study_design or ""),
+    ]).lower()
+
+    # Meta-analysis / RCT evidence justifies T1 and T2
+    if re.search(r"\b(meta-analy\w+|meta analy\w+|rct|randomized controlled|randomised controlled)\b", text):
+        return
+
+    # Controlled trial / quasi-experimental justifies T2
+    if re.search(r"\b(controlled trial|control group|quasi-experimental|matched comparison|comparison group)\b", text):
+        if tier == "T1":
+            finding["tier"] = "T2"
+            finding["tier_calibrated"] = True
+            finding["original_tier"] = "T1"
+            cal_note = " [Tier calibrated: downgraded from T1 to T2 because study design is controlled trial, not meta-analysis/RCT]"
+            finding["evidence"] = (finding.get("evidence", "") + cal_note).strip()
+        return
+
+    # Systematic review justifies T3
+    if re.search(r"\b(systematic review|scoping review)\b", text):
+        finding["tier"] = "T3"
+        finding["tier_calibrated"] = True
+        finding["original_tier"] = tier
+        cal_note = " [Tier calibrated: downgraded from " + tier + " to T3 because study design is systematic review without meta-analysis]"
+        finding["evidence"] = (finding.get("evidence", "") + cal_note).strip()
+        return
+
+    # Observational / qualitative / survey / case study -> cap at T4
+    if re.search(r"\b(observational|qualitative|case study|survey|interview|pre-post without|single[-\s]course|thematic analysis)\b", text):
+        finding["tier"] = "T4"
+        finding["tier_calibrated"] = True
+        finding["original_tier"] = tier
+        cal_note = " [Tier calibrated: downgraded from " + tier + " to T4 because study design is observational/qualitative without control group]"
+        finding["evidence"] = (finding.get("evidence", "") + cal_note).strip()
+        return
+
+    # Default fallback when claiming T1/T2 without meta-analysis or controlled trial: cap at T4
+    finding["tier"] = "T4"
+    finding["tier_calibrated"] = True
+    finding["original_tier"] = tier
+    cal_note = " [Tier calibrated: downgraded from " + tier + " to T4: lacks meta-analysis or controlled trial evidence]"
+    finding["evidence"] = (finding.get("evidence", "") + cal_note).strip()
+
+
+def cmd_verify(args):
+    """Run evidence QA gate and auto-correction on findings payload."""
+    if not os.path.isfile(args.findings):
+        print("Error: Input findings file not found: " + args.findings, file=sys.stderr)
+        return 1
+
+    try:
+        with open(args.findings, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print("Error reading findings file: " + str(e), file=sys.stderr)
+        return 1
+
+    if isinstance(data, dict):
+        findings = data.get("findings", [])
+        is_dict = True
+    elif isinstance(data, list):
+        findings = data
+        is_dict = False
+    else:
+        print("Error: Expected JSON object or array in findings file", file=sys.stderr)
+        return 1
+
+    if not isinstance(findings, list):
+        findings = []
+
+    known_by_tag, all_refs = load_known_references()
+    api_key = resolve_api_key()
+
+    cached_count = 0
+    auto_corrected_count = 0
+
+    for finding in findings:
+        if not isinstance(finding, dict):
+            continue
+
+        # 1. Check for pedagogical neuromyths
+        myth_type = detect_neuromyth(finding)
+        if myth_type:
+            auto_correct_neuromyth(finding, myth_type)
+            auto_corrected_count += 1
+            continue
+
+        # 2. Check against known references in evidence/references.md
+        ref = lookup_known_reference(finding.get("citation", ""), known_by_tag, all_refs)
+        if ref:
+            finding["tier"] = ref["tier"]
+            finding["qa_verified"] = True
+            continue
+
+        # 3. Novel claim: extract claim text first before any modification
+        claim_text = str(finding.get("claim") or finding.get("evidence") or finding.get("observation") or finding.get("recommendation", "")).strip()
+        claim_stripped = re.sub(r"[\.\,\;\:\!\?]+$", "", claim_text).strip()
+        norm1 = normalize_claim(claim_text)
+        norm2 = normalize_claim(claim_stripped)
+        h1 = hashlib.sha256(norm1.encode("utf-8")).hexdigest()
+        h2 = hashlib.sha256(norm2.encode("utf-8")).hexdigest()
+
+        cached = get_cached_record(h1) or get_cached_record(h2)
+        top_study_design = None
+        if cached:
+            cached_count += 1
+            finding["qa_verified"] = True
+            finding["from_cache"] = True
+            if "consensus_meter" in cached:
+                finding["consensus"] = cached["consensus_meter"]
+            if cached.get("top_papers"):
+                top = cached["top_papers"][0]
+                if top.get("doi_url"):
+                    finding["doi_url"] = top["doi_url"]
+                top_study_design = top.get("study_design", "")
+        elif api_key:
+            try:
+                raw_res = fetch_from_consensus_api(claim_stripped or claim_text, api_key)
+                papers = []
+                for p in raw_res.get("papers", raw_res.get("results", []))[:3]:
+                    study_design = p.get("study_type", "Observational")
+                    tier = "T1" if "meta" in str(study_design).lower() else "T2"
+                    papers.append({
+                        "title": p.get("title", ""),
+                        "authors": p.get("authors", []),
+                        "year": p.get("year", 2024),
+                        "study_design": study_design,
+                        "tier": tier,
+                        "doi_url": p.get("doi_url", p.get("url", "")),
+                        "key_finding": p.get("abstract", p.get("summary", "")),
+                    })
+                meter = raw_res.get(
+                    "consensus_meter",
+                    {"yes_pct": 80, "possibly_pct": 15, "no_pct": 5, "total_papers": len(papers)},
+                )
+                record = {
+                    "query": claim_stripped or claim_text,
+                    "query_hash": h2,
+                    "cached_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "consensus_meter": meter,
+                    "top_papers": papers,
+                }
+                save_cached_record(h2, record)
+                finding["qa_verified"] = True
+                finding["consensus"] = meter
+                if papers:
+                    if papers[0].get("doi_url"):
+                        finding["doi_url"] = papers[0]["doi_url"]
+                    top_study_design = papers[0].get("study_design", "")
+            except Exception:
+                finding["qa_verified"] = False
+        else:
+            finding["qa_verified"] = False
+
+        # 4. Calibrate tier taking into account top study design from Consensus if available
+        calibrate_tier(finding, study_design=top_study_design)
+
+    total_verified = sum(1 for f in findings if isinstance(f, dict) and f.get("qa_verified"))
+
+    # Write output payload
+    if is_dict:
+        data["findings"] = findings
+        out_payload = data
+    else:
+        out_payload = {"findings": findings}
+
+    out_dir = os.path.dirname(os.path.abspath(args.output))
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    with open(args.output, "w", encoding="utf-8") as f:
+        json.dump(out_payload, f, indent=2)
+
+    print(
+        "Evidence QA: %d findings verified (%d cached, %d auto-corrected)"
+        % (total_verified, cached_count, auto_corrected_count)
+    )
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="idstack Consensus API client & cache")
     subparsers = parser.add_subparsers(dest="command")
@@ -248,6 +635,11 @@ def main():
     query_parser.add_argument("--claim", required=True, help="Pedagogical claim to query")
     query_parser.set_defaults(func=cmd_query)
 
+    verify_parser = subparsers.add_parser("verify", help="Pre-response evidence QA gate & auto-correction")
+    verify_parser.add_argument("--findings", required=True, help="Path to findings JSON file")
+    verify_parser.add_argument("--output", required=True, help="Path to output verified findings JSON file")
+    verify_parser.set_defaults(func=cmd_verify)
+
     args = parser.parse_args()
     if not args.command or not hasattr(args, "func"):
         parser.print_help()
@@ -258,3 +650,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+

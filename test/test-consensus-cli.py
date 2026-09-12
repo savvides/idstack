@@ -137,6 +137,233 @@ class TestConsensusCLI(unittest.TestCase):
         status_data = json.loads(status_proc.stdout)
         self.assertEqual(status_data["api_key_configured"], True)
 
+    def test_verify_known_reference_passes_free(self):
+        input_file = os.path.join(self.test_dir, "staged.json")
+        output_file = os.path.join(self.test_dir, "verified.json")
+        findings = [
+            {
+                "severity": "warning",
+                "tier": "T1",
+                "citation": "[Assessment-8] Wisniewski et al. (2020)",
+                "observation": "Assessments lack rubrics.",
+                "evidence": "Elaborated feedback improves learning gains.",
+                "recommendation": "Add rubrics with elaborated feedback.",
+            }
+        ]
+        with open(input_file, "w") as f:
+            json.dump({"findings": findings}, f)
+
+        proc = self.run_cli(["verify", "--findings", input_file, "--output", output_file])
+        self.assertEqual(proc.returncode, 0)
+        with open(output_file, "r") as f:
+            verified = json.load(f)
+        self.assertEqual(len(verified["findings"]), 1)
+        self.assertEqual(verified["findings"][0]["tier"], "T1")
+        self.assertTrue(verified["findings"][0]["qa_verified"])
+
+    def test_verify_neuromyth_contradiction_auto_corrected(self):
+        input_file = os.path.join(self.test_dir, "neuromyth.json")
+        output_file = os.path.join(self.test_dir, "corrected.json")
+        findings = [
+            {
+                "severity": "suggestion",
+                "tier": "T1",
+                "citation": "[Novel-Claim]",
+                "observation": "Students have varied learning styles.",
+                "evidence": "Audit course to match visual and auditory learning styles.",
+                "recommendation": "Separate students by visual vs auditory learning styles.",
+            }
+        ]
+        with open(input_file, "w") as f:
+            json.dump({"findings": findings}, f)
+
+        proc = self.run_cli(["verify", "--findings", input_file, "--output", output_file])
+        self.assertEqual(proc.returncode, 0)
+        with open(output_file, "r") as f:
+            corrected = json.load(f)
+        finding = corrected["findings"][0]
+        self.assertIn("multimodal", finding["recommendation"].lower())
+        self.assertTrue(finding.get("auto_corrected"))
+
+    def test_verify_tier_calibration_downgrades_observational(self):
+        input_file = os.path.join(self.test_dir, "observational.json")
+        output_file = os.path.join(self.test_dir, "calibrated.json")
+        findings = [
+            {
+                "severity": "suggestion",
+                "tier": "T1",
+                "citation": "Smith et al. (2023)",
+                "observation": "Student engagement was reported high in discussion forums.",
+                "evidence": "An observational survey of 45 students in an online seminar.",
+                "recommendation": "Use discussion forums for engagement.",
+            }
+        ]
+        with open(input_file, "w") as f:
+            json.dump({"findings": findings}, f)
+
+        proc = self.run_cli(["verify", "--findings", input_file, "--output", output_file])
+        self.assertEqual(proc.returncode, 0)
+        with open(output_file, "r") as f:
+            calibrated = json.load(f)
+        finding = calibrated["findings"][0]
+        self.assertIn(finding["tier"], ("T3", "T4"))
+        self.assertEqual(finding["tier"], "T4")
+
+    def test_verify_cached_novel_claim_enriched(self):
+        os.makedirs(self.cache_dir, exist_ok=True)
+        claim = "microlearning retention gains"
+        norm = "microlearning retention gains"
+        q_hash = hashlib.sha256(norm.encode("utf-8")).hexdigest()
+        cached_record = {
+            "query": norm,
+            "query_hash": q_hash,
+            "cached_at": "2026-09-12T00:00:00Z",
+            "consensus_meter": {"yes_pct": 85, "possibly_pct": 10, "no_pct": 5, "total_papers": 14},
+            "top_papers": [
+                {
+                    "title": "Microlearning in Digital Education",
+                    "authors": ["Chen et al."],
+                    "year": 2024,
+                    "study_design": "Meta-analysis",
+                    "tier": "T1",
+                    "doi_url": "https://doi.org/10.1000/microlearning-meta",
+                }
+            ],
+        }
+        with open(os.path.join(self.cache_dir, q_hash + ".json"), "w") as f:
+            json.dump(cached_record, f)
+
+        input_file = os.path.join(self.test_dir, "novel_cached.json")
+        output_file = os.path.join(self.test_dir, "novel_verified.json")
+        findings = [
+            {
+                "severity": "suggestion",
+                "tier": "T1",
+                "citation": "Chen et al. (2024)",
+                "observation": "Lessons are too long.",
+                "evidence": "Microlearning retention gains.",
+                "recommendation": "Chunk content into 5-minute modules.",
+            }
+        ]
+        with open(input_file, "w") as f:
+            json.dump({"findings": findings}, f)
+
+        proc = self.run_cli(["verify", "--findings", input_file, "--output", output_file])
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("Evidence QA:", proc.stdout)
+        self.assertIn("1 cached", proc.stdout)
+        with open(output_file, "r") as f:
+            verified = json.load(f)
+        finding = verified["findings"][0]
+        self.assertTrue(finding.get("qa_verified"))
+        self.assertEqual(finding.get("doi_url"), "https://doi.org/10.1000/microlearning-meta")
+        self.assertEqual(finding.get("consensus", {}).get("yes_pct"), 85)
+
+    def test_verify_direct_array_input(self):
+        input_file = os.path.join(self.test_dir, "array.json")
+        output_file = os.path.join(self.test_dir, "out_array.json")
+        findings = [
+            {
+                "severity": "info",
+                "tier": "T1",
+                "citation": "[Assessment-8] Wisniewski et al. (2020)",
+                "observation": "Feedback timing is immediate.",
+                "evidence": "Immediate feedback guides correction.",
+                "recommendation": "Maintain immediate feedback.",
+            }
+        ]
+        with open(input_file, "w") as f:
+            json.dump(findings, f)
+
+        proc = self.run_cli(["verify", "--findings", input_file, "--output", output_file])
+        self.assertEqual(proc.returncode, 0)
+        with open(output_file, "r") as f:
+            verified = json.load(f)
+        self.assertIn("findings", verified)
+        self.assertEqual(len(verified["findings"]), 1)
+        self.assertTrue(verified["findings"][0]["qa_verified"])
+
+    def test_verify_hemisphere_neuromyth_auto_corrected(self):
+        input_file = os.path.join(self.test_dir, "hemisphere.json")
+        output_file = os.path.join(self.test_dir, "hemisphere_out.json")
+        findings = [
+            {
+                "severity": "suggestion",
+                "tier": "T1",
+                "citation": "[Novel-Claim]",
+                "observation": "Lessons should cater to right-brain learners.",
+                "evidence": "Right-brained students need intuitive creative tasks.",
+                "recommendation": "Tailor assignments for right-brain learners.",
+            }
+        ]
+        with open(input_file, "w") as f:
+            json.dump({"findings": findings}, f)
+
+        proc = self.run_cli(["verify", "--findings", input_file, "--output", output_file])
+        self.assertEqual(proc.returncode, 0)
+        with open(output_file, "r") as f:
+            corrected = json.load(f)
+        finding = corrected["findings"][0]
+        self.assertTrue(finding.get("auto_corrected"))
+        self.assertIn("multimodal", finding["recommendation"].lower())
+
+    def test_verify_tier_calibration_controlled_downgrades_to_t2(self):
+        input_file = os.path.join(self.test_dir, "controlled.json")
+        output_file = os.path.join(self.test_dir, "controlled_out.json")
+        findings = [
+            {
+                "severity": "suggestion",
+                "tier": "T1",
+                "citation": "Taylor & White (2023)",
+                "observation": "Interactive quizzes improved mastery.",
+                "evidence": "Quasi-experimental study with matched comparison group in two chemistry classes.",
+                "recommendation": "Incorporate interactive quizzes.",
+            }
+        ]
+        with open(input_file, "w") as f:
+            json.dump({"findings": findings}, f)
+
+        proc = self.run_cli(["verify", "--findings", input_file, "--output", output_file])
+        self.assertEqual(proc.returncode, 0)
+        with open(output_file, "r") as f:
+            calibrated = json.load(f)
+        finding = calibrated["findings"][0]
+        self.assertEqual(finding["tier"], "T2")
+
+    def test_verify_tier_calibration_systematic_review_downgrades_to_t3(self):
+        input_file = os.path.join(self.test_dir, "sysrev.json")
+        output_file = os.path.join(self.test_dir, "sysrev_out.json")
+        findings = [
+            {
+                "severity": "suggestion",
+                "tier": "T1",
+                "citation": "Miller et al. (2022)",
+                "observation": "Peer grading needs calibration.",
+                "evidence": "A systematic review of peer grading across 40 universities.",
+                "recommendation": "Calibrate peer graders.",
+            }
+        ]
+        with open(input_file, "w") as f:
+            json.dump({"findings": findings}, f)
+
+        proc = self.run_cli(["verify", "--findings", input_file, "--output", output_file])
+        self.assertEqual(proc.returncode, 0)
+        with open(output_file, "r") as f:
+            calibrated = json.load(f)
+        finding = calibrated["findings"][0]
+        self.assertEqual(finding["tier"], "T3")
+
+    def test_verify_missing_file_fails(self):
+        proc = self.run_cli([
+            "verify",
+            "--findings",
+            os.path.join(self.test_dir, "nonexistent.json"),
+            "--output",
+            os.path.join(self.test_dir, "out.json"),
+        ])
+        self.assertEqual(proc.returncode, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
+
