@@ -418,6 +418,7 @@ const closeSettings = document.getElementById('close-settings');
 const settingsDrawer = document.getElementById('settings-drawer');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
 const apiKeyInput = document.getElementById('api-key-input');
+const consensusApiKeyInput = document.getElementById('consensus-api-key-input');
 
 if (settingsToggle && settingsDrawer) {
   settingsToggle.addEventListener('click', () => {
@@ -432,10 +433,11 @@ if (closeSettings && settingsDrawer) {
   });
 }
 
-if (saveSettingsBtn && apiKeyInput) {
+if (saveSettingsBtn) {
   saveSettingsBtn.addEventListener('click', async () => {
-    const key = apiKeyInput.value.trim();
-    await saveSettings({ apiKey: key });
+    const key = apiKeyInput ? apiKeyInput.value.trim() : '';
+    const consensusKey = consensusApiKeyInput ? consensusApiKeyInput.value.trim() : '';
+    await saveSettings({ apiKey: key, consensusApiKey: consensusKey });
     saveSettingsBtn.textContent = 'Saved!';
     setTimeout(() => {
       saveSettingsBtn.textContent = 'Save Settings';
@@ -446,15 +448,18 @@ if (saveSettingsBtn && apiKeyInput) {
 
 // Load initial settings & dossier count
 (async () => {
-  if (apiKeyInput) {
-    try {
-      const settings = await getSettings();
-      if (settings && settings.apiKey) {
+  try {
+    const settings = await getSettings();
+    if (settings) {
+      if (apiKeyInput && settings.apiKey) {
         apiKeyInput.value = settings.apiKey;
       }
-    } catch (e) {
-      // Ignored if storage not initialized
+      if (consensusApiKeyInput && settings.consensusApiKey) {
+        consensusApiKeyInput.value = settings.consensusApiKey;
+      }
     }
+  } catch (e) {
+    // Ignored if storage not initialized
   }
   await updateDossierBadge();
 })();

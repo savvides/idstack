@@ -186,7 +186,46 @@ else
 fi
 echo ""
 
-# 5. Final verdict
+# 5. Consensus evidence engine
+echo "Consensus evidence engine:"
+if [ ! -f "$IDSTACK_DIR/bin/idstack-consensus" ]; then
+  echo "  PROBLEM: missing bin/idstack-consensus"
+  note_problem
+elif [ ! -x "$IDSTACK_DIR/bin/idstack-consensus" ]; then
+  echo "  PROBLEM: bin/idstack-consensus is not executable"
+  note_problem
+else
+  echo "  idstack-consensus present and executable"
+  consensus_status=""
+  if command -v python3 >/dev/null 2>&1; then
+    consensus_status=$(python3 "$IDSTACK_DIR/bin/idstack-consensus" status 2>/dev/null || true)
+  fi
+  if [ -n "$consensus_status" ]; then
+    key_configured=""
+    cached_count=""
+    eval "$(echo "$consensus_status" | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+    k = "true" if d.get("api_key_configured") else "false"
+    c = int(d.get("cached_queries_count", 0))
+    print("key_configured=%s\ncached_count=%d" % (k, c))
+except Exception:
+    pass
+' 2>/dev/null || true)"
+    if [ "$key_configured" = "true" ]; then
+      echo "  Consensus API key: configured"
+    else
+      echo "  Consensus API key: not configured (optional BYOK)"
+    fi
+    echo "  cached queries: ${cached_count:-0}"
+  else
+    echo "  Consensus status: unavailable"
+  fi
+fi
+echo ""
+
+# 6. Final verdict
 if [ "$PROBLEMS" = "0" ]; then
   echo "OK"
   exit 0

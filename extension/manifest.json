@@ -38,6 +38,7 @@
   ],
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*",
-    "*://*.instructure.com/*"
+    "*://*.instructure.com/*",
+    "https://api.consensus.app/*"
   ]
 }
