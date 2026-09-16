@@ -1,5 +1,5 @@
 import { getSettings, saveSettings, getDossier, addToDossier, removeFromDossier, clearDossier } from '../shared/storage.js';
-import { renderAuditHTML, renderDossierListHTML } from './renderer-helper.js';
+import { renderAuditHTML } from './renderer-helper.js';
 import { detectCourseContext } from '../content/extractor-core.js';
 import { compileSingleAuditToMarkdown, compileDossierToMarkdown } from '../shared/dossier-compiler.js';
 
@@ -44,20 +44,88 @@ export async function updateDossierUI() {
   if (!listEl) return;
   try {
     const dossier = await getDossier();
-    listEl.innerHTML = renderDossierListHTML(dossier);
+    listEl.innerHTML = '';
 
-    listEl.querySelectorAll('.dossier-delete-btn').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
+    if (!Array.isArray(dossier) || dossier.length === 0) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'dossier-empty';
+      const p1 = document.createElement('p');
+      p1.textContent = 'No items in dossier yet.';
+      const p2 = document.createElement('p');
+      p2.className = 'help-text';
+      p2.innerHTML = 'Audit pages and click &ldquo;Add to Dossier&rdquo; to build your course dossier.';
+      emptyDiv.appendChild(p1);
+      emptyDiv.appendChild(p2);
+      listEl.appendChild(emptyDiv);
+      return;
+    }
+
+    dossier.forEach((item) => {
+      const id = item.id || '';
+      const title = item.title || 'Untitled Material';
+      const pageType = item.pageType || 'Page';
+      const blooms = item.result?.summary?.bloomsLevel || 'N/A';
+      const alignment = item.result?.summary?.alignmentScore || 'N/A';
+
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'dossier-item';
+      itemDiv.setAttribute('data-dossier-id', id);
+
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'dossier-item-header';
+
+      const chipSpan = document.createElement('span');
+      chipSpan.className = 'chip';
+      chipSpan.textContent = pageType;
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'dossier-delete-btn icon-btn';
+      deleteBtn.setAttribute('data-dossier-id', id);
+      deleteBtn.title = 'Remove from Dossier';
+      deleteBtn.textContent = '✕';
+      deleteBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const id = btn.getAttribute('data-dossier-id');
         if (id) {
           await removeFromDossier(id);
           await updateDossierUI();
         }
       });
+
+      headerDiv.appendChild(chipSpan);
+      headerDiv.appendChild(deleteBtn);
+
+      const titleH4 = document.createElement('h4');
+      titleH4.className = 'dossier-item-title';
+      titleH4.textContent = title;
+
+      const metaDiv = document.createElement('div');
+      metaDiv.className = 'dossier-item-meta';
+
+      const bloomsSpan = document.createElement('span');
+      bloomsSpan.innerHTML = `Bloom's: <strong></strong>`;
+      bloomsSpan.querySelector('strong').textContent = blooms;
+
+      const alignmentSpan = document.createElement('span');
+      alignmentSpan.innerHTML = `Alignment: <strong></strong>`;
+      alignmentSpan.querySelector('strong').textContent = alignment;
+
+      metaDiv.appendChild(bloomsSpan);
+      metaDiv.appendChild(alignmentSpan);
+
+      itemDiv.appendChild(headerDiv);
+      itemDiv.appendChild(titleH4);
+      itemDiv.appendChild(metaDiv);
+
+      listEl.appendChild(itemDiv);
     });
   } catch (e) {
-    listEl.innerHTML = '<div class="dossier-empty"><p>Error loading dossier.</p></div>';
+    listEl.innerHTML = '';
+    const errDiv = document.createElement('div');
+    errDiv.className = 'dossier-empty';
+    const errP = document.createElement('p');
+    errP.textContent = 'Error loading dossier.';
+    errDiv.appendChild(errP);
+    listEl.appendChild(errDiv);
   }
 }
 
