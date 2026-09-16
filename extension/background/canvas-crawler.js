@@ -20,31 +20,36 @@ export async function crawlCanvasCourse(origin, courseId, fetchImpl = fetch) {
 
   // 1. Fetch Course details & syllabus
   const courseUrl = `${origin}/api/v1/courses/${courseId}?include[]=syllabus_body`;
-  const courseRes = await fetchImpl(courseUrl, { credentials: 'include' });
-  if (!courseRes.ok) {
-    throw new Error(`Failed to fetch Canvas course info (${courseRes.status})`);
-  }
-  const courseJson = await courseRes.json();
+  const coursePromise = fetchImpl(courseUrl, { credentials: 'include' }).then(async (res) => {
+    if (!res.ok) {
+      throw new Error(`Failed to fetch Canvas course info (${res.status})`);
+    }
+    return res.json();
+  });
 
   // 2. Fetch Assignments list (up to 50)
   const assignmentsUrl = `${origin}/api/v1/courses/${courseId}/assignments?per_page=50`;
-  let assignments = [];
-  try {
-    const assignRes = await fetchImpl(assignmentsUrl, { credentials: 'include' });
-    if (assignRes.ok) {
-      const assignJson = await assignRes.json();
-      if (Array.isArray(assignJson)) {
-        assignments = assignJson.map((a) => ({
-          title: a.name || 'Untitled Assignment',
-          description: stripHtml(a.description || '').slice(0, 1000),
-          points: a.points_possible || 0,
-          dueAt: a.due_at || null
-        }));
+  const assignmentsPromise = fetchImpl(assignmentsUrl, { credentials: 'include' })
+    .then(async (res) => {
+      if (res.ok) {
+        const assignJson = await res.json();
+        if (Array.isArray(assignJson)) {
+          return assignJson.map((a) => ({
+            title: a.name || 'Untitled Assignment',
+            description: stripHtml(a.description || '').slice(0, 1000),
+            points: a.points_possible || 0,
+            dueAt: a.due_at || null
+          }));
+        }
       }
-    }
-  } catch (e) {
-    console.warn('Could not fetch assignments list:', e);
-  }
+      return [];
+    })
+    .catch((e) => {
+      console.warn('Could not fetch assignments list:', e);
+      return [];
+    });
+
+  const [courseJson, assignments] = await Promise.all([coursePromise, assignmentsPromise]);
 
   return {
     title: courseJson.name || courseJson.course_code || 'Canvas Course',
