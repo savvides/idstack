@@ -77,8 +77,10 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
       (async () => {
         try {
           const { origin, courseId } = request.payload || {};
-          const courseData = await crawlCanvasCourse(origin, courseId);
-          const settings = await getSettings();
+          const [courseData, settings] = await Promise.all([
+            crawlCanvasCourse(origin, courseId),
+            getSettings()
+          ]);
 
           let auditResult;
           if (settings && settings.apiKey && settings.apiKey.trim()) {
