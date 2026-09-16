@@ -5,6 +5,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "==> Running idstack Chrome Extension test suite..."
 node "$DIR/test-manifest.js"
+node "$DIR/test-parser-helper.js"
 node "$DIR/test-prompts.js"
 node "$DIR/test-extractor.js"
 node "$DIR/test-crawler.js"
