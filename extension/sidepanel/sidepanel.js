@@ -459,6 +459,7 @@ if (saveSettingsBtn) {
       }
     }
   } catch (e) {
+    console.warn('Error loading settings:', e);
     // Ignored if storage not initialized
   }
   await updateDossierBadge();
