@@ -44,7 +44,7 @@ export async function updateDossierUI() {
   if (!listEl) return;
   try {
     const dossier = await getDossier();
-    listEl.innerHTML = renderDossierListHTML(dossier);
+    listEl.innerHTML = DOMPurify.sanitize(renderDossierListHTML(dossier));
 
     listEl.querySelectorAll('.dossier-delete-btn').forEach((btn) => {
       btn.addEventListener('click', async (e) => {
@@ -57,7 +57,7 @@ export async function updateDossierUI() {
       });
     });
   } catch (e) {
-    listEl.innerHTML = '<div class="dossier-empty"><p>Error loading dossier.</p></div>';
+    listEl.innerHTML = DOMPurify.sanitize('<div class="dossier-empty"><p>Error loading dossier.</p></div>');
   }
 }
 
@@ -149,7 +149,7 @@ export function renderResults(data) {
   const container = document.getElementById('results-container');
   if (!container) return;
 
-  container.innerHTML = renderAuditHTML(data);
+  container.innerHTML = DOMPurify.sanitize(renderAuditHTML(data));
 
   const copyBtn = document.getElementById('copy-improved-btn');
   if (copyBtn) {
@@ -177,7 +177,7 @@ export function renderResults(data) {
     btn.addEventListener('click', (e) => {
       const parent = e.target.parentElement;
       if (parent) {
-        parent.innerHTML = '<em>Thank you for your feedback!</em>';
+        parent.innerHTML = DOMPurify.sanitize('<em>Thank you for your feedback!</em>');
       }
     });
   });
@@ -198,7 +198,7 @@ export function renderError(errorMessage) {
         .replace(/'/g, '&#039;')
     : 'Unknown error occurred during audit.';
 
-  container.innerHTML = `
+  container.innerHTML = DOMPurify.sanitize(`
     <div class="context-card error-card">
       <div class="error-header">
         <span class="error-icon">⚠️</span>
@@ -210,7 +210,7 @@ export function renderError(errorMessage) {
         <button id="error-settings-btn" class="secondary-btn">Open Settings</button>
       </div>
     </div>
-  `;
+  `);
 
   const retryBtn = document.getElementById('error-retry-btn');
   if (retryBtn) {

@@ -23,6 +23,9 @@ assert.ok(html.includes('id="page-type-tag"'), 'Page type tag must exist');
 assert.ok(html.includes('id="page-title"'), 'Page title heading must exist');
 assert.ok(html.includes('id="loader-status"'), 'Loader status text must exist');
 
+// Security
+assert.ok(html.includes('src="purify.min.js"'), 'HTML must load DOMPurify (purify.min.js)');
+
 // Typography and external font loading
 assert.ok(html.includes('Source+Serif+4') || html.includes('Source Serif 4'), 'HTML must load Source Serif 4');
 assert.ok(html.includes('Public+Sans') || html.includes('Public Sans'), 'HTML must load Public Sans');
