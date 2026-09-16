@@ -32,7 +32,10 @@ const mockFetch = async (url, options) => {
 };
 
 (async () => {
-  const courseData = await crawlCanvasCourse('https://canvas.instructure.com', '12345', mockFetch);
+  const originalFetch = global.fetch;
+  global.fetch = mockFetch;
+
+  const courseData = await crawlCanvasCourse('https://canvas.instructure.com', '12345');
   assert.strictEqual(courseData.title, 'Biology 101: Cell Systems');
   assert.ok(fetchOptionsPassed.every(opt => opt && opt.credentials === 'include'), 'fetchImpl must include credentials');
   assert.ok(courseData.syllabus.includes('Analyze cellular metabolism'));
@@ -43,7 +46,7 @@ const mockFetch = async (url, options) => {
   // Test 2.5: Missing Error Path Test for crawlCanvasCourse
   let caughtError1 = false;
   try {
-    await crawlCanvasCourse(null, '12345', mockFetch);
+    await crawlCanvasCourse(null, '12345');
   } catch (err) {
     caughtError1 = true;
     assert.strictEqual(err.message, 'Canvas origin and courseId are required for course crawling.');
@@ -52,7 +55,7 @@ const mockFetch = async (url, options) => {
 
   let caughtError2 = false;
   try {
-    await crawlCanvasCourse('https://canvas.instructure.com', null, mockFetch);
+    await crawlCanvasCourse('https://canvas.instructure.com', null);
   } catch (err) {
     caughtError2 = true;
     assert.strictEqual(err.message, 'Canvas origin and courseId are required for course crawling.');
@@ -75,12 +78,14 @@ const mockFetch = async (url, options) => {
 
   let errorThrown = false;
   try {
-    await crawlCanvasCourse('https://canvas.instructure.com', 'invalid-id', mockFailedFetch);
+    global.fetch = mockFailedFetch;
+    await crawlCanvasCourse('https://canvas.instructure.com', 'invalid-id');
   } catch (err) {
     errorThrown = true;
     assert.strictEqual(err.message, 'Failed to fetch Canvas course info (404)');
   }
   assert.ok(errorThrown, 'Expected an error to be thrown for failed fetch');
+  global.fetch = originalFetch;
 
   console.log('✅ Task 2 Canvas crawler tests passed.');
 })();
