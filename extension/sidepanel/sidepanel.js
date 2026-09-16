@@ -459,7 +459,7 @@ if (saveSettingsBtn) {
       }
     }
   } catch (e) {
-    // Ignored if storage not initialized
+    console.warn('Ignored if storage not initialized:', e);
   }
   await updateDossierBadge();
 })();
