@@ -24,10 +24,36 @@ const rawWithWhitespace = '   \n```json\n{"summary": {"bloomsLevel": "Evaluate"}
 const parsedWhitespace = parseAuditResponse(rawWithWhitespace);
 assert.strictEqual(parsedWhitespace.summary.bloomsLevel, 'Evaluate');
 
-// Test 5: cleanJsonResponse alias
+// Test 5: cleanJsonResponse comprehensive tests
 assert.strictEqual(typeof cleanJsonResponse, 'function');
-const cleaned = cleanJsonResponse('{"key": "value"}');
-assert.strictEqual(cleaned.key, 'value');
+
+// 5a. Pure JSON
+const cleanObj1 = cleanJsonResponse('{"key": "value"}');
+assert.strictEqual(cleanObj1.key, 'value');
+
+// 5b. JSON with leading/trailing whitespace
+const cleanObj2 = cleanJsonResponse('  \n\t {"key": "value"} \n ');
+assert.strictEqual(cleanObj2.key, 'value');
+
+// 5c. Markdown fenced JSON with '```json'
+const cleanObj3 = cleanJsonResponse('```json\n{"key": "value"}\n```');
+assert.strictEqual(cleanObj3.key, 'value');
+
+// 5d. Markdown fenced JSON with '```'
+const cleanObj4 = cleanJsonResponse('```\n{"key": "value"}\n```');
+assert.strictEqual(cleanObj4.key, 'value');
+
+// 5e. Markdown fenced JSON with leading/trailing whitespace
+const cleanObj5 = cleanJsonResponse(' \n ```json\n{"key": "value"}\n``` \n');
+assert.strictEqual(cleanObj5.key, 'value');
+
+// 5f. Invalid JSON throws
+assert.throws(() => {
+  cleanJsonResponse('{"key": "value"');
+}, SyntaxError);
+assert.throws(() => {
+  cleanJsonResponse('not json');
+}, SyntaxError);
 
 // Test 6: Demo fallback when API key is not configured
 assert.strictEqual(typeof getDemoAuditResult, 'function', 'getDemoAuditResult must be a function');
