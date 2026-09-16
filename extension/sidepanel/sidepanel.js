@@ -104,6 +104,7 @@ export async function refreshActiveTab() {
           }
         } catch (injectionErr) {
           // Tab may be a chrome:// or restricted URL
+          console.warn('Error injecting content script:', injectionErr);
         }
       }
     }
