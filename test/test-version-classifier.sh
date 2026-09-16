@@ -22,7 +22,7 @@ set -e
 
 . "$(dirname "$0")/test-helper.sh"
 
-IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
+IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 . "$IDSTACK_DIR/bin/lib/version-classify.sh"
 
 # Domain-specific shape: this compares a version string to an expected

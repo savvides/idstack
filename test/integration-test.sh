@@ -4,7 +4,7 @@ set -e
 
 . "$(dirname "$0")/test-helper.sh"
 
-IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 TEST_DIR=$(mktemp -d)
 # Single-quoted so expansion happens at trap time and a path with spaces survives.
 trap 'rm -rf "$TEST_DIR"' EXIT
