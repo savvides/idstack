@@ -34,6 +34,7 @@ export async function updateDossierBadge() {
     const dossier = await getDossier();
     countEl.textContent = String(dossier ? dossier.length : 0);
   } catch (e) {
+    console.warn(e);
     countEl.textContent = '0';
   }
 }
