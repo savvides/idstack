@@ -335,4 +335,32 @@ const subpageCtx = detectCourseContext('https://canvas.instructure.com/courses/9
 assert.strictEqual(subpageCtx.isCourseRoot, false);
 assert.strictEqual(subpageCtx.courseId, '987654');
 
+// Edge cases for detectCourseContext
+const nullCtx = detectCourseContext(null);
+assert.strictEqual(nullCtx.isCourseRoot, false);
+assert.strictEqual(nullCtx.courseId, null);
+assert.strictEqual(nullCtx.origin, null);
+
+const invalidUrlCtx = detectCourseContext('invalid-url');
+assert.strictEqual(invalidUrlCtx.isCourseRoot, false);
+assert.strictEqual(invalidUrlCtx.courseId, null);
+assert.strictEqual(invalidUrlCtx.origin, null);
+
+const hashFragmentCtx = detectCourseContext('https://canvas.instructure.com/courses/987654#main');
+assert.strictEqual(hashFragmentCtx.isCourseRoot, true);
+assert.strictEqual(hashFragmentCtx.courseId, '987654');
+
+const nonCanvasCourseCtx = detectCourseContext('https://example.com/other/123');
+assert.strictEqual(nonCanvasCourseCtx.isCourseRoot, false);
+assert.strictEqual(nonCanvasCourseCtx.courseId, null);
+assert.strictEqual(nonCanvasCourseCtx.origin, 'https://example.com');
+
+const noIdCtx = detectCourseContext('https://canvas.instructure.com/courses/');
+assert.strictEqual(noIdCtx.isCourseRoot, false);
+assert.strictEqual(noIdCtx.courseId, null);
+
+const nonNumericIdCtx = detectCourseContext('https://canvas.instructure.com/courses/abc');
+assert.strictEqual(nonNumericIdCtx.isCourseRoot, false);
+assert.strictEqual(nonNumericIdCtx.courseId, null);
+
 console.log('✅ Task 3 extractor tests passed.');
