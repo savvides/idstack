@@ -441,6 +441,41 @@ fresh
 printf 'idstack also runs in OpenAI Codex CLI.\n' > "$WORK/r/docs/superpowers/leak.md"  # IDSTACK_CLI_LEAK_ALLOW
 expect_fail "committed docs/superpowers is not sweep-exempt" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 24a/24b/24f. The extension suite must exercise the SHIPPED files. Every
+# extension test used to load a hand-maintained .cjs twin, so a bug planted in
+# the .js that Chrome actually runs stayed green.
+
+# 24a. shipped renderer stops escaping '<' -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/renderer-helper.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    .replace(/</g, '&lt;')\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "shipped renderer stops escaping '<'" "$WORK/r/test/test-extension.sh"
+
+# 24b. the course-root detector the side panel imports treats every course page
+# as the root -> test-extension must fail. The old suite tested extractor.js's
+# copy (via a .cjs twin); sidepanel.js imports content/extractor-core.js.
+fresh
+python3 - "$WORK/r/extension/content/extractor-core.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "isCourseRoot: !!match,"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "isCourseRoot: !!anyCourseMatch,", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "side panel course-root detector matches every course page" "$WORK/r/test/test-extension.sh"
+
+# 24f. a hand-copied .cjs twin comes back -> test-extension must fail.
+fresh
+cp "$WORK/r/extension/sidepanel/renderer-helper.js" "$WORK/r/extension/sidepanel/renderer-helper.cjs"
+expect_fail "hand-copied .cjs twin back in extension/" "$WORK/r/test/test-extension.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

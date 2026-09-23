@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { EVIDENCE_DOMAINS, TIER_METADATA, buildAuditPrompt } = require('../extension/shared/prompts.cjs');
+import assert from 'node:assert';
+import { EVIDENCE_DOMAINS, TIER_METADATA, buildAuditPrompt, buildCourseAuditPrompt } from '../extension/shared/prompts.js';
 
 assert.ok(EVIDENCE_DOMAINS.length >= 10, 'Should include all core idstack research domains');
 assert.ok(TIER_METADATA.T1, 'Tier 1 metadata must exist');
@@ -21,7 +21,6 @@ assert.ok(prompt.includes('Biology 101'), 'Prompt should include content title')
 assert.ok(prompt.includes("Bloom's"), "Prompt should require Bloom's classification");
 assert.ok(prompt.includes('JSON'), 'Prompt should enforce JSON format');
 
-const { buildCourseAuditPrompt } = require('../extension/shared/prompts.cjs');
 assert.strictEqual(typeof buildCourseAuditPrompt, 'function');
 const coursePrompt = buildCourseAuditPrompt({
   title: 'Biology 101',

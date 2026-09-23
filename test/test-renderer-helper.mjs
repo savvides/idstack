@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { renderAuditHTML, escapeHtml } = require('../extension/sidepanel/renderer-helper.cjs');
+import assert from 'node:assert';
+import { renderAuditHTML, renderDossierListHTML, escapeHtml } from '../extension/sidepanel/renderer-helper.js';
 
 // Test 1: Full mock audit data rendering
 const mockData = {
@@ -147,7 +147,6 @@ assert.ok(renderedCourse.includes('Course Alignment Matrix'));
 assert.ok(renderedCourse.includes('High (88%)'));
 
 // Test 8: Dossier Item Rendering in Drawer
-const { renderDossierListHTML } = require('../extension/sidepanel/renderer-helper.cjs');
 assert.strictEqual(typeof renderDossierListHTML, 'function', 'renderDossierListHTML must be a function');
 const listHtml = renderDossierListHTML([
   { id: '1', title: 'Week 1 Quiz', pageType: 'Assignment', result: { summary: { bloomsLevel: 'Remember', alignmentScore: 'Low' } } }

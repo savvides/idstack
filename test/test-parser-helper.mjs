@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { parseAuditResponse, cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } = require('../extension/background/parser-helper.cjs');
+import assert from 'node:assert';
+import { parseAuditResponse, cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } from '../extension/background/parser-helper.js';
 
 // Test 1: Markdown fenced JSON with '```json'
 const rawLlmResponse = "```json\n{\n  \"summary\": {\n    \"bloomsLevel\": \"Remember\",\n    \"alignmentScore\": \"Moderate\",\n    \"keyTakeaway\": \"Quiz focuses only on memorization.\"\n  },\n  \"findings\": [],\n  \"improvedDraft\": {\n    \"title\": \"Analysis Prompt\",\n    \"content\": \"Compare and contrast\"\n  }\n}\n```";

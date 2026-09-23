@@ -39,7 +39,8 @@ Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 ./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
-./test/test-extension.sh          # Chrome Extension packaging and static analysis tests
+./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules via
+                                  # test/extension-harness.mjs (Node >= 20.19 or 22.7; never add .cjs twins)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails
@@ -47,7 +48,7 @@ python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across 
 
 `test/test-helper.sh` is not a suite — it is sourced by all of them and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion. Do not add a local counter block to a suite; smoke-test fails on one, and a mutation proves that guard works.
 
-CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9.
+CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9. The test, mutation and release jobs pin Node 22 for the extension tests.
 
 No build step for users. No dependencies beyond bash (python3 recommended for full features). Skills are plain Markdown files.
 

@@ -47,22 +47,6 @@ function extractPageContent() {
   return extractContentFromDOM(document, url);
 }
 
-function detectCourseContext(url, docTitle) {
-  if (!url) return { isCourseRoot: false, courseId: null, origin: null };
-  try {
-    const parsedUrl = new URL(url);
-    const match = parsedUrl.pathname.match(/\/courses\/(\d+)(?:\/(?:modules)?)?\/?$/);
-    const anyCourseMatch = parsedUrl.pathname.match(/\/courses\/(\d+)/);
-    return {
-      isCourseRoot: !!match,
-      courseId: anyCourseMatch ? anyCourseMatch[1] : null,
-      origin: parsedUrl.origin
-    };
-  } catch (e) {
-    return { isCourseRoot: false, courseId: null, origin: null };
-  }
-}
-
 // Listen for messages from Side Panel
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -78,7 +62,6 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     detectPageType,
     extractContentFromDOM,
-    extractPageContent,
-    detectCourseContext
+    extractPageContent
   };
 }
