@@ -127,7 +127,7 @@ bin/idstack-gen-skills --dry-run  # Generated files up to date? Run this first.
 ./test/smoke-test.sh              # Verify the install
 ```
 
-Ten suites run in CI (`.github/workflows/test.yml`) on every push and pull request. Run whichever ones your change touches locally; CI runs them all:
+Eleven suites run in CI (`.github/workflows/test.yml`) on every push and pull request. Run whichever ones your change touches locally; CI runs them all:
 
 | Suite | Covers |
 |-------|--------|
@@ -140,6 +140,7 @@ Ten suites run in CI (`.github/workflows/test.yml`) on every push and pull reque
 | `test/test-version-classifier.sh` | `bin/lib/version-classify.sh` |
 | `test/test-plugin-status.sh` | `bin/lib/plugin-status.sh` |
 | `test/test-preamble-python.sh` | The preamble's embedded Python, on 3.9 and 3.12 |
+| `test/test-extension.sh` | The Chrome extension. Imports the shipped `extension/` modules through `test/extension-harness.mjs` (Node 20.19+ or 22.7+) and fails if a hand-copied `.cjs` twin comes back |
 | `python3 test/check-evidence-cards.py .` | Verifies landing page evidence card study counts and tier ranges against `evidence/references.md` |
 | `python3 test/check-doc-accuracy.py .` | Validates version agreement, manifest schema version, binary/flag references, link targets, and surface accuracy across docs |
 | `test/mutation-test.sh` | Reintroduces each known defect into a throwaway copy and asserts the guarding test fails. Add a mutation here whenever you fix a bug — it is what proves your new test would have caught it |
