@@ -33,7 +33,7 @@ Building institutional LMS integrations (LTI 1.3, Canvas Developer Keys) introdu
        ▼ (Automatic platform detection: "Canvas Assignment Detected")
 [User clicks "Audit with Evidence"]
        │
-       ▼ (2-3s fast analysis via Gemini 3.7 Flash)
+       ▼ (2-3s fast analysis via Gemini 3.7 Flash) <!-- IDSTACK_CLI_LEAK_ALLOW -->
 [Results Displayed in Side Panel]
  ├── Bloom's Taxonomy Level & Alignment Summary
  ├── Finding Cards with [T1]–[T5] Evidence Badges
@@ -49,7 +49,7 @@ Building institutional LMS integrations (LTI 1.3, Canvas Developer Keys) introdu
    - **Finding Cards:** Categorized by severity (Critical / Warning / Suggestion) with mono-tagged citation chips (e.g. `[Assessment-8] [T1]`).
    - **Actionable Rewrite Box:** Formatted revised rubric criteria or rewritten measurable learning objectives with a **"📋 Copy to Clipboard"** button.
    - **Feedback Mechanism:** Instant 1-click **"Helpful? 👍 / 👎"** toggle to collect experiment signal.
-4. **Settings / Privacy State:** Clean drawer allowing users to view privacy commitments (zero student PII stored) and optionally enter a custom Gemini / Claude API key for BYOK mode.
+4. **Settings / Privacy State:** Clean drawer allowing users to view privacy commitments (zero student PII stored) and optionally enter a custom Gemini / Claude API key for BYOK mode. <!-- IDSTACK_CLI_LEAK_ALLOW -->
 
 ---
 
@@ -88,7 +88,7 @@ The content script is injected on demand or on target domains to extract course 
 ### 3.2 Background Worker (`background/service-worker.js`)
 - Receives audit requests from the Side Panel.
 - Formats prompt with extracted DOM text + idstack research criteria.
-- Dispatches request to the configured LLM endpoint (Gemini 3.7 Flash default proxy or local BYOK endpoint).
+- Dispatches request to the configured LLM endpoint (Gemini 3.7 Flash default proxy or local BYOK endpoint). <!-- IDSTACK_CLI_LEAK_ALLOW -->
 - Validates and parses the returned JSON schema and forwards results to the Side Panel.
 
 ---
@@ -139,6 +139,6 @@ For this experiment to be considered successful before expanding into larger fea
 1. **Phase 1: Project Scaffolding & Manifest:** Create `extension/manifest.json`, icon assets, and baseline extension setup.
 2. **Phase 2: Content Extraction Engine:** Implement `content/extractor.js` for Canvas LMS and general web pages.
 3. **Phase 3: Side Panel UI & Design System:** Implement `sidepanel/index.html`, `sidepanel.css` (using `DESIGN.md` tokens), and interactive state rendering.
-4. **Phase 4: LLM Audit Engine & Prompts:** Implement `background/service-worker.js` with structured Gemini 3.7 Flash prompting and JSON schema enforcement.
+4. **Phase 4: LLM Audit Engine & Prompts:** Implement `background/service-worker.js` with structured Gemini 3.7 Flash prompting and JSON schema enforcement. <!-- IDSTACK_CLI_LEAK_ALLOW -->
 5. **Phase 5: Copy Actions & Stakeholder Report Generator:** Wire 1-click clipboard revision copying and standalone HTML report generation.
 6. **Phase 6: Testing & Verification:** Verify on real Canvas pages and web syllabi.

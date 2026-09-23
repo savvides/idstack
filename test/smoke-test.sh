@@ -415,21 +415,26 @@ check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_
 #      directories. Implementation reports and review notes written during
 #      development are not shipped and CI never sees them (fresh checkout), but
 #      they can discuss the sweep and trip it unreliably.
-#   3. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Three kinds of line carry the tag:
-#      this block's own patterns, the dated release note on the landing page,
-#      and the comments crediting "Gemini Code Assist" — a PR-review bot  # IDSTACK_CLI_LEAK_ALLOW
+#      --exclude-dir matches a name at any depth, so never add the dotless
+#      `superpowers`: it exempted the committed specs and plans under
+#      docs/superpowers/ and superpowers/.
+#   3. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Kinds of line that carry the tag
+#      include: this block's own patterns, the dated release note on the
+#      landing page, the comments crediting "Gemini Code Assist" — a PR-review bot  # IDSTACK_CLI_LEAK_ALLOW
 #      that flagged the version classifier four times, unrelated to the CLI and
-#      the reason those test cases exist.
+#      the reason those test cases exist — and mentions of the Gemini model API  # IDSTACK_CLI_LEAK_ALLOW
+#      the Chrome extension calls, which is an LLM endpoint, not a CLI.
 #
-#      A tag is for a dated, historical mention. It is NEVER for a line that
-#      claims idstack runs somewhere it does not. Tag individual lines, never
-#      whole files, and never filter on a bare string: an earlier draft dropped
-#      every line containing the bot's name repo-wide, which would have
-#      let an untagged capability claim through anywhere it appeared.
+#      A tag is for a dated, historical mention or the extension's model API.
+#      It is NEVER for a line that claims idstack runs somewhere it does not.
+#      Tag individual lines, never whole files, and never filter on a bare
+#      string: an earlier draft dropped every line containing the bot's name
+#      repo-wide, which would have let an untagged capability claim through
+#      anywhere it appeared.
 CLI_LEAK_RE='codex|gemini'            # IDSTACK_CLI_LEAK_ALLOW
 CLI_LEAK="$(grep -rIiE "$CLI_LEAK_RE" "$IDSTACK_DIR" \
   --exclude-dir=.git --exclude-dir=.gstack --exclude-dir=.idstack \
-  --exclude-dir=.claude --exclude-dir=.superpowers --exclude-dir=superpowers --exclude=CHANGELOG.md 2>/dev/null || true)"
+  --exclude-dir=.claude --exclude-dir=.superpowers --exclude=CHANGELOG.md 2>/dev/null || true)"
 CLI_LEAK="$(printf '%s' "$CLI_LEAK" | grep -vF 'IDSTACK_CLI_LEAK_ALLOW' || true)"
 # Printed through the command itself, not tested with -z, so a failure names
 # the offending lines instead of just saying the string was non-empty.

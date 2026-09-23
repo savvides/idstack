@@ -4,7 +4,7 @@
 
 **Goal:** Build a frictionless Manifest V3 Chrome Extension that brings idstack's evidence-based course design audits into Canvas LMS, Google Docs, and web browsers via Chrome's native Side Panel.
 
-**Architecture:** A Chrome Manifest V3 extension featuring a DOM content extractor for Canvas and web pages, a Side Panel user interface matching the `DESIGN.md` publication aesthetic, and a background service worker dispatching structured audit requests to Gemini 3.7 Flash with T1–T5 evidence citations.
+**Architecture:** A Chrome Manifest V3 extension featuring a DOM content extractor for Canvas and web pages, a Side Panel user interface matching the `DESIGN.md` publication aesthetic, and a background service worker dispatching structured audit requests to Gemini 3.7 Flash with T1–T5 evidence citations. <!-- IDSTACK_CLI_LEAK_ALLOW -->
 
 **Tech Stack:** Chrome Extensions API (Manifest V3, Side Panel API, Content Scripts, Service Worker), Vanilla JavaScript (ES Modules), Vanilla CSS (matching `DESIGN.md` tokens), Node.js test runner for unit tests.
 
@@ -407,7 +407,7 @@ git commit -m "feat(extension): implement DOM extractor for Canvas and web sylla
 
 ---
 
-### Task 4: Background Service Worker & Gemini API Engine
+### Task 4: Background Service Worker & Gemini API Engine <!-- IDSTACK_CLI_LEAK_ALLOW -->
 
 **Files:**
 - Create: `extension/background/service-worker.js`
@@ -424,9 +424,9 @@ Create `test/test-service-worker.js`:
 const assert = require('assert');
 const { parseAuditResponse } = require('../extension/background/parser-helper.cjs');
 
-const rawGeminiResponse = "```json\n{\n  \"summary\": {\n    \"bloomsLevel\": \"Remember\",\n    \"alignmentScore\": \"Moderate\",\n    \"keyTakeaway\": \"Quiz focuses only on memorization.\"\n  },\n  \"findings\": [],\n  \"improvedDraft\": {\n    \"title\": \"Analysis Prompt\",\n    \"content\": \"Compare and contrast\"\n  }\n}\n```";
+const rawGeminiResponse = "```json\n{\n  \"summary\": {\n    \"bloomsLevel\": \"Remember\",\n    \"alignmentScore\": \"Moderate\",\n    \"keyTakeaway\": \"Quiz focuses only on memorization.\"\n  },\n  \"findings\": [],\n  \"improvedDraft\": {\n    \"title\": \"Analysis Prompt\",\n    \"content\": \"Compare and contrast\"\n  }\n}\n```"; // IDSTACK_CLI_LEAK_ALLOW
 
-const parsed = parseAuditResponse(rawGeminiResponse);
+const parsed = parseAuditResponse(rawGeminiResponse); // IDSTACK_CLI_LEAK_ALLOW
 assert.strictEqual(parsed.summary.bloomsLevel, 'Remember');
 assert.strictEqual(parsed.improvedDraft.title, 'Analysis Prompt');
 
@@ -456,8 +456,8 @@ function cleanJsonResponse(rawText) {
   return JSON.parse(cleaned.trim());
 }
 
-async function callGeminiApi(apiKey, prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+async function callGeminiApi(apiKey, prompt) { // IDSTACK_CLI_LEAK_ALLOW
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`; // IDSTACK_CLI_LEAK_ALLOW
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -492,10 +492,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Use user's key if provided, or default endpoint
         let auditResult;
         if (settings.apiKey) {
-          auditResult = await callGeminiApi(settings.apiKey, prompt);
+          auditResult = await callGeminiApi(settings.apiKey, prompt); // IDSTACK_CLI_LEAK_ALLOW
         } else {
           // Fallback demo mock or proxy endpoint
-          auditResult = await callGeminiApi('YOUR_DEFAULT_API_KEY_OR_PROXY', prompt);
+          auditResult = await callGeminiApi('YOUR_DEFAULT_API_KEY_OR_PROXY', prompt); // IDSTACK_CLI_LEAK_ALLOW
         }
 
         await saveAuditResult({
@@ -624,7 +624,7 @@ Create `extension/sidepanel/index.html`:
       </div>
       <div class="drawer-body">
         <div class="form-group">
-          <label for="api-key-input">Gemini / Claude API Key (Optional BYOK)</label>
+          <label for="api-key-input">Gemini / Claude API Key (Optional BYOK)</label> <!-- IDSTACK_CLI_LEAK_ALLOW -->
           <input type="password" id="api-key-input" placeholder="AIzaSy... or sk-ant-..." />
           <p class="help-text">Leave blank to use the standard free demo tier.</p>
         </div>
