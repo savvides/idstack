@@ -34,18 +34,18 @@ export function getDemoAuditResult(payload = {}) {
       },
       {
         severity: 'critical',
-        tier: 'T2',
-        citation: '[Alignment-3] Direct Constructive Alignment',
+        tier: 'T5',
+        citation: '[Alignment-1] Direct Constructive Alignment',
         observation: 'Learning objectives target analytical synthesis, but evaluation instruments only test lower-order recall.',
-        evidence: 'Biggs (1996) & Liou et al. (2023) [T2 controlled trial]: Constructive misalignment between stated objectives and assessment formats leads to superficial learning strategies.',
+        evidence: 'Biggs (1996) [T5]: Constructive misalignment between stated objectives and assessment formats leads to superficial learning strategies.',
         recommendation: 'Incorporate authentic problem-solving prompts and case analysis rather than purely multiple-choice recall questions.'
       },
       {
         severity: 'info',
         tier: 'T1',
-        citation: '[Cognitive-2] Cognitive Load & Chunking',
+        citation: '[CogLoad-1] Cognitive Load & Chunking',
         observation: 'Task instructions present multiple complex requirements in a single unsegmented block.',
-        evidence: 'Costley et al. (2023) [T1 meta-analysis]: Segmenting complex instructional tasks into structured sequential phases reduces extraneous cognitive load.',
+        evidence: 'Costley et al. (2023) [T1]: Segmenting complex instructional tasks into structured sequential phases reduces extraneous cognitive load.',
         recommendation: 'Format multi-step assignment guidelines into sequenced checklists or distinct milestone stages.'
       }
     ],
@@ -82,18 +82,18 @@ export function getDemoCourseAuditResult(payload = {}) {
     findings: [
       {
         severity: 'critical',
-        tier: 'T2',
-        citation: '[Alignment-3] Direct Constructive Alignment',
+        tier: 'T5',
+        citation: '[Alignment-1] Direct Constructive Alignment',
         observation: 'Modules 1-6 assess solely lower-order factual recall, while the final course project demands high-order synthesis without intermediate scaffolding.',
-        evidence: 'Biggs (1996) & Liou et al. (2023) [T2 controlled trial]: Abrupt jumps in cognitive demand without progressive assessment scaffolding increase failure rates.',
+        evidence: 'Biggs (1996) [T5]: Constructive alignment requires every assessment to engage the cognitive level its learning outcome names.',
         recommendation: 'Introduce mid-semester milestone case studies in Module 4 to bridge the gap between quizzes and the final capstone.'
       },
       {
         severity: 'warning',
         tier: 'T1',
-        citation: '[Cognitive-2] Cognitive Load & Spaced Practice',
+        citation: '[CogLoad-6] Cognitive Load & Spaced Practice',
         observation: 'Major assignment deadlines are clustered in Week 14-15 with no spaced formative checkpoints.',
-        evidence: 'Carpenter et al. (2022) [T1 meta-analysis, d=0.61]: Distributing assessments across spaced intervals produces significantly higher long-term retention.',
+        evidence: 'Chen et al. (2018) [T1]: Distributing practice across time produces stronger long-term retention than massing the same content into a single session.',
         recommendation: 'Redistribute submission checkpoints into 3 progressive deliverables across weeks 6, 10, and 14.'
       },
       {

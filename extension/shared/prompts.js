@@ -1,4 +1,6 @@
-import { EVIDENCE_DOMAINS, TIER_METADATA } from './evidence-base.js';
+import { TIER_METADATA } from './evidence-base.js';
+
+const TIER_SCALE = Object.entries(TIER_METADATA).map(([tier, m]) => `   ${tier}: ${m.description}`).join('\n');
 
 export function buildAuditPrompt({ title, pageType, content = '' }) {
   return `You are idstack, an evidence-based instructional design co-pilot.
@@ -16,7 +18,8 @@ Please audit this material against peer-reviewed instructional design evidence:
 1. Classify learning objectives or implied cognitive depth using Bloom's Revised Taxonomy (Remember, Understand, Apply, Analyze, Evaluate, Create).
 2. Check Constructive Alignment: Do activities and assessments match the stated or necessary cognitive depth?
 3. Flag Cognitive Load, Elaborated Feedback gaps, and Accessibility considerations.
-4. Rate each recommendation with an evidence tier [T1] to [T5].
+4. Rate each recommendation with an evidence tier:
+${TIER_SCALE}
 5. Provide a ready-to-use, improved version (rewritten rubric, upgraded learning outcome verbs, or enhanced prompt).
 
 You MUST respond strictly with valid JSON conforming to this schema:
@@ -28,7 +31,7 @@ You MUST respond strictly with valid JSON conforming to this schema:
   },
   "findings": [
     {
-      "severity": "critical | warning | suggestion",
+      "severity": "critical | warning | info",
       "tier": "T1 | T2 | T3 | T4 | T5",
       "citation": "[Domain-Code] Short Citation",
       "observation": "What is present in the current material",
@@ -70,8 +73,10 @@ ${(courseData.syllabus || 'No syllabus provided').slice(0, 8000)}
 COURSE ASSIGNMENTS & ASSESSMENTS (${total} items; ${shown} shown in full below):
 ${assignmentsSummary}
 
-Evaluate whether the assessment system constructively aligns with stated learning outcomes (Biggs 1996 [T2], Liou et al. 2023 [T2]).
-Identify cognitive load bottlenecks (Sweller 2011 [T1]), scaffolding gaps (Wood et al. 1976 [T2]), and formative feedback quality (Wisniewski et al. 2020 [T1]).
+Evaluate whether the assessment system constructively aligns with stated learning outcomes ([Alignment-1] Biggs (1996) [T5]).
+Identify cognitive load bottlenecks ([CogLoad-4] Sweller (1994) [T5]), scaffolding gaps ([CogLoad-1] Costley et al. (2023) [T1]), and formative feedback quality ([Assessment-8] Wisniewski et al. (2020) [T1]).
+Rate each finding's evidence tier on this scale:
+${TIER_SCALE}
 
 Respond with ONLY a valid JSON object matching this schema:
 {
@@ -97,4 +102,4 @@ Respond with ONLY a valid JSON object matching this schema:
 }`;
 }
 
-export { EVIDENCE_DOMAINS, TIER_METADATA };
+export { TIER_METADATA };

@@ -586,6 +586,99 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "course prompt cuts the assignment list mid-block" node "$WORK/r/test/test-prompts.mjs"
 
+# 26a-26g. The extension shipped a tier scale that put randomized trials in T2,
+# demo findings citing Biggs as [Alignment-3] [T2] and a nonexistent
+# [Cognitive-2], uncoded prompt citations, and a page prompt asking for a
+# 'suggestion' severity. test-evidence-labels.mjs checks every label against
+# evidence/references.md and CLAUDE.md; each case reverts one defect.
+
+# 26a. TIER_METADATA relabels T2 as randomized trials -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/evidence-base.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "T2: { label: 'Quasi-experimental with controls', description: 'Quasi-experimental with appropriate controls'"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "T2: { label: 'Controlled trial', description: 'Peer-reviewed empirical randomized or quasi-experimental studies'", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "tier scale puts randomized trials in T2" "$WORK/r/test/test-extension.sh"
+
+# 26b. the demo cites Biggs as [Alignment-3] [T2] again -> test-extension must
+# fail. references.md files Biggs as [Alignment-1] T5; [Alignment-3] is Pereira, T4.
+fresh
+python3 - "$WORK/r/extension/background/parser-helper.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "tier: 'T5',\n        citation: '[Alignment-1] Direct Constructive Alignment',\n        observation: 'Learning objectives"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "tier: 'T2',\n        citation: '[Alignment-3] Direct Constructive Alignment',\n        observation: 'Learning objectives", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "demo cites Biggs as [Alignment-3] T2" "$WORK/r/test/test-extension.sh"
+
+# 26c. the demo cites the nonexistent [Cognitive-2] again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/background/parser-helper.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "'[CogLoad-1] Cognitive Load & Chunking'"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "'[Cognitive-2] Cognitive Load & Chunking'", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "demo cites nonexistent [Cognitive-2]" "$WORK/r/test/test-extension.sh"
+
+# 26d. the course prompt cites Biggs uncoded at T2 again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/prompts.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "([Alignment-1] Biggs (1996) [T5])."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "(Biggs 1996 [T2], Liou et al. 2023 [T2]).", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course prompt cites Biggs uncoded at T2" "$WORK/r/test/test-extension.sh"
+
+# 26e. the page prompt asks for a 'suggestion' severity again -> test-extension
+# must fail. The course prompt, the reports and the side panel use critical|warning|info.
+fresh
+python3 - "$WORK/r/extension/shared/prompts.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '"severity": "critical | warning | info",'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '"severity": "critical | warning | suggestion",', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "page prompt asks for a suggestion severity" "$WORK/r/test/test-extension.sh"
+
+# 26f. the course prompt drops the canonical tier scale -> test-extension must
+# fail. Without it the model rates tiers on whatever scale it assumes.
+fresh
+python3 - "$WORK/r/extension/shared/prompts.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Rate each finding's evidence tier on this scale:\n${TIER_SCALE}\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course prompt drops the tier scale" "$WORK/r/test/test-extension.sh"
+
+# 26g. the side panel styles a 'suggestion' finding card again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.css" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ".finding-card.severity-info {"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, ".finding-card.severity-suggestion {\n  border-left-color: #2f7a4a;\n}\n\n.finding-card.severity-info {", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "side panel styles a suggestion severity" "$WORK/r/test/test-extension.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

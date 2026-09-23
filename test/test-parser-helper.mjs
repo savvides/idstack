@@ -42,9 +42,9 @@ assert.ok(demoData.summary.keyTakeaway.includes('Settings'), 'Demo result must n
 assert.ok(demoData.findings.length >= 2, 'Demo result must provide multiple evidence-based findings');
 
 const hasT1 = demoData.findings.some(f => f.tier === 'T1');
-const hasT2 = demoData.findings.some(f => f.tier === 'T2');
+const hasT5 = demoData.findings.some(f => f.tier === 'T5');
 assert.ok(hasT1, 'Demo findings must include T1 evidence tier badge');
-assert.ok(hasT2, 'Demo findings must include T2 evidence tier badge');
+assert.ok(hasT5, 'Demo findings must include T5 evidence tier badge');
 
 assert.ok(demoData.improvedDraft.title, 'Demo draft must include title');
 assert.ok(demoData.improvedDraft.content.includes('Settings'), 'Demo draft must remind user to configure API key in Settings');
