@@ -13,6 +13,9 @@ export function stripHtml(html) {
     .trim();
 }
 
+// 10 pages of 50 bounds the crawl at 500 assignments.
+const MAX_ASSIGNMENT_PAGES = 10;
+
 export async function crawlCanvasCourse(origin, courseId, fetchImpl = fetch) {
   if (!origin || !courseId) {
     throw new Error('Canvas origin and courseId are required for course crawling.');
@@ -26,24 +29,28 @@ export async function crawlCanvasCourse(origin, courseId, fetchImpl = fetch) {
   }
   const courseJson = await courseRes.json();
 
-  // 2. Fetch Assignments list (up to 50)
-  const assignmentsUrl = `${origin}/api/v1/courses/${courseId}/assignments?per_page=50`;
-  let assignments = [];
-  try {
-    const assignRes = await fetchImpl(assignmentsUrl, { credentials: 'include' });
-    if (assignRes.ok) {
-      const assignJson = await assignRes.json();
-      if (Array.isArray(assignJson)) {
-        assignments = assignJson.map((a) => ({
-          title: a.name || 'Untitled Assignment',
-          description: stripHtml(a.description || '').slice(0, 1000),
-          points: a.points_possible || 0,
-          dueAt: a.due_at || null
-        }));
-      }
+  // 2. Fetch every page of the Assignments list (Canvas paginates via the Link
+  // header). Any failure is fatal: an alignment audit run on a partial or empty
+  // list tells the instructor the course has no assessments.
+  const assignments = [];
+  let assignmentsUrl = `${origin}/api/v1/courses/${courseId}/assignments?per_page=50`;
+  for (let page = 1; assignmentsUrl; page++) {
+    if (page > MAX_ASSIGNMENT_PAGES) {
+      throw new Error(`This course has more than ${assignments.length} assignments, more than the full-course audit can read. Try auditing individual assignment pages instead.`);
     }
-  } catch (e) {
-    console.warn('Could not fetch assignments list:', e);
+    const assignRes = await fetchImpl(assignmentsUrl, { credentials: 'include' });
+    if (!assignRes.ok) {
+      throw new Error(`Failed to fetch Canvas assignments (${assignRes.status})`);
+    }
+    const assignJson = await assignRes.json();
+    assignments.push(...assignJson.map((a) => ({
+      title: a.name || 'Untitled Assignment',
+      description: stripHtml(a.description || '').slice(0, 1000),
+      points: a.points_possible || 0,
+      dueAt: a.due_at || null
+    })));
+    const next = /<([^>]+)>;\s*rel="next"/.exec(assignRes.headers.get('Link') || '');
+    assignmentsUrl = next ? next[1] : null;
   }
 
   return {

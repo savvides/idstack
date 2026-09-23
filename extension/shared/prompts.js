@@ -44,9 +44,21 @@ You MUST respond strictly with valid JSON conforming to this schema:
 }
 
 export function buildCourseAuditPrompt(courseData = {}) {
-  const assignmentsSummary = (courseData.assignments || [])
-    .map((a, i) => `Assignment ${i+1}: ${a.title} (${a.points || 0} pts)\nDescription: ${(a.description || '').slice(0, 500)}`)
-    .join('\n\n');
+  const blocks = (courseData.assignments || [])
+    .map((a, i) => `Assignment ${i+1}: ${a.title} (${a.points || 0} pts)\nDescription: ${(a.description || '').slice(0, 500)}`);
+  // Whole assignments up to a 20,000-char budget, and the header says how many
+  // made it: a plain character cut ended mid-assignment under a header that
+  // still counted every item. The budget keeps a 500-assignment course's
+  // prompt, and so the model's response time, bounded.
+  const total = blocks.length;
+  let shown = 0;
+  let assignmentsSummary = '';
+  for (const block of blocks) {
+    const next = shown ? `${assignmentsSummary}\n\n${block}` : block;
+    if (next.length > 20000) break;
+    assignmentsSummary = next;
+    shown++;
+  }
 
   return `You are an expert instructional designer and cognitive scientist using the idstack evidence base.
 Perform a full-course Constructive Alignment audit (courseAudit) for the following course:
@@ -55,8 +67,8 @@ COURSE TITLE: ${courseData.title || 'Canvas Course'}
 SYLLABUS & LEARNING OBJECTIVES:
 ${(courseData.syllabus || 'No syllabus provided').slice(0, 8000)}
 
-COURSE ASSIGNMENTS & ASSESSMENTS (${(courseData.assignments || []).length} items):
-${assignmentsSummary.slice(0, 20000)}
+COURSE ASSIGNMENTS & ASSESSMENTS (${total} items; ${shown} shown in full below):
+${assignmentsSummary}
 
 Evaluate whether the assessment system constructively aligns with stated learning outcomes (Biggs 1996 [T2], Liou et al. 2023 [T2]).
 Identify cognitive load bottlenecks (Sweller 2011 [T1]), scaffolding gaps (Wood et al. 1976 [T2]), and formative feedback quality (Wisniewski et al. 2020 [T1]).

@@ -34,4 +34,20 @@ assert.ok(coursePrompt.includes('Biology 101'));
 assert.ok(coursePrompt.includes('Constructive Alignment'));
 assert.ok(coursePrompt.includes('courseAudit'));
 
+// A long course: the crawler reads up to 500 assignments, and the prompt keeps
+// a 20,000-char budget for them. It must list whole assignments and say how
+// many it lists, not cut one mid-description under a header that counts all.
+const longCoursePrompt = buildCourseAuditPrompt({
+  title: 'Biology 101',
+  syllabus: 'Objectives: Analyze cellular metabolism.',
+  assignments: Array.from({ length: 80 }, (_, i) => ({ title: `Lab ${i + 1}`, description: 'd'.repeat(600), points: 10 }))
+});
+const assignmentsHeader = /COURSE ASSIGNMENTS & ASSESSMENTS \((\d+) items; (\d+) shown in full below\)/.exec(longCoursePrompt);
+assert.ok(assignmentsHeader, 'course prompt header states the item count and how many are shown in full');
+assert.strictEqual(assignmentsHeader[1], '80', 'the header counts every crawled assignment');
+const listedBlocks = longCoursePrompt.match(/^Assignment \d+: .*\nDescription: .*$/gm) || [];
+assert.strictEqual(listedBlocks.length, Number(assignmentsHeader[2]), 'the header states exactly how many assignments are listed');
+assert.ok(listedBlocks.length > 0 && listedBlocks.length < 80, '80 long assignments exceed the budget, so only some are listed');
+assert.ok(listedBlocks.every((b) => b.endsWith('\nDescription: ' + 'd'.repeat(500))), 'no assignment is cut mid-description');
+
 console.log('✅ Task 2 prompt engine tests passed.');

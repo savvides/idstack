@@ -517,6 +517,75 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "course-audit button hidden on a course root" "$WORK/r/test/test-extension.sh"
 
+# 25a-25d. The full-course audit read one page of 50 assignments and turned any
+# fetch failure into an empty list, and the prompt then cut that list at 20,000
+# characters mid-assignment under a header that still counted every item.
+
+# 25a. the crawler stops following Link rel="next" -> test-crawler must fail.
+# Canvas pages assignments 50 at a time; reading only page 1 audited the first
+# 50 of an 80-assignment course without saying so.
+fresh
+python3 - "$WORK/r/extension/background/canvas-crawler.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "assignmentsUrl = next ? next[1] : null;"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "assignmentsUrl = null;", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "canvas crawler ignores Link rel=next" node "$WORK/r/test/test-crawler.mjs"
+
+# 25b. the original try/catch returns around the assignments fetch -> test-crawler
+# must fail. That catch turned a 403 or a dropped connection into an empty list,
+# and the audit then told the instructor the course had no assessments.
+fresh
+python3 - "$WORK/r/extension/background/canvas-crawler.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+for old, new in [
+    ("  for (let page = 1; assignmentsUrl; page++) {\n",
+     "  try {\n  for (let page = 1; assignmentsUrl; page++) {\n"),
+    ("    assignmentsUrl = next ? next[1] : null;\n  }\n",
+     "    assignmentsUrl = next ? next[1] : null;\n  }\n  } catch (e) {\n    console.warn('Could not fetch assignments list:', e);\n  }\n"),
+]:
+    assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+    s = s.replace(old, new, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "canvas crawler swallows assignment-fetch failures" node "$WORK/r/test/test-crawler.mjs"
+
+# 25c. pagination page cap removed -> test-crawler must fail. The loop follows
+# server-supplied links; without the cap a Link cycle crawls until OOM. The test
+# fake is finite (12 pages) so this fails in milliseconds instead of hanging.
+fresh
+python3 - "$WORK/r/extension/background/canvas-crawler.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "if (page > MAX_ASSIGNMENT_PAGES) {"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "if (false) {", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "canvas crawler page cap removed" node "$WORK/r/test/test-crawler.mjs"
+
+# 25d. the course prompt goes back to a plain 20,000-char slice of every
+# assignment -> test-prompts must fail. The slice ended mid-assignment while the
+# header counted every item. Reverting needs both edits: the whole-block budget
+# already fits in 20,000 chars, so the slice alone would change nothing.
+fresh
+python3 - "$WORK/r/extension/shared/prompts.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+for old, new in [
+    ("    if (next.length > 20000) break;\n", ""),
+    ("${assignmentsSummary}\n", "${assignmentsSummary.slice(0, 20000)}\n"),
+]:
+    assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+    s = s.replace(old, new, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course prompt cuts the assignment list mid-block" node "$WORK/r/test/test-prompts.mjs"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
