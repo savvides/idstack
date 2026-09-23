@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Mutation test: reintroduce each bug fixed in v3.3.0.0 into a throwaway copy
+# Mutation test: reintroduce each fixed defect into a throwaway copy
 # of the repo and confirm the guarding test FAILS. A test that still passes
 # with its bug reintroduced is not guarding anything — that is exactly how the
 # v3.3.0.0 defects survived (the version-classifier suite tested a local copy
@@ -19,6 +19,16 @@ trap 'rm -rf "$WORK"' EXIT
 pass=0; fail=0; skip=0
 expect_fail() { # <name> <cmd...>
   local name="$1"; shift
+  # A mutation that edits nothing proves nothing, whatever the suite then does.
+  # Cases 16 and 17 went stale twice this way: their anchor stopped matching,
+  # python's assert exited nonzero, nothing checked it, and both kept reporting
+  # GUARDED. *.bak is excluded because sed -i.bak writes one even on no match.
+  local d=0
+  diff -rq -x '*.bak' "$WORK/base" "$WORK/r" >/dev/null 2>&1 || d=$?
+  if [ "$d" -ne 1 ]; then
+    echo "  ERROR: $name: the mutation did not change the copy (diff exit $d; stale anchor?) — fix the case; no result is trustworthy until then" >&2
+    exit 1
+  fi
   if "$@" >/dev/null 2>&1; then
     echo "  NOT-GUARDED: $name (test still passed with the bug reintroduced)"
     fail=$((fail+1))
@@ -39,16 +49,20 @@ skip_case() { # <name> <why>
 # 3.12+. Mutating it under 3.12 would report a false NOT-GUARDED.
 PY_LT_312=$(python3 -c 'import sys; print(1 if sys.version_info < (3,12) else 0)' 2>/dev/null || echo 0)
 
+# Every case starts from one pristine snapshot, taken once. It is the tree the
+# baseline below vouches for and the tree expect_fail diffs each mutation
+# against, so all three agree by construction even if $SRC is edited mid-run.
+# Copy only what the suites need; skip .git and any nested worktrees.
+mkdir -p "$WORK/base"
+for item in bin skills templates test evidence docs extension .claude-plugin \
+            VERSION CHANGELOG.md README.md TODOS.md CONTRIBUTING.md \
+            DESIGN.md ROADMAP.md CLAUDE.md setup; do
+  [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/base/"
+done
+
 fresh() {
   rm -rf "$WORK/r"
-  mkdir -p "$WORK/r"
-  # Copy only what the suites need; skip .git and any nested worktrees.
-  for item in bin skills templates test evidence docs .claude-plugin \
-              VERSION CHANGELOG.md README.md TODOS.md CONTRIBUTING.md \
-              DESIGN.md ROADMAP.md CLAUDE.md setup; do
-    [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/r/"
-  done
-  return 0
+  cp -R "$WORK/base" "$WORK/r"
 }
 
 # Regenerate after mutating a .tmpl or a spliced template. Without this, the
@@ -66,6 +80,25 @@ regen() {
     exit 1
   fi
 }
+
+# Baseline: the unmutated copy must pass, or every expect_fail below reports
+# GUARDED for the wrong reason. fresh() once omitted extension/, so smoke-test
+# failed on every copy and each smoke-guarded case "passed" while guarding
+# nothing. smoke-test runs every other guarding suite, so one run covers them.
+fresh
+if ! "$WORK/r/test/smoke-test.sh" "$WORK/r" >"$WORK/baseline.log" 2>&1; then
+  echo "  ERROR: the unmutated copy fails smoke-test; every GUARDED result would be meaningless" >&2
+  grep -A5 'FAIL:' "$WORK/baseline.log" >&2
+  exit 1
+fi
+
+# 0. expect_fail must refuse a mutation that changed nothing. Run in a subshell
+# so its exit is observable; bash does not run the parent's EXIT trap there.
+fresh
+if ( expect_fail "no-op mutation" false ) >/dev/null 2>&1; then
+  echo "  ERROR: a mutation that changed nothing was counted as GUARDED" >&2
+  exit 1
+fi
 
 # 1. f-string bug in the preamble -> test-preamble-python must fail.
 # Only meaningful on Python < 3.12; see PY_LT_312 above.
@@ -302,13 +335,11 @@ expect_fail "second-CLI dist/ bundle returns" "$WORK/r/test/smoke-test.sh" "$WOR
 fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import sys
-p = sys.argv[1]; s = open(p).read()
-old = "<h2 id=\"install-title\">Install in 30 seconds.</h2>"
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '<h2 id="install-title">'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old,
-              "<h2 id=\"install-title\">Install in 30 seconds.</h2>\n"
-              "      <p>Also runs in OpenAI Codex CLI.</p>", 1)  # IDSTACK_CLI_LEAK_ALLOW
-open(p,'w').write(s)
+s = s.replace(old, '<p>Also runs in OpenAI Codex CLI.</p>\n        ' + old, 1)  # IDSTACK_CLI_LEAK_ALLOW
+open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "untagged reference in a file with tagged lines" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
@@ -321,13 +352,11 @@ expect_fail "untagged reference in a file with tagged lines" "$WORK/r/test/smoke
 fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import sys
-p = sys.argv[1]; s = open(p).read()
-old = "<h2 id=\"install-title\">Install in 30 seconds.</h2>"
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '<h2 id="install-title">'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old,
-              "<h2 id=\"install-title\">Install in 30 seconds.</h2>\n"
-              "      <p>Reviewed by Gemini Code Assist. Also runs in Codex CLI.</p>", 1)  # IDSTACK_CLI_LEAK_ALLOW
-open(p,'w').write(s)
+s = s.replace(old, '<p>Reviewed by Gemini Code Assist. Also runs in Codex CLI.</p>\n        ' + old, 1)  # IDSTACK_CLI_LEAK_ALLOW
+open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "claim carrying the bot's name is not exempt" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
@@ -403,6 +432,14 @@ s = s.replace('"datePublished": "2026-04-20",',
 open(p, 'w').write(s)
 PY
 expect_fail "dateModified reintroduced into docs/index.html" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 23. an untagged claim in a committed doc under docs/superpowers/ -> smoke-test
+# must fail. 2b36bea added --exclude-dir=superpowers to the sweep to hide the
+# extension's design docs; grep matches that name at any depth, so it exempted
+# every committed spec and plan under docs/superpowers/ and superpowers/.
+fresh
+printf 'idstack also runs in OpenAI Codex CLI.\n' > "$WORK/r/docs/superpowers/leak.md"  # IDSTACK_CLI_LEAK_ALLOW
+expect_fail "committed docs/superpowers is not sweep-exempt" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
