@@ -476,6 +476,47 @@ fresh
 cp "$WORK/r/extension/sidepanel/renderer-helper.js" "$WORK/r/extension/sidepanel/renderer-helper.cjs"
 expect_fail "hand-copied .cjs twin back in extension/" "$WORK/r/test/test-extension.sh"
 
+# 24c/24d/24e. service-worker.js, storage.js and sidepanel.js never ran under
+# the old suite (no chrome or DOM stub), so a bug planted in any of them stayed
+# green. Each case now trips a test that executes the shipped module.
+
+# 24c. RUN_AUDIT stops holding the reply channel open -> test-extension must
+# fail. Without `return true` Chrome closes the port and the panel gets undefined.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "      return true; // async reply\n    }\n\n    if (request.action === 'CRAWL_AND_AUDIT_COURSE')"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    }\n\n    if (request.action === 'CRAWL_AND_AUDIT_COURSE')", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "service worker drops return true for RUN_AUDIT" "$WORK/r/test/test-extension.sh"
+
+# 24d. re-auditing a page appends a duplicate dossier entry -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/storage.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "if (existingIdx >= 0) {"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "if (existingIdx > 0) {", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "dossier replace-by-url off by one" "$WORK/r/test/test-extension.sh"
+
+# 24e. side panel hides the course-audit button on a course root -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "isCourseRoot ? 'block' : 'none'"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "isCourseRoot ? 'none' : 'block'", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course-audit button hidden on a course root" "$WORK/r/test/test-extension.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
