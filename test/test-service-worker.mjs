@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { installChrome, installFetch, jsonResponse, importFresh, resetGlobals } from './extension-harness.mjs';
+import { installChrome, installFetch, jsonResponse, importFresh, resetGlobals, EXTENSION_ID } from './extension-harness.mjs';
 import { saveSettings, getAuditHistory } from '../extension/shared/storage.js';
 
 // A real but short Canvas prompt (13 words): the worker must still audit it.
@@ -134,6 +134,53 @@ for (const bad of [{ findings: { 0: {} } }, { findings: [null] }, { findings: [{
   h = await loadWorker({ apiKey: 'k', fetchHandler: async () => llmReply(bad) });
   await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload }), /audit format/);
 }
+
+// F3: only the side panel may start audits. A content script shares sender.id
+// with the panel, so a sender.id check would let any page's injected world
+// trigger credentialed Canvas fetches and write audit history.
+const fakeCanvas = async (url) => url.includes('include[]=syllabus_body')
+  ? jsonResponse({ name: 'Biology 101', syllabus_body: '<p>Course outcomes and weekly schedule</p>' })
+  : jsonResponse([]);
+const contentScript = { id: EXTENSION_ID, url: 'https://evil.example/page', tab: { id: 7 }, frameId: 0 };
+h = await loadWorker({ fetchHandler: fakeCanvas });
+res = await h.dispatch({ action: 'CRAWL_AND_AUDIT_COURSE', payload: { origin: 'https://canvas.instructure.com', courseId: '12' } }, contentScript);
+assert.strictEqual(res, undefined, 'a content-script sender gets no reply');
+res = await h.dispatch({ action: 'RUN_AUDIT', payload }, contentScript);
+assert.strictEqual(res, undefined, 'a content-script sender gets no RUN_AUDIT reply');
+assert.strictEqual(h.fetchCalls.length, 0, 'no credentialed Canvas fetch for a content-script sender');
+assert.deepStrictEqual(await getAuditHistory(), [], 'a content-script sender must not write audit history');
+
+// F3: origin and courseId are spliced into a credentialed fetch URL, so only a
+// bare https origin and a numeric course id are accepted.
+for (const target of [
+  { origin: 'https://victim.instructure.com/api/v1/users/self?x=', courseId: '1' },
+  { origin: 'https://canvas.asu.edu', courseId: '1/users' },
+  { origin: 'http://canvas.asu.edu', courseId: '1' },
+  { origin: 'https://user@canvas.asu.edu', courseId: '1' },
+  {}
+]) {
+  h = await loadWorker({ fetchHandler: fakeCanvas });
+  res = await h.dispatch({ action: 'CRAWL_AND_AUDIT_COURSE', payload: target });
+  assert.strictEqual(res?.success, false, `must reject course target ${JSON.stringify(target)}`);
+  assert.strictEqual(h.fetchCalls.length, 0, `rejected course target ${JSON.stringify(target)} must never be fetched`);
+}
+
+// Positive control: the panel can still crawl a custom-domain Canvas course,
+// and every request stays inside the validated course.
+h = await loadWorker({ fetchHandler: fakeCanvas });
+res = await h.dispatch({ action: 'CRAWL_AND_AUDIT_COURSE', payload: { origin: 'https://canvas.asu.edu', courseId: '42' } });
+assert.strictEqual(res?.success, true, JSON.stringify(res));
+assert.ok(h.fetchCalls.length > 0 && h.fetchCalls.every((c) => c.url.startsWith('https://canvas.asu.edu/api/v1/courses/42')),
+  `every crawl request stays inside the validated course: ${h.fetchCalls.map((c) => c.url).join(', ')}`);
+
+// F4: activeTab is granted only when the icon click reaches action.onClicked;
+// Chrome's openPanelOnActionClick path skips the grant (crbug.com/40904917).
+assert.deepStrictEqual(h.calls.panelBehavior, { openPanelOnActionClick: false },
+  'openPanelOnActionClick must be off: the side-panel toggle path skips the activeTab grant');
+assert.strictEqual(h.listeners.actionClicked.length, 1, 'service worker must handle action.onClicked');
+h.listeners.actionClicked[0]({ id: 3, windowId: 9 });
+assert.deepStrictEqual(h.calls.opened, [{ windowId: 9 }], 'icon click opens the panel synchronously (sidePanel.open needs the gesture)');
+assert.ok(h.sent.some((m) => m.action === 'TAB_ACCESS_GRANTED'), 'icon click tells an open panel to re-read the tab');
 
 resetGlobals();
 console.log('✅ Service worker routing tests passed.');

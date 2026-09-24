@@ -75,8 +75,16 @@ export async function refreshActiveTab() {
       auditCourseBtn.style.display = activeCourseContext.isCourseRoot ? 'block' : 'none';
     }
 
+    // No declarative content script: inject the extractor on demand. Its final
+    // statement evaluates to the payload, which comes back as the injection result.
+    // Needs access to the tab: activeTab (clicking the idstack icon on this tab) or a
+    // host permission (*.instructure.com, or a site granted for a course audit).
     try {
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_CONTENT' });
+      const [injection] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content/extractor.js']
+      });
+      const response = injection && injection.result;
       if (response) {
         activePayload = response;
         const pageTypeTag = document.getElementById('page-type-tag');
@@ -86,38 +94,22 @@ export async function refreshActiveTab() {
         return;
       }
     } catch (err) {
-      // Content script may not be injected on pre-existing tabs. Attempt programmatic injection.
-      if (chrome.scripting && chrome.scripting.executeScript) {
-        try {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content/extractor.js']
-          });
-          const retryResponse = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_CONTENT' });
-          if (retryResponse) {
-            activePayload = retryResponse;
-            const pageTypeTag = document.getElementById('page-type-tag');
-            const pageTitle = document.getElementById('page-title');
-            if (pageTypeTag) pageTypeTag.textContent = activeCourseContext.isCourseRoot ? 'Canvas Course Root' : retryResponse.pageType;
-            if (pageTitle) pageTitle.textContent = retryResponse.title;
-            return;
-          }
-        } catch (injectionErr) {
-          // Tab may be a chrome:// or restricted URL
-        }
-      }
+      // No access to this tab yet (switched to it without clicking the icon) or a
+      // restricted page such as chrome:// or the Chrome Web Store.
     }
 
-    // Fallback payload if content script extraction fails
+    // Fallback payload if extraction fails. Without access Chrome hides tab.title too.
     const pageTypeTag = document.getElementById('page-type-tag');
     const pageTitle = document.getElementById('page-title');
     if (pageTypeTag) pageTypeTag.textContent = activeCourseContext.isCourseRoot ? 'Canvas Course Root' : 'Web Page';
-    if (pageTitle) pageTitle.textContent = tab.title || 'Current Tab';
+    if (pageTitle) pageTitle.textContent = tab.title || 'Click the idstack toolbar icon to read this tab';
     activePayload = {
       url: tab.url || '',
       title: tab.title || 'Current Tab',
       pageType: activeCourseContext.isCourseRoot ? 'Canvas Course Root' : 'Web Page',
-      content: ''
+      content: '',
+      // The service worker shows this instead of auditing an empty page.
+      emptyReason: 'idstack cannot read this tab. If you just switched to it, click the idstack toolbar icon, then audit again. Browser pages such as chrome:// and the Chrome Web Store cannot be read.'
     };
   } catch (e) {
     console.warn('Error refreshing active tab:', e);
@@ -294,12 +286,21 @@ if (auditBtn) {
 const auditCourseBtn = document.getElementById('audit-course-btn');
 if (auditCourseBtn) {
   auditCourseBtn.addEventListener('click', async () => {
-    if (!activePayload) await refreshActiveTab();
-
-    const url = (activePayload && activePayload.url) || '';
-    const courseCtx = activeCourseContext || detectCourseContext(url);
-    const origin = courseCtx.origin || (url ? new URL(url).origin : '');
-    const courseId = courseCtx.courseId;
+    // Shown only after refreshActiveTab() found a course root, so the context is set.
+    const { origin, courseId } = activeCourseContext || {};
+    // permissions.request needs this click's user gesture, so it comes before any other
+    // await. Already-held access (*.instructure.com) resolves true with no prompt; other
+    // Canvas hosts get a one-time Chrome prompt for that site only.
+    let granted = false;
+    try {
+      granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
+    } catch (err) {
+      // Not a requestable origin (optional_host_permissions covers https only)
+    }
+    if (!granted) {
+      renderError(`idstack needs access to ${origin} to audit the whole course.`);
+      return;
+    }
 
     const progressCard = document.getElementById('crawl-progress-card');
     const statusText = document.getElementById('crawl-status-text');
@@ -473,6 +474,13 @@ if (typeof chrome !== 'undefined' && chrome.tabs) {
       }
     });
   }
+}
+
+// The service worker announces an icon click: activeTab now covers the current tab.
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg && msg.action === 'TAB_ACCESS_GRANTED') refreshActiveTab();
+  });
 }
 
 // Initial tab detection on load

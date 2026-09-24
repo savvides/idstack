@@ -764,6 +764,188 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "empty course audited" "$WORK/r/test/test-extension.sh"
 
+# 28a-28n. The extension declared an <all_urls> content script (install prompt:
+# "all your data on all websites"), yet custom-domain Canvas hosts could not be
+# crawled; and the service worker answered any sender, splicing the raw origin
+# and courseId into credentialed Canvas fetches. Now the panel reads tabs through
+# activeTab (the icon click reaches action.onClicked), requests a Canvas host per
+# site, and the worker serves only its own pages and validated course targets.
+
+# 28a. the worker gates on sender.id, which a content script shares -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "if (!String(sender.url || '').startsWith(chrome.runtime.getURL(''))) return;"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "if (sender.id !== chrome.runtime.id) return;", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "service worker trusts content-script senders" "$WORK/r/test/test-extension.sh"
+
+# 28b. the course origin may carry a path or query again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "target.origin !== origin || "
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course origin smuggles a path" "$WORK/r/test/test-extension.sh"
+
+# 28c. the course id may carry a path again -> test-extension must fail. fetch
+# normalizes '../' segments, so '../../users/self' is any credentialed GET on the host.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = " || !/^\\d+$/.test(courseId)"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course id smuggles a path" "$WORK/r/test/test-extension.sh"
+
+# 28d. the <all_urls> content script comes back -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/manifest.json" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '  "permissions": [\n'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '  "content_scripts": [\n    {\n      "matches": ["<all_urls>"],\n      "js": ["content/extractor.js"],\n      "run_at": "document_idle"\n    }\n  ],\n' + old, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "<all_urls> content script back" "$WORK/r/test/test-extension.sh"
+
+# 28e. the per-site optional host permission is dropped -> test-extension must
+# fail. Canvas outside instructure.com could then never be crawled.
+fresh
+python3 - "$WORK/r/extension/manifest.json" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '  ],\n  "optional_host_permissions": [\n    "https://*/*"\n  ]\n'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '  ]\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "custom-domain permission dropped" "$WORK/r/test/test-extension.sh"
+
+# 28f. the icon click toggles the panel directly again -> test-extension must
+# fail. Chrome's side-panel toggle path skips the activeTab grant.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "setPanelBehavior({ openPanelOnActionClick: false })"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "setPanelBehavior({ openPanelOnActionClick: true })", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "icon click no longer grants activeTab" "$WORK/r/test/test-extension.sh"
+
+# 28g. the site permission is requested after an await -> test-extension must
+# fail. Chrome rejects permissions.request once the click's user gesture is gone.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    let granted = false;\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    await refreshActiveTab();\n" + old, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "site permission requested after an await" "$WORK/r/test/test-extension.sh"
+
+# 28h. the extractor's final statement no longer yields the payload -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "} else {\n  extractPageContent();\n}\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "}\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "extractor no longer returns its payload" "$WORK/r/test/test-extension.sh"
+
+# 28i. a top-level const in the extractor -> test-extension must fail. The panel
+# re-injects into the same isolated world, where a redeclaration throws.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "function detectPageType("
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "const EXTRACTOR_READY = true;\n" + old, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "extractor breaks on re-injection" "$WORK/r/test/test-extension.sh"
+
+# 28j. an unreadable tab is sent with no explanation -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "      emptyReason: 'idstack cannot read this tab. If you just switched to it, click the idstack toolbar icon, then audit again. Browser pages such as chrome:// and the Chrome Web Store cannot be read.'\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "unreadable tab sent with no explanation" "$WORK/r/test/test-extension.sh"
+
+# 28k. the Chrome floor for sidePanel.open is dropped -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/manifest.json" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '  "minimum_chrome_version": "116",\n'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "Chrome floor for sidePanel.open dropped" "$WORK/r/test/test-extension.sh"
+
+# 28l. the course crawl ignores a denied site permission -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    if (!granted) {"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    if (false) {", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course crawl runs after the site permission is denied" "$WORK/r/test/test-extension.sh"
+
+# 28m. the icon click no longer opens the panel -> test-extension must fail.
+# With openPanelOnActionClick off, onClicked is the only way the panel opens.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "  chrome.sidePanel.open({ windowId: tab.windowId });\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "icon click no longer opens the panel" "$WORK/r/test/test-extension.sh"
+
+# 28n. the panel ignores the worker's TAB_ACCESS_GRANTED -> test-extension must
+# fail. After a tab switch and an icon click the header would stay stale.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "  if (msg && msg.action === 'TAB_ACCESS_GRANTED') refreshActiveTab();\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "panel ignores newly granted tab access" "$WORK/r/test/test-extension.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "idstack — Evidence-Based Course Design",
   "version": "1.0.0",
+  "minimum_chrome_version": "116",
   "description": "Evidence-based instructional design co-pilot for Canvas LMS, Google Docs, and course web pages.",
   "homepage_url": "https://idstack.org",
   "icons": {
@@ -19,17 +20,6 @@
     "service_worker": "background/service-worker.js",
     "type": "module"
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "*://*.instructure.com/*",
-        "*://docs.google.com/document/*",
-        "<all_urls>"
-      ],
-      "js": ["content/extractor.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "permissions": [
     "sidePanel",
     "storage",
@@ -39,5 +29,8 @@
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*",
     "*://*.instructure.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
   ]
 }

@@ -47,21 +47,16 @@ function extractPageContent() {
   return extractContentFromDOM(document, url);
 }
 
-// Listen for messages from Side Panel
-if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'EXTRACT_CONTENT') {
-      const data = extractPageContent();
-      sendResponse(data);
-    }
-    return true;
-  });
-}
-
+// Injected with chrome.scripting.executeScript({ files }): the value of the final
+// statement is the InjectionResult the side panel reads, so extractPageContent()
+// must stay last. Re-injected on every refresh into the same isolated world, so no
+// top-level let/const/class (redeclaring them throws).
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     detectPageType,
     extractContentFromDOM,
     extractPageContent
   };
+} else {
+  extractPageContent();
 }

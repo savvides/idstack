@@ -1,4 +1,6 @@
 import assert from 'node:assert';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 import { createDocument, installChrome, loadContentScript, resetGlobals } from './extension-harness.mjs';
 
 // The shipped content script: a classic script, loaded exactly as Chrome gets it.
@@ -151,17 +153,25 @@ assert.strictEqual(detectPageType('https://canvas.instructure.com/courses/1/assi
 assert.strictEqual(detectPageType('https://docs.google.com/document/d/123', {}), 'Google Doc Syllabus');
 assert.strictEqual(detectPageType('https://harvard.edu/syllabus', {}), 'Web Syllabus / Course Page');
 
-// Test 10: Chrome Runtime onMessage listener handling
+// Test 10: executeScript({ files }) contract. The side panel injects the shipped
+// extractor.js and reads the script's completion value as the InjectionResult.
+// It re-injects on every refresh into the same isolated world, so a second run
+// must work too (a top-level let/const/class would throw on redeclaration).
+const extractorUrl = new URL('../extension/content/extractor.js', import.meta.url);
+const extractorSrc = readFileSync(extractorUrl, 'utf8');
 const h = installChrome();
-globalThis.window = { location: { href: domAssignment.url } };
-globalThis.document = domAssignment.document;
-loadContentScript('content/extractor.js');
-
-assert.strictEqual(h.listeners.message.length, 1, 'chrome.runtime.onMessage listener should be registered');
-const responseData = await h.dispatch({ action: 'EXTRACT_CONTENT' });
-assert.ok(responseData, 'Response data must be returned on EXTRACT_CONTENT action');
-assert.strictEqual(responseData.pageType, 'Canvas Assignment');
-assert.strictEqual(responseData.title, 'Enzymes Lab Analysis');
+const isolatedWorld = vm.createContext({
+  URL,
+  chrome: h.chrome,
+  document: domAssignment.document,
+  window: { location: { href: domAssignment.url } }
+});
+for (const run of ['first', 'second']) {
+  const injected = vm.runInContext(extractorSrc, isolatedWorld, { filename: extractorUrl.pathname });
+  assert.ok(injected && injected.pageType === 'Canvas Assignment', `${run} injection must evaluate to the extraction payload`);
+  assert.strictEqual(injected.title, 'Enzymes Lab Analysis');
+}
+assert.strictEqual(h.listeners.message.length, 0, 'extractor must not register a persistent runtime.onMessage listener');
 resetGlobals();
 
 console.log('✅ Task 3 extractor tests passed.');

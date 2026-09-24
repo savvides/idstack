@@ -70,20 +70,27 @@ function storageArea(data) {
 }
 
 // Installs globalThis.chrome. Options:
-//   sync, local       initial chrome.storage contents
-//   tabs              what chrome.tabs.query resolves to
-//   onTabMessage      (tabId, message) => response for chrome.tabs.sendMessage;
-//                     omitted = reject like a tab with no content script
-//   onRuntimeMessage  (message) => response for chrome.runtime.sendMessage
-// Returns { chrome, storage, listeners, sent, dispatch }. storage.sync/.local
-// are the live backing objects; sent records runtime.sendMessage calls;
+//   sync, local          initial chrome.storage contents
+//   tabs                 what chrome.tabs.query resolves to
+//   onRuntimeMessage     (message) => response for chrome.runtime.sendMessage
+//   onExecuteScript      (injection) => InjectionResult[] for
+//                        chrome.scripting.executeScript; omitted = reject like
+//                        a tab the extension has no access to
+//   onPermissionRequest  (permissions) => boolean for chrome.permissions.request;
+//                        omitted = granted
+// Returns { chrome, storage, listeners, sent, calls, dispatch }.
+// storage.sync/.local are the live backing objects; sent records
+// runtime.sendMessage calls; calls records executeScript injections
+// (executed), permission requests (permissionRequests), sidePanel.open
+// options (opened) and the last setPanelBehavior value (panelBehavior).
 // dispatch(message, sender = PANEL_SENDER) delivers to the registered
 // runtime.onMessage listeners and resolves with the sendResponse value
 // (undefined if no listener keeps the channel open and none responds).
-export function installChrome({ sync = {}, local = {}, tabs = [], onTabMessage, onRuntimeMessage } = {}) {
+export function installChrome({ sync = {}, local = {}, tabs = [], onRuntimeMessage, onExecuteScript, onPermissionRequest } = {}) {
   const storage = { sync: structuredClone(sync), local: structuredClone(local) };
-  const listeners = { message: [], tabActivated: [], tabUpdated: [] };
+  const listeners = { message: [], tabActivated: [], tabUpdated: [], actionClicked: [] };
   const sent = [];
+  const calls = { executed: [], permissionRequests: [], opened: [], panelBehavior: undefined };
   const chrome = {
     runtime: {
       id: EXTENSION_ID,
@@ -100,15 +107,29 @@ export function installChrome({ sync = {}, local = {}, tabs = [], onTabMessage, 
     storage: { sync: storageArea(storage.sync), local: storageArea(storage.local) },
     tabs: {
       query: async () => tabs,
-      sendMessage: async (tabId, message) => {
-        if (!onTabMessage) throw new Error('Could not establish connection. Receiving end does not exist.');
-        return onTabMessage(tabId, message);
-      },
       onActivated: { addListener: (fn) => listeners.tabActivated.push(fn) },
       onUpdated: { addListener: (fn) => listeners.tabUpdated.push(fn) }
     },
-    scripting: { executeScript: async () => [] },
-    sidePanel: { setPanelBehavior: async () => {} }
+    scripting: {
+      executeScript: async (injection) => {
+        calls.executed.push(injection);
+        if (!onExecuteScript) throw new Error('Cannot access contents of the page.');
+        return onExecuteScript(injection);
+      }
+    },
+    // Recorded before any await, so a test can check that a request was made
+    // synchronously inside a click handler (it needs the user gesture).
+    permissions: {
+      request(permissions) {
+        calls.permissionRequests.push(permissions);
+        return Promise.resolve(onPermissionRequest ? onPermissionRequest(permissions) : true);
+      }
+    },
+    action: { onClicked: { addListener: (fn) => listeners.actionClicked.push(fn) } },
+    sidePanel: {
+      setPanelBehavior: async (behavior) => { calls.panelBehavior = behavior; },
+      open(options) { calls.opened.push(options); return Promise.resolve(); }
+    }
   };
   globalThis.chrome = chrome;
 
@@ -124,7 +145,7 @@ export function installChrome({ sync = {}, local = {}, tabs = [], onTabMessage, 
       if (!keepOpen && !responded) resolve(undefined);
     });
   }
-  return { chrome, storage, listeners, sent, dispatch };
+  return { chrome, storage, listeners, sent, calls, dispatch };
 }
 
 // Replaces globalThis.fetch; handler(url, init) returns a Response or throws.
