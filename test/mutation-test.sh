@@ -1362,6 +1362,20 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "FERPA-compliance claim back in the privacy policy" "$WORK/r/test/test-extension.sh"
 
+# 31j. the policy stops naming a host the manifest can reach -> test-extension must fail.
+# #89 added api.consensus.app to host_permissions without a word in PRIVACY.md. The
+# plugin section names the host too, so this proves the check reads the extension section.
+fresh
+python3 - "$WORK/r/PRIVACY.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "from your browser to Consensus (`api.consensus.app`)"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "from your browser to Consensus", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "privacy policy omits a host the manifest can reach" "$WORK/r/test/test-extension.sh"
+
 # 32. the side panel's version badge drifts from the manifest -> test-extension must fail.
 # The badge is hand-written, so a manifest bump alone would leave the panel showing the old version.
 fresh

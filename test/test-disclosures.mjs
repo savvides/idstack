@@ -106,5 +106,16 @@ for (const [word, url] of [
   }
 }
 
+// 7. Every host the manifest lets the extension reach must be named in the policy, and a
+//    settings field for a Consensus key means the panel's privacy note must mention Consensus.
+//    #89 added api.consensus.app to host_permissions and a key field with neither.
+for (const pattern of manifest.host_permissions || []) {
+  const host = pattern.replace(/^[^:]+:\/\//, '').replace(/^\*\./, '').replace(/\/.*$/, '');
+  check(policy.includes(host), `PRIVACY.md's extension section does not name ${host}, which manifest.json host_permissions lets the extension reach`);
+}
+if (html.includes('id="consensus-api-key-input"')) {
+  check(/Consensus/.test(note || ''), 'side-panel privacy note does not say what a saved Consensus key sends to Consensus');
+}
+
 assert.ok(problems.size === 0, `Extension disclosures disagree with the shipped code:\n  ${[...problems].join('\n  ')}`);
 console.log('✅ Extension privacy and capability disclosures match the shipped code.');
