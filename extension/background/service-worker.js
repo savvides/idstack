@@ -2,6 +2,7 @@ import { buildAuditPrompt, buildCourseAuditPrompt } from '../shared/prompts.js';
 import { getSettings, saveAuditResult } from '../shared/storage.js';
 import { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } from './parser-helper.js';
 import { crawlCanvasCourse } from './canvas-crawler.js';
+import { verifyFindingsWithConsensus } from '../shared/consensus-client.js';
 
 const LLM_TIMEOUT_MS = 25000;   // Chrome kills an extension SW whose fetch response takes >30 s
 // Fewer words than this means an unreadable page (browser page, PDF viewer,
@@ -88,6 +89,10 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
             auditResult = getDemoAuditResult(request.payload);
           }
 
+          if (auditResult && auditResult.findings) {
+            auditResult.findings = await verifyFindingsWithConsensus(auditResult.findings, settings?.consensusApiKey);
+          }
+
           await saveAuditResult({
             url: request.payload?.url || '',
             title: request.payload?.title || 'Current Tab',
@@ -129,6 +134,10 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
             auditResult = getDemoCourseAuditResult(courseData);
           }
 
+          if (auditResult && auditResult.findings) {
+            auditResult.findings = await verifyFindingsWithConsensus(auditResult.findings, settings?.consensusApiKey);
+          }
+
           await saveAuditResult({
             url: `${origin}/courses/${courseId}`,
             title: courseData.title || 'Canvas Course',
@@ -146,6 +155,6 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
   });
 }
 
-export { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult, crawlCanvasCourse, callLlmApi };
+export { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult, crawlCanvasCourse, callLlmApi, verifyFindingsWithConsensus };
 
 

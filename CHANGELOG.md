@@ -1,10 +1,17 @@
 # Changelog
 
-## v3.5.1.0 (2026-09-23)
+## v3.6.0.0 (2026-09-24)
 
-Hardens the Chrome extension after a code review of v3.5.0.0. It no longer asks for access to every website, refuses Canvas pages that show student records, reads every page of a course's assignments, and its privacy notes now say what is sent to Google. The extension is now version 1.1.0 and needs Chrome 116 or later. The Claude Code plugin's skills are unchanged.
+Adds an optional Consensus evidence engine to the skills and the Chrome extension, and hardens the extension after a code review of v3.5.0.0. The extension no longer asks for access to every website, refuses Canvas pages that show student records, reads every page of a course's assignments, and its privacy notes now say what is sent to Google and to Consensus. The extension is now version 1.1.0 and needs Chrome 116 or later.
 
 To update: `cd` into your idstack clone, then `git pull && ./setup`. The Chrome Web Store updates the extension on its own once 1.1.0 is published there.
+
+### Added — Consensus evidence engine (bring your own key)
+
+- **`bin/idstack-consensus`** looks up a claim in the Consensus research database and caches every answer under `~/.idstack/cache/consensus/`, so a claim is looked up once. Its subcommands are `status`, `configure`, `query`, `verify`, and `sync`. It reads your own Consensus API key from `CONSENSUS_API_KEY`, `~/.idstack/profile.yaml`, or the project manifest. Without a key it works from `evidence/references.md` alone.
+- **An evidence check before findings are written.** `/idstack:course-quality-review`, `/idstack:assessment-design`, and `/idstack:red-team` now pass their findings through `idstack-consensus verify` before writing the report or the manifest. It corrects four known neuromyths (learning styles, left- and right-brain learning, "10% of the brain", and Dale's cone retention percentages), checks each tier against `evidence/references.md`, and attaches literature matches when a key is set.
+- **Every skill's preamble reports whether a Consensus key is configured**, and `bin/idstack-doctor` checks the CLI and its cache.
+- **The Chrome extension takes an optional Consensus API key in Settings.** With a key, each finding's claim is looked up on Consensus after the audit, and a matched finding shows a Consensus badge and a link to the top paper. The neuromyth corrections apply with or without a key. PRIVACY.md says what is sent and where results are kept.
 
 ### Fixed — the extension could read every website
 
@@ -52,11 +59,86 @@ To update: `cd` into your idstack clone, then `git pull && ./setup`. The Chrome 
 
 ### For contributors
 
-- **The mutation suite proves its guards again.** Its repo copy never included `extension/`, so once smoke-test ran the extension suite, smoke failed on every mutated copy. Every smoke-guarded case then reported GUARDED while guarding nothing, and two cases whose anchors had gone stale were counted too. The suite now runs smoke once on an unmutated snapshot and stops if it fails, and it stops on any mutation that leaves the copy unchanged. It grows from 27 cases to 97.
+- **The mutation suite refuses a mutation that changes nothing.** Two cases whose anchors had gone stale kept reporting GUARDED because nothing checked that the mutation had edited anything. The suite now copies the repo once into a snapshot that its baseline smoke run vouches for, and stops on any mutation that leaves the copy unchanged. It grows from 36 cases to 107.
 - **The retired-CLI sweep now covers `docs/superpowers/`.** `--exclude-dir=superpowers` matched that name at any depth and exempted every committed spec and plan.
 - **The extension tests run the shipped code.** They used to load hand-copied `.cjs` twins, which are gone, and `test-extension.sh` fails if one comes back. `test/extension-harness.mjs` stubs the Chrome APIs and a small DOM, so the tests import the shipped modules and now also run the background worker, storage, and side panel. `test/test-evidence-labels.mjs` checks every citation and tier against `evidence/references.md`. `test/test-disclosures.mjs` checks the side panel, PRIVACY.md, and README against the shipped code.
-- **Node 22 is pinned** wherever CI runs the extension suite (the test and mutation jobs and the release workflow), and `test-extension.sh` stops with a clear message on a Node too old to import the modules (it needs 20.19+ or 22.7+). The extension suite also has its own CI step, so its full failure output shows.
+- **The release workflow pins Node 22**, as the test and mutation jobs already did, and `test-extension.sh` stops with a clear message on a Node too old to import the modules (it needs 20.19+ or 22.7+). The extension suite also has its own CI step, so its full failure output shows.
 - **`bin/package-extension.sh` names the zip from `extension/manifest.json`** and leaves the dev-only `icons/generate-icons.js` out of it. The side panel's version badge is tested against the manifest.
+
+## v3.5.1.0 (2026-08-29)
+
+Fixes three defects on idstack.org that only show up on a phone, and repairs the test harness that
+was supposed to be catching them. No skill behavior changes.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`.
+
+### Fixed — every mutation in the suite was passing vacuously
+
+- **`test/mutation-test.sh` reported a perfect score while proving nothing.** Its `fresh()` helper
+  copies the repo into a throwaway directory per mutation, and `extension/` was not on the copy
+  list. So `test/test-extension.sh` failed on every copy before any mutation was applied, and
+  because `expect_fail` only checks that smoke-test exits non-zero, all 36 mutations reported
+  GUARDED whether or not their guard worked. The suite that exists to prove the other tests work
+  had been unable to fail since the extension landed.
+
+  `extension` is now copied, and a null-mutation control runs first: it aborts the whole suite if
+  an unmutated copy is already red, because that is the state in which every GUARDED below it is
+  meaningless. Verified by removing the fix again and watching the control fire.
+
+### Fixed — idstack.org on a phone
+
+- **Every content section sat under the notch.** The responsive pass added `viewport-fit=cover`,
+  which extends the page into the display cutout, then gave the safe-area inset to the nav, hero
+  and footer but not to `.section` — which wraps the evidence, pipeline, output, install and
+  what's-new regions. On a notched phone in landscape the install command ran under the cutout.
+  The four containers now share one rule, so a fifth cannot be added without the gutter.
+- **Touch targets were below the 44px floor, inconsistently.** The page carried three ad-hoc
+  minimums (36px, 40px, 42px), and the footer controls applied theirs only below 480px, leaving
+  every width above that — tablets and desktop included — at 36.6px. One `--tap-min` token now
+  applies at every width.
+- **A viewport clip was hiding overflow rather than preventing it.** `overflow-x: clip` on
+  `html`/`body` suppressed horizontal scrolling, which also meant a real overflow became content
+  the reader could not reach instead of a visible bug. The grid tracks that actually contain long
+  install commands now size with `minmax(0, …)`, and the clip is gone: measured clean at 11
+  viewport widths from 320px up.
+
+### Added — the landing page is now tested by rendering it
+
+- **`test/test-rendered-landing.js`** loads `docs/index.html` in headless Chrome and asserts what
+  the page does at 11 widths: no sideways scroll, every control at least 44px, the pipeline and
+  output grids collapsing at their breakpoints, the nav sticky and all its links reachable. It
+  adds no npm dependency (Chrome over CDP with node's built-in `fetch` and `WebSocket`) and skips
+  loudly when no browser is present. It does require node 22.4+, which is where the global
+  `WebSocket` becomes available; CI pins node 22 for exactly this reason.
+
+  The existing suite checks CSS as text, which can only forbid the spellings someone thought of.
+  Six kinds of edit shipped a broken page past it — a selector list, an `:is()` wrapper, an
+  `@container` wrapper, a print-only media query, a media query nested inside a desktop one, and a
+  `<style>` block inside an HTML comment. All six fail the rendered suite. Both run: the text one
+  is fast and names the exact rule, the rendered one cannot be talked around.
+
+### Fixed — the responsive guard had holes in it
+
+- Assertions accepted the regressions they existed to catch: `(clip|hidden)` allowed the
+  `overflow-x: hidden` that breaks the sticky nav, `grid-template-columns: 1fr` matched the
+  `1fr 1fr` it forbids, a `--tap-min` existence check passed while a later rule shipped 30px
+  targets, and a `@media` regex spanned block boundaries so a rule could move to another
+  breakpoint unnoticed. Each is now pinned and carries a mutation.
+- Guards no longer fail correct changes: adding a fifth container to the shared gutter rule, or
+  reformatting `minmax(0, 1fr)`, used to fail a page that renders identically.
+
+### Changed
+
+- **CI declares its node dependency.** Both jobs install node rather than relying on the runner
+  image. Without it the landing-page suites skip, which in the mutation job means nine mutations
+  silently report NOT-GUARDED.
+- **Landing page type simplified.** 12 of 19 fluid `font-size: clamp()` declarations varied by at
+  most 1.12px across their whole range — a fixed value written in three terms — and are now fixed
+  values. The 7 that move meaningfully stay fluid. `DESIGN.md` records the rule and the 44px
+  target figure.
+- **Documentation corrected** where it disagreed with the code: the smoke-test assertion count,
+  the suite tables in `CLAUDE.md` and `CONTRIBUTING.md`, and the claim that every suite sources
+  `test/test-helper.sh` (the two node suites cannot).
 
 ## v3.5.0.0 (2026-08-16)
 

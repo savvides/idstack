@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>idstack — Evidence-based instructional design with peer-reviewed citations</title>
   <meta name="description" content="Open-source skills for evidence-based instructional design. 108 peer-reviewed studies across 11 research domains. Every recommendation cites its evidence tier, T1 (meta-analyses, RCTs) through T5 (expert opinion). Runs in Claude Code and Chrome.">
   <meta name="keywords" content="instructional design, evidence-based, course design, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, WCAG, UDL, open source, Claude Code">
@@ -42,7 +42,7 @@
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
-    "softwareVersion": "3.5.1.0",
+    "softwareVersion": "3.6.0.0",
     "datePublished": "2026-04-20",
     "offers": {
       "@type": "Offer",
@@ -61,6 +61,13 @@
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    img, svg {
+      max-width: 100%;
+      height: auto;
+      display: inline-block;
+      vertical-align: middle;
+    }
 
     :root {
       /* Dark-only — near-black with the indigo→purple signature. See DESIGN.md § Color. */
@@ -99,8 +106,12 @@
 
       --max:    1120px;
       --prose:  62ch;
-      --pad-x:  clamp(1.25rem, 4vw, 2rem);
-      --pad-y:  clamp(3.5rem, 7vw, 6rem);
+      --pad-x:  clamp(1rem, 3.5vw, 2rem);
+      --pad-y:  clamp(2.75rem, 5.5vw, 5.5rem);
+
+      /* Minimum interactive target. 44px is the Apple HIG / WCAG 2.5.5 figure; the page
+         previously carried three different ad-hoc floors (36/40/42px). */
+      --tap-min: 44px;
     }
 
     html { scroll-behavior: smooth; }
@@ -168,18 +179,20 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 0.85rem var(--pad-x);
-      gap: 1.25rem;
+      padding-block: 0.85rem;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
     .brand {
       font-family: var(--font-display);
-      font-size: 1.35rem;
+      font-size: clamp(1.2rem, 3vw, 1.35rem);
       font-weight: 600;
       color: var(--ink);
       text-decoration: none;
       letter-spacing: -0.01em;
+      display: inline-flex;
+      align-items: baseline;
+      flex-shrink: 0;
     }
     .brand:hover { text-decoration: none; }
     .brand-beta {
@@ -195,28 +208,39 @@
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 1.5rem;
+      gap: clamp(0.75rem, 2.5vw, 1.5rem);
+      flex-wrap: wrap;
     }
     .nav-links a {
       color: var(--ink-soft);
       text-decoration: none;
-      font-size: 0.93rem;
+      font-size: clamp(0.82rem, 1.8vw, 0.93rem);
+      padding: 0.25rem 0;
+      transition: color 0.15s ease;
+      white-space: nowrap;
     }
     .nav-links a:hover { color: var(--ink); }
 
-    @media (max-width: 720px) {
-      .nav-links { gap: 1rem; font-size: 0.9rem; }
-      .nav-links a:nth-child(2),
-      .nav-links a:nth-child(3) { display: none; }
+    @media (max-width: 480px) {
+      .nav { padding-top: 0.65rem; padding-bottom: 0.65rem; gap: 0.6rem; }
+      .nav-links { gap: 0.85rem; }
     }
 
     /* ──────────────────────────────────────────────
        Layout primitives
        ────────────────────────────────────────────── */
-    .section {
+    /* Page containers share the max-width, centering, and notch-safe inline gutter.
+       Defining the gutter once means a new container cannot miss it — .section did,
+       so every content region sat under the notch once viewport-fit=cover landed. */
+    .nav, .section, .hero, .footer {
       max-width: var(--max);
-      margin: 0 auto;
-      padding: var(--pad-y) var(--pad-x);
+      margin-inline: auto;
+      padding-inline:
+        max(var(--pad-x), env(safe-area-inset-left))
+        max(var(--pad-x), env(safe-area-inset-right));
+    }
+    .section {
+      padding-block: var(--pad-y);
     }
     .section + .section { border-top: 1px solid var(--rule); }
 
@@ -250,19 +274,18 @@
        Hero — single column, generous whitespace
        ────────────────────────────────────────────── */
     .hero {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: clamp(3.5rem, 8vw, 6rem) var(--pad-x) clamp(3rem, 6vw, 5rem);
+      padding-block: clamp(2.5rem, 6vw, 5.5rem) clamp(2.25rem, 5vw, 4.5rem);
     }
     .hero-text { max-width: 56rem; }
 
     .hero h1 {
-      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-size: clamp(1.85rem, 5.2vw, 3.4rem);
       font-weight: 600;
       letter-spacing: -0.022em;
-      line-height: 1.08;
+      line-height: 1.1;
       margin-bottom: 1.25rem;
       text-wrap: balance;
+      overflow-wrap: break-word;
       max-width: 22ch;
       color: var(--accent-start);
       background: var(--accent-gradient);
@@ -271,7 +294,7 @@
       -webkit-text-fill-color: transparent;
     }
     .hero .lede {
-      font-size: clamp(1rem, 1.6vw, 1.15rem);
+      font-size: clamp(0.98rem, 1.6vw, 1.15rem);
       color: var(--ink-soft);
       line-height: 1.6;
       max-width: var(--prose);
@@ -282,9 +305,9 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.55rem 0.7rem;
+      gap: 0.45rem 0.65rem;
       font-size: 0.78rem;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       color: var(--ink-muted);
       margin-bottom: 1.25rem;
     }
@@ -292,6 +315,7 @@
       width: 4px; height: 4px; border-radius: 50%;
       background: var(--ink-muted);
       display: inline-block;
+      flex-shrink: 0;
     }
 
     .install-pill {
@@ -301,7 +325,7 @@
       background: var(--accent-soft);
       border: 1px solid var(--accent-start);
       border-radius: 2px;
-      padding: 0.55rem 0.55rem 0.55rem 0.85rem;
+      padding: 0.5rem 0.55rem 0.5rem 0.8rem;
       width: 100%;
       max-width: 640px;
       overflow: hidden;
@@ -328,8 +352,8 @@
       background: transparent;
       border: 1px solid var(--rule);
       border-radius: 2px;
-      padding: 0.4rem 0.7rem;
-      min-height: 32px;
+      padding: 0.4rem 0.75rem;
+      min-height: var(--tap-min);
       color: var(--ink-soft);
       font-family: var(--font-ui);
       font-weight: 600;
@@ -358,13 +382,15 @@
     .btn-chrome {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.55rem;
       background: #2563eb;
       color: #ffffff;
       font-family: var(--font-ui);
       font-weight: 600;
       font-size: 0.88rem;
-      padding: 0.55rem 1rem;
+      padding: 0.6rem 1rem;
+      min-height: var(--tap-min);
       border-radius: 2px;
       text-decoration: none;
       transition: background 0.15s ease;
@@ -396,8 +422,15 @@
       color: var(--ink-muted);
       text-decoration: none;
       align-self: flex-start;
+      padding: 0.2rem 0;
     }
     .cta-secondary:hover { color: var(--ink); text-decoration: underline; }
+
+    @media (max-width: 480px) {
+      .cta-actions { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+      .btn-chrome { width: 100%; }
+      .cta-or { text-align: center; }
+    }
 
     /* Tier + severity pills */
     .tier {
@@ -450,9 +483,9 @@
     .evidence-legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.85rem 1.75rem;
-      margin-bottom: 2.5rem;
-      padding-bottom: 1.5rem;
+      gap: 0.75rem clamp(1rem, 3vw, 1.75rem);
+      margin-bottom: 2.25rem;
+      padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--rule);
       font-family: var(--font-ui);
       font-size: 0.88rem;
@@ -461,8 +494,8 @@
     .evidence-legend-item {
       display: inline-flex;
       align-items: baseline;
-      gap: 0.5rem;
-      white-space: nowrap;
+      gap: 0.45rem;
+      flex-wrap: wrap;
     }
     .evidence-legend-item strong {
       font-family: var(--font-mono);
@@ -497,7 +530,7 @@
     }
 
     .evidence-card {
-      padding: 1.4rem 0;
+      padding: 1.25rem 0;
       border-bottom: 1px solid var(--rule);
     }
     .evidence-card:last-child { border-bottom: none; }
@@ -584,6 +617,9 @@
     @media (max-width: 640px) {
       .pipeline-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+    @media (max-width: 480px) {
+      .pipeline-flow { grid-template-columns: 1fr; }
+    }
 
     .pipeline-node {
       counter-increment: step;
@@ -617,6 +653,7 @@
       color: var(--accent);
       margin-bottom: 0.3rem;
       word-break: break-word;
+      padding-right: 1.5rem;
     }
     .pipeline-node .node-desc {
       font-size: 0.78rem;
@@ -635,8 +672,8 @@
     }
     .pipeline-aside {
       display: flex;
-      align-items: center;
-      gap: 0.6rem;
+      align-items: flex-start;
+      gap: 0.65rem;
     }
     .pipeline-aside .aside-tag {
       font-family: var(--font-mono);
@@ -646,6 +683,8 @@
       padding: 0.18em 0.5em;
       border-radius: 2px;
       background: var(--raised);
+      flex-shrink: 0;
+      margin-top: 0.1rem;
     }
 
     .pipeline-foot {
@@ -658,13 +697,15 @@
     /* ──────────────────────────────────────────────
        Output pair (markdown / json)
        ────────────────────────────────────────────── */
+    /* minmax(0, …) rather than a bare 1fr: a grid item's automatic minimum size is its
+       min-content width, so a long unbreakable code string would otherwise widen the track. */
     .output-pair {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
     }
     @media (max-width: 880px) {
-      .output-pair { grid-template-columns: 1fr; }
+      .output-pair { grid-template-columns: minmax(0, 1fr); }
     }
     .output-panel {
       background: var(--raised);
@@ -682,9 +723,11 @@
       font-size: 0.74rem;
       color: var(--ink-muted);
       letter-spacing: 0.02em;
+      overflow-x: auto;
+      white-space: nowrap;
     }
     .output-body {
-      padding: 1.1rem 1.25rem;
+      padding: clamp(0.9rem, 2.5vw, 1.25rem);
       font-size: 0.92rem;
       line-height: 1.6;
       color: var(--ink-soft);
@@ -710,8 +753,9 @@
       line-height: 1.55;
       white-space: pre;
       overflow-x: auto;
+      scrollbar-width: thin;
       color: var(--ink-soft);
-      padding: 1.1rem 1.25rem;
+      padding: clamp(0.9rem, 2.5vw, 1.25rem);
     }
     .output-json .key   { color: var(--accent); }
     .output-json .str   { color: var(--tier-2); }
@@ -728,7 +772,7 @@
        ────────────────────────────────────────────── */
     .install-tracks {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       gap: 1.5rem;
       max-width: 760px;
     }
@@ -736,19 +780,19 @@
       background: var(--raised);
       border: 1px solid var(--rule);
       border-radius: 2px;
-      padding: clamp(1.25rem, 3vw, 1.75rem);
+      padding: clamp(1rem, 3.5vw, 1.75rem);
     }
     .install-track-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: 0.6rem 0.75rem;
       flex-wrap: wrap;
       margin-bottom: 0.85rem;
     }
     .install-track-header h3 {
       font-family: var(--font-display);
-      font-size: 1.18rem;
+      font-size: clamp(1.05rem, 2.5vw, 1.18rem);
       font-weight: 600;
       margin: 0;
     }
@@ -761,6 +805,7 @@
       padding: 0.15rem 0.5rem;
       border-radius: 2px;
       border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      white-space: nowrap;
     }
     .install-track-card .btn-chrome {
       margin-top: 1rem;
@@ -773,7 +818,7 @@
       background: var(--raised);
       border: 1px solid var(--rule);
       border-radius: 2px;
-      padding: 0.85rem 0.85rem 0.85rem 1.1rem;
+      padding: 0.65rem 0.65rem 0.65rem 0.95rem;
       max-width: 760px;
       width: 100%;
     }
@@ -788,11 +833,12 @@
       border: none;
       padding: 0;
       color: var(--ink);
-      font-size: 0.88rem;
+      font-size: clamp(0.78rem, 1.8vw, 0.88rem);
       flex: 1 1 0;
       min-width: 0;
       overflow-x: auto;
       white-space: nowrap;
+      scrollbar-width: thin;
     }
 
     .install-prose {
@@ -844,9 +890,7 @@
        Footer
        ────────────────────────────────────────────── */
     .footer {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 2.5rem var(--pad-x) 3rem;
+      padding-block: 2.5rem max(3rem, env(safe-area-inset-bottom));
       border-top: 1px solid var(--rule);
       font-size: 0.88rem;
     }
@@ -857,7 +901,7 @@
       align-items: start;
     }
     @media (max-width: 720px) {
-      .footer-top { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr; gap: 1.25rem; }
     }
     .footer-brand {
       font-family: var(--font-display);
@@ -881,6 +925,7 @@
     .footer-links a {
       color: var(--ink-soft);
       text-decoration: none;
+      padding: 0.2rem 0;
     }
     .footer-links a:hover { color: var(--ink); text-decoration: underline; }
 
@@ -892,10 +937,10 @@
       max-width: 460px;
       gap: 0;
     }
-    @media (max-width: 420px) {
+    @media (max-width: 480px) {
       .footer-signup { flex-direction: column; gap: 0.5rem; }
       .footer-signup input[type="email"] { border-right: 1px solid var(--rule); border-radius: 2px; }
-      .footer-signup button { border-radius: 2px; }
+      .footer-signup button { border-radius: 2px; width: 100%; }
     }
     .footer-signup label {
       position: absolute;
@@ -906,6 +951,7 @@
     }
     .footer-signup input[type="email"] {
       flex: 1;
+      min-height: var(--tap-min);
       padding: 0.55rem 0.85rem;
       font-family: var(--font-ui);
       font-size: 0.9rem;
@@ -919,6 +965,7 @@
     .footer-signup input[type="email"]:focus { border-color: var(--accent); }
     .footer-signup input[type="email"]::placeholder { color: var(--ink-muted); }
     .footer-signup button {
+      min-height: var(--tap-min);
       padding: 0.55rem 1rem;
       font-family: var(--font-ui);
       font-size: 0.85rem;
@@ -983,7 +1030,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v3.5.1.0 · Claude Code &amp; Chrome Extension</span>
+          <span>v3.6.0.0 · Claude Code &amp; Chrome Extension</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design with peer-reviewed citations.</h1>
         <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation includes its evidence tier: <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code and as a native Chrome Extension.</p>
@@ -1272,11 +1319,18 @@
       </header>
 
       <article class="release-card">
+        <p class="release-meta">September 24, 2026 · v3.6.0.0</p>
+        <h3>Consensus evidence checks &amp; a hardened Chrome extension.</h3>
+        <p>An optional Consensus evidence engine runs on your own API key. <code>/idstack:course-quality-review</code>, <code>/idstack:assessment-design</code>, and <code>/idstack:red-team</code> now check their findings before writing them: four well-known neuromyths are corrected with or without a key, and with one each claim is matched against the research literature. The Chrome extension can run the same check and marks the findings it matches.</p>
+        <p>The Chrome extension, now 1.1.0, no longer requests access to every website, refuses Canvas pages that show student records, reads every page of a course's assignments, and its privacy notes now say what is sent to Google and to Consensus.</p>
+      </article>
+
+      <article class="release-card">
         <p class="release-meta">August 16, 2026 · v3.5.0.0 · patched through v3.5.1.0</p>
         <h3>Chrome Side Panel co-pilot &amp; Course Dossier export.</h3>
         <p>idstack is officially published as a native <a href="https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm" target="_blank" rel="noopener">Chrome Side Panel extension on the Chrome Web Store</a>. It provides in-browser Bloom's taxonomy classification, constructive alignment reviews, and empirical citations (T1–T5) for Canvas LMS assignments, syllabi, and Google Docs without requiring command-line configuration.</p>
         <p>This release also introduces a background Canvas course crawler for multi-page syllabus audits, a Course Dossier export drawer that compiles multi-page findings into structured Markdown (<code>.md</code>) reports, atomic writes for learnings logs (Issue #60), and local-over-global search precedence (Issue #61).</p>
-        <p>The v3.5.1.0 update hardened the Chrome extension: it no longer requests access to every website, refuses Canvas pages that show student records, reads every page of a course's assignments, and its privacy notes now say what is sent to Google.</p>
+        <p>Patched in v3.5.1.0 (August 30): corrected mobile layout on this page. Content no longer sits under the display cutout on notched phones, every button and input meets a 44px minimum touch target at all screen widths, and horizontal overflow is prevented rather than hidden.</p>
       </article>
 
       <article class="release-card">

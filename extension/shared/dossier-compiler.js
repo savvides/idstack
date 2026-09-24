@@ -4,7 +4,7 @@ export function compileSingleAuditToMarkdown(item) {
   const title = item.title || 'Course Material';
   const pageType = item.pageType || 'Web Page';
   const url = item.url || '';
-  const timestamp = item.timestamp ? new Date(item.timestamp).toLocaleString() : new Date().toLocaleString();
+  const timestamp = (item.timestamp ? new Date(item.timestamp) : new Date()).toLocaleString();
 
   let md = `# idstack Instructional Design Audit: ${title}\n\n`;
   md += `> **Audited Component:** ${pageType}  \n`;

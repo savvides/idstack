@@ -28,11 +28,32 @@ export function renderAuditHTML(data) {
     const evidence = escapeHtml(f.evidence || '');
     const recommendation = escapeHtml(f.recommendation || '');
 
+    let consensusBadgeHTML = '';
+    if (f.consensus) {
+      let badgeText = '✓ Consensus Verified';
+      if (f.consensus.meter !== undefined && f.consensus.meter !== null && f.consensus.totalStudies !== undefined && f.consensus.totalStudies !== null) {
+        const count = f.consensus.totalStudies;
+        const countLabel = count === 1 ? '1 paper' : `${count} papers`;
+        badgeText = `✓ ${f.consensus.meter}% Consensus (${countLabel})`;
+      } else if (f.consensus.meter !== undefined && f.consensus.meter !== null) {
+        badgeText = `✓ ${f.consensus.meter}% Consensus`;
+      }
+      consensusBadgeHTML = `<span class="consensus-badge">${escapeHtml(badgeText)}</span>`;
+    }
+
+    let citationHTML = `<span class="citation">${citation}</span>`;
+    if (f.consensus && f.consensus.paperUrl) {
+      const rawUrl = String(f.consensus.paperUrl);
+      if (/^https?:\/\//i.test(rawUrl)) {
+        citationHTML = `<a href="${escapeHtml(rawUrl)}" target="_blank" rel="noopener noreferrer" class="citation">${citation || 'Source Paper'}</a>`;
+      }
+    }
+
     return `
     <div class="finding-card severity-${severity}">
       <div class="finding-header">
         <span class="tier-badge tier-${tierClass}">${tier}</span>
-        <span class="citation">${citation}</span>
+        ${consensusBadgeHTML ? `${consensusBadgeHTML}\n        ` : ''}${citationHTML}
       </div>
       <p class="finding-obs"><strong>Observation:</strong> ${observation}</p>
       <p class="finding-evi"><strong>Evidence:</strong> ${evidence}</p>

@@ -4,6 +4,16 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Consensus evidence checks & Chrome extension hardening (v3.6.0.0)
+- **An optional Consensus evidence engine, on your own API key.** `bin/idstack-consensus` looks up and caches claims. `/idstack:course-quality-review`, `/idstack:assessment-design`, and `/idstack:red-team` check their findings with it before writing them, and correct four known neuromyths with or without a key.
+- **The Chrome extension (1.1.0) reads only the tab you point it at.** It no longer asks for access to every website, refuses Canvas pages that show student records, and reads every page of a course's assignments.
+- **Its privacy notes match the code.** The side panel and PRIVACY.md say what is sent to Google and to Consensus, and where results are kept.
+
+### Mobile fixes for idstack.org & test-harness repair (v3.5.1.0)
+- **idstack.org is usable on a phone.** Every content section sat under the display cutout, buttons and inputs fell below the 44px touch floor at every width above 480px, and a viewport clip was hiding horizontal overflow instead of preventing it. Measured clean at 11 widths from 320px up. No skill behavior changed.
+- **The mutation suite could not fail.** `test/mutation-test.sh` never copied `extension/` into its throwaway repos, so `test/test-extension.sh` broke before any mutation was applied and all 36 mutations reported GUARDED whether their guard worked or not. A null-mutation control now aborts the run when an unmutated copy is already red.
+- **The landing page is tested by rendering it.** `test/test-rendered-landing.js` loads the page in headless Chrome and asserts what it does at 11 widths, not what its CSS says. Six kinds of edit had shipped a broken page past the text-only suite; all six fail this one.
+
 ### Chrome Extension, Course Dossier & Robustness (v3.5.0.0)
 - **Native Chrome Side Panel extension for Canvas LMS & Google Docs.** Officially published on the [Chrome Web Store](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). Audits course content and assignments with cognitive demand classification (Bloom's Revised Taxonomy) and empirical evidence citations directly in the browser.
 - **Automated background Canvas course crawler.** Audits entire Canvas courses in the background via active session cookies without requiring developer API keys.
@@ -11,7 +21,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **Automated Web Store packaging.** Added `bin/package-extension.sh` to package clean `.zip` bundles for the Chrome Web Store Developer Console.
 - **Atomic learnings deletion with permission preservation (#60).** Replaced destructive file truncation in `bin/lib/idstack-learnings-delete` with an atomic tempfile-and-rename pattern that preserves POSIX permissions.
 - **Cross-project local-over-global search precedence (#61).** Enforces project-local learnings priority over global store records during cross-project searches in `bin/idstack-learnings-search`.
-- **Comprehensive test coverage for slugify stdin/emojis & migrate malformed manifest fallback (#62).** Added smoke tests for stdin piping, emoji handling in `bin/idstack-slugify`, and graceful fallback on malformed JSON manifests in `bin/idstack-migrate`.
+- **Full test coverage for slugify stdin/emojis & migrate malformed manifest fallback (#62).** Added smoke tests for stdin piping, emoji handling in `bin/idstack-slugify`, and graceful fallback on malformed JSON manifests in `bin/idstack-migrate`.
 
 ### Documentation accuracy & automated verification (v3.4.0.1)
 - **Evidence cards derived from research references.** `test/check-evidence-cards.py` verifies landing page cards against `evidence/references.md` in `smoke-test.sh` so study counts and tier spans match.
@@ -36,7 +46,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **Standalone runs persist.** `bin/idstack-migrate --init` creates a canonical manifest, so a skill run outside the pipeline has something to write into instead of silently discarding its results.
 
 ### Test infrastructure and CI (v3.3.0.0–v3.3.0.4, for contributors)
-- The suite had never run automatically. GitHub Actions runs every suite on each push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, ten today.
+- The suite had never run automatically. GitHub Actions runs every suite on each push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, and more since; `CONTRIBUTING.md` lists the current set.
 - `./setup` — the primary deliverable — went from zero coverage to 17 behavioral tests.
 - `bin/idstack-doctor` and `bin/idstack-status --readiness` gained their first execution coverage in v3.3.0.4. Both are what a user reaches for when something has already gone wrong, and neither had any.
 - `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught. Every mutation in it is guarded; the suite prints the current count when you run it.
@@ -118,7 +128,7 @@ Four more skills based on the research synthesis:
 - **Model selector** — recommends the right instructional design framework for your context (ADDIE, SAM, backward design, etc.) instead of defaulting to one
 - **Content sequencing** — organizes your modules and lessons to manage cognitive load, applying spacing, interleaving, and scaffolding principles
 - **Media selection** — flags multimedia principle violations (redundancy, split attention, coherence) and recommends when to use video, text, diagrams, or interactive elements
-- **Evaluation design** — plans how to measure whether your course actually worked, using Kirkpatrick's four levels and beyond
+- **Evaluation design** — plans how to measure whether the course met its learning outcomes, using Kirkpatrick's four levels and beyond
 
 ## Exploring
 

@@ -182,6 +182,50 @@ assert.ok(junk.includes('Evidence-Based Findings (1)'), 'null and non-object fin
 assert.ok(junk.includes('[Alignment-1]'), 'a valid finding next to junk still renders');
 assert.ok(renderAuditHTML({ findings: [{ tier: 1, citation: '[CogLoad-1]' }] }).includes('tier-badge tier-1'), 'a non-string tier is stringified');
 
-console.log('✅ Side panel renderer, escaping, course matrix & dossier tests passed.');
+// Test 10: Consensus Badge and DOI Citation Link Rendering
+const consensusData = {
+  summary: {
+    bloomsLevel: 'Apply',
+    alignmentScore: 'High',
+    keyTakeaway: 'Strong evidence backing.'
+  },
+  findings: [
+    {
+      severity: 'suggestion',
+      tier: 'T1',
+      citation: '[Assessment-8] Elaborated Feedback',
+      observation: 'Rubric uses generic grading bands.',
+      evidence: 'Elaborated criteria increase metacognitive monitoring.',
+      recommendation: 'Add milestone descriptions for each level.',
+      consensus: {
+        meter: 88,
+        totalStudies: 34,
+        verified: true,
+        paperUrl: 'https://doi.org/10.1016/j.edurev.2019.100309'
+      }
+    },
+    {
+      severity: 'info',
+      tier: 'T2',
+      citation: '[Alignment-2] Constructive Alignment',
+      observation: 'Aligned objectives.',
+      evidence: 'Alignment increases retention.',
+      recommendation: 'Keep current alignment.',
+      consensus: {
+        verified: true
+      }
+    }
+  ]
+};
+
+const renderedConsensus = renderAuditHTML(consensusData);
+assert.ok(renderedConsensus.includes('consensus-badge'), 'Must render consensus-badge class');
+assert.ok(renderedConsensus.includes('✓ 88% Consensus (34 papers)'), 'Must render consensus meter and paper count');
+assert.ok(renderedConsensus.includes('✓ Consensus Verified'), 'Must render default consensus verified text when meter absent');
+assert.ok(renderedConsensus.includes('href="https://doi.org/10.1016/j.edurev.2019.100309"'), 'Must render clickable DOI paper URL link');
+assert.ok(renderedConsensus.includes('target="_blank"'), 'Must include target="_blank" for DOI link');
+assert.ok(renderedConsensus.includes('rel="noopener noreferrer"'), 'Must include rel="noopener noreferrer" for DOI link');
+
+console.log('✅ Side panel renderer, escaping, course matrix, dossier & consensus tests passed.');
 
 

@@ -1375,6 +1375,166 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "side panel version badge drifts from the manifest" "$WORK/r/test/test-extension.sh"
 
+# 33. The notch-safe gutter drops back to a plain var(--pad-x), leaving .section
+# (which wraps every content region) under the notch once viewport-fit=cover is
+# set. This is the defect the shared container rule fixed.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = """    .nav, .section, .hero, .footer {
+      max-width: var(--max);
+      margin-inline: auto;
+      padding-inline:
+        max(var(--pad-x), env(safe-area-inset-left))
+        max(var(--pad-x), env(safe-area-inset-right));
+    }"""
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+new = """    .nav, .section, .hero, .footer {
+      max-width: var(--max);
+      margin-inline: auto;
+      padding-inline: var(--pad-x);
+    }"""
+open(p, 'w').write(s.replace(old, new, 1))
+PY
+expect_fail "notch-safe gutter loses its env() inset" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 34. A later :root override ships 30px touch targets below 480px while the 44px
+# declaration is still present, so an existence check on --tap-min would pass.
+# Proves the assertion requires exactly one declaration, not merely the string.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "  </style>"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    @media (max-width: 480px) { :root { --tap-min: 30px; } }\n" + old, 1)
+open(p, 'w').write(s)
+PY
+expect_fail "a later override shrinks the 44px touch target" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 35. The viewport clip returns. It hides horizontal overflow instead of
+# preventing it, so a regression becomes unreachable content rather than a
+# visible bug -- measured in Chrome as 305px of the install command unreachable
+# when an element does overflow.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "    html { scroll-behavior: smooth; }"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    html { scroll-behavior: smooth; overflow-x: clip; }", 1)
+open(p, 'w').write(s)
+PY
+expect_fail "root overflow-x clip masks page overflow" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 36. The 44px floor is hoisted out of the unconditional cascade into a
+# min-width query, so phones get no floor at all while the token and the
+# declaration both still exist. This is the original scoping bug in mirror
+# image, and an assertion that scans the whole sheet cannot see it.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "      min-height: var(--tap-min);\n      color: var(--ink-soft);"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "      color: var(--ink-soft);", 1)
+s = s.replace("  </style>",
+              "    @media (min-width: 900px) { .copy-btn { min-height: var(--tap-min); } }\n  </style>", 1)
+open(p, 'w').write(s)
+PY
+expect_fail "touch-target floor hoisted into a desktop-only query" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 37. A second <style> block overrides the token. Every assertion reads the
+# stylesheet, so a scanner that stops at the first block is blind to it --
+# and that blindness would also defeat mutation 34.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "</head>"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "<style>:root{--tap-min:30px}</style>\n</head>", 1)
+open(p, 'w').write(s)
+PY
+expect_fail "a second <style> block overrides the touch-target token" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 38. The breakpoint rule moves into `@media not all and (max-width: 480px)`,
+# which applies ABOVE 480px. The prelude still contains the breakpoint string,
+# so a substring match counts it as scoped when it is inverted.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = """    @media (max-width: 480px) {
+      .pipeline-flow { grid-template-columns: 1fr; }
+    }"""
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, """    @media not all and (max-width: 480px) {
+      .pipeline-flow { grid-template-columns: 1fr; }
+    }""", 1)
+open(p, 'w').write(s)
+PY
+expect_fail "an inverted @media prelude passes as breakpoint-scoped" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 39. A later base rule at equal specificity re-declares the touch-target floor
+# in px. The token is untouched and the first .copy-btn block still reads
+# var(--tap-min), so a positive check that stops at the first match cannot see
+# it -- only counting the declarations sheet-wide can.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "  </style>"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    .copy-btn { min-height: 30px; }\n" + old, 1)
+open(p, 'w').write(s)
+PY
+expect_fail "a later base rule outranks the touch-target token" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 40. The viewport clip returns as the `overflow` shorthand rather than the
+# `overflow-x` longhand. Same rendered effect, different spelling.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "    html { scroll-behavior: smooth; }"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    html { scroll-behavior: smooth; overflow: clip; }", 1)
+open(p, 'w').write(s)
+PY
+expect_fail "root overflow shorthand masks page overflow" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 41. The mobile breakpoint stops collapsing to one column. `1fr 1fr` still
+# contains `1fr`, so an unanchored match treats the two-column regression as
+# satisfying the single-column assertion.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "      .pipeline-flow { grid-template-columns: 1fr; }"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "      .pipeline-flow { grid-template-columns: 1fr 1fr; }", 1)
+open(p, 'w').write(s)
+PY
+expect_fail "pipeline stays two-column at the mobile breakpoint" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 42. A selector LIST shrinks the touch target below 480px. The text suite anchors every
+# touch-target guard on the single-selector spelling `.copy-btn {`, so `.copy-btn, .btn-badge {`
+# is invisible to all three of its checks at once and it exits 0. Only the rendered suite
+# catches this, by measuring the button at 375px. This mutation is the reason
+# test-rendered-landing.js exists: it forbids the outcome, not the spelling.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "  </style>"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    @media (max-width: 480px) { .copy-btn, .btn-badge { min-height: 30px; } }\n" + old, 1)
+open(p, 'w').write(s)
+PY
+expect_fail "a selector list shrinks the touch target past the text guard" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

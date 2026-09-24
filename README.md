@@ -1,14 +1,14 @@
 # idstack
 
-> **Status: beta (v3.5.1.0).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
+> **Status: beta (v3.6.0.0).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 
-idstack is an open source set of skills for evidence-based instructional design that bring peer-reviewed research into your actual workflow. Runs in Claude Code. Not a chatbot that summarizes papers — a design partner that checks your alignment matrix, flags cognitive load issues, classifies your objectives with Bloom's taxonomy, and tells you the evidence strength behind every recommendation.
+idstack is an open source set of skills for evidence-based instructional design that brings peer-reviewed research into your workflow. Runs in Claude Code. Rather than summarizing papers, idstack audits alignment matrices, flags cognitive load issues, classifies objectives against Bloom's taxonomy, and references the empirical evidence behind every recommendation.
 
 Skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
-Free, MIT licensed, open source. Available as a [Claude Code plugin](#install--30-seconds) and a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
+Free, MIT licensed, open source. Available as a [Claude Code plugin](#install-30-seconds) and a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 ## Quick start
 
@@ -92,7 +92,7 @@ idstack: Reading your manifest... I have 12 modules, 6 objectives,
 
 You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses; `learn` is a separate cross-project memory utility — those two sit outside the linear chain, which is why pipeline runs 8 of the 11 skills).
 
-## Install — 30 seconds
+## Install (30 seconds)
 
 **Requirement:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI.
 
@@ -245,14 +245,14 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 | `/idstack:course-quality-review` | **Quality Auditor** | Full QM-aligned audit plus Community of Inquiry presence layer. 8 structural standards, 3 presence dimensions (teaching, social, cognitive), constructive alignment audit. Parallel sub-agents on Claude Code for speed. Writes `.idstack/exports/<course-slug>/course-quality-review.html`. |
 | `/idstack:accessibility-review` | **Accessibility Reviewer** | WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) enhancement review. Two-tier output: "Must Fix" for accessibility violations, "Should Improve" for UDL recommendations. Parallel sub-agents for WCAG and UDL. Writes `.idstack/exports/<course-slug>/accessibility-review.html`. |
 | `/idstack:red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Runs in a clean-context sub-agent so the audit can't inherit build-bias from the parent. Five dimensions in parallel: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Writes `.idstack/exports/<course-slug>/red-team.html` and returns to the parent for a triage-and-fix loop (Critical / Critical+High / All / Skip). Produces a confidence score. |
-| `/idstack:pipeline` | **Orchestrator** | Chains the 8-skill linear pipeline automatically. Auto-skips completed skills. Shows pipeline status. Pause anytime, resume later. Produces `.idstack/exports/<course-slug>/index.html` — a branded course dashboard linking to every per-skill report, with readiness scores, top recurring issues, evidence themes, and where to start. Open in any browser. |
+| `/idstack:pipeline` | **Orchestrator** | Chains the 8-skill linear pipeline automatically. Auto-skips completed skills. Shows pipeline status. Pause anytime, resume later. Produces `.idstack/exports/<course-slug>/index.html`, a branded course dashboard linking to every per-skill report, with readiness scores, top recurring issues, evidence themes, and where to start. Open in any browser. |
 | `/idstack:learn` | **Memory Manager** | Search, list, delete, promote, and export project learnings. Supports cross-project intelligence. |
 
 ## The workflow
 
 Each skill feeds into the next. The project manifest is the thread.
 
-Skill names in the diagram below are shown unprefixed to keep the columns readable. To actually run one, use the namespaced form: `/idstack:<skill>`.
+Skill names in the diagram below are shown unprefixed to keep the columns readable. To run a skill, use the namespaced form: `/idstack:<skill>`.
 
 ```
 EXISTING COURSE                           NEW COURSE
@@ -362,9 +362,9 @@ idstack saves your design decisions in `.idstack/project.json` so each skill rem
 When you run `/idstack:course-import`, it creates the manifest with your course structure. When you run `/idstack:learning-objectives`, it reads the manifest and extends it with objectives and alignment data. `/idstack:assessment-design` adds rubrics and feedback strategies. `/idstack:course-builder` generates the actual content. `/idstack:course-quality-review` audits the full chain. `/idstack:course-export` packages it for your LMS. Each skill reads what came before and adds its layer. Or run `/idstack:pipeline` and it chains them all automatically.
 
 ### How idstack reports back to you
-idstack is a collaborator, not a course builder. When a skill finishes, it produces two artifacts:
+idstack functions as a design partner rather than an automated content generator. When a skill finishes, it produces two artifacts:
 
-- **Branded HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the human view. Open it in any browser. Every finding follows the same structure: *what we saw* in your course, *what the evidence says* (with a citation tag like `[Assessment-8] [T1]`), *why it matters* for learners, and *what to consider* changing. Suggestions, not directives — the designer owns the course; idstack offers the read.
+- **Branded HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the human view. Open it in any browser. Every finding follows the same structure: *what we saw* in your course, *what the evidence says* (with a citation tag like `[Assessment-8] [T1]`), *why it matters* for learners, and *what to consider* changing. Suggestions, not directives: the designer owns the course, while idstack provides the analytical review.
 - **Manifest section** at `.idstack/project.json` — the system view. Same findings in JSON so other skills can read and act on them.
 
 The visual contract lives in [`templates/report.html.tmpl`](templates/report.html.tmpl) (the HTML skeleton) and [`templates/assets/idstack.css`](templates/assets/idstack.css) (the branded stylesheet). The content contract is in [`templates/report-format.md`](templates/report-format.md). Re-running a skill overwrites its report; the timeline at `.idstack/timeline.jsonl` carries the run history.
@@ -387,7 +387,7 @@ Every recommendation includes an evidence tier so you know how strong the backin
 | **T4** | Observational studies without comparison groups | "QM peer review improves course quality" (Zimmerman et al., 2020) |
 | **T5** | Expert opinion and theoretical frameworks | "Constructive alignment improves learning" (Biggs, 1996) |
 
-When the skill says "add elaborated feedback to your quizzes," it tells you that's T1 evidence from multiple meta-analyses, not someone's blog post.
+When the skill says "add elaborated feedback to your quizzes," it references T1 evidence from multiple meta-analyses rather than unverified opinion.
 
 ### Using skills independently
 Any skill works on its own. `/idstack:course-quality-review` works without a manifest by asking you questions directly. `/idstack:learning-objectives` works without a needs analysis. The pipeline adds context and makes recommendations sharper, but every skill is self-contained.
@@ -487,4 +487,4 @@ Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full gui
 
 ## License
 
-MIT. Free forever. Go design something evidence-based.
+MIT License. Free and open source.

@@ -27,9 +27,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      # test/test-extension.sh imports the shipped extension ES modules. extension/ has no
-      # package.json, so Node must detect ESM syntax in .js files itself (default only from
-      # 20.19 / 22.7). Pinned so the runner image's Node cannot change under the suite.
+      # Node 22 is pinned for two suites. test/test-extension.sh imports the shipped extension
+      # ES modules; extension/ has no package.json, so Node must detect ESM syntax in .js files
+      # itself (the default only from 20.19 / 22.7). test-rendered-landing.js drives Chrome over
+      # the global WebSocket, which node exposes unflagged only from 22.4. Declaring node here
+      # also keeps smoke-test's node-absent SKIP from silently hiding a failure.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -68,11 +70,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      # test/test-extension.sh imports the shipped extension ES modules. extension/ has no
-      # package.json, so Node must detect ESM syntax in .js files itself (default only from
-      # 20.19 / 22.7). Pinned so the runner image's Node cannot change under the suite.
-      # Required for every smoke-test case too: fresh() copies extension/ and smoke runs
-      # test-extension.sh.
+      # Node 22 for the same two reasons as the test job, and a hard requirement here: fresh()
+      # copies extension/ and smoke runs test-extension.sh in every case, and the landing-page
+      # mutations are guarded only by the node suites, so without node they report NOT-GUARDED.
+      # The rendered-landing mutation additionally needs Chrome.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

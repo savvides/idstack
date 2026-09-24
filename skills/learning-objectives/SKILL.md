@@ -152,6 +152,33 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
 to adjust how much detail idstack provides."
 
+## Preamble: Evidence Engine & Consensus QA
+
+Check whether a Consensus API key is configured for live literature grounding.
+
+```bash
+# Consensus key detection
+# (fresh shell — re-derive the install dir; see Preamble: Update Check)
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _dir in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_dir" ] && [ -d "$_dir" ]; then _IDSTACK="${_dir%/}"; break; fi
+done
+_CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q '"api_key_configured": true' && echo "CONFIGURED" || echo "UNCONFIGURED")
+[ -n "$_CONSENSUS_KEY" ] && echo "CONSENSUS:$_CONSENSUS_KEY"
+```
+
+**If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
+subject-specific pedagogical claims will be verified against peer-reviewed research.
+**If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
+run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
+to enable live literature verification via Consensus."
+
 ## Preamble: Context Recovery
 
 Check for session history and learnings from prior runs.
@@ -527,7 +554,7 @@ an assessment or consider whether this objective is necessary."
 an unstated objective (add the ILO) or it's not contributing to course outcomes (consider
 removing it)."
 
-Present gaps prominently. These are the most actionable findings from the alignment check.
+Present gaps prominently. These are the primary findings from the alignment check.
 
 ---
 
@@ -598,7 +625,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Summary:** 2–3 sentences — how many ILOs you have, how many are well-aligned, the single most important gap or mismatch the designer should know about.
 - **Skill-specific section before Findings** — add a `<section class="alignment-table">` with `<h2>Alignment table</h2>` and an HTML `<table>` (columns: ID, Objective, Knowledge, Process, Activity, Assessment, Alignment). Alignment values: `aligned` / `MISMATCH` / `GAP`.
 - **Finding ids:** `align-1`, `bloom-1`, `expertise-1`, etc. Findings come from bidirectional alignment gaps, Bloom's-level mismatches, expertise-reversal flags, and ambiguous verbs that were clarified.
-- **Top recommendations:** the 3-5 highest-impact alignment fixes, ordered by leverage; cite each ([Domain-N] [TN]) and reference the finding id it addresses.
+- **Top recommendations:** the 3-5 highest-impact alignment fixes, ordered by priority; cite each ([Domain-N] [TN]) and reference the finding id it addresses.
 - **Limitations:** alignment is read from manifest descriptions, not from the actual rubric criteria; expertise-reversal flags are inferred from the learner profile without a learner survey.
 - **Next steps:** Run `/idstack:assessment-design` to design assessments aligned to these objectives with evidence-based rubrics and feedback strategies.
 

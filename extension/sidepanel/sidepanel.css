@@ -34,6 +34,7 @@
   --sev-critical-bg: #f5dcd5;
   --sev-warning-bg: #fbf0d9;
   --sev-info-bg: #e7eaf1;
+  --consensus-bg: #eef6f0;
 
   /* Typography */
   --font-display: 'Source Serif 4', 'Source Serif Pro', 'Charter', Georgia, serif;
@@ -74,6 +75,7 @@
     --sev-critical-bg: #2e1612;
     --sev-warning-bg: #2e2210;
     --sev-info-bg: #1a2030;
+    --consensus-bg: #14281b;
   }
 }
 
@@ -268,6 +270,31 @@ body {
   color: var(--accent-blue);
 }
 
+a.citation {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+a.citation:hover {
+  color: var(--ink);
+}
+
+.consensus-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tier-t1);
+  background: var(--consensus-bg);
+  border: 1px solid var(--tier-t1);
+  padding: 1px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
 /* Severity Finding Cards */
 .finding-card {
   border-left: 4px solid var(--rule-strong);
@@ -290,6 +317,7 @@ body {
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .finding-obs, .finding-evi, .finding-rec {

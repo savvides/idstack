@@ -27,7 +27,7 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
 
 - **Display + body:** **Source Serif 4** (Adobe / open source). Body-serif is the deliberate commitment — every paragraph reinforces the publication mood. Source Serif 4 has multiple optical sizes (`opsz` axis) so the same family handles 13px captions through 65px hero headlines without going off-design.
 - **UI / labels / badges / table cells:** **Public Sans** (USWDS / open source). Designed for US-government documents; reads as "official record" rather than "SaaS chrome." Anti-Inter.
-- **Citations / IDs / code / file paths:** **JetBrains Mono** (open source). Citations like `[Alignment-14] [T1]` are the academic-paper convention rendered in mono — load-bearing, not decorative.
+- **Citations / IDs / code / file paths:** **JetBrains Mono** (open source). Citations like `[Alignment-14] [T1]` are the academic-paper convention rendered in mono: functional reference notation, not decorative.
 - **Loading:** Google Fonts via one `<link>` in each HTML surface (`docs/index.html`, `templates/report.html.tmpl`, `templates/index.html.tmpl`). System-font fallbacks are preserved in `--font-*` tokens so the page is legible even when the network is unavailable. Total weight ~120kb woff2 for the variable axes used.
 - **Scale (modular, ratio 1.250 — major third), base 1rem = 17px:**
 
@@ -42,6 +42,13 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
   | `small` | 0.80 | 14 | Captions, mono citations, badges |
 
 - **Line heights:** 1.65 body · 1.20 display · 1.40 UI.
+- **When to use fluid `clamp()` type (landing page):** only where the size genuinely moves —
+  a total min→max span of roughly 1.5px or more. Below that the clamp is a three-term
+  declaration encoding a sub-pixel step, so use a fixed rem value instead. Seven declarations
+  in `docs/index.html` clear the bar (`.brand`, `.nav-links a`, `.section-header h2`,
+  `.hero h1`, `.hero .lede`, `.install-track-header h3`, `.install-block code`); the rest are
+  fixed. The layout tokens `--pad-x` / `--pad-y` stay fluid regardless: 16→32px (fluid across a
+  457–914px viewport) and 44→88px (800–1600px).
 
 ## Color
 
@@ -104,6 +111,14 @@ Restrained. Two-color annotation set (rust + prussian blue) for primary marks; t
 | `3xl` | 64 | Major page section spacing |
 | `4xl` | 96 | Hero spacing |
 
+- **Minimum interactive target (landing page only):** 44px, as `--tap-min` in `docs/index.html`.
+  44px is where Apple's HIG and WCAG 2.5.5 Target Size (Enhanced) both land; citing it is the source
+  of the number, not a claim that the page conforms to that AAA criterion. Applies to buttons and
+  form inputs at every viewport width, not only in stacked mobile layouts. Text links are not sized
+  to it — measured at 375px they run 18px in prose, 29-32px for nav, footer, `.brand` and
+  `.cta-secondary`, and 35px for `.skip-link`. They sit in running text where a 44px box would break
+  the line rhythm, and all clear WCAG 2.5.8 (AA) at 24px or fall under its inline-target exception.
+
 ## Layout
 
 - **Approach:** Hybrid. Grid-disciplined for marketing landing; single-column prose for reports.
@@ -138,7 +153,7 @@ No medium / long durations. No scroll-driven animations. No parallax. No entranc
 
 ## Anti-patterns (NEVER ship)
 
-- Gradient mesh hero (Stripe owns it; copying = derivative AI-slop). _(Scope: this binds the report system. The marketing landing uses an indigo→purple gradient-ACCENT treatment by explicit decision — accent marks, not a full-bleed mesh hero background. See Decisions log, 2026-06-12.)_
+- Gradient mesh hero (Stripe owns it; copying creates derivative styling). _(Scope: this binds the report system. The marketing landing uses an indigo→purple gradient-ACCENT treatment by explicit decision — accent marks, not a full-bleed mesh hero background. See Decisions log, 2026-06-12.)_
 - Stock photo of person looking at laptop (Quality Matters does this; category cliché).
 - 3-column or 5-column badge-icon feature grid (Quality Matters has FIVE; category cliché).
 - Bright association blue + orange palette.
@@ -160,3 +175,5 @@ No medium / long durations. No scroll-driven animations. No parallax. No entranc
 | 2026-05-13 | Background ivory `#faf8f3` (replaces parchment `#fbfaf6`) | Cleaner publication feel. Parchment-warm read as "old book"; ivory reads as "good paper." |
 | 2026-05-13 | Add prussian blue `#1d4a5e` as secondary accent | Two-color annotation set (red + blue) mirrors how academic editors marked manuscripts. |
 | 2026-06-12 | Landing reverted to original dark/indigo aesthetic, separate from the report system (owner request) | Reports retain scholarly ivory "Proof" identity. Landing uses indigo→purple gradient accents — a scoped exception to the no-gradient anti-pattern, which still binds reports. |
+| 2026-08-29 | Fluid `clamp()` type reserved for sizes that span ≥1.5px | The responsive pass put `clamp()` on 19 landing-page font sizes; 12 of them varied by at most 1.12px across their whole range, i.e. a fixed value written in three terms. Those 12 reverted to fixed rem. Cost: type on phones is up to 1.1px larger than the clamp gave; accepted, it reads slightly better. |
+| 2026-08-29 | Minimum interactive target fixed at 44px (`--tap-min`) | The landing page had grown three ad-hoc floors (36/40/42px), and the footer controls applied theirs only below 480px, leaving every width above 480px (desktop included) at 36.6px. One token, applied at every width. Cost: slightly taller controls on desktop; accepted in a product that ships a WCAG review skill. |

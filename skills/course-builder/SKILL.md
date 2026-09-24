@@ -153,6 +153,33 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
 to adjust how much detail idstack provides."
 
+## Preamble: Evidence Engine & Consensus QA
+
+Check whether a Consensus API key is configured for live literature grounding.
+
+```bash
+# Consensus key detection
+# (fresh shell — re-derive the install dir; see Preamble: Update Check)
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _dir in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_dir" ] && [ -d "$_dir" ]; then _IDSTACK="${_dir%/}"; break; fi
+done
+_CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q '"api_key_configured": true' && echo "CONFIGURED" || echo "UNCONFIGURED")
+[ -n "$_CONSENSUS_KEY" ] && echo "CONSENSUS:$_CONSENSUS_KEY"
+```
+
+**If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
+subject-specific pedagogical claims will be verified against peer-reviewed research.
+**If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
+run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
+to enable live literature verification via Consensus."
+
 ## Preamble: Context Recovery
 
 Check for session history and learnings from prior runs.
@@ -659,7 +686,7 @@ module will resurface later.]
   worked examples
 - Provide less structured activities that require learners to draw on
   existing knowledge
-- Offer optional "deep dive" sections for further exploration
+- Offer optional advanced exploration sections for extended study
 - Remove redundant explanations that repeat what experts already know
 
 **Mixed audiences:**

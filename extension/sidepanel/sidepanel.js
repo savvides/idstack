@@ -183,7 +183,7 @@ export function renderResults(data, source) {
     });
   }
 
-  document.querySelectorAll('.feedback-btn').forEach(btn => {
+  container.querySelectorAll('.feedback-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const row = btn.parentElement;
       if (!row) return;
@@ -449,6 +449,7 @@ const closeSettings = document.getElementById('close-settings');
 const settingsDrawer = document.getElementById('settings-drawer');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
 const apiKeyInput = document.getElementById('api-key-input');
+const consensusApiKeyInput = document.getElementById('consensus-api-key-input');
 
 if (settingsToggle && settingsDrawer) {
   settingsToggle.addEventListener('click', () => {
@@ -463,10 +464,11 @@ if (closeSettings && settingsDrawer) {
   });
 }
 
-if (saveSettingsBtn && apiKeyInput) {
+if (saveSettingsBtn) {
   saveSettingsBtn.addEventListener('click', async () => {
-    const key = apiKeyInput.value.trim();
-    await saveSettings({ apiKey: key });
+    const key = apiKeyInput ? apiKeyInput.value.trim() : '';
+    const consensusKey = consensusApiKeyInput ? consensusApiKeyInput.value.trim() : '';
+    await saveSettings({ apiKey: key, consensusApiKey: consensusKey });
     saveSettingsBtn.textContent = 'Saved!';
     setTimeout(() => {
       saveSettingsBtn.textContent = 'Save Settings';
@@ -477,32 +479,39 @@ if (saveSettingsBtn && apiKeyInput) {
 
 // Load initial settings & dossier count
 (async () => {
-  if (apiKeyInput) {
-    try {
-      const settings = await getSettings();
-      if (settings && settings.apiKey) {
+  try {
+    const settings = await getSettings();
+    if (settings) {
+      if (apiKeyInput && settings.apiKey) {
         apiKeyInput.value = settings.apiKey;
       }
-    } catch (e) {
-      // Ignored if storage not initialized
+      if (consensusApiKeyInput && settings.consensusApiKey) {
+        consensusApiKeyInput.value = settings.consensusApiKey;
+      }
     }
+  } catch (e) {
+    // Ignored if storage not initialized
   }
   await updateDossierBadge();
 })();
 
 // Listen for tab switching / updates
+function handleTabActivated() {
+  refreshActiveTab();
+}
+
+function handleTabUpdated(tabId, changeInfo, tab) {
+  if (changeInfo.status === 'complete' && tab.active) {
+    refreshActiveTab();
+  }
+}
+
 if (typeof chrome !== 'undefined' && chrome.tabs) {
   if (chrome.tabs.onActivated) {
-    chrome.tabs.onActivated.addListener(() => {
-      refreshActiveTab();
-    });
+    chrome.tabs.onActivated.addListener(handleTabActivated);
   }
   if (chrome.tabs.onUpdated) {
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      if (changeInfo.status === 'complete' && tab.active) {
-        refreshActiveTab();
-      }
-    });
+    chrome.tabs.onUpdated.addListener(handleTabUpdated);
   }
 }
 

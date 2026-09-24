@@ -86,7 +86,21 @@ assert.strictEqual(stripHtml('<p>Hello <strong>World</strong> &amp; Students<br>
   assert.strictEqual(calls.filter((c) => c.url.includes('/assignments')).length, 10);
 }
 
-// Test 6: Demo Course Audit Fallback
+// Test 6: missing origin or course id is refused before any request
+{
+  const { fetchImpl, calls } = canvasFetch({});
+  await assert.rejects(crawlCanvasCourse(null, '12345', fetchImpl), /Canvas origin and courseId are required/);
+  await assert.rejects(crawlCanvasCourse(ORIGIN, null, fetchImpl), /Canvas origin and courseId are required/);
+  assert.strictEqual(calls.length, 0);
+}
+
+// Test 7: a failed course fetch is fatal
+{
+  const { fetchImpl } = canvasFetch({ [COURSE_URL]: { status: 404, body: { errors: [{ message: 'The specified resource does not exist.' }] } } });
+  await assert.rejects(crawlCanvasCourse(ORIGIN, '12345', fetchImpl), /Failed to fetch Canvas course info \(404\)/);
+}
+
+// Test 8: Demo Course Audit Fallback
 const demoResult = getDemoCourseAuditResult({ title: 'Biology 101: Cell Systems' });
 assert.ok(demoResult.summary.keyTakeaway.includes('Course-Level Demo'));
 assert.ok(demoResult.findings.length >= 2);
