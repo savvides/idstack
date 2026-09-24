@@ -1193,6 +1193,20 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "Retry clicks the hidden course button" node "$WORK/r/test/test-sidepanel-state.mjs"
 
+# 30n. Retry re-clicks the course button after a switch to another course root
+# -> test-sidepanel-state must fail. The button stays visible there, so 30m's
+# guard passes and Retry would audit the other course (Codex review on #109).
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "      if (lastCourseTarget && lastCourseTarget !== `${ctx.origin}/courses/${ctx.courseId}`) return;\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "Retry audits the course now active, not the one that failed" node "$WORK/r/test/test-sidepanel-state.mjs"
+
 # 30i. a feedback vote rewrites the whole row -> test-sidepanel-state must fail.
 # The row also holds Audit Another Page, the only way back to the ready state.
 fresh

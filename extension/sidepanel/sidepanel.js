@@ -8,6 +8,7 @@ let activeCourseContext = null;
 let activeAuditResult = null;
 let activeAuditItem = null;
 let lastAuditBtn = null;
+let lastCourseTarget = null; // `${origin}/courses/${id}` of the last course audit; null after a page audit
 let refreshSeq = 0;
 
 function sanitizeFilename(name) {
@@ -236,6 +237,10 @@ export function renderError(errorMessage) {
       // A tab switch can hide Audit Entire Course; re-clicking it would crawl,
       // and ask for access to, whatever site is active now.
       if (lastAuditBtn && lastAuditBtn.style.display === 'none') return;
+      // A switch to another course root keeps the button visible; re-clicking it would
+      // audit that course instead of the one that failed.
+      const ctx = activeCourseContext || {};
+      if (lastCourseTarget && lastCourseTarget !== `${ctx.origin}/courses/${ctx.courseId}`) return;
       if (lastAuditBtn) lastAuditBtn.click();
     });
   }
@@ -280,6 +285,7 @@ const auditBtn = document.getElementById('audit-btn');
 if (auditBtn) {
   auditBtn.addEventListener('click', async () => {
     lastAuditBtn = auditBtn;
+    lastCourseTarget = null;
     if (!activePayload) await refreshActiveTab();
     // Label the result with the page sent, not the tab active when the reply lands.
     const sent = activePayload;
@@ -319,6 +325,7 @@ if (auditCourseBtn) {
     lastAuditBtn = auditCourseBtn;
     // Shown only after refreshActiveTab() found a course root, so the context is set.
     const { origin, courseId } = activeCourseContext || {};
+    lastCourseTarget = `${origin}/courses/${courseId}`;
     // permissions.request needs this click's user gesture, so it comes before any other
     // await. Already-held access (*.instructure.com) resolves true with no prompt; other
     // Canvas hosts get a one-time Chrome prompt for that site only.

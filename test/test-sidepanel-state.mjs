@@ -141,6 +141,22 @@ const scenarios = {
     assert.strictEqual(p.h.sent.filter((m) => m.action === 'CRAWL_AND_AUDIT_COURSE').length, 1);
   },
 
+  async 'Retry after a switch to another course does not audit that course (F14)'() {
+    const a = 'https://x.instructure.com/courses/123';
+    const b = 'https://x.instructure.com/courses/456';
+    const p = await loadPanel({ tab: { id: 1, url: a }, payloads: { 1: page('Course A', a, 'Canvas LMS Page'), 2: page('Course B', b, 'Canvas LMS Page') } });
+    await p.$('audit-course-btn').click();
+    await flush();
+    await p.reply({ success: false, error: 'Failed to fetch Canvas course info (401)' });
+    await p.switchTab({ id: 2, url: b });
+    assert.notStrictEqual(p.$('audit-course-btn').style.display, 'none', 'course B shows its own course button');
+    await p.$('error-retry-btn').click();
+    await flush();
+    const crawls = p.h.sent.filter((m) => m.action === 'CRAWL_AND_AUDIT_COURSE');
+    assert.strictEqual(crawls.length, 1, 'Retry must not crawl the course now active');
+    assert.strictEqual(crawls[0].payload.courseId, '123');
+  },
+
   async 'a feedback vote keeps the Audit Another Page button (F14)'() {
     const p = await loadPanel({ tab: { id: 1, url: A.url }, payloads: { 1: A } });
     await p.$('audit-btn').click();
