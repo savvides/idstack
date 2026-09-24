@@ -98,13 +98,13 @@
           <label for="api-key-input">Google AI Studio API Key (Optional BYOK)</label>
           <input type="password" id="api-key-input" placeholder="AIzaSy..." />
           <a id="get-api-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" class="help-link">Get your free Google AI Studio key &rarr;</a>
-          <p class="help-text">Leave blank to use the built-in free demo tier.</p>
+          <p class="help-text">Without a key, idstack runs in demo mode: every audit shows the same sample findings, whatever the page says, and the page's text is not sent anywhere.</p>
         </div>
         <button id="save-settings-btn" class="secondary-btn">Save Settings</button>
         <hr class="divider" />
         <div class="privacy-note">
-          <h4>Privacy & FERPA Commitment</h4>
-          <p>idstack processes only curriculum and assignment text. No student PII is ever collected, retained, or used for model training.</p>
+          <h4>Privacy & Student Data</h4>
+          <p>With a key saved, each audit sends the page's title and text (for a full-course audit, the syllabus and assignments) from your browser to Google's API. On Google's free tier, Google may use that content to improve its products, and human reviewers may read it. idstack will not read Canvas grades, Gradebook, SpeedGrader, People, groups, discussions, submissions, or Inbox pages. Other pages can still name students, so audit course materials, not student work.</p>
         </div>
       </div>
     </section>

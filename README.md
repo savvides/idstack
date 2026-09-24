@@ -188,6 +188,8 @@ If you or your instructional designers don't use the terminal, idstack is availa
 3. Navigate to any Canvas assignment, syllabus, or Google Doc and click the idstack icon to open the Side Panel.
 4. Click **"Audit Page with Evidence"** for instant Bloom's classification, constructive alignment reviews, and 1-click improved rubrics.
 
+If you switch tabs while the panel is open, click the idstack icon again so it can read the new tab. This isn't needed on Canvas pages at `instructure.com` or on a Canvas site you've already allowed.
+
 #### Loading Unpacked (Local Development)
 
 If developing or modifying the extension locally:
@@ -198,24 +200,26 @@ If developing or modifying the extension locally:
 #### Full Course Audit (Canvas LMS)
 
 When viewing any Canvas course homepage or modules list (`/courses/:id`), idstack automatically detects the course environment and presents an **"Audit Entire Course"** button:
-- **Zero Developer Tokens Required:** Crawls published syllabus items, modules, assignments, discussions, and quizzes in the background using your active browser session. No Canvas API keys, LMS admin setup, or command line required.
-- **Course Quality Matrix:** Synthesizes findings across all modules into an interactive course health dashboard, highlighting cognitive process distribution across Bloom's levels, constructive alignment gaps, and prioritized action items.
-- **Export Ready:** Download the full synthesized course audit as JSON or Markdown to share with instructional design teams and faculty stakeholders.
+- **Zero Developer Tokens Required:** Reads the course syllabus and assignment descriptions through Canvas's API using your active browser session. No Canvas API keys, LMS admin setup, or command line required.
+- **Course-level findings:** Reviews the syllabus and assignments together for alignment gaps, cognitive demand across Bloom's levels, and prioritized fixes, shown in the same results view as a page audit.
+- **Export Ready:** Add the course audit to your Course Dossier or export it as Markdown to share with instructional design teams and faculty stakeholders.
+
+On Canvas hosted outside `instructure.com` (for example, a university's own domain), Chrome asks once, for that site only, when you first click **"Audit Entire Course"**.
 
 #### Multi-Page Course Dossier & Markdown Export
 
 Audit multiple pages across a course or syllabus and accumulate findings into a structured institutional deliverable:
-- **Incremental Dossier Accumulation:** Click **"Add to Dossier"** on any page audit (assignments, quizzes, syllabi, Google Docs). The header dossier badge tracks your collected course components across browsing sessions.
+- **Incremental Dossier Accumulation:** Click **"Add to Dossier"** on any page audit (assignments, pages, syllabi, rubrics, Google Docs). The header dossier badge tracks your collected course components across browsing sessions.
 - **1-Click Compiled Markdown Export (`.md`):** Open the Dossier drawer to download a synthesized multi-page Markdown report (`idstack-course-dossier-<title>.md`) containing executive summaries, cognitive demand tables, itemized empirical citations (T1–T5), and improved rubric drafts.
 - **Clipboard Ready:** Copy the compiled Markdown report directly to your clipboard for pasting into LMS course notes, Google Docs, Notion, or faculty review tickets.
 
 #### Free Google AI Studio API Key Setup
 
-idstack includes a rich built-in simulation fallback mode for instant demonstration without API keys. To connect live LLM inference:
+Without a key, the extension runs in demo mode: every audit returns the same sample findings, whatever the page says. To get real audits:
 1. Obtain a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 2. In the idstack Side Panel, click the **Settings** (gear) icon in the top header.
 3. Paste your API key into the input field and click **Save Settings**.
-4. All prompts execute client-side directly against Google's API (`gemini-2.5-flash`). Zero student PII or course content is stored or transmitted to external intermediary servers. <!-- IDSTACK_CLI_LEAK_ALLOW -->
+4. Each audit sends the page's title and text (or, for a full-course audit, the syllabus and assignments) straight from your browser to Google's API; no idstack server is involved. On Google's free tier, Google may use that content to improve its products, so read [PRIVACY.md](PRIVACY.md) before auditing anything that names students.
 
 #### Packaging for Chrome Web Store
 
@@ -433,7 +437,7 @@ Run `bin/idstack-status` from your project directory for the dashboard (quality 
 python3 is recommended but not required. With python3, you get quality score trends, dimension analysis, search filtering, and safe JSON serialization. Without it, basic timeline logging and learnings still work via bash fallback, but score trends and search filtering are unavailable. Most systems have python3 pre-installed.
 
 **Is my data safe?**
-idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Session history (`.idstack/timeline.jsonl`) and learnings (`.idstack/learnings.jsonl`) are also local. Course data reaches external servers only when you explicitly invoke integration skills (such as Canvas API calls via `/idstack:course-import` or `/idstack:course-export`) or perform hourly update checks via `git fetch`. Claude Code's own privacy policy applies to the AI conversation.
+idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Session history (`.idstack/timeline.jsonl`) and learnings (`.idstack/learnings.jsonl`) are also local. In the Claude Code plugin, course data reaches external servers only when you explicitly invoke integration skills (such as Canvas API calls via `/idstack:course-import` or `/idstack:course-export`) or perform hourly update checks via `git fetch`. The Chrome extension sends page text to Google's API when you run an audit with your own API key saved; see [PRIVACY.md](PRIVACY.md). Claude Code's own privacy policy applies to the AI conversation.
 
 **Can I edit the project manifest directly?**
 You can, but let the skills manage it. If you do edit it, keep the JSON valid.

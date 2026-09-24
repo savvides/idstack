@@ -55,7 +55,7 @@ PY_LT_312=$(python3 -c 'import sys; print(1 if sys.version_info < (3,12) else 0)
 # Copy only what the suites need; skip .git and any nested worktrees.
 mkdir -p "$WORK/base"
 for item in bin skills templates test evidence docs extension .claude-plugin \
-            VERSION CHANGELOG.md README.md TODOS.md CONTRIBUTING.md \
+            VERSION CHANGELOG.md README.md PRIVACY.md TODOS.md CONTRIBUTING.md \
             DESIGN.md ROADMAP.md CLAUDE.md setup; do
   [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/base/"
 done
@@ -1241,6 +1241,126 @@ s = s.replace(old, "(f.tier || 'T1')", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "renderer calls toLowerCase on a non-string tier" node "$WORK/r/test/test-renderer-helper.mjs"
+
+# 31a-31i. The docs made promises the code did not keep. The side panel said
+# no student data was "ever collected, retained, or used for model training"
+# while the extractor read whole Canvas pages and the panel pointed at a free
+# API tier whose terms allow that use. The settings called canned demo output
+# a "free demo tier". PRIVACY.md put the API key in chrome.storage.local and
+# called the design FERPA-compliant. README said the course crawler reads
+# modules, discussions and quizzes. test-disclosures.mjs checks each doc claim
+# against the shipped code.
+
+# 31a. the side panel's absolute no-PII promise returns -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "<h4>Privacy & Student Data</h4>"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, old + "\n          <p>No student PII is ever collected, retained, or used for model training.</p>", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "absolute no-PII promise back in the side panel" "$WORK/r/test/test-extension.sh"
+
+# 31b. the free-tier data-use disclosure is dropped from the side panel -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = " On Google's free tier, Google may use that content to improve its products, and human reviewers may read it."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "free-tier data-use disclosure dropped from the side panel" "$WORK/r/test/test-extension.sh"
+
+# 31c. demo mode advertised as a service tier again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Without a key, idstack runs in demo mode: every audit shows the same sample findings, whatever the page says, and the page's text is not sent anywhere."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Leave blank to use the built-in free demo tier.", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "demo advertised as a service tier again" "$WORK/r/test/test-extension.sh"
+
+# 31d. the privacy policy names the wrong storage area for the API key -> test-extension must fail.
+fresh
+python3 - "$WORK/r/PRIVACY.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Your API key is saved in `chrome.storage.sync`."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Your API key is saved in `chrome.storage.local`.", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "privacy policy names the wrong storage area for the API key" "$WORK/r/test/test-extension.sh"
+
+# 31e. the never-accesses-PII claim is back in the privacy policy -> test-extension must fail.
+fresh
+python3 - "$WORK/r/PRIVACY.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "- **No tracking.**"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "- **Curriculum-Only Processing:** The extension only reads public or instructor-accessible course materials (syllabi, module structures, assignment guidelines, and rubrics). It never accesses student rosters, student submissions, student grades, or any Personally Identifiable Information (PII).\n" + old, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "never-accesses-PII claim back in the privacy policy" "$WORK/r/test/test-extension.sh"
+
+# 31f. audit-history retention goes undisclosed -> test-extension must fail.
+fresh
+python3 - "$WORK/r/PRIVACY.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "The last 20 audit results (page address, title, page type, and the full audit result) are kept in `chrome.storage.local`, as is the Course Dossier you build."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "The Course Dossier you build is kept in `chrome.storage.local`.", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "audit-history retention undisclosed" "$WORK/r/test/test-extension.sh"
+
+# 31g. the README crawler bullet overclaims again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/README.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Reads the course syllabus and assignment descriptions through Canvas's API using your active browser session."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Crawls published syllabus items, modules, assignments, discussions, and quizzes in the background using your active browser session.", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "README crawler bullet overclaims again" "$WORK/r/test/test-extension.sh"
+
+# 31h. the docs say Inbox is refused but the extractor reads it -> test-disclosures
+# must fail. Run directly: test-extractor.mjs would also fail under test-extension.sh,
+# leaving GUARDED ambiguous about which assertion caught it.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "|conversations"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "docs say Inbox is refused but the extractor reads it" node "$WORK/r/test/test-disclosures.mjs"
+
+# 31i. the FERPA-compliance claim is back in the privacy policy -> test-extension must fail.
+# idstack cannot certify FERPA compliance; that determination is the institution's.
+fresh
+python3 - "$WORK/r/PRIVACY.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "The extension is built to audit course materials, not student records."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "The idstack Chrome Extension is designed with a strict privacy-first and FERPA-compliant architecture.", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "FERPA-compliance claim back in the privacy policy" "$WORK/r/test/test-extension.sh"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
