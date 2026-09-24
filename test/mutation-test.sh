@@ -946,6 +946,123 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "panel ignores newly granted tab access" "$WORK/r/test/test-extension.sh"
 
+# 29a-29i. The extractor sent a Modules page's first item title only, read the
+# whole page on any Canvas view it did not recognize (Gradebook, People, Inbox,
+# discussions), treated any /courses/ URL as Canvas, and read Google Docs from
+# the editor DOM, which holds no document text. test-extractor.mjs runs the
+# shipped extractor on each page.
+
+# 29a. a Modules page reads only the first item title -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Array.from(document.querySelectorAll('.module-item-title'))"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "[document.querySelector('.module-item-title')]", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "Modules page reads only the first item title" "$WORK/r/test/test-extension.sh"
+
+# 29b. a course home in Modules view is not detected -> test-extension must fail.
+# Canvas's modules container is #context_modules, and the course home URL has no /modules.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "'#context_modules, #modules'"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "'#modules'", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course home in Modules view not detected" "$WORK/r/test/test-extension.sh"
+
+# 29c. an unrecognized Canvas view falls back to the whole page -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "content = mainBody ? (mainBody.innerText || mainBody.textContent || '').trim() : '';"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "content = mainBody ? (mainBody.innerText || mainBody.textContent || '').trim() : (document.body ? (document.body.innerText || document.body.textContent || '').trim() : '');", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "Canvas page falls back to the whole document body" "$WORK/r/test/test-extension.sh"
+
+# 29d. the student-record guard is disabled -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "if (studentRecordUrl.test(url)) {"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "if (false && studentRecordUrl.test(url)) {", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "student-record page guard disabled" "$WORK/r/test/test-extension.sh"
+
+# 29e. custom-domain Canvas course pages are not detected as Canvas -> test-extension
+# must fail. They would go through the generic reader, which reads [role=main].
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = r" || /\/courses\/\d+(?:[/?#]|$)/.test(url)"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "custom-domain Canvas course page not detected as Canvas" "$WORK/r/test/test-extension.sh"
+
+# 29f. any /courses/<slug> site is treated as Canvas again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = r"/\/courses\/\d+(?:[/?#]|$)/.test(url)"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "url.includes('/courses/')", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "non-Canvas /courses/<slug> site treated as Canvas" "$WORK/r/test/test-extension.sh"
+
+# 29g. rubric pages lose their text without the body fallback -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ", #rubrics'"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "'", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "rubric text lost with the body fallback" "$WORK/r/test/test-extension.sh"
+
+# 29h. Google Docs are read from the editor DOM again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "  if (!doc) return data;\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "  return data;\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "Google Docs read from the canvas-rendered DOM" "$WORK/r/test/test-extension.sh"
+
+# 29i. the Docs export accepts any content type -> test-extension must fail. A
+# signed-out export answers 200 with an HTML sign-in page, audited as the document.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = " || !(res.headers.get('content-type') || '').startsWith('text/plain')"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "HTML sign-in page audited as the Google Doc" "$WORK/r/test/test-extension.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
