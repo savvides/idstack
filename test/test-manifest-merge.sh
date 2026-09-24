@@ -7,7 +7,7 @@ set -e
 
 . "$(dirname "$0")/test-helper.sh"
 
-REPO_ROOT="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MERGE="$REPO_ROOT/bin/idstack-manifest-merge"
 
 # Skip the suite if python3 is missing (the tool requires python3).
@@ -126,7 +126,7 @@ check "manifest with string root exits 2" "[ $EC -eq 2 ]"
 # --- idstack-migrate --init: the manifest bootstrap the merge tool depends on ---
 # Skills running standalone create the manifest with --init before merging;
 # without it the merge exits 4 and standalone results are never persisted.
-MIGRATE="$REPO_ROOT/bin/idstack-migrate"
+MIGRATE="$(cd "$(dirname "$0")/.." && pwd -P)/bin/idstack-migrate"
 
 INIT_DIR="$WORK/initcase"
 mkdir -p "$INIT_DIR/.idstack"

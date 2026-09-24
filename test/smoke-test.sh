@@ -272,7 +272,7 @@ fi
 check "bin/idstack-manifest-merge exists" "[ -f '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
 check "bin/idstack-manifest-merge is executable" "[ -x '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
 if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
-  check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh' '$IDSTACK_DIR'"
+  check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
 fi
 
 # Version classifier (shared by setup + bin/idstack-doctor) must classify
@@ -285,7 +285,7 @@ check "setup sources the shared version classifier" "grep -q 'lib/version-classi
 check "idstack-doctor sources the shared version classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/bin/idstack-doctor'"
 check "version-classifier test sources the shared classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/test/test-version-classifier.sh'"
 if [ -x "$IDSTACK_DIR/test/test-version-classifier.sh" ]; then
-  check "version-classifier unit tests pass" "'$IDSTACK_DIR/test/test-version-classifier.sh' '$IDSTACK_DIR'"
+  check "version-classifier unit tests pass" "'$IDSTACK_DIR/test/test-version-classifier.sh'"
 fi
 
 # `claude plugin list` parsing, also extracted to bin/lib/ so it is testable.
@@ -294,16 +294,16 @@ check "bin/lib/plugin-status.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/plugin-statu
 check "idstack-doctor sources the shared plugin-status parser" "grep -q 'lib/plugin-status.sh' '$IDSTACK_DIR/bin/idstack-doctor'"
 check "idstack-doctor no longer uses a fixed -A4 window" "! grep -q 'grep -A4' '$IDSTACK_DIR/bin/idstack-doctor'"
 if [ -x "$IDSTACK_DIR/test/test-plugin-status.sh" ]; then
-  check "plugin-status unit tests pass" "'$IDSTACK_DIR/test/test-plugin-status.sh' '$IDSTACK_DIR'"
+  check "plugin-status unit tests pass" "'$IDSTACK_DIR/test/test-plugin-status.sh'"
 fi
 # Hooked in here as well as in CI because release.yml's gate runs only
 # smoke-test.sh — doctor's branches would otherwise be unverified at release.
 if [ -x "$IDSTACK_DIR/test/test-doctor.sh" ]; then
-  check "doctor behavioral tests pass" "'$IDSTACK_DIR/test/test-doctor.sh' '$IDSTACK_DIR'"
+  check "doctor behavioral tests pass" "'$IDSTACK_DIR/test/test-doctor.sh'"
 fi
 # --readiness is the pre-export gate; same reasoning as doctor above.
 if [ -x "$IDSTACK_DIR/test/test-status.sh" ]; then
-  check "idstack-status behavioral tests pass" "'$IDSTACK_DIR/test/test-status.sh' '$IDSTACK_DIR'"
+  check "idstack-status behavioral tests pass" "'$IDSTACK_DIR/test/test-status.sh'"
 fi
 
 # ./setup is what a new user runs first; it is exercised against a repo copy
@@ -314,7 +314,7 @@ fi
 
 # Chrome extension unit and integration tests
 if [ -x "$IDSTACK_DIR/test/test-extension.sh" ]; then
-  check "chrome extension tests pass" "'$IDSTACK_DIR/test/test-extension.sh' '$IDSTACK_DIR'"
+  check "chrome extension tests pass" "'$IDSTACK_DIR/test/test-extension.sh'"
 fi
 
 # Responsive landing page test
@@ -346,7 +346,7 @@ check "preamble supports CLAUDE_PLUGIN_ROOT" "grep -q 'CLAUDE_PLUGIN_ROOT' '$IDS
 # (macOS system python3 is 3.9) — a SyntaxError there dies silently behind
 # `2>/dev/null || true` in every generated skill.
 if [ -x "$IDSTACK_DIR/test/test-preamble-python.sh" ]; then
-  check "preamble embedded-python tests pass" "'$IDSTACK_DIR/test/test-preamble-python.sh' '$IDSTACK_DIR'"
+  check "preamble embedded-python tests pass" "'$IDSTACK_DIR/test/test-preamble-python.sh'"
 fi
 
 # Migration tests. One tempdir root cleaned by trap; every cp + migrate runs

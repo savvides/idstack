@@ -11,7 +11,7 @@ set -e
 
 . "$(dirname "$0")/test-helper.sh"
 
-IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
+IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 
 echo "test-preamble-python"
 echo "  python3: $(python3 --version 2>&1 || echo 'not found')"

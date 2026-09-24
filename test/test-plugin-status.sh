@@ -14,7 +14,7 @@ set -e
 
 . "$(dirname "$0")/test-helper.sh"
 
-IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
+IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 . "$IDSTACK_DIR/bin/lib/plugin-status.sh"
 
 # Domain-specific shape: feeds a `claude plugin list` listing to

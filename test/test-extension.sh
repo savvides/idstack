@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}/test"
+DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "==> Running idstack Chrome Extension test suite..."
 node "$DIR/test-manifest.js"

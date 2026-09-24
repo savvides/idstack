@@ -15,7 +15,7 @@ set -e
 
 . "$(dirname "$0")/test-helper.sh"
 
-REPO_ROOT="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 STATUS="$REPO_ROOT/bin/idstack-status"
 
 if ! command -v python3 >/dev/null 2>&1; then
