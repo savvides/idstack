@@ -13,7 +13,7 @@
 - **Design System:** Strictly follow `DESIGN.md` (Source Serif 4, Public Sans, JetBrains Mono, `#faf8f3` ivory background, `#ffffff` card surfaces, `#1a1815` ink, canonical T1–T5 palette: T1 `#2f7a4a`, T2 `#2864a8`, T3 `#a87726`, T4 `#b35a1f`, T5 `#6b6b6b`).
 - **Zero Build Overhead:** Pure Vanilla JS and CSS without bundlers, webpack, or npm runtime dependencies.
 - **Privacy & FERPA:** Only extract syllabus, assignment descriptions, and rubrics. Never touch student rosters, submissions, or grades.
-- **Free Tier Onboarding:** Provide direct link to Google AI Studio for free Gemini API keys, plus a rich demo fallback mode for instant testing without an API key.
+- **Free Tier Onboarding:** Provide direct link to Google AI Studio for free Gemini API keys, plus a rich demo fallback mode for instant testing without an API key. <!-- IDSTACK_CLI_LEAK_ALLOW -->
 - **T1–T5 Research Grounding:** All course audit prompts ground alignment ratings in `evidence/references.md` (Biggs constructive alignment, Bloom's taxonomy, Hattie feedback, Sweller cognitive load).
 
 ---

@@ -4,6 +4,11 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Consensus evidence checks & Chrome extension hardening (v3.6.0.0)
+- **An optional Consensus evidence engine, on your own API key.** `bin/idstack-consensus` looks up and caches claims. `/idstack:course-quality-review`, `/idstack:assessment-design`, and `/idstack:red-team` check their findings with it before writing them, and correct four known neuromyths with or without a key.
+- **The Chrome extension (1.1.0) reads only the tab you point it at.** It no longer asks for access to every website, refuses Canvas pages that show student records, and reads every page of a course's assignments.
+- **Its privacy notes match the code.** The side panel and PRIVACY.md say what is sent to Google and to Consensus, and where results are kept.
+
 ### Mobile fixes for idstack.org & test-harness repair (v3.5.1.0)
 - **idstack.org is usable on a phone.** Every content section sat under the display cutout, buttons and inputs fell below the 44px touch floor at every width above 480px, and a viewport clip was hiding horizontal overflow instead of preventing it. Measured clean at 11 widths from 320px up. No skill behavior changed.
 - **The mutation suite could not fail.** `test/mutation-test.sh` never copied `extension/` into its throwaway repos, so `test/test-extension.sh` broke before any mutation was applied and all 36 mutations reported GUARDED whether their guard worked or not. A null-mutation control now aborts the run when an unmutated copy is already red.

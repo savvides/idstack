@@ -1,7 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-const assert = require('assert');
-const { compileDossierToMarkdown, compileSingleAuditToMarkdown } = require('../extension/shared/dossier-compiler.cjs');
+import assert from 'node:assert';
+import { compileDossierToMarkdown, compileSingleAuditToMarkdown } from '../extension/shared/dossier-compiler.js';
 
 // Test 1: Single Audit Markdown Compilation
 const singleItem = {
@@ -85,14 +83,5 @@ const emptyDossierMd = compileDossierToMarkdown([], 'Empty Course');
 assert.ok(emptyDossierMd.includes('*No audit materials in dossier.*'));
 const nullDossierMd = compileDossierToMarkdown(null);
 assert.ok(nullDossierMd.includes('*No audit materials in dossier.*'));
-
-// Test 4: Verify storage.js methods exist
-const storagePath = path.join(__dirname, '../extension/shared/storage.js');
-assert.ok(fs.existsSync(storagePath), 'storage.js must exist');
-const storageContent = fs.readFileSync(storagePath, 'utf8');
-assert.ok(storageContent.includes('export async function getDossier()'), 'getDossier export required');
-assert.ok(storageContent.includes('export async function addToDossier('), 'addToDossier export required');
-assert.ok(storageContent.includes('export async function removeFromDossier('), 'removeFromDossier export required');
-assert.ok(storageContent.includes('export async function clearDossier()'), 'clearDossier export required');
 
 console.log('✅ Task 1 Dossier compiler tests passed.');

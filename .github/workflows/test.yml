@@ -27,14 +27,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      # smoke-test skips the Chrome-extension and landing-page suites when node is
-      # absent. Declaring it here keeps that skip from silently hiding a failure on a
-      # runner image that stops preinstalling node.
+      # Node 22 is pinned for two suites. test/test-extension.sh imports the shipped extension
+      # ES modules; extension/ has no package.json, so Node must detect ESM syntax in .js files
+      # itself (the default only from 20.19 / 22.7). test-rendered-landing.js drives Chrome over
+      # the global WebSocket, which node exposes unflagged only from 22.4. Declaring node here
+      # also keeps smoke-test's node-absent SKIP from silently hiding a failure.
       - uses: actions/setup-node@v4
         with:
-          # 22, not 20: test-rendered-landing.js drives Chrome over the global WebSocket,
-          # which node exposes unflagged only from 22.4. On 20 it fails with
-          # "WebSocket is not defined" and the rendered suite never runs.
           node-version: '22'
       - name: Smoke test
         run: ./test/smoke-test.sh
@@ -54,6 +53,8 @@ jobs:
         run: ./test/test-preamble-python.sh
       - name: Setup behavioral tests
         run: ./test/test-setup.sh
+      - name: Chrome extension unit tests
+        run: ./test/test-extension.sh
 
   # Confirms the guards above actually fail when their bugs return. Slower
   # (copies the repo per mutation), so it runs once rather than per matrix leg.
@@ -69,10 +70,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      # Mutations 23-32 are guarded only by the node landing-page suites. Without node,
-      # smoke-test skips them, those mutations report NOT-GUARDED and this job fails. node is
-      # a hard requirement here, not a hedge against a silent skip. 22 for the same WebSocket
-      # reason as the test job; mutation 32 additionally needs Chrome.
+      # Node 22 for the same two reasons as the test job, and a hard requirement here: fresh()
+      # copies extension/ and smoke runs test-extension.sh in every case, and the landing-page
+      # mutations are guarded only by the node suites, so without node they report NOT-GUARDED.
+      # The rendered-landing mutation additionally needs Chrome.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

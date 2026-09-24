@@ -7,7 +7,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 EXT_DIR="$REPO_ROOT/extension"
 BUILD_DIR="$REPO_ROOT/build"
-ZIP_NAME="idstack-chrome-extension-v1.0.0.zip"
+# The zip is named for the version in manifest.json, so a release bump cannot ship a stale name.
+ZIP_NAME="idstack-chrome-extension-v$(node -p 'require(process.argv[1]).version' "$EXT_DIR/manifest.json").zip"
 ZIP_PATH="$BUILD_DIR/$ZIP_NAME"
 
 echo "==> Verifying extension test suite..."
@@ -19,7 +20,8 @@ rm -f "$ZIP_PATH"
 
 echo "==> Packaging extension from $EXT_DIR..."
 # Zip contents directly so manifest.json is at root of archive
-(cd "$EXT_DIR" && zip -r "$ZIP_PATH" . -x "*.DS_Store" "*__MACOSX*" "*.git*")
+# icons/generate-icons.js is a dev-time script that drew the PNGs; it is not part of the extension.
+(cd "$EXT_DIR" && zip -r "$ZIP_PATH" . -x "*.DS_Store" "*__MACOSX*" "*.git*" "icons/generate-icons.js")
 
 echo ""
 echo "✅ Extension packaged successfully!"

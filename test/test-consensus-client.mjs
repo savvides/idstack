@@ -1,10 +1,10 @@
-const assert = require('assert');
-const {
+import assert from 'node:assert';
+import {
   verifyFindingsWithConsensus,
   hashClaim,
   detectNeuromyth,
   autoCorrectNeuromyth
-} = require('../extension/shared/consensus-client.cjs');
+} from '../extension/shared/consensus-client.js';
 
 async function runTests() {
   console.log('==> Starting Consensus Extension Client unit tests...');

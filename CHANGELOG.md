@@ -1,5 +1,70 @@
 # Changelog
 
+## v3.6.0.0 (2026-09-24)
+
+Adds an optional Consensus evidence engine to the skills and the Chrome extension, and hardens the extension after a code review of v3.5.0.0. The extension no longer asks for access to every website, refuses Canvas pages that show student records, reads every page of a course's assignments, and its privacy notes now say what is sent to Google and to Consensus. The extension is now version 1.1.0 and needs Chrome 116 or later.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`. The Chrome Web Store updates the extension on its own once 1.1.0 is published there.
+
+### Added — Consensus evidence engine (bring your own key)
+
+- **`bin/idstack-consensus`** looks up a claim in the Consensus research database and caches every answer under `~/.idstack/cache/consensus/`, so a claim is looked up once. Its subcommands are `status`, `configure`, `query`, `verify`, and `sync`. It reads your own Consensus API key from `CONSENSUS_API_KEY`, `~/.idstack/profile.yaml`, or the project manifest. Without a key it works from `evidence/references.md` alone.
+- **An evidence check before findings are written.** `/idstack:course-quality-review`, `/idstack:assessment-design`, and `/idstack:red-team` now pass their findings through `idstack-consensus verify` before writing the report or the manifest. It corrects four known neuromyths (learning styles, left- and right-brain learning, "10% of the brain", and Dale's cone retention percentages), checks each tier against `evidence/references.md`, and attaches literature matches when a key is set.
+- **Every skill's preamble reports whether a Consensus key is configured**, and `bin/idstack-doctor` checks the CLI and its cache.
+- **The Chrome extension takes an optional Consensus API key in Settings.** With a key, each finding's claim is looked up on Consensus after the audit, and a matched finding shows a Consensus badge and a link to the top paper. The neuromyth corrections apply with or without a key. PRIVACY.md says what is sent and where results are kept.
+
+### Fixed — the extension could read every website
+
+- **v3.5.0.0 injected its page reader into every site you visited.** Chrome's install prompt therefore said it could read your data on all websites, and the same match let the extension's background worker make logged-in requests to any site and read the replies. The reader is now injected only into the tab you are looking at, after you click the idstack toolbar icon. Canvas at `instructure.com` needs no click. A Canvas site on its own domain is requested for that site only, when you first click **Audit Entire Course** there, and Chrome asks you before granting it. The toolbar icon now opens the panel and no longer closes it.
+- **The background worker took course-audit requests from any part of the extension, including the page reader it injected into every site, and fetched whatever course address it was given.** Web pages themselves could not message it. It now ignores messages that don't come from the extension's own pages. The course audit accepts only a bare `https` site address and a numeric course id before it requests anything with your Canvas login.
+
+### Fixed — student-record pages, Modules pages, and Google Docs
+
+- **Canvas pages that show student records were read like any other page.** Gradebook and SpeedGrader, grades, People (in a course or the whole account), groups, discussions, submissions, and Inbox are now refused, and the panel says why instead of auditing them. Other Canvas pages no longer fall back to reading the whole page body, and rubric text is now included. On a Canvas site outside `instructure.com`, only numeric `/courses/<n>` pages are read as Canvas; its other pages, such as the dashboard, are read like any web page.
+- **A Modules page audited only its first item.** Every module item title is now read, including a course home shown in Modules view.
+- **Google Docs were read from the editor's rendered page.** The extension now downloads the document's plain-text export with your Google login, waits at most 10 seconds, accepts only plain text, and says so when a document can't be exported. Published (`/d/e/`) documents are not fetched.
+
+### Fixed — the course audit read at most 50 assignments and hid failures
+
+- **Courses with more than 50 assignments were silently cut short.** The crawler now follows Canvas's pagination to the end, up to 10 pages (500 assignments), and says so when a course has more. A failed request or an unexpected response now stops the audit with an error. It used to become an empty assignment list, so the audit ran as if the course had no assessments.
+- **The course prompt could cut an assignment off partway through.** It keeps its 20,000-character budget but fills it with whole assignments, and its header now states how many of the course's items are shown in full.
+
+### Fixed — empty pages, malformed answers, slow requests, and the API key in the URL
+
+- **An empty or unreadable page was still audited.** Pages with fewer than 10 words are refused before anything is sent, with the reason when the extension knows it (for example, a tab it cannot read). A course with no syllabus text and no assignments is refused too. Both checks also apply in demo mode.
+- **A malformed answer from the model was saved and could crash the results view.** An answer must contain a list of findings before it is saved or shown.
+- **A slow model request had no limit of its own.** It now stops after 25 seconds with a message that says so.
+- **Your API key travelled in the request URL.** It is now sent in a request header.
+
+### Fixed — the side panel labelled, kept, or retried the wrong result
+
+- **A result could carry the wrong page's name.** A page audit is now labelled with the page that was sent, not whichever tab is active when the answer arrives, and a course audit is labelled with the course. A slow tab read can no longer overwrite a newer one.
+- **After an error, the previous result stayed actionable.** The error card now clears it and hides **Add to Dossier** and **Export .md** until the next successful audit. **Retry** re-runs the audit you started, page or course, instead of always running a page audit. If the tab now shows a different course, or no course, Retry goes back to the ready screen instead of auditing it.
+- **A thumbs-up or thumbs-down vote also removed Audit Another Page.** Now only the vote buttons go.
+- **The copy buttons did not report a refused clipboard.** One said "Copied!" anyway and the other failed silently. Both now say "Copy failed".
+- **The results view crashed on findings that were not a list, on empty entries, or on a tier that was not text.** It now handles all three.
+
+### Fixed — evidence labels disagreed with `evidence/references.md`
+
+- **The extension's tier scale put randomized trials in T2 and called T3 observational.** Its labels now match idstack's scale, T1 meta-analyses and RCTs through T5 expert opinion, and both prompts give the model that scale.
+- **Demo findings and the course prompt cited studies idstack does not hold, or held them at the wrong tier.** Biggs (1996) is now `[Alignment-1] [T5]`, not `[Alignment-3]` at T2. The non-existent `[Cognitive-2]` is replaced by `[CogLoad-1]` and `[CogLoad-6]`, which exist. Carpenter (2022), Sweller (2011), and Wood (1976), none of which are in `evidence/references.md`, are replaced by studies that are. An unused list of evidence domains that cited unreferenced studies is removed.
+- **The page prompt asked for a `suggestion` severity, which idstack does not use.** It now asks for `critical`, `warning`, or `info`.
+
+### Fixed — the Chrome extension's privacy promises did not match what it does
+
+- **The Settings panel promised that no student data is "ever collected, retained, or used for model training."** None of that held. On a Canvas page the extractor did not recognize, such as Gradebook, People, Inbox, or a discussion, it read the whole page. The panel also points you to a free Google AI Studio key, whose terms let Google use submitted content to improve its products and let human reviewers read it. The extractor now refuses those pages (see above), and the panel says what is sent, to whom, and what Google's free tier allows.
+- **"Leave blank to use the built-in free demo tier" described a service that does not exist.** Without a key, every audit returns the same sample findings, whatever the page says. The panel, README, and PRIVACY.md now say so.
+- **PRIVACY.md said the API key is stored with `chrome.storage.local`.** The code uses `chrome.storage.sync`, which Chrome copies to your Google account when sync is on. The policy now says that. It also discloses that the last 20 audit results are kept in `chrome.storage.local` and that the side panel loads its fonts from Google Fonts. It no longer claims that the extension never touches rosters or grades, or that its design is FERPA-compliant. The README's "Is my data safe?" answer now points to it for the extension.
+- **Correction to the v3.5.0.0 notes.** They said the course crawler audits "syllabi, modules, assignments, discussions, quizzes". It requests the syllabus and assignments only. README repeated the claim, along with a course "dashboard" and a JSON export that do not exist, and is fixed. The v3.5.0.0 entry is left as released.
+
+### For contributors
+
+- **The mutation suite refuses a mutation that changes nothing.** Two cases whose anchors had gone stale kept reporting GUARDED because nothing checked that the mutation had edited anything. The suite now copies the repo once into a snapshot that its baseline smoke run vouches for, and stops on any mutation that leaves the copy unchanged. It grows from 36 cases to 108.
+- **The retired-CLI sweep now covers `docs/superpowers/`.** `--exclude-dir=superpowers` matched that name at any depth and exempted every committed spec and plan.
+- **The extension tests run the shipped code.** They used to load hand-copied `.cjs` twins, which are gone, and `test-extension.sh` fails if one comes back. `test/extension-harness.mjs` stubs the Chrome APIs and a small DOM, so the tests import the shipped modules and now also run the background worker, storage, and side panel. `test/test-evidence-labels.mjs` checks every citation and tier against `evidence/references.md`. `test/test-disclosures.mjs` checks the side panel, PRIVACY.md, and README against the shipped code.
+- **The release workflow pins Node 22**, as the test and mutation jobs already did, and `test-extension.sh` stops with a clear message on a Node too old to import the modules (it needs 20.19+ or 22.7+). The extension suite also has its own CI step, so its full failure output shows.
+- **`bin/package-extension.sh` names the zip from `extension/manifest.json`** and leaves the dev-only `icons/generate-icons.js` out of it. The side panel's version badge is tested against the manifest.
+
 ## v3.5.1.0 (2026-08-29)
 
 Fixes three defects on idstack.org that only show up on a phone, and repairs the test harness that

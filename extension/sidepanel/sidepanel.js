@@ -7,6 +7,9 @@ let activePayload = null;
 let activeCourseContext = null;
 let activeAuditResult = null;
 let activeAuditItem = null;
+let lastAuditBtn = null;
+let lastCourseTarget = null; // `${origin}/courses/${id}` of the last course audit; null after a page audit
+let refreshSeq = 0;
 
 function sanitizeFilename(name) {
   return String(name || 'material')
@@ -25,6 +28,19 @@ function downloadMarkdownFile(filename, content) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// A missing navigator.clipboard throws inside the try, so it is reported too.
+async function copyWithFeedback(btn, text, idleLabel) {
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copied!';
+  } catch (e) {
+    btn.textContent = 'Copy failed';
+  }
+  setTimeout(() => {
+    btn.textContent = idleLabel;
+  }, 2000);
 }
 
 export async function updateDossierBadge() {
@@ -63,10 +79,12 @@ export async function updateDossierUI() {
 
 export async function refreshActiveTab() {
   if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.tabs.query) return;
+  // Tab events can fire back to back; only the newest refresh may write state.
+  const seq = ++refreshSeq;
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.id) return;
+    if (seq !== refreshSeq || !tab || !tab.id) return;
 
     const url = tab.url || '';
     activeCourseContext = detectCourseContext(url);
@@ -75,8 +93,17 @@ export async function refreshActiveTab() {
       auditCourseBtn.style.display = activeCourseContext.isCourseRoot ? 'block' : 'none';
     }
 
+    // No declarative content script: inject the extractor on demand. Its final
+    // statement evaluates to the payload, which comes back as the injection result.
+    // Needs access to the tab: activeTab (clicking the idstack icon on this tab) or a
+    // host permission (*.instructure.com, or a site granted for a course audit).
     try {
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_CONTENT' });
+      const [injection] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content/extractor.js']
+      });
+      if (seq !== refreshSeq) return;
+      const response = injection && injection.result;
       if (response) {
         activePayload = response;
         const pageTypeTag = document.getElementById('page-type-tag');
@@ -86,38 +113,23 @@ export async function refreshActiveTab() {
         return;
       }
     } catch (err) {
-      // Content script may not be injected on pre-existing tabs. Attempt programmatic injection.
-      if (chrome.scripting && chrome.scripting.executeScript) {
-        try {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content/extractor.js']
-          });
-          const retryResponse = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_CONTENT' });
-          if (retryResponse) {
-            activePayload = retryResponse;
-            const pageTypeTag = document.getElementById('page-type-tag');
-            const pageTitle = document.getElementById('page-title');
-            if (pageTypeTag) pageTypeTag.textContent = activeCourseContext.isCourseRoot ? 'Canvas Course Root' : retryResponse.pageType;
-            if (pageTitle) pageTitle.textContent = retryResponse.title;
-            return;
-          }
-        } catch (injectionErr) {
-          // Tab may be a chrome:// or restricted URL
-        }
-      }
+      // No access to this tab yet (switched to it without clicking the icon) or a
+      // restricted page such as chrome:// or the Chrome Web Store.
     }
 
-    // Fallback payload if content script extraction fails
+    if (seq !== refreshSeq) return;
+    // Fallback payload if extraction fails. Without access Chrome hides tab.title too.
     const pageTypeTag = document.getElementById('page-type-tag');
     const pageTitle = document.getElementById('page-title');
     if (pageTypeTag) pageTypeTag.textContent = activeCourseContext.isCourseRoot ? 'Canvas Course Root' : 'Web Page';
-    if (pageTitle) pageTitle.textContent = tab.title || 'Current Tab';
+    if (pageTitle) pageTitle.textContent = tab.title || 'Click the idstack toolbar icon to read this tab';
     activePayload = {
       url: tab.url || '',
       title: tab.title || 'Current Tab',
       pageType: activeCourseContext.isCourseRoot ? 'Canvas Course Root' : 'Web Page',
-      content: ''
+      content: '',
+      // The service worker shows this instead of auditing an empty page.
+      emptyReason: 'idstack cannot read this tab. If you just switched to it, click the idstack toolbar icon, then audit again. Browser pages such as chrome:// and the Chrome Web Store cannot be read.'
     };
   } catch (e) {
     console.warn('Error refreshing active tab:', e);
@@ -130,13 +142,15 @@ export function showState(stateName) {
   if (target) target.classList.add('active');
 }
 
-export function renderResults(data) {
+// source: the page (or course) the request was sent for. The active tab may
+// have changed while the audit ran.
+export function renderResults(data, source) {
   activeAuditResult = data;
   activeAuditItem = {
-    id: activePayload?.url || `item-${Date.now()}`,
-    title: activePayload?.title || 'Course Material',
-    pageType: activePayload?.pageType || 'Web Page',
-    url: activePayload?.url || '',
+    id: source?.url || `item-${Date.now()}`,
+    title: source?.title || 'Course Material',
+    pageType: source?.pageType || 'Web Page',
+    url: source?.url || '',
     result: data,
     timestamp: new Date().toISOString()
   };
@@ -145,6 +159,9 @@ export function renderResults(data) {
   if (addToDossierBtn) {
     addToDossierBtn.textContent = '➕ Add to Dossier';
   }
+  // renderError hides the bar; '' restores the stylesheet's display.
+  const actionsBar = document.querySelector('.result-actions-bar');
+  if (actionsBar) actionsBar.style.display = '';
 
   const container = document.getElementById('results-container');
   if (!container) return;
@@ -155,13 +172,7 @@ export function renderResults(data) {
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
       const contentToCopy = (data && data.improvedDraft && data.improvedDraft.content) || '';
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(contentToCopy);
-      }
-      copyBtn.textContent = '✓ Copied!';
-      setTimeout(() => {
-        copyBtn.textContent = '📋 Copy to Clipboard';
-      }, 2000);
+      copyWithFeedback(copyBtn, contentToCopy, '📋 Copy to Clipboard');
     });
   }
 
@@ -174,11 +185,13 @@ export function renderResults(data) {
   }
 
   container.querySelectorAll('.feedback-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const parent = e.target.parentElement;
-      if (parent) {
-        parent.innerHTML = '<em>Thank you for your feedback!</em>';
-      }
+    btn.addEventListener('click', () => {
+      const row = btn.parentElement;
+      if (!row) return;
+      // Replace only the vote controls; the row also holds #re-audit-btn.
+      row.querySelectorAll('.feedback-btn').forEach((b) => b.remove());
+      const prompt = row.querySelector('span');
+      if (prompt) prompt.innerHTML = '<em>Thank you for your feedback!</em>';
     });
   });
 
@@ -186,6 +199,11 @@ export function renderResults(data) {
 }
 
 export function renderError(errorMessage) {
+  // Clear the last result so Add to Dossier / Export .md cannot act on it.
+  activeAuditItem = null;
+  const actionsBar = document.querySelector('.result-actions-bar');
+  if (actionsBar) actionsBar.style.display = 'none';
+
   const container = document.getElementById('results-container');
   if (!container) return;
 
@@ -216,8 +234,12 @@ export function renderError(errorMessage) {
   if (retryBtn) {
     retryBtn.addEventListener('click', () => {
       showState('ready');
-      const btn = document.getElementById('audit-btn');
-      if (btn) btn.click();
+      // The course button reads activeCourseContext when clicked. After a tab switch to
+      // another course, or off Canvas, re-clicking it would crawl, and ask for access
+      // to, whatever is active now instead of the course that failed.
+      const ctx = activeCourseContext || {};
+      if (lastCourseTarget && lastCourseTarget !== `${ctx.origin}/courses/${ctx.courseId}`) return;
+      if (lastAuditBtn) lastAuditBtn.click();
     });
   }
 
@@ -260,7 +282,11 @@ if (exportSingleMdBtn) {
 const auditBtn = document.getElementById('audit-btn');
 if (auditBtn) {
   auditBtn.addEventListener('click', async () => {
+    lastAuditBtn = auditBtn;
+    lastCourseTarget = null;
     if (!activePayload) await refreshActiveTab();
+    // Label the result with the page sent, not the tab active when the reply lands.
+    const sent = activePayload;
 
     const progressCard = document.getElementById('crawl-progress-card');
     if (progressCard) progressCard.style.display = 'none';
@@ -272,13 +298,13 @@ if (auditBtn) {
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       try {
-        chrome.runtime.sendMessage({ action: 'RUN_AUDIT', payload: activePayload }, (response) => {
+        chrome.runtime.sendMessage({ action: 'RUN_AUDIT', payload: sent }, (response) => {
           if (chrome.runtime.lastError) {
             renderError(chrome.runtime.lastError.message);
             return;
           }
           if (response && response.success) {
-            renderResults(response.data);
+            renderResults(response.data, sent);
           } else {
             renderError(response?.error || 'Unknown error occurred during audit.');
           }
@@ -294,12 +320,23 @@ if (auditBtn) {
 const auditCourseBtn = document.getElementById('audit-course-btn');
 if (auditCourseBtn) {
   auditCourseBtn.addEventListener('click', async () => {
-    if (!activePayload) await refreshActiveTab();
-
-    const url = (activePayload && activePayload.url) || '';
-    const courseCtx = activeCourseContext || detectCourseContext(url);
-    const origin = courseCtx.origin || (url ? new URL(url).origin : '');
-    const courseId = courseCtx.courseId;
+    lastAuditBtn = auditCourseBtn;
+    // Shown only after refreshActiveTab() found a course root, so the context is set.
+    const { origin, courseId } = activeCourseContext || {};
+    lastCourseTarget = `${origin}/courses/${courseId}`;
+    // permissions.request needs this click's user gesture, so it comes before any other
+    // await. Already-held access (*.instructure.com) resolves true with no prompt; other
+    // Canvas hosts get a one-time Chrome prompt for that site only.
+    let granted = false;
+    try {
+      granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
+    } catch (err) {
+      // Not a requestable origin (optional_host_permissions covers https only)
+    }
+    if (!granted) {
+      renderError(`idstack needs access to ${origin} to audit the whole course.`);
+      return;
+    }
 
     const progressCard = document.getElementById('crawl-progress-card');
     const statusText = document.getElementById('crawl-status-text');
@@ -337,7 +374,12 @@ if (auditCourseBtn) {
             return;
           }
           if (response && response.success) {
-            renderResults(response.data);
+            // Same label as the worker's auditHistory entry for this course.
+            renderResults(response.data, {
+              url: `${origin}/courses/${courseId}`,
+              title: response.courseData?.title || 'Canvas Course',
+              pageType: 'Canvas Course (Full Audit)'
+            });
           } else {
             renderError(response?.error || 'Unknown error occurred during course audit.');
           }
@@ -395,13 +437,7 @@ if (copyDossierMdBtn) {
       ? `Course ${activeCourseContext.courseId}`
       : (activePayload?.title || 'Canvas Course');
     const md = compileDossierToMarkdown(dossier, courseTitle);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(md);
-    }
-    copyDossierMdBtn.textContent = '✓ Copied!';
-    setTimeout(() => {
-      copyDossierMdBtn.textContent = '📋 Copy Markdown';
-    }, 2000);
+    await copyWithFeedback(copyDossierMdBtn, md, '📋 Copy Markdown');
   });
 }
 
@@ -482,6 +518,13 @@ if (typeof chrome !== 'undefined' && chrome.tabs) {
   if (chrome.tabs.onUpdated) {
     chrome.tabs.onUpdated.addListener(handleTabUpdated);
   }
+}
+
+// The service worker announces an icon click: activeTab now covers the current tab.
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg && msg.action === 'TAB_ACCESS_GRANTED') refreshActiveTab();
+  });
 }
 
 // Initial tab detection on load

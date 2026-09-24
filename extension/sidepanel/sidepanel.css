@@ -29,13 +29,12 @@
   /* Severity palette */
   --severity-critical: #8c2515;
   --severity-warning: #7a4f0c;
-  --severity-suggestion: #2f7a4a;
   --severity-info: #344566;
 
   --sev-critical-bg: #f5dcd5;
   --sev-warning-bg: #fbf0d9;
-  --sev-suggestion-bg: #eef6f0;
   --sev-info-bg: #e7eaf1;
+  --consensus-bg: #eef6f0;
 
   /* Typography */
   --font-display: 'Source Serif 4', 'Source Serif Pro', 'Charter', Georgia, serif;
@@ -71,13 +70,12 @@
 
     --severity-critical: #e89786;
     --severity-warning: #e3b25c;
-    --severity-suggestion: #5fc185;
     --severity-info: #9bafd2;
 
     --sev-critical-bg: #2e1612;
     --sev-warning-bg: #2e2210;
-    --sev-suggestion-bg: #14281b;
     --sev-info-bg: #1a2030;
+    --consensus-bg: #14281b;
   }
 }
 
@@ -289,7 +287,7 @@ a.citation:hover {
   font-size: 11px;
   font-weight: 500;
   color: var(--tier-t1);
-  background: var(--sev-suggestion-bg);
+  background: var(--consensus-bg);
   border: 1px solid var(--tier-t1);
   padding: 1px 6px;
   border-radius: 2px;
@@ -308,10 +306,6 @@ a.citation:hover {
 
 .finding-card.severity-warning {
   border-left-color: var(--severity-warning);
-}
-
-.finding-card.severity-suggestion {
-  border-left-color: var(--severity-suggestion);
 }
 
 .finding-card.severity-info {

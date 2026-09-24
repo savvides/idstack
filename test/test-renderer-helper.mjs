@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { renderAuditHTML, escapeHtml } = require('../extension/sidepanel/renderer-helper.cjs');
+import assert from 'node:assert';
+import { renderAuditHTML, renderDossierListHTML, escapeHtml } from '../extension/sidepanel/renderer-helper.js';
 
 // Test 1: Full mock audit data rendering
 const mockData = {
@@ -147,7 +147,6 @@ assert.ok(renderedCourse.includes('Course Alignment Matrix'));
 assert.ok(renderedCourse.includes('High (88%)'));
 
 // Test 8: Dossier Item Rendering in Drawer
-const { renderDossierListHTML } = require('../extension/sidepanel/renderer-helper.cjs');
 assert.strictEqual(typeof renderDossierListHTML, 'function', 'renderDossierListHTML must be a function');
 const listHtml = renderDossierListHTML([
   { id: '1', title: 'Week 1 Quiz', pageType: 'Assignment', result: { summary: { bloomsLevel: 'Remember', alignmentScore: 'Low' } } }
@@ -175,7 +174,15 @@ assert.ok(!escapedDossierHtml.includes('<script>'), 'Must escape script tags in 
 assert.ok(!escapedDossierHtml.includes('<img src=x>'), 'Must escape img tags in dossier page type');
 assert.ok(escapedDossierHtml.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), 'Must properly escape characters in dossier title');
 
-// Test 9: Consensus Badge and DOI Citation Link Rendering
+// Test 9: malformed model JSON renders instead of throwing (F9). The panel
+// renders inside a runtime.sendMessage callback, so a throw leaves the spinner up.
+assert.ok(renderAuditHTML({ findings: { 0: { tier: 'T1' } } }).includes('Evidence-Based Findings (0)'), 'non-array findings render as none');
+const junk = renderAuditHTML({ findings: [null, 'oops', { tier: 'T5', citation: '[Alignment-1]' }] });
+assert.ok(junk.includes('Evidence-Based Findings (1)'), 'null and non-object findings are dropped');
+assert.ok(junk.includes('[Alignment-1]'), 'a valid finding next to junk still renders');
+assert.ok(renderAuditHTML({ findings: [{ tier: 1, citation: '[CogLoad-1]' }] }).includes('tier-badge tier-1'), 'a non-string tier is stringified');
+
+// Test 10: Consensus Badge and DOI Citation Link Rendering
 const consensusData = {
   summary: {
     bloomsLevel: 'Apply',
@@ -220,6 +227,5 @@ assert.ok(renderedConsensus.includes('target="_blank"'), 'Must include target="_
 assert.ok(renderedConsensus.includes('rel="noopener noreferrer"'), 'Must include rel="noopener noreferrer" for DOI link');
 
 console.log('✅ Side panel renderer, escaping, course matrix, dossier & consensus tests passed.');
-
 
 

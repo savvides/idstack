@@ -26,6 +26,13 @@ jobs:
             echo "plugin.json version does not match VERSION ($VER)" >&2; exit 1; }
           grep -qF "## v$VER" CHANGELOG.md || {
             echo "CHANGELOG.md has no entry for v$VER" >&2; exit 1; }
+      # test/test-extension.sh imports the shipped extension ES modules. extension/ has no
+      # package.json, so Node must detect ESM syntax in .js files itself (default only from
+      # 20.19 / 22.7). Pinned so the runner image's Node cannot change under the suite.
+      # Required here too: smoke-test.sh runs test-extension.sh.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Run test suite
         run: ./test/smoke-test.sh
       - name: Create GitHub Release

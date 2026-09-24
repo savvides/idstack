@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { parseAuditResponse, cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } = require('../extension/background/parser-helper.cjs');
+import assert from 'node:assert';
+import { parseAuditResponse, cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } from '../extension/background/parser-helper.js';
 
 // Test 1: Markdown fenced JSON with '```json'
 const rawLlmResponse = "```json\n{\n  \"summary\": {\n    \"bloomsLevel\": \"Remember\",\n    \"alignmentScore\": \"Moderate\",\n    \"keyTakeaway\": \"Quiz focuses only on memorization.\"\n  },\n  \"findings\": [],\n  \"improvedDraft\": {\n    \"title\": \"Analysis Prompt\",\n    \"content\": \"Compare and contrast\"\n  }\n}\n```";
@@ -28,6 +28,12 @@ assert.strictEqual(parsedWhitespace.summary.bloomsLevel, 'Evaluate');
 assert.strictEqual(typeof cleanJsonResponse, 'function');
 const cleaned = cleanJsonResponse('{"key": "value"}');
 assert.strictEqual(cleaned.key, 'value');
+// Cases from closed bot PRs #99 and #101: arrays, bare whitespace, and malformed JSON.
+assert.deepStrictEqual(cleanJsonResponse('["item1", "item2"]'), ['item1', 'item2']);
+assert.strictEqual(cleanJsonResponse('  \n\t {"key": "value"} \n ').key, 'value');
+assert.throws(() => cleanJsonResponse('```json\n{"key": "value",}\n```'), SyntaxError, 'a trailing comma must not parse');
+assert.throws(() => cleanJsonResponse('{"key": "value"'), SyntaxError, 'truncated JSON must not parse');
+assert.throws(() => cleanJsonResponse('not json'), SyntaxError);
 
 // Test 6: Demo fallback when API key is not configured
 assert.strictEqual(typeof getDemoAuditResult, 'function', 'getDemoAuditResult must be a function');
@@ -42,9 +48,9 @@ assert.ok(demoData.summary.keyTakeaway.includes('Settings'), 'Demo result must n
 assert.ok(demoData.findings.length >= 2, 'Demo result must provide multiple evidence-based findings');
 
 const hasT1 = demoData.findings.some(f => f.tier === 'T1');
-const hasT2 = demoData.findings.some(f => f.tier === 'T2');
+const hasT5 = demoData.findings.some(f => f.tier === 'T5');
 assert.ok(hasT1, 'Demo findings must include T1 evidence tier badge');
-assert.ok(hasT2, 'Demo findings must include T2 evidence tier badge');
+assert.ok(hasT5, 'Demo findings must include T5 evidence tier badge');
 
 assert.ok(demoData.improvedDraft.title, 'Demo draft must include title');
 assert.ok(demoData.improvedDraft.content.includes('Settings'), 'Demo draft must remind user to configure API key in Settings');

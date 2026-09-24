@@ -140,7 +140,7 @@ Every suite below runs in CI (`.github/workflows/test.yml`) on every push and pu
 | `test/test-version-classifier.sh` | `bin/lib/version-classify.sh` |
 | `test/test-plugin-status.sh` | `bin/lib/plugin-status.sh` |
 | `test/test-preamble-python.sh` | The preamble's embedded Python, on 3.9 and 3.12 |
-| `test/test-extension.sh` | Chrome extension packaging and static analysis, plus eight node unit suites under `test/test-*.js` |
+| `test/test-extension.sh` | The Chrome extension. Imports the shipped `extension/` modules through `test/extension-harness.mjs` (Node 20.19+ or 22.7+) and fails if a hand-copied `.cjs` twin comes back |
 | `test/test-rendered-landing.js` | Renders `docs/index.html` in headless Chrome across 11 widths and asserts the rendered outcome: no horizontal scroll, 44px touch targets, breakpoint column counts, sticky nav. Catches regressions the text suite cannot see (selector lists, `@container`, nested or print-only media queries, a `<style>` inside an HTML comment). Skips loudly with no browser |
 | `test/test-responsive-landing.js` | Responsive and mobile-ergonomics invariants for `docs/index.html` — fluid tokens, notch-safe gutters, breakpoint-scoped rules, touch targets. Runs on node, via `smoke-test.sh` |
 | `python3 test/check-evidence-cards.py .` | Verifies landing page evidence card study counts and tier ranges against `evidence/references.md` |
