@@ -174,6 +174,14 @@ assert.ok(!escapedDossierHtml.includes('<script>'), 'Must escape script tags in 
 assert.ok(!escapedDossierHtml.includes('<img src=x>'), 'Must escape img tags in dossier page type');
 assert.ok(escapedDossierHtml.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), 'Must properly escape characters in dossier title');
 
+// Test 9: malformed model JSON renders instead of throwing (F9). The panel
+// renders inside a runtime.sendMessage callback, so a throw leaves the spinner up.
+assert.ok(renderAuditHTML({ findings: { 0: { tier: 'T1' } } }).includes('Evidence-Based Findings (0)'), 'non-array findings render as none');
+const junk = renderAuditHTML({ findings: [null, 'oops', { tier: 'T5', citation: '[Alignment-1]' }] });
+assert.ok(junk.includes('Evidence-Based Findings (1)'), 'null and non-object findings are dropped');
+assert.ok(junk.includes('[Alignment-1]'), 'a valid finding next to junk still renders');
+assert.ok(renderAuditHTML({ findings: [{ tier: 1, citation: '[CogLoad-1]' }] }).includes('tier-badge tier-1'), 'a non-string tier is stringified');
+
 console.log('✅ Side panel renderer, escaping, course matrix & dossier tests passed.');
 
 

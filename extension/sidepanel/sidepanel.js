@@ -7,6 +7,8 @@ let activePayload = null;
 let activeCourseContext = null;
 let activeAuditResult = null;
 let activeAuditItem = null;
+let lastAuditBtn = null;
+let refreshSeq = 0;
 
 function sanitizeFilename(name) {
   return String(name || 'material')
@@ -25,6 +27,19 @@ function downloadMarkdownFile(filename, content) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// A missing navigator.clipboard throws inside the try, so it is reported too.
+async function copyWithFeedback(btn, text, idleLabel) {
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copied!';
+  } catch (e) {
+    btn.textContent = 'Copy failed';
+  }
+  setTimeout(() => {
+    btn.textContent = idleLabel;
+  }, 2000);
 }
 
 export async function updateDossierBadge() {
@@ -63,10 +78,12 @@ export async function updateDossierUI() {
 
 export async function refreshActiveTab() {
   if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.tabs.query) return;
+  // Tab events can fire back to back; only the newest refresh may write state.
+  const seq = ++refreshSeq;
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.id) return;
+    if (seq !== refreshSeq || !tab || !tab.id) return;
 
     const url = tab.url || '';
     activeCourseContext = detectCourseContext(url);
@@ -84,6 +101,7 @@ export async function refreshActiveTab() {
         target: { tabId: tab.id },
         files: ['content/extractor.js']
       });
+      if (seq !== refreshSeq) return;
       const response = injection && injection.result;
       if (response) {
         activePayload = response;
@@ -98,6 +116,7 @@ export async function refreshActiveTab() {
       // restricted page such as chrome:// or the Chrome Web Store.
     }
 
+    if (seq !== refreshSeq) return;
     // Fallback payload if extraction fails. Without access Chrome hides tab.title too.
     const pageTypeTag = document.getElementById('page-type-tag');
     const pageTitle = document.getElementById('page-title');
@@ -122,13 +141,15 @@ export function showState(stateName) {
   if (target) target.classList.add('active');
 }
 
-export function renderResults(data) {
+// source: the page (or course) the request was sent for. The active tab may
+// have changed while the audit ran.
+export function renderResults(data, source) {
   activeAuditResult = data;
   activeAuditItem = {
-    id: activePayload?.url || `item-${Date.now()}`,
-    title: activePayload?.title || 'Course Material',
-    pageType: activePayload?.pageType || 'Web Page',
-    url: activePayload?.url || '',
+    id: source?.url || `item-${Date.now()}`,
+    title: source?.title || 'Course Material',
+    pageType: source?.pageType || 'Web Page',
+    url: source?.url || '',
     result: data,
     timestamp: new Date().toISOString()
   };
@@ -137,6 +158,9 @@ export function renderResults(data) {
   if (addToDossierBtn) {
     addToDossierBtn.textContent = '➕ Add to Dossier';
   }
+  // renderError hides the bar; '' restores the stylesheet's display.
+  const actionsBar = document.querySelector('.result-actions-bar');
+  if (actionsBar) actionsBar.style.display = '';
 
   const container = document.getElementById('results-container');
   if (!container) return;
@@ -147,13 +171,7 @@ export function renderResults(data) {
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
       const contentToCopy = (data && data.improvedDraft && data.improvedDraft.content) || '';
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(contentToCopy);
-      }
-      copyBtn.textContent = '✓ Copied!';
-      setTimeout(() => {
-        copyBtn.textContent = '📋 Copy to Clipboard';
-      }, 2000);
+      copyWithFeedback(copyBtn, contentToCopy, '📋 Copy to Clipboard');
     });
   }
 
@@ -166,11 +184,13 @@ export function renderResults(data) {
   }
 
   document.querySelectorAll('.feedback-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const parent = e.target.parentElement;
-      if (parent) {
-        parent.innerHTML = '<em>Thank you for your feedback!</em>';
-      }
+    btn.addEventListener('click', () => {
+      const row = btn.parentElement;
+      if (!row) return;
+      // Replace only the vote controls; the row also holds #re-audit-btn.
+      row.querySelectorAll('.feedback-btn').forEach((b) => b.remove());
+      const prompt = row.querySelector('span');
+      if (prompt) prompt.innerHTML = '<em>Thank you for your feedback!</em>';
     });
   });
 
@@ -178,6 +198,11 @@ export function renderResults(data) {
 }
 
 export function renderError(errorMessage) {
+  // Clear the last result so Add to Dossier / Export .md cannot act on it.
+  activeAuditItem = null;
+  const actionsBar = document.querySelector('.result-actions-bar');
+  if (actionsBar) actionsBar.style.display = 'none';
+
   const container = document.getElementById('results-container');
   if (!container) return;
 
@@ -208,8 +233,10 @@ export function renderError(errorMessage) {
   if (retryBtn) {
     retryBtn.addEventListener('click', () => {
       showState('ready');
-      const btn = document.getElementById('audit-btn');
-      if (btn) btn.click();
+      // A tab switch can hide Audit Entire Course; re-clicking it would crawl,
+      // and ask for access to, whatever site is active now.
+      if (lastAuditBtn && lastAuditBtn.style.display === 'none') return;
+      if (lastAuditBtn) lastAuditBtn.click();
     });
   }
 
@@ -252,7 +279,10 @@ if (exportSingleMdBtn) {
 const auditBtn = document.getElementById('audit-btn');
 if (auditBtn) {
   auditBtn.addEventListener('click', async () => {
+    lastAuditBtn = auditBtn;
     if (!activePayload) await refreshActiveTab();
+    // Label the result with the page sent, not the tab active when the reply lands.
+    const sent = activePayload;
 
     const progressCard = document.getElementById('crawl-progress-card');
     if (progressCard) progressCard.style.display = 'none';
@@ -264,13 +294,13 @@ if (auditBtn) {
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       try {
-        chrome.runtime.sendMessage({ action: 'RUN_AUDIT', payload: activePayload }, (response) => {
+        chrome.runtime.sendMessage({ action: 'RUN_AUDIT', payload: sent }, (response) => {
           if (chrome.runtime.lastError) {
             renderError(chrome.runtime.lastError.message);
             return;
           }
           if (response && response.success) {
-            renderResults(response.data);
+            renderResults(response.data, sent);
           } else {
             renderError(response?.error || 'Unknown error occurred during audit.');
           }
@@ -286,6 +316,7 @@ if (auditBtn) {
 const auditCourseBtn = document.getElementById('audit-course-btn');
 if (auditCourseBtn) {
   auditCourseBtn.addEventListener('click', async () => {
+    lastAuditBtn = auditCourseBtn;
     // Shown only after refreshActiveTab() found a course root, so the context is set.
     const { origin, courseId } = activeCourseContext || {};
     // permissions.request needs this click's user gesture, so it comes before any other
@@ -338,7 +369,12 @@ if (auditCourseBtn) {
             return;
           }
           if (response && response.success) {
-            renderResults(response.data);
+            // Same label as the worker's auditHistory entry for this course.
+            renderResults(response.data, {
+              url: `${origin}/courses/${courseId}`,
+              title: response.courseData?.title || 'Canvas Course',
+              pageType: 'Canvas Course (Full Audit)'
+            });
           } else {
             renderError(response?.error || 'Unknown error occurred during course audit.');
           }
@@ -396,13 +432,7 @@ if (copyDossierMdBtn) {
       ? `Course ${activeCourseContext.courseId}`
       : (activePayload?.title || 'Canvas Course');
     const md = compileDossierToMarkdown(dossier, courseTitle);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(md);
-    }
-    copyDossierMdBtn.textContent = '✓ Copied!';
-    setTimeout(() => {
-      copyDossierMdBtn.textContent = '📋 Copy Markdown';
-    }, 2000);
+    await copyWithFeedback(copyDossierMdBtn, md, '📋 Copy Markdown');
   });
 }
 

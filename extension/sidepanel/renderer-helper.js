@@ -15,12 +15,13 @@ export function escapeHtml(str) {
 export function renderAuditHTML(data) {
   if (!data) return '';
   const summary = data.summary || { bloomsLevel: 'N/A', alignmentScore: 'N/A', keyTakeaway: '' };
-  const findings = data.findings || [];
+  const findings = Array.isArray(data.findings) ? data.findings.filter((f) => f && typeof f === 'object') : [];
   const improvedDraft = data.improvedDraft || { title: 'Improved Draft', content: '' };
 
   const findingsHTML = findings.map(f => {
-    const tier = escapeHtml(f.tier || 'T1');
-    const tierClass = escapeHtml((f.tier || 'T1').toLowerCase());
+    const tierLabel = String(f.tier || 'T1');
+    const tier = escapeHtml(tierLabel);
+    const tierClass = escapeHtml(tierLabel.toLowerCase());
     const severity = escapeHtml(f.severity || 'info');
     const citation = escapeHtml(f.citation || '');
     const observation = escapeHtml(f.observation || '');

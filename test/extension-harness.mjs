@@ -71,7 +71,8 @@ function storageArea(data) {
 
 // Installs globalThis.chrome. Options:
 //   sync, local          initial chrome.storage contents
-//   tabs                 what chrome.tabs.query resolves to
+//   tabs                 what chrome.tabs.query resolves to, or a function
+//                        returning it (read on every query, so a test can switch tabs)
 //   onRuntimeMessage     (message) => response for chrome.runtime.sendMessage
 //   onExecuteScript      (injection) => InjectionResult[] for
 //                        chrome.scripting.executeScript; omitted = reject like
@@ -106,7 +107,7 @@ export function installChrome({ sync = {}, local = {}, tabs = [], onRuntimeMessa
     },
     storage: { sync: storageArea(storage.sync), local: storageArea(storage.local) },
     tabs: {
-      query: async () => tabs,
+      query: async () => (typeof tabs === 'function' ? tabs() : tabs),
       onActivated: { addListener: (fn) => listeners.tabActivated.push(fn) },
       onUpdated: { addListener: (fn) => listeners.tabUpdated.push(fn) }
     },
@@ -174,6 +175,17 @@ export function jsonResponse(body, init = {}) {
 // (querySelector) rather than on decoded text.
 const VOID_TAGS = new Set(['meta', 'link', 'img', 'br', 'hr', 'input']);
 
+// What click listeners threw or rejected with. Chrome reports these as uncaught
+// errors, so a test asserts this stays empty rather than letting one crash it.
+export const clickErrors = [];
+// A suite that never inspects clickErrors still fails on one.
+process.on('exit', () => {
+  if (clickErrors.length) {
+    console.error('A click handler threw or rejected:', clickErrors);
+    process.exitCode = 1;
+  }
+});
+
 class FakeElement {
   constructor(tagName, attrs = {}) {
     this.tagName = tagName.toLowerCase();
@@ -209,10 +221,15 @@ class FakeElement {
   }
   appendChild(child) { child.parentElement = this; this.children.push(child); return child; }
   removeChild(child) { this.children = this.children.filter((c) => c !== child); return child; }
+  remove() { if (this.parentElement) this.parentElement.removeChild(this); }
   addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
+  // Each listener runs synchronously up to its first await, as in Chrome. The
+  // returned promise settles once every (async) listener has finished.
   click() {
     const event = { type: 'click', target: this, currentTarget: this, stopPropagation() {}, preventDefault() {} };
-    for (const fn of this.listeners.click || []) fn(event);
+    return Promise.all((this.listeners.click || []).map(async (fn) => {
+      try { await fn(event); } catch (e) { clickErrors.push(e); }
+    }));
   }
   _descendants() {
     const out = [];

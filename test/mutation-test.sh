@@ -1063,6 +1063,185 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "HTML sign-in page audited as the Google Doc" "$WORK/r/test/test-extension.sh"
 
+# 30a-30l. The side panel labelled a result with whatever tab was active when
+# the reply landed, let a slow tab refresh overwrite a newer one, left the last
+# result behind Add to Dossier after an error, retried the single-page audit
+# whatever had failed, wiped Audit Another Page on a vote, and said "Copied!"
+# when the clipboard write failed. The renderer threw on malformed findings,
+# inside the sendMessage callback, so the spinner stayed up.
+# test-sidepanel-state.mjs drives the shipped sidepanel.js through each case.
+
+# 30a. a page audit is labelled with the tab active when the reply lands ->
+# test-sidepanel-state must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "renderResults(response.data, sent);"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "renderResults(response.data, activePayload);", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "page audit labelled with the tab active when the reply lands" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30b. a course audit is labelled with the current page, not the course the
+# worker crawled -> test-sidepanel-state must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ("renderResults(response.data, {\n"
+       "              url: `${origin}/courses/${courseId}`,\n"
+       "              title: response.courseData?.title || 'Canvas Course',\n"
+       "              pageType: 'Canvas Course (Full Audit)'\n"
+       "            });")
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "renderResults(response.data, activePayload);", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course audit label ignores the crawled course" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30c. every refresh passes the sequence check -> test-sidepanel-state must
+# fail. A slow injection for a tab the user already left overwrites the newer
+# tab's title and payload, and the next audit sends the wrong page.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "const seq = ++refreshSeq;"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "const seq = refreshSeq;", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "stale tab refresh overwrites a newer tab" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30d. an error leaves the previous result actionable -> test-sidepanel-state
+# must fail. Add to Dossier would save the last success under the failed page.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "\n  activeAuditItem = null;\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "error leaves the previous result actionable" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30e. the action bar hidden by an error never comes back -> test-sidepanel-state must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "  if (actionsBar) actionsBar.style.display = '';\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "action bar never returns after an error" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30f. Copy to Clipboard says "Copied!" whether or not the write worked ->
+# test-sidepanel-state must fail. The .catch keeps the failure on the label.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "copyWithFeedback(copyBtn, contentToCopy, '📋 Copy to Clipboard');"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "navigator.clipboard.writeText(contentToCopy).catch(() => {}); copyBtn.textContent = '✓ Copied!';", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "copy button claims success on a rejected write" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30g. Copy Markdown lets a rejected write escape the click handler ->
+# test-sidepanel-state must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "await copyWithFeedback(copyDossierMdBtn, md, '📋 Copy Markdown');"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "await navigator.clipboard.writeText(md); copyDossierMdBtn.textContent = '✓ Copied!';", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "dossier copy leaks an unhandled rejection" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30h. Retry always runs the single-page audit -> test-sidepanel-state must
+# fail. A failed course audit was retried as an audit of the current page.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "if (lastAuditBtn) lastAuditBtn.click();"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "document.getElementById('audit-btn').click();", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "Retry always runs the single-page audit" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30m. Retry clicks the hidden course button after a switch to a non-course tab
+# -> test-sidepanel-state must fail. It would crawl, and ask for access to,
+# whatever site is active now.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "      if (lastAuditBtn && lastAuditBtn.style.display === 'none') return;\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "Retry clicks the hidden course button" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30i. a feedback vote rewrites the whole row -> test-sidepanel-state must fail.
+# The row also holds Audit Another Page, the only way back to the ready state.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "if (prompt) prompt.innerHTML = '<em>Thank you for your feedback!</em>';"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "row.innerHTML = '<em>Thank you for your feedback!</em>';", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "feedback vote wipes Audit Another Page" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30j. the renderer trusts a non-array findings value -> test-renderer-helper must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/renderer-helper.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Array.isArray(data.findings) ? data.findings.filter((f) => f && typeof f === 'object') : []"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "data.findings || []", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "renderer trusts non-array findings" node "$WORK/r/test/test-renderer-helper.mjs"
+
+# 30k. the renderer keeps null and non-object findings -> test-renderer-helper must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/renderer-helper.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ".filter((f) => f && typeof f === 'object')"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "renderer crashes on a null finding entry" node "$WORK/r/test/test-renderer-helper.mjs"
+
+# 30l. the renderer calls toLowerCase on a non-string tier -> test-renderer-helper must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/renderer-helper.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "String(f.tier || 'T1')"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "(f.tier || 'T1')", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "renderer calls toLowerCase on a non-string tier" node "$WORK/r/test/test-renderer-helper.mjs"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
