@@ -1292,9 +1292,9 @@ fresh
 python3 - "$WORK/r/PRIVACY.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "Your API key is saved in `chrome.storage.sync`."
+old = "Your Google API key and your Consensus key are saved in `chrome.storage.sync`."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "Your API key is saved in `chrome.storage.local`.", 1)
+s = s.replace(old, "Your Google API key and your Consensus key are saved in `chrome.storage.local`.", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "privacy policy names the wrong storage area for the API key" "$WORK/r/test/test-extension.sh"
