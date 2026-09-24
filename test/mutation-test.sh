@@ -1179,23 +1179,10 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "Retry always runs the single-page audit" node "$WORK/r/test/test-sidepanel-state.mjs"
 
-# 30m. Retry clicks the hidden course button after a switch to a non-course tab
-# -> test-sidepanel-state must fail. It would crawl, and ask for access to,
-# whatever site is active now.
-fresh
-python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "      if (lastAuditBtn && lastAuditBtn.style.display === 'none') return;\n"
-assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "", 1)
-open(p, 'w', encoding='utf-8').write(s)
-PY
-expect_fail "Retry clicks the hidden course button" node "$WORK/r/test/test-sidepanel-state.mjs"
-
-# 30n. Retry re-clicks the course button after a switch to another course root
-# -> test-sidepanel-state must fail. The button stays visible there, so 30m's
-# guard passes and Retry would audit the other course (automated review on #109).
+# 30m. Retry re-clicks the course button after a tab switch -> test-sidepanel-state
+# must fail. The button reads the active course when clicked, so Retry would crawl,
+# and ask for access to, the course or site now active. Both switch scenarios (to a
+# non-course tab, and to another course root, which keeps the button visible) fail.
 fresh
 python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
 import sys
@@ -1205,7 +1192,7 @@ assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "Retry audits the course now active, not the one that failed" node "$WORK/r/test/test-sidepanel-state.mjs"
+expect_fail "Retry audits the course or site now active, not the one that failed" node "$WORK/r/test/test-sidepanel-state.mjs"
 
 # 30i. a feedback vote rewrites the whole row -> test-sidepanel-state must fail.
 # The row also holds Audit Another Page, the only way back to the ready state.

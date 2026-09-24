@@ -234,11 +234,9 @@ export function renderError(errorMessage) {
   if (retryBtn) {
     retryBtn.addEventListener('click', () => {
       showState('ready');
-      // A tab switch can hide Audit Entire Course; re-clicking it would crawl,
-      // and ask for access to, whatever site is active now.
-      if (lastAuditBtn && lastAuditBtn.style.display === 'none') return;
-      // A switch to another course root keeps the button visible; re-clicking it would
-      // audit that course instead of the one that failed.
+      // The course button reads activeCourseContext when clicked. After a tab switch to
+      // another course, or off Canvas, re-clicking it would crawl, and ask for access
+      // to, whatever is active now instead of the course that failed.
       const ctx = activeCourseContext || {};
       if (lastCourseTarget && lastCourseTarget !== `${ctx.origin}/courses/${ctx.courseId}`) return;
       if (lastAuditBtn) lastAuditBtn.click();

@@ -157,6 +157,21 @@ const scenarios = {
     assert.strictEqual(crawls[0].payload.courseId, '123');
   },
 
+  async 'Retry from another page of the same course re-runs that course audit (F14)'() {
+    const root = 'https://x.instructure.com/courses/123';
+    const sub = 'https://x.instructure.com/courses/123/assignments/9';
+    const p = await loadPanel({ tab: { id: 1, url: root }, payloads: { 1: page('Home', root, 'Canvas LMS Page'), 2: page('Lab 9', sub) } });
+    await p.$('audit-course-btn').click();
+    await flush();
+    await p.reply({ success: false, error: 'Failed to fetch Canvas course info (401)' });
+    await p.switchTab({ id: 2, url: sub });
+    await p.$('error-retry-btn').click();
+    await flush();
+    const crawls = p.h.sent.filter((m) => m.action === 'CRAWL_AND_AUDIT_COURSE');
+    assert.strictEqual(crawls.length, 2, 'Retry re-runs the course that failed');
+    assert.strictEqual(crawls[1].payload.courseId, '123');
+  },
+
   async 'a feedback vote keeps the Audit Another Page button (F14)'() {
     const p = await loadPanel({ tab: { id: 1, url: A.url }, payloads: { 1: A } });
     await p.$('audit-btn').click();

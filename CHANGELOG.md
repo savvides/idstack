@@ -39,7 +39,7 @@ To update: `cd` into your idstack clone, then `git pull && ./setup`. The Chrome 
 ### Fixed — the side panel labelled, kept, or retried the wrong result
 
 - **A result could carry the wrong page's name.** A page audit is now labelled with the page that was sent, not whichever tab is active when the answer arrives, and a course audit is labelled with the course. A slow tab read can no longer overwrite a newer one.
-- **After an error, the previous result stayed actionable.** The error card now clears it and hides **Add to Dossier** and **Export .md** until the next successful audit. **Retry** re-runs the audit you started, page or course, instead of always running a page audit. If you have since moved to a different course, it goes back to the ready screen instead of auditing that course.
+- **After an error, the previous result stayed actionable.** The error card now clears it and hides **Add to Dossier** and **Export .md** until the next successful audit. **Retry** re-runs the audit you started, page or course, instead of always running a page audit. If the tab now shows a different course, or no course, Retry goes back to the ready screen instead of auditing it.
 - **A thumbs-up or thumbs-down vote also removed Audit Another Page.** Now only the vote buttons go.
 - **The copy buttons did not report a refused clipboard.** One said "Copied!" anyway and the other failed silently. Both now say "Copy failed".
 - **The results view crashed on findings that were not a list, on empty entries, or on a tier that was not text.** It now handles all three.
@@ -59,7 +59,7 @@ To update: `cd` into your idstack clone, then `git pull && ./setup`. The Chrome 
 
 ### For contributors
 
-- **The mutation suite refuses a mutation that changes nothing.** Two cases whose anchors had gone stale kept reporting GUARDED because nothing checked that the mutation had edited anything. The suite now copies the repo once into a snapshot that its baseline smoke run vouches for, and stops on any mutation that leaves the copy unchanged. It grows from 36 cases to 109.
+- **The mutation suite refuses a mutation that changes nothing.** Two cases whose anchors had gone stale kept reporting GUARDED because nothing checked that the mutation had edited anything. The suite now copies the repo once into a snapshot that its baseline smoke run vouches for, and stops on any mutation that leaves the copy unchanged. It grows from 36 cases to 108.
 - **The retired-CLI sweep now covers `docs/superpowers/`.** `--exclude-dir=superpowers` matched that name at any depth and exempted every committed spec and plan.
 - **The extension tests run the shipped code.** They used to load hand-copied `.cjs` twins, which are gone, and `test-extension.sh` fails if one comes back. `test/extension-harness.mjs` stubs the Chrome APIs and a small DOM, so the tests import the shipped modules and now also run the background worker, storage, and side panel. `test/test-evidence-labels.mjs` checks every citation and tier against `evidence/references.md`. `test/test-disclosures.mjs` checks the side panel, PRIVACY.md, and README against the shipped code.
 - **The release workflow pins Node 22**, as the test and mutation jobs already did, and `test-extension.sh` stops with a clear message on a Node too old to import the modules (it needs 20.19+ or 22.7+). The extension suite also has its own CI step, so its full failure output shows.
