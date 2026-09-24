@@ -28,6 +28,12 @@ assert.strictEqual(parsedWhitespace.summary.bloomsLevel, 'Evaluate');
 assert.strictEqual(typeof cleanJsonResponse, 'function');
 const cleaned = cleanJsonResponse('{"key": "value"}');
 assert.strictEqual(cleaned.key, 'value');
+// Cases from closed bot PRs #99 and #101: arrays, bare whitespace, and malformed JSON.
+assert.deepStrictEqual(cleanJsonResponse('["item1", "item2"]'), ['item1', 'item2']);
+assert.strictEqual(cleanJsonResponse('  \n\t {"key": "value"} \n ').key, 'value');
+assert.throws(() => cleanJsonResponse('```json\n{"key": "value",}\n```'), SyntaxError, 'a trailing comma must not parse');
+assert.throws(() => cleanJsonResponse('{"key": "value"'), SyntaxError, 'truncated JSON must not parse');
+assert.throws(() => cleanJsonResponse('not json'), SyntaxError);
 
 // Test 6: Demo fallback when API key is not configured
 assert.strictEqual(typeof getDemoAuditResult, 'function', 'getDemoAuditResult must be a function');
