@@ -679,6 +679,91 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "side panel styles a suggestion severity" "$WORK/r/test/test-extension.sh"
 
+# 27a-27f. The service worker audited whatever it was sent: a restricted tab's
+# empty fallback, a lone Modules item title or an empty course came back as an
+# invented audit and was saved. Malformed model JSON was saved and stuck the
+# panel, and the model fetch had no timeout and carried the API key in its URL.
+# test-service-worker.mjs drives the shipped worker through each case.
+
+# 27a. RUN_AUDIT audits a page with no readable text again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "if (wordCount < MIN_AUDIT_WORDS) {"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "if (false) {", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "RUN_AUDIT audits a page with no text" "$WORK/r/test/test-extension.sh"
+
+# 27b. malformed model JSON is saved and handed to the panel again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "throw new Error('The AI response did not match the audit format. Please retry the audit.');"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "malformed model JSON saved to history" "$WORK/r/test/test-extension.sh"
+
+# 27c. the API key goes back into the URL query string -> test-extension must
+# fail. A query-string key lands in proxy, gateway and crash logs.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+for old, new in [
+    (":generateContent';", ":generateContent?key=' + apiKey;"),
+    (", 'x-goog-api-key': apiKey", ""),
+]:
+    assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+    s = s.replace(old, new, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "API key sent in the URL query string" "$WORK/r/test/test-extension.sh"
+
+# 27d. the model fetch loses its timeout -> test-extension must fail. Chrome
+# kills a service worker whose fetch response takes over 30 s, and the panel
+# then gets a closed message port instead of an explanation.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "const signal = AbortSignal.timeout(LLM_TIMEOUT_MS);"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "const signal = new AbortController().signal;", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "model fetch without a timeout" "$WORK/r/test/test-extension.sh"
+
+# 27e. the worker drops the reason the extractor or panel gave for an unread
+# page -> test-extension must fail. The user would see a generic word count.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "request.payload?.emptyReason || "
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "refusal reason from the extractor/panel dropped" "$WORK/r/test/test-extension.sh"
+
+# 27f. a course with no syllabus and no assignments is audited again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "if (!courseData.syllabus.trim() && courseData.assignments.length === 0) {"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "if (false) {", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "empty course audited" "$WORK/r/test/test-extension.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
