@@ -1362,6 +1362,19 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "FERPA-compliance claim back in the privacy policy" "$WORK/r/test/test-extension.sh"
 
+# 32. the side panel's version badge drifts from the manifest -> test-extension must fail.
+# The badge is hand-written, so a manifest bump alone would leave the panel showing the old version.
+fresh
+python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '<span class="badge-version">v1.1</span>'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '<span class="badge-version">v1.0</span>', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "side panel version badge drifts from the manifest" "$WORK/r/test/test-extension.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

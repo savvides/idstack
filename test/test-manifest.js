@@ -26,6 +26,14 @@ assert.ok(!manifest.host_permissions.some((h) => ['<all_urls>', '*://*/*', 'http
 // chrome.sidePanel.open, called from the icon click, needs Chrome 116.
 assert.ok(Number(manifest.minimum_chrome_version) >= 116, 'minimum_chrome_version must be at least 116 for sidePanel.open');
 
+// The side panel's version badge shows v<major>.<minor> of the manifest version.
+// The badge is hand-written, so a manifest bump alone would leave the panel showing the old version.
+const sidepanelHtml = fs.readFileSync(path.join(__dirname, '../extension/sidepanel/index.html'), 'utf8');
+const badge = sidepanelHtml.match(/<span class="badge-version">([^<]*)<\/span>/);
+assert.ok(badge, 'side panel must show a version badge');
+const [major, minor] = manifest.version.split('.');
+assert.strictEqual(badge[1], `v${major}.${minor}`, `side panel badge ${badge[1]} must match manifest version ${manifest.version}`);
+
 // Storage helper check
 const storagePath = path.join(__dirname, '../extension/shared/storage.js');
 assert.ok(fs.existsSync(storagePath), 'storage.js must exist');
