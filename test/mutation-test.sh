@@ -1195,7 +1195,7 @@ expect_fail "Retry clicks the hidden course button" node "$WORK/r/test/test-side
 
 # 30n. Retry re-clicks the course button after a switch to another course root
 # -> test-sidepanel-state must fail. The button stays visible there, so 30m's
-# guard passes and Retry would audit the other course (Codex review on #109).
+# guard passes and Retry would audit the other course (automated review on #109).
 fresh
 python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
 import sys
