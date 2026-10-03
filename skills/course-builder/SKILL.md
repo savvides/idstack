@@ -598,7 +598,7 @@ In gap-fill mode, **skip Steps 2–7 entirely** (instructor info, syllabus, modu
 3. **Generate only what's missing.** For each confirmed target, follow the relevant sub-step from Steps 4–6 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration.
 4. **Record outputs.** Update `course_content.generated_files` (additive) and `course_content.recommended_generation_targets` (the list, with status `generated | deferred | declined`).
 
-When done, write the manifest via `bin/idstack-manifest-merge` (see Write Manifest below) and skip directly to the final summary.
+When done, do the writing standard check at the end of Step 6. In its command, replace `".idstack/course-content"` with the paths of the files that you generated. Put quotation marks around each path, for example `".idstack/course-content/rubrics/rubric-05-discussion.md" ".idstack/course-content/modules/module-05-vision.md"`. If you write the build report (Step 7), also do its check. Then write the manifest through `bin/idstack-manifest-merge` (see Write Manifest) and skip directly to the final summary.
 
 Save the chosen mode under `course_content.mode` (`"build-new"` or `"gap-fill"`).
 
@@ -953,6 +953,32 @@ Write files with consistent naming:
 Confirm each file as it is written. If any write fails, report the error and
 continue with remaining files.
 
+**Writing standard check (course content).** Run this command on the course content folder. Do the check only on the files that you wrote in this run. If the folder has other files, replace `".idstack/course-content"` with the paths of the files that you wrote. Put each path in quotation marks.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times. Show the user each sentence that you changed, before and after the change.
+
 ### Step 7: Generate Build Report
 
 Before updating the manifest, generate an HTML build report so the designer can see what was generated and why each design choice was made (or, in gap-fill mode, what was skipped and why). The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
@@ -997,6 +1023,32 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="placeholders-used">` with `<h2>Placeholders used</h2>` listing the placeholder fields the designer must fill in before the course is ready for learners.
 - **Limitations:** content adaptation is structural, not voice/style; cognitive-load estimates are heuristic; placeholders are detected by template, not by reading the surrounding paragraph.
 - **Next steps:** Review and edit the generated files to add your voice and institutional details. Then run `/idstack:course-quality-review` to audit the complete course against QM standards and CoI presence.
+
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
 
 ### Step 8: Update Manifest
 
@@ -1115,10 +1167,14 @@ user, run an adversarial self-review if the **Agent tool** is available.
 
 - **Alignment Validator** — "You are an independent alignment reviewer. Read these generated course files: [list file paths in .idstack/course-content/]. Also read the project manifest at .idstack/project.json (specifically the learning_objectives and assessments sections). Verify: (1) Every ILO from the manifest has at least one module that teaches it, (2) Every assessment aligns to a stated ILO at the correct Bloom's level, (3) Module sequencing respects prerequisite chains, (4) No content exceeds cognitive load guidelines (>7 new concepts per module). Report issues found and fixes applied. Be specific with file names and line numbers."
 
+Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in the agent prompt. The agent cannot see the preamble. Its changes go into the course files.
+
 **After the agent returns:**
 - If issues were found that can be auto-fixed (e.g., missing ILO reference, wrong Bloom's verb), fix them in the generated files.
 - Add a "Review: N issues found, M fixed" line to the output summary.
 - If critical issues remain that require user input, list them in the summary.
+
+If you or the agent changed course files in this step, do the writing standard check at the end of Step 6 again. Show the user each sentence that you changed, before and after the change.
 
 **If Agent tool is NOT available:** Skip this step. Add a note to the output:
 "Tip: Run `/idstack:course-quality-review` next for a full alignment audit."
@@ -1138,7 +1194,7 @@ Every skill that produces findings emits **both**:
 - a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
 - an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
 
-The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
+The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → recommendation, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
 
 `<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
 

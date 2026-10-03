@@ -96,6 +96,8 @@ If you have access to the **Agent tool**, dispatch the WCAG audit and UDL review
 
 2. **UDL 3.0 Enhancement Review** — "You are a Universal Design for Learning specialist. Given this course data: [paste course info from Step 1]. Review against UDL 3.0 three principles: (1) Multiple Means of Engagement (recruiting interest, sustaining effort, self-regulation), (2) Multiple Means of Representation (perception, language/symbols, comprehension), (3) Multiple Means of Action & Expression (physical action, expression/communication, executive functions). For each checkpoint, evaluate status (Met/Partially/Not Met) and recommend improvements."
 
+Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in each agent prompt. The agents cannot see the preamble.
+
 **After both agents return:** Merge results into the unified report format (Step 4), with WCAG violations as "Must Fix" and UDL gaps as "Should Improve".
 
 **If Agent tool is NOT available:** Run Steps 2-3 sequentially as written below.
@@ -314,6 +316,15 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Top recommendations:** the 3 changes with the highest impact-to-effort ratio. Cite each.
 - **Limitations:** review reads structural metadata, not the actual learner-facing content text; alt-text quality is checked for presence not for descriptive accuracy; UDL recommendations are generated from manifest signals, not from observed learner use.
 - **Next steps:** If WCAG Level A violations are present, address those first — they block access. Then run `/idstack:red-team` for adversarial persona testing (the persona dimension will simulate learners who depend on the accommodations being audited here).
+
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+{{IDSTACK_RESOLVE}}
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
 
 ---
 

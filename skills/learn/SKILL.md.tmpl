@@ -91,6 +91,15 @@ Export all learnings to a markdown file.
 Format as markdown with sections grouped by type (operational, pedagogical, etc.)
 and write to `.idstack/learnings-export.md`.
 
+**Writing standard check.** Run this command on the export file.
+
+```bash
+{{IDSTACK_RESOLVE}}
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+
 ## Workflow
 
 1. Parse the user's input to determine which command they want

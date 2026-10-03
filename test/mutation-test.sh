@@ -1581,6 +1581,57 @@ fresh
 sed -i.bak 's/^DESCRIPTIVE_MAX = 25$/DESCRIPTIVE_MAX = 26/' "$WORK/r/bin/idstack-ste-check"
 expect_fail "the checker accepts a 26-word description" python3 "$WORK/r/test/test-ste-check.py"
 
+# 48a-48b. The writing standard reaches a report only through the skill steps and
+# the report template. A skill without the check step ships text that no check
+# has seen, and a bad template label goes into every report.
+# 48a. A skill loses its writing standard check step -> smoke-test must fail.
+# learn has one check step only, so removing it leaves no other call to match.
+fresh
+python3 - "$WORK/r/skills/learn/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ('**Writing standard check.** Run this command on the export file.\n\n'
+       '```bash\n{{IDSTACK_RESOLVE}}\n'
+       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" '
+       '".idstack/learnings-export.md"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n\n'
+       'For the result, do the steps in "How to use the standard" in the "Writing Standard '
+       '(ASD-STE100)" section of the preamble. Do the check a maximum of three times.\n\n')
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "a skill drops its writing standard check" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 48b. The report template labels a recommendation "Consider" again -> smoke-test
+# must fail. The template is not spliced into a skill, so no regen.
+fresh
+python3 - "$WORK/r/templates/report.html.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "          <dt>Recommendation</dt>\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "          <dt>Consider</dt>\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the report template labels a recommendation Consider" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 48c. course-builder loses its course-content check step but keeps the report check ->
+# smoke-test must fail. A guard that only asks "is the call present" passes here.
+fresh
+python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ('```bash\n{{IDSTACK_RESOLVE}}\n'
+       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" '
+       '".idstack/course-content"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n')
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-builder drops its course-content check step" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

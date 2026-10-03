@@ -316,6 +316,21 @@ fi
 if command -v python3 &>/dev/null; then
   check "ste checker unit tests pass" "python3 '$IDSTACK_DIR/test/test-ste-check.py'"
 fi
+# Each skill runs the checker on the files it writes for a person. The match is
+# the bash call itself, not the prose around it, so a step that loses its
+# command fails here even when the text that names the check stays.
+for skill in $SKILLS; do
+  case "$skill" in course-builder|course-export|red-team) want=2 ;; *) want=1 ;; esac
+  # grep -c exits 1 on zero matches; without "|| true", set -e ends the run with no FAIL line.
+  got=$(grep -cF '"$_IDSTACK/bin/idstack-ste-check"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
+  check "$skill SKILL.md.tmpl runs the ste checker at all $want check steps" "[ '$got' -eq $want ]"
+done
+# Every report and the course dashboard copy the fixed labels in these two
+# templates, so one bad label puts a problem in every report.
+if command -v python3 &>/dev/null; then
+  check "report and dashboard templates pass the ste checker" \
+    "'$IDSTACK_DIR/bin/idstack-ste-check' --format html '$IDSTACK_DIR/templates/report.html.tmpl' '$IDSTACK_DIR/templates/index.html.tmpl'"
+fi
 
 # ./setup is what a new user runs first; it is exercised against a repo copy
 # with a fake $HOME and a stub `claude`, never the real install.

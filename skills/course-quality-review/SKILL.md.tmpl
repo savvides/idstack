@@ -163,6 +163,8 @@ as parallel subagents after gathering course information (Mode 1/2/3 above).
 
 3. **Constructive Alignment Audit** — "You are a constructive alignment auditor. Given this course data: [paste objectives, assessments, activities]. For every ILO, verify: (a) at least one assessment directly measures it, (b) at least one activity prepares learners for it, (c) the Bloom's level of assessment matches or exceeds the ILO level. Report gaps, orphaned activities, and level mismatches."
 
+Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in each agent prompt. The agents cannot see the preamble.
+
 **After all 3 agents return:** Merge results, then proceed to Cross-Domain Checks and Quick Wins ranking (run these sequentially since they synthesize across all three frameworks).
 
 **If Agent tool is NOT available:** Run the three frameworks sequentially as written below.
@@ -823,6 +825,15 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="quick-wins">` with `<h2>Top 3 quick wins</h2>` and an HTML `<table>` (#, Finding, Impact, Skill to Run).
 - **Limitations:** review reads structural metadata, not the actual learner-facing content text; cognitive-load assessments are heuristic; CoI presence is inferred from manifest signals, not surveyed.
 - **Next steps:** 1–3 specific next actions referencing other idstack skills. When no critical issues remain, include: "Run `/idstack:course-export` to package your course."
+
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+{{IDSTACK_RESOLVE}}
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
 
 After writing both the manifest and the quality report, confirm to the user:
 

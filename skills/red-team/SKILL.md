@@ -498,6 +498,8 @@ Use the **Agent tool** with `subagent_type=general-purpose`. The prompt is the f
 - `{{MANIFEST_INFO}}` → either `Manifest at .idstack/project.json — read it directly.` or, in standalone mode, the captured course information from Step 1
 - `{{COURSE_FILES_HINT}}` → if the manifest has `course_content.content_dir`, set this to that path; otherwise `Look under ./course/ or ./modules/ for generated course files.`
 
+Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble at the end of the prompt. The orchestrator cannot see the preamble.
+
 Then call Agent. Block on its return.
 
 <orchestrator-brief>
@@ -534,6 +536,8 @@ Otherwise, audit the named dimension at full depth and cover the others at reduc
 If you have access to the **Agent tool**, dispatch the 5 dimensions in parallel as nested sub-agents using the briefs in "Dimension Briefs" below. Wait for all 5 to return, then deduplicate findings.
 
 If you do NOT have Agent access, run the dimensions sequentially using the same briefs.
+
+The "Writing Standard (ASD-STE100)" section is at the end of this prompt. Put a copy of it in each sub-agent prompt. The sub-agents cannot see it.
 
 ---
 
@@ -797,6 +801,32 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 
 Each finding **must** have a stable id of the form `<dimension>-<n>` (e.g., `alignment-1`, `cogload-3`) so the parent can reference findings when applying fixes.
 
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section at the end of this prompt. Do the check a maximum of three times. If these steps tell you to tell the user something, put it in your executive summary.
+
 ## Return value
 
 After writing the report, return ONLY a short executive summary (≤200 words) to the parent:
@@ -842,6 +872,32 @@ For each finding in the chosen severity bucket, in order of severity:
 Do not spawn additional sub-agents for fixes. The parent has the relevant context to edit course files directly.
 
 If the user pushes back on any specific fix, mark it deferred and continue.
+
+**Writing standard check.** Run this command one time for each course file that you edited in this step. Replace `<path>` with the path of the file. Do not run it on `.idstack/project.json`.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Change only the sentences that you wrote or changed in this step. Do not change the other text in the file. Do the check a maximum of three times. If the checker shows problems only in sentences that you did not write or change, the check of that file is complete. Tell the user one time that these lines had problems before your changes.
 
 ### Step 6: Update manifest
 

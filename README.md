@@ -364,7 +364,7 @@ When you run `/idstack:course-import`, it creates the manifest with your course 
 ### How idstack reports back to you
 idstack functions as a design partner rather than an automated content generator. When a skill finishes, it produces two artifacts:
 
-- **Branded HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the human view. Open it in any browser. Every finding follows the same structure: *what we saw* in your course, *what the evidence says* (with a citation tag like `[Assessment-8] [T1]`), *why it matters* for learners, and *what to consider* changing. Suggestions, not directives: the designer owns the course, while idstack provides the analytical review.
+- **Branded HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the human view. Open it in any browser. Every finding follows the same structure: *what we saw* in your course, *what the evidence says* (with a citation tag like `[Assessment-8] [T1]`), *why it matters* for learners, and a *recommendation* for what to change. Recommendations, not orders: the designer owns the course, while idstack provides the analytical review.
 - **Manifest section** at `.idstack/project.json` — the system view. Same findings in JSON so other skills can read and act on them.
 
 The visual contract lives in [`templates/report.html.tmpl`](templates/report.html.tmpl) (the HTML skeleton) and [`templates/assets/idstack.css`](templates/assets/idstack.css) (the branded stylesheet). The content contract is in [`templates/report-format.md`](templates/report-format.md). Re-running a skill overwrites its report; the timeline at `.idstack/timeline.jsonl` carries the run history.

@@ -602,14 +602,43 @@ Also read `.idstack/project.json` for project_name, scores (`quality_review.over
 
 - **`{{project_name}}`:** from the manifest top-level.
 - **`{{pipeline_run_status}}`:** e.g., "complete · 8 of 8 skills" or "partial · 4 of 8 skills".
-- **Cross-cutting summary** (replaces `{{cross_cutting_summary_2_to_3_paragraphs}}`): 2–3 paragraphs of cross-cutting synthesis. Designed to be read by a designer (or stakeholder) who hasn't yet opened the per-skill reports. Lead with the verdict, follow with the themes that recur across multiple skills, end with where to start.
+- **Cross-cutting summary** (replaces `{{cross_cutting_verdict_paragraph}}`, `{{cross_cutting_themes_paragraph}}` and `{{cross_cutting_start_paragraph}}`): two or three paragraphs of cross-cutting synthesis for a designer or stakeholder who did not open the per-skill reports. Put each paragraph in a different `<p>`, with a maximum of six sentences.
+  - The first paragraph gives the verdict.
+  - The second paragraph gives the themes that occur in more than one skill.
+  - The third paragraph tells where to start. It is optional. If you do not use it, remove its `<p>`.
 - **Readiness scoreboard** — populate the four `<div class="score verdict-{verdict}">` cards (Quality, Accessibility, Red-team confidence, Overall verdict). Verdict values: `ready` (green border) / `issues` (amber) / `blocked` (red) / `pending` (grey, when skill hasn't run yet). Thresholds match `bin/idstack-status --readiness`.
 - **Pipeline status table** — one row per pipeline skill. `status-done` if the per-skill HTML report file exists, `status-pending` otherwise. `signal` column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). Link the report cell to the relative HTML filename (e.g., `<a href="needs-analysis.html">needs-analysis.html</a>`). Add an optional course-import row when that report is present.
 - **Top cross-cutting issues** (`<ol>` items): 3–5 highest-impact findings that appear in or affect multiple per-skill reports. Each item shows the source skill(s) and the evidence tier as a `<cite class="citation">` element.
-- **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: `<p>No LMS packages produced yet. Run <code>/idstack:course-export</code> to package this course.</p>`.
+- **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: `<p>This folder has no LMS packages. To make them, run <code>/idstack:course-export</code>.</p>`.
 - **Where to start** — one paragraph. The single change (or 2–3 changes) that would address the largest number of cross-cutting concerns. Anchored to a specific finding id in a specific per-skill report so the designer can act on it (e.g., "Address `assess-1` in <code>assessment-design.html</code> first…").
 
 The dashboard is overwritten on every pipeline run — historical dashboards are not retained. The timeline at `.idstack/timeline.jsonl` carries the run history.
+
+**Writing standard check.** In this command, replace `<path>` with the path from the "Dashboard:" line. Then run the command.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
 
 ### Step 5: Pipeline Complete
 

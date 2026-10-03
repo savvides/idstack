@@ -346,6 +346,15 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 
 Every finding in the HTML must correspond to a finding the manifest's `needs_analysis` section can carry, so downstream skills and `bin/idstack-status` can refer to them programmatically.
 
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+{{IDSTACK_RESOLVE}}
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+
 ### Step 7: Write Manifest
 
 Create or update the project manifest. Use the Write tool to write `.idstack/project.json`.

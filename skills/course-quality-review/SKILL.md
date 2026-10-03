@@ -573,6 +573,8 @@ as parallel subagents after gathering course information (Mode 1/2/3 above).
 
 3. **Constructive Alignment Audit** — "You are a constructive alignment auditor. Given this course data: [paste objectives, assessments, activities]. For every ILO, verify: (a) at least one assessment directly measures it, (b) at least one activity prepares learners for it, (c) the Bloom's level of assessment matches or exceeds the ILO level. Report gaps, orphaned activities, and level mismatches."
 
+Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in each agent prompt. The agents cannot see the preamble.
+
 **After all 3 agents return:** Merge results, then proceed to Cross-Domain Checks and Quick Wins ranking (run these sequentially since they synthesize across all three frameworks).
 
 **If Agent tool is NOT available:** Run the three frameworks sequentially as written below.
@@ -1285,6 +1287,32 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Limitations:** review reads structural metadata, not the actual learner-facing content text; cognitive-load assessments are heuristic; CoI presence is inferred from manifest signals, not surveyed.
 - **Next steps:** 1–3 specific next actions referencing other idstack skills. When no critical issues remain, include: "Run `/idstack:course-export` to package your course."
 
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+
 After writing both the manifest and the quality report, confirm to the user:
 
 "Your quality review has been saved to `.idstack/project.json` and a shareable HTML
@@ -1316,7 +1344,7 @@ Every skill that produces findings emits **both**:
 - a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
 - an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
 
-The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
+The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → recommendation, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
 
 `<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
 

@@ -575,6 +575,42 @@ zip the whole folder to hand to a stakeholder.
 
 ---
 
+## Writing Standard Check (course content)
+
+If the course content is not in English, do not run this check. Go to "Export Format Selection". If the course content is in English, run the ASD-STE100 checker on it before you make a package or send content to Canvas. This check only shows problems. Do not change the course files. The designer wrote this text or gave approval to it.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+1. If the output is `STE_CHECK_UNAVAILABLE`, tell the user one time that the check did not run. Continue the export.
+2. If the checker shows no problems, continue the export.
+3. If the checker shows problems, show them to the user. Then use AskUserQuestion with two alternatives: "Continue the export" and "Stop the export to correct the content".
+4. If the user selects "Stop the export to correct the content", stop this skill. Tell the user to correct the files in `.idstack/course-content/` and then run `/idstack:course-export` again.
+5. If the checker shows an error, tell the user which files the checker did not read. Then continue with the steps above for the problems that it shows.
+
+The package files (HTML pages, XML files and quiz text) get no file check. When you write text for the package, for example quiz questions, quiz feedback or item titles, obey the "Writing Standard (ASD-STE100)" section of the preamble.
+
+---
+
 ## Export Format Selection
 
 Ask the user how they want to export. Use AskUserQuestion:
@@ -1310,6 +1346,32 @@ After the export completes (any path), write the HTML report at `$_REPORT_PATH` 
 - **Limitations:** SCORM/IMSCC packages contain static HTML; interactive elements aren't generated. Quiz questions are auto-generated from assessment specs and need designer review. Tokens are never written to disk.
 - **Next steps:** Verify that the LMS import preserved everything correctly. Pay particular attention to quiz questions, assignment rubrics, discussion prompts, and module sequencing. If the readiness verdict was "with warnings," address the flagged findings before publishing.
 
+**Writing standard check.** In this command, replace `<path>` with the path of `course-export.html` in the folder from the "Course export folder:" line. Then run the command.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+
 ---
 
 ## Manifest Write
@@ -1442,7 +1504,7 @@ Every skill that produces findings emits **both**:
 - a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
 - an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
 
-The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
+The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → recommendation, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
 
 `<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
 

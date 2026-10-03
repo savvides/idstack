@@ -14,11 +14,11 @@ Re-runs overwrite the report. The timeline at `.idstack/timeline.jsonl` carries 
 
 ### Voice and stance
 
-idstack is a collaborator, not a builder. Every report should read like evidence-based feedback to a designer who already has work to defend. Three rules:
+idstack works with the designer. It does not make the course. Each report gives evidence-based feedback to the designer. The designer makes the decisions about the course. Write all report text in ASD-STE100 Simplified Technical English, as the "Writing Standard (ASD-STE100)" section of `templates/preamble.md` tells you. Obey these three rules:
 
-- **Observation, then evidence, then suggestion.** Never recommend without first showing what was seen and what the research says about it.
-- **Suggest, don't direct.** "Consider…" / "Evidence suggests…" / "You may want to…" — not "You must…" / "Add this." The designer owns the course; idstack offers the read.
-- **Cite every recommendation.** Every finding carries `[Domain-N] [Tier]`. If you can't cite it, it doesn't belong in a finding — move it to a "Limitations" or "Notes" section.
+- **Problem, then evidence, then recommendation.** First show the problem that idstack found. Then show the evidence from the research. Then give the recommendation.
+- **Recommend, do not give orders.** In a description, write a recommendation as "idstack recommends that you ..." or as "You can ...". In a numbered list of steps, write each step as a command. Do not use "consider", "may", "should" or "suggest". In the HTML, the label of the recommendation is "Recommendation".
+- **Cite each recommendation.** Each finding has a `[Domain-N] [Tier]` citation. If you cannot cite a recommendation, do not put it in a finding. Put it in a "Limitations" or "Notes" section.
 
 ### Canonical content (what each placeholder must carry)
 
@@ -33,8 +33,8 @@ Skills emit the HTML structure from `templates/report.html.tmpl`. The data each 
    - `observation_html` — concrete observation grounded in the manifest or the imported course ("Module 4 has no rubric." / "Of 8 ILOs, 3 have no matching assessment.").
    - `evidence_html` — 1–2 sentences from the literature synthesis, plain language, followed by `<cite class="citation">[Domain-N] [Tier]</cite>`.
    - `why_it_matters_html` — bridge: explicitly connect observation → evidence → learner-outcome consequence. Without this, the citation reads as decoration.
-   - `suggestion_html` — collaborative recommendation. Phrased as a suggestion, not a directive. May reference another skill ("Run /idstack:learning-objectives to address the bidirectional gap.") or a concrete change.
-4. **Top recommendations** — 3–5 highest-impact moves, ordered. Each carries an evidence citation and points to the skill/finding that would address it. `bin/idstack-status` and `/idstack:pipeline` may surface this section as a digest.
+   - `suggestion_html` — the recommendation, with the label "Recommendation". Write it as "idstack recommends that you ..." or as "You can ...". It can name a skill to run ("You can run /idstack:learning-objectives to correct the bidirectional gap.") or a change to the course.
+4. **Top recommendations** — 3–5 highest-impact moves, ordered. Each carries an evidence citation and points to the skill/finding that would address it. Write each item as one command, with no period at the end of `{{action}}`. In a second sentence, tell why the change is necessary. Put the citation at the end of the item. `bin/idstack-status` and `/idstack:pipeline` may surface this section as a digest.
 5. **Optional skill-specific sections** — e.g., needs-analysis adds "Training justification" + "Expertise-fit read"; accessibility-review may add a WCAG/UDL split. Use `<section>` with a clear `<h2>` heading.
 6. **Limitations** — what this report didn't analyze, what's a proxy, what would change the read if available.
 7. **Next steps** — one paragraph. What the designer might do next inside idstack — a specific skill to run, a specific finding to address first, or "rerun this skill after addressing X." Avoid generic advice.
