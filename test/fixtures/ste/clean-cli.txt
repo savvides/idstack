@@ -1,0 +1,16 @@
+==============================
+  idstack course status
+==============================
+Project: Bob's Advanced Course
+Skills completed:
+  [x] /idstack:needs-analysis (2x)
+  [ ] /idstack:learning-objectives
+Quality trend: 65 -> 85
+Recommended next: /idstack:learning-objectives
+Reports (open in a browser for the human view):
+  .idstack/exports/bobs-advanced-course/index.html  <-- course dashboard, start here
+─── Course Readiness ───
+  Quality Review:       READY       Score: 80/100  (READY threshold: 70)
+  Verdict: NOT-READY (quality score 69 < 70)
+  Fix: claude plugin enable idstack@idstack
+    claude plugin install idstack@idstack --scope user

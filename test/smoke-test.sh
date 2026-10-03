@@ -50,7 +50,7 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus idstack-ste-check; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
@@ -309,6 +309,12 @@ fi
 # Consensus CLI unit tests
 if command -v python3 &>/dev/null; then
   check "consensus cli unit tests pass" "python3 '$IDSTACK_DIR/test/test-consensus-cli.py'"
+fi
+
+# The ASD-STE100 checker. Skills run it on each file they write, so a false
+# positive costs the user three rewrite passes on every run.
+if command -v python3 &>/dev/null; then
+  check "ste checker unit tests pass" "python3 '$IDSTACK_DIR/test/test-ste-check.py'"
 fi
 
 # ./setup is what a new user runs first; it is exercised against a repo copy

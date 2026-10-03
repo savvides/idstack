@@ -1550,6 +1550,37 @@ open(p, 'w').write(s)
 PY
 expect_fail "a selector list shrinks the touch target past the text guard" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 43a-43c. The ASD-STE100 checker. Skills trust its exit code to end their rewrite
+# loop, so a checker that stops finding a problem lets non-STE text ship silently.
+# 43a. The word list in the preamble loses its rows -> test-ste-check must fail.
+# An empty list must stop the checker, not turn the word rule off.
+fresh
+python3 - "$WORK/r/templates/preamble.md" <<'PY'
+import re, sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+new = re.sub(r'(?m)^\| "[^"]+" \|.*\n', '', s)
+assert new != s, 'no word-list rows found'
+open(p, 'w', encoding='utf-8').write(new)
+PY
+expect_fail "the checker runs with an empty word list" python3 "$WORK/r/test/test-ste-check.py"
+
+# 43b. The checker stops finding semicolons -> test-ste-check must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-ste-check" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "        if ';' in part:\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "        if '\\x00' in part:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the checker misses a semicolon" python3 "$WORK/r/test/test-ste-check.py"
+
+# 43c. The description limit drifts from 25 to 26 words -> test-ste-check must fail.
+fresh
+sed -i.bak 's/^DESCRIPTIVE_MAX = 25$/DESCRIPTIVE_MAX = 26/' "$WORK/r/bin/idstack-ste-check"
+expect_fail "the checker accepts a 26-word description" python3 "$WORK/r/test/test-ste-check.py"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
