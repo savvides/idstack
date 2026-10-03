@@ -702,7 +702,7 @@ fresh
 python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "throw new Error('The AI response did not match the audit format. Please retry the audit.');"
+old = "throw new Error('The AI response is not in the audit format. Try the audit again.');"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "", 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -889,7 +889,7 @@ fresh
 python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "      emptyReason: 'idstack cannot read this tab. If you just switched to it, click the idstack toolbar icon, then audit again. Browser pages such as chrome:// and the Chrome Web Store cannot be read.'\n"
+old = "      emptyReason: 'idstack cannot read this tab. If you moved to this tab from a different tab, click the idstack toolbar icon. Then audit again. idstack cannot read browser pages, for example chrome:// pages and the Chrome Web Store.'\n"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "", 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1066,7 +1066,7 @@ expect_fail "HTML sign-in page audited as the Google Doc" "$WORK/r/test/test-ext
 # 30a-30l. The side panel labelled a result with whatever tab was active when
 # the reply landed, let a slow tab refresh overwrite a newer one, left the last
 # result behind Add to Dossier after an error, retried the single-page audit
-# whatever had failed, wiped Audit Another Page on a vote, and said "Copied!"
+# whatever had failed, wiped Audit a Different Page on a vote, and said "Copied!"
 # when the clipboard write failed. The renderer threw on malformed findings,
 # inside the sendMessage callback, so the spinner stayed up.
 # test-sidepanel-state.mjs drives the shipped sidepanel.js through each case.
@@ -1195,7 +1195,7 @@ PY
 expect_fail "Retry audits the course or site now active, not the one that failed" node "$WORK/r/test/test-sidepanel-state.mjs"
 
 # 30i. a feedback vote rewrites the whole row -> test-sidepanel-state must fail.
-# The row also holds Audit Another Page, the only way back to the ready state.
+# The row also holds Audit a Different Page, the only way back to the ready state.
 fresh
 python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
 import sys
@@ -1205,7 +1205,7 @@ assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "row.innerHTML = '<em>Thank you for your feedback!</em>';", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "feedback vote wipes Audit Another Page" node "$WORK/r/test/test-sidepanel-state.mjs"
+expect_fail "feedback vote wipes Audit a Different Page" node "$WORK/r/test/test-sidepanel-state.mjs"
 
 # 30j. the renderer trusts a non-array findings value -> test-renderer-helper must fail.
 fresh
@@ -1269,7 +1269,7 @@ fresh
 python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = " On Google's free tier, Google may use that content to improve its products, and human reviewers may read it."
+old = " On Google's free tier, Google can use this content to improve its products."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "", 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1281,7 +1281,7 @@ fresh
 python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "Without a key, idstack runs in demo mode: every audit shows the same sample findings, whatever the page says, and the page's text is not sent anywhere."
+old = "Without a key, idstack runs in demo mode. Each audit then shows the same sample findings for all pages. In demo mode, idstack does not send the page text out of your browser."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "Leave blank to use the built-in free demo tier.", 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1757,6 +1757,61 @@ s = s.replace(old, 'revised assessment scaffolding."\n  }\n}`;', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "course prompt drops the STE rules" "$WORK/r/test/test-extension.sh"
+
+# 46a-46c. The extension's fixed text obeys ASD-STE100. smoke-test sends the printed
+# extension output and the side-panel page through bin/idstack-ste-check. Only the
+# STE checks catch 46a and 46b: every other suite still passes.
+# 46a. The Markdown export labels a recommendation in non-STE text again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/extension/shared/dossier-compiler.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "      md += `- **Recommendation:** ${f.recommendation || ''}\\n\\n`;\n    });"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "      md += `- **Actionable Recommendation:** ${f.recommendation || ''}; consider it before you publish.\\n\\n`;\n    });", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the Markdown export writes non-STE text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 46b. The side-panel privacy note says "may" again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Google can use this content to improve its products."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Google may use this content to improve its products.", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the side-panel privacy note says may" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 46c. An STE rewording drops a refused page from the side-panel privacy note ->
+# test-extension must fail. test-disclosures checks the extractor only for the pages
+# that the note names, so without its name check the dropped page passes silently.
+fresh
+python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Gradebook, SpeedGrader, People"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Gradebook, People", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the privacy note drops SpeedGrader" "$WORK/r/test/test-extension.sh"
+
+# 46d. A side-panel loader step that no test runs gets non-STE text again ->
+# smoke-test must fail. The printer also prints the fixed string literals of the
+# side panel and the service worker, so text on a path that it does not run is checked.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "'idstack reads the assignments...'"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "'Fetching assignments; please wait...'", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a side-panel loader step writes non-STE text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

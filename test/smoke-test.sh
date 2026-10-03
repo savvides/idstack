@@ -362,10 +362,21 @@ if command -v node &>/dev/null; then
   # targets, column counts) rather than the CSS text. Skips loudly without a browser; the
   # text suite above still runs. See test/test-rendered-landing.js for why both exist.
   check "rendered landing page tests pass" "node '$IDSTACK_DIR/test/test-rendered-landing.js'"
+  # The fixed text that the extension shows must obey ASD-STE100: the demo audits,
+  # the Markdown export, the rendered findings, the error messages and the side-panel
+  # page. pipefail: a printer that crashes must fail here, not send empty text.
+  if command -v python3 &>/dev/null; then
+    check "extension Markdown output passes the STE checker" "( set -o pipefail; node '$IDSTACK_DIR/test/print-extension-output.mjs' markdown | python3 '$IDSTACK_DIR/bin/idstack-ste-check' --format markdown - )"
+    check "extension HTML output passes the STE checker" "( set -o pipefail; node '$IDSTACK_DIR/test/print-extension-output.mjs' html | python3 '$IDSTACK_DIR/bin/idstack-ste-check' --format html - )"
+    check "side-panel page passes the STE checker" "python3 '$IDSTACK_DIR/bin/idstack-ste-check' '$IDSTACK_DIR/extension/sidepanel/index.html'"
+  else
+    echo "  SKIP: extension STE checks (python3 not installed)"
+  fi
 else
   echo "  SKIP: chrome extension tests (node not installed)"
   echo "  SKIP: responsive landing page tests (node not installed)"
   echo "  SKIP: rendered landing page tests (node not installed)"
+  echo "  SKIP: extension STE checks (node not installed)"
 fi
 
 # Check generated files have auto-generated header

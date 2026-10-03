@@ -42,7 +42,7 @@ async function callLlmApi(apiKey, prompt) {
   }).catch((err) => {
     // Chrome < 124 rejects a timed-out fetch with AbortError, so check the signal, not err.name.
     throw signal.aborted
-      ? new Error(`The AI service did not respond within ${LLM_TIMEOUT_MS / 1000} seconds. Please retry the audit.`)
+      ? new Error(`The AI model did not send a result in ${LLM_TIMEOUT_MS / 1000} seconds. Try the audit again.`)
       : err;
   });
 
@@ -53,14 +53,14 @@ async function callLlmApi(apiKey, prompt) {
 
   const data = await response.json();
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawText) throw new Error('Empty response from AI model.');
+  if (!rawText) throw new Error('The AI model sent an empty response.');
 
   const result = cleanJsonResponse(rawText);
   // The renderer and dossier compiler read every finding and call string methods
   // on tier and severity; refuse a shape they cannot handle before it is saved.
   const optionalString = (v) => v == null || typeof v === 'string';
   if (!Array.isArray(result?.findings) || !result.findings.every((f) => f && typeof f === 'object' && optionalString(f.tier) && optionalString(f.severity))) {
-    throw new Error('The AI response did not match the audit format. Please retry the audit.');
+    throw new Error('The AI response is not in the audit format. Try the audit again.');
   }
   return result;
 }
@@ -76,7 +76,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
           const wordCount = String(request.payload?.content || '').split(/\s+/).filter(Boolean).length;
           if (wordCount < MIN_AUDIT_WORDS) {
             // The extractor and side panel explain pages they could not or would not read.
-            throw new Error(request.payload?.emptyReason || `This page has too little readable text to audit (${wordCount} words; at least ${MIN_AUDIT_WORDS} needed). Browser pages, PDF viewers, and image-only pages expose no text to idstack.`);
+            throw new Error(request.payload?.emptyReason || `This page does not have sufficient text to audit. It has ${wordCount} words, and an audit must have ${MIN_AUDIT_WORDS} words or more. Browser pages, PDF viewers and image-only pages do not give text to idstack.`);
           }
           const settings = await getSettings();
           
@@ -117,7 +117,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
           let target = null;
           try { target = new URL(origin); } catch (e) { /* not a URL */ }
           if (!target || target.protocol !== 'https:' || target.origin !== origin || !/^\d+$/.test(courseId)) {
-            throw new Error('Invalid Canvas course target.');
+            throw new Error('The Canvas course URL is not correct.');
           }
           const courseData = await crawlCanvasCourse(origin, courseId);
           if (!courseData.syllabus.trim() && courseData.assignments.length === 0) {

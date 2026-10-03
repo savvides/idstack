@@ -200,12 +200,12 @@ If developing or modifying the extension locally:
 
 #### Full Course Audit (Canvas LMS)
 
-When viewing any Canvas course homepage or modules list (`/courses/:id`), idstack automatically detects the course environment and presents an **"Audit Entire Course"** button:
+When viewing any Canvas course homepage or modules list (`/courses/:id`), idstack automatically detects the course environment and presents an **"Audit Full Course"** button:
 - **Zero Developer Tokens Required:** Reads the course syllabus and assignment descriptions through Canvas's API using your active browser session. No Canvas API keys, LMS admin setup, or command line required.
 - **Course-level findings:** Reviews the syllabus and assignments together for alignment gaps, cognitive demand across Bloom's levels, and prioritized fixes, shown in the same results view as a page audit.
 - **Export Ready:** Add the course audit to your Course Dossier or export it as Markdown to share with instructional design teams and faculty stakeholders.
 
-On Canvas hosted outside `instructure.com` (for example, a university's own domain), Chrome asks once, for that site only, when you first click **"Audit Entire Course"**.
+On Canvas hosted outside `instructure.com` (for example, a university's own domain), Chrome asks once, for that site only, when you first click **"Audit Full Course"**.
 
 #### Multi-Page Course Dossier & Markdown Export
 

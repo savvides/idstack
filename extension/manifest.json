@@ -3,7 +3,7 @@
   "name": "idstack — Evidence-Based Course Design",
   "version": "1.1.0",
   "minimum_chrome_version": "116",
-  "description": "Evidence-based instructional design co-pilot for Canvas LMS, Google Docs, and course web pages.",
+  "description": "idstack audits course pages in Canvas LMS, Google Docs and on the web against instructional design evidence.",
   "homepage_url": "https://idstack.org",
   "icons": {
     "16": "icons/icon-16.png",
@@ -11,7 +11,7 @@
     "128": "icons/icon-128.png"
   },
   "action": {
-    "default_title": "Open idstack Course Co-Pilot"
+    "default_title": "Open the idstack Course Co-Pilot"
   },
   "side_panel": {
     "default_path": "sidepanel/index.html"

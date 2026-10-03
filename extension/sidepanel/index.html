@@ -30,16 +30,16 @@
     <section id="ready-state" class="state-panel active">
       <div class="context-card">
         <div class="page-meta">
-          <span id="page-type-tag" class="chip">Detecting page...</span>
-          <h2 id="page-title" class="page-heading">Loading page title...</h2>
+          <span id="page-type-tag" class="chip">Page type...</span>
+          <h2 id="page-title" class="page-heading">idstack reads the page...</h2>
         </div>
-        <p class="summary-hint">Audit constructive alignment, Bloom's classification, and cognitive load with peer-reviewed evidence.</p>
+        <p class="summary-hint">idstack audits constructive alignment, Bloom's levels and cognitive load against peer-reviewed evidence.</p>
         <div class="action-buttons">
           <button id="audit-btn" class="primary-btn">
             <span class="btn-text">Audit Page with Evidence</span>
           </button>
           <button id="audit-course-btn" class="secondary-btn course-audit-btn" style="display: none;">
-            <span class="btn-text">Audit Entire Course</span>
+            <span class="btn-text">Audit Full Course</span>
           </button>
         </div>
       </div>
@@ -49,12 +49,12 @@
     <section id="loading-state" class="state-panel">
       <div class="loader-box">
         <div class="spinner"></div>
-        <p id="loader-status" class="loader-status-text">Analyzing course structure...</p>
+        <p id="loader-status" class="loader-status-text">idstack examines the page...</p>
         <div id="crawl-progress-card" class="progress-card" style="display: none;">
           <div class="progress-bar-container">
             <div id="crawl-progress-fill" class="progress-bar-fill"></div>
           </div>
-          <p id="crawl-status-text" class="progress-status-text">Gathering course syllabus...</p>
+          <p id="crawl-status-text" class="progress-status-text">idstack reads the syllabus...</p>
         </div>
       </div>
     </section>
@@ -75,13 +75,13 @@
         <button id="close-dossier" class="icon-btn" title="Close Dossier">✕</button>
       </div>
       <div class="drawer-body">
-        <p class="drawer-intro">Collected audits for compiled course-level markdown export.</p>
+        <p class="drawer-intro">The dossier keeps the audits that you add. You can export all of them as one Markdown file for the course.</p>
         <div id="dossier-list" class="dossier-list"></div>
         <div class="dossier-drawer-actions">
-          <button id="export-dossier-md-btn" class="primary-btn">📥 Download Compiled .md</button>
+          <button id="export-dossier-md-btn" class="primary-btn">📥 Download Dossier .md</button>
           <div class="dossier-secondary-actions">
             <button id="copy-dossier-md-btn" class="secondary-btn">📋 Copy Markdown</button>
-            <button id="clear-dossier-btn" class="secondary-btn danger-btn">🗑️ Clear Dossier</button>
+            <button id="clear-dossier-btn" class="secondary-btn danger-btn">🗑️ Remove All from Dossier</button>
           </div>
         </div>
       </div>
@@ -98,19 +98,21 @@
           <label for="api-key-input">Google AI Studio API Key (Optional BYOK)</label>
           <input type="password" id="api-key-input" placeholder="AIzaSy..." />
           <a id="get-api-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="help-link">Get your free Google AI Studio key &rarr;</a>
-          <p class="help-text">Without a key, idstack runs in demo mode: every audit shows the same sample findings, whatever the page says, and the page's text is not sent anywhere.</p>
+          <p class="help-text">Without a key, idstack runs in demo mode. Each audit then shows the same sample findings for all pages. In demo mode, idstack does not send the page text out of your browser.</p>
         </div>
         <div class="form-group">
           <label for="consensus-api-key-input">Consensus API Key (Optional BYOK)</label>
           <input type="password" id="consensus-api-key-input" placeholder="cons_..." />
           <a id="get-consensus-api-key-link" href="https://consensus.app" target="_blank" rel="noopener noreferrer" class="help-link">Get your Consensus API key &rarr;</a>
-          <p class="help-text">Checks each finding against the research literature on Consensus. With a key saved, each finding's claim is sent to Consensus under your key.</p>
+          <p class="help-text">idstack checks each finding against the research on Consensus. If you save a key, idstack sends the claim of each finding to Consensus with your key.</p>
         </div>
         <button id="save-settings-btn" class="secondary-btn">Save Settings</button>
         <hr class="divider" />
         <div class="privacy-note">
           <h4>Privacy & Student Data</h4>
-          <p>With a key saved, each audit sends the page's title and text (for a full-course audit, the syllabus and assignments) from your browser to Google's API. On Google's free tier, Google may use that content to improve its products, and human reviewers may read it. idstack will not read Canvas grades, Gradebook, SpeedGrader, People, groups, discussions, submissions, or Inbox pages. Other pages can still name students, so audit course materials, not student work. With a Consensus key saved, each finding's claim, which can quote the page, is also sent to Consensus.</p>
+          <p>If you save a Google AI Studio key, each audit sends the page title and text from your browser to the Google API. For a full-course audit, idstack sends the syllabus and the assignments to the Google API. On Google's free tier, Google can use this content to improve its products. Human reviewers can also read this content.</p>
+          <p>idstack does not read Canvas grades, Gradebook, SpeedGrader, People, groups, discussions, submissions or Inbox pages. Other pages can show the names of students. Thus, idstack recommends that you audit course materials, not student work.</p>
+          <p>If you save a Consensus key, idstack also sends the claim of each finding to Consensus. This claim can contain text from the page.</p>
         </div>
       </div>
     </section>

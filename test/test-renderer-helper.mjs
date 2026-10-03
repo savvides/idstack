@@ -40,7 +40,7 @@ assert.ok(rendered.includes('Strong'), "Must render alignment score");
 assert.ok(rendered.includes('Great constructive alignment between rubric and lab analysis.'), "Must render key takeaway");
 
 // Check findings count & citations
-assert.ok(rendered.includes('Evidence-Based Findings (2)'), 'Must render correct findings count heading');
+assert.ok(rendered.includes('Findings with Evidence (2)'), 'Must render correct findings count heading');
 assert.ok(rendered.includes('[Assessment-8]'), 'Must render citation for finding 1');
 assert.ok(rendered.includes('[Alignment-3]'), 'Must render citation for finding 2');
 
@@ -78,7 +78,7 @@ const emptyData = {
   }
 };
 const emptyRendered = renderAuditHTML(emptyData);
-assert.ok(emptyRendered.includes('Evidence-Based Findings (0)'), 'Must handle 0 findings gracefully');
+assert.ok(emptyRendered.includes('Findings with Evidence (0)'), 'Must handle 0 findings gracefully');
 assert.ok(emptyRendered.includes('Remember'), 'Must render Bloom\'s level for empty findings data');
 
 // Test 3: Null / undefined resilience
@@ -95,7 +95,7 @@ const partialData = {
 };
 const partialRendered = renderAuditHTML(partialData);
 assert.ok(partialRendered.includes('Evaluate'), 'Must handle missing findings and improvedDraft');
-assert.ok(partialRendered.includes('Evidence-Based Findings (0)'), 'Must default findings to 0');
+assert.ok(partialRendered.includes('Findings with Evidence (0)'), 'Must default findings to 0');
 
 // Test 5: escapeHtml unit tests
 assert.strictEqual(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
@@ -156,9 +156,9 @@ assert.ok(listHtml.includes('Assignment'), 'Must render item page type');
 assert.ok(listHtml.includes('data-dossier-id="1"'), 'Must include data-dossier-id attribute');
 
 // Empty and edge cases
-assert.ok(renderDossierListHTML([]).includes('No items in dossier yet'), 'Must handle empty array gracefully');
-assert.ok(renderDossierListHTML(null).includes('No items in dossier yet'), 'Must handle null gracefully');
-assert.ok(renderDossierListHTML(undefined).includes('No items in dossier yet'), 'Must handle undefined gracefully');
+assert.ok(renderDossierListHTML([]).includes('The dossier is empty.'), 'Must handle empty array gracefully');
+assert.ok(renderDossierListHTML(null).includes('The dossier is empty.'), 'Must handle null gracefully');
+assert.ok(renderDossierListHTML(undefined).includes('The dossier is empty.'), 'Must handle undefined gracefully');
 
 // HTML Entity Escaping in Dossier List
 const unsafeDossier = [
@@ -176,9 +176,9 @@ assert.ok(escapedDossierHtml.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), 
 
 // Test 9: malformed model JSON renders instead of throwing (F9). The panel
 // renders inside a runtime.sendMessage callback, so a throw leaves the spinner up.
-assert.ok(renderAuditHTML({ findings: { 0: { tier: 'T1' } } }).includes('Evidence-Based Findings (0)'), 'non-array findings render as none');
+assert.ok(renderAuditHTML({ findings: { 0: { tier: 'T1' } } }).includes('Findings with Evidence (0)'), 'non-array findings render as none');
 const junk = renderAuditHTML({ findings: [null, 'oops', { tier: 'T5', citation: '[Alignment-1]' }] });
-assert.ok(junk.includes('Evidence-Based Findings (1)'), 'null and non-object findings are dropped');
+assert.ok(junk.includes('Findings with Evidence (1)'), 'null and non-object findings are dropped');
 assert.ok(junk.includes('[Alignment-1]'), 'a valid finding next to junk still renders');
 assert.ok(renderAuditHTML({ findings: [{ tier: 1, citation: '[CogLoad-1]' }] }).includes('tier-badge tier-1'), 'a non-string tier is stringified');
 
@@ -221,7 +221,7 @@ const consensusData = {
 const renderedConsensus = renderAuditHTML(consensusData);
 assert.ok(renderedConsensus.includes('consensus-badge'), 'Must render consensus-badge class');
 assert.ok(renderedConsensus.includes('✓ 88% Consensus (34 papers)'), 'Must render consensus meter and paper count');
-assert.ok(renderedConsensus.includes('✓ Consensus Verified'), 'Must render default consensus verified text when meter absent');
+assert.ok(renderedConsensus.includes('✓ Found on Consensus'), 'Must render the default Consensus badge text when meter absent');
 assert.ok(renderedConsensus.includes('href="https://doi.org/10.1016/j.edurev.2019.100309"'), 'Must render clickable DOI paper URL link');
 assert.ok(renderedConsensus.includes('target="_blank"'), 'Must include target="_blank" for DOI link');
 assert.ok(renderedConsensus.includes('rel="noopener noreferrer"'), 'Must include rel="noopener noreferrer" for DOI link');

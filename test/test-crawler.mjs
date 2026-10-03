@@ -60,7 +60,7 @@ assert.strictEqual(stripHtml('<p>Hello <strong>World</strong> &amp; Students<br>
     [COURSE_URL]: COURSE,
     [PAGE1_URL]: { status: 403, body: { errors: [{ message: 'user not authorized to perform that action' }] } }
   });
-  await assert.rejects(crawlCanvasCourse(ORIGIN, '12345', fetchImpl), /Failed to fetch Canvas assignments \(403\)/);
+  await assert.rejects(crawlCanvasCourse(ORIGIN, '12345', fetchImpl), /cannot get the Canvas assignments \(403\)/);
 }
 
 // Test 4: a network failure on page 2 is fatal, not a silent 50-item list
@@ -89,15 +89,15 @@ assert.strictEqual(stripHtml('<p>Hello <strong>World</strong> &amp; Students<br>
 // Test 6: missing origin or course id is refused before any request
 {
   const { fetchImpl, calls } = canvasFetch({});
-  await assert.rejects(crawlCanvasCourse(null, '12345', fetchImpl), /Canvas origin and courseId are required/);
-  await assert.rejects(crawlCanvasCourse(ORIGIN, null, fetchImpl), /Canvas origin and courseId are required/);
+  await assert.rejects(crawlCanvasCourse(null, '12345', fetchImpl), /must have a Canvas origin and a courseId/);
+  await assert.rejects(crawlCanvasCourse(ORIGIN, null, fetchImpl), /must have a Canvas origin and a courseId/);
   assert.strictEqual(calls.length, 0);
 }
 
 // Test 7: a failed course fetch is fatal
 {
   const { fetchImpl } = canvasFetch({ [COURSE_URL]: { status: 404, body: { errors: [{ message: 'The specified resource does not exist.' }] } } });
-  await assert.rejects(crawlCanvasCourse(ORIGIN, '12345', fetchImpl), /Failed to fetch Canvas course info \(404\)/);
+  await assert.rejects(crawlCanvasCourse(ORIGIN, '12345', fetchImpl), /cannot get the Canvas course information \(404\)/);
 }
 
 // Test 8: Demo Course Audit Fallback

@@ -16,7 +16,7 @@ export function renderAuditHTML(data) {
   if (!data) return '';
   const summary = data.summary || { bloomsLevel: 'N/A', alignmentScore: 'N/A', keyTakeaway: '' };
   const findings = Array.isArray(data.findings) ? data.findings.filter((f) => f && typeof f === 'object') : [];
-  const improvedDraft = data.improvedDraft || { title: 'Improved Draft', content: '' };
+  const improvedDraft = data.improvedDraft || { title: 'Recommended Draft', content: '' };
 
   const findingsHTML = findings.map(f => {
     const tierLabel = String(f.tier || 'T1');
@@ -30,7 +30,7 @@ export function renderAuditHTML(data) {
 
     let consensusBadgeHTML = '';
     if (f.consensus) {
-      let badgeText = '✓ Consensus Verified';
+      let badgeText = '✓ Found on Consensus';
       if (f.consensus.meter !== undefined && f.consensus.meter !== null && f.consensus.totalStudies !== undefined && f.consensus.totalStudies !== null) {
         const count = f.consensus.totalStudies;
         const countLabel = count === 1 ? '1 paper' : `${count} papers`;
@@ -65,7 +65,7 @@ export function renderAuditHTML(data) {
   const bloomsLevel = escapeHtml(summary.bloomsLevel || 'N/A');
   const alignmentScore = escapeHtml(summary.alignmentScore || 'N/A');
   const keyTakeaway = escapeHtml(summary.keyTakeaway || '');
-  const draftTitle = escapeHtml(improvedDraft.title || 'Improved Draft');
+  const draftTitle = escapeHtml(improvedDraft.title || 'Recommended Draft');
   const draftContent = escapeHtml(improvedDraft.content || '');
 
   return `
@@ -77,7 +77,7 @@ export function renderAuditHTML(data) {
       <p class="key-takeaway">${keyTakeaway}</p>
     </div>
 
-    <h3 class="section-title">Evidence-Based Findings (${findings.length})</h3>
+    <h3 class="section-title">Findings with Evidence (${findings.length})</h3>
     <div class="findings-list">${findingsHTML}</div>
 
     <div class="improved-box">
@@ -89,10 +89,10 @@ export function renderAuditHTML(data) {
     </div>
 
     <div class="feedback-row">
-      <span>Was this audit helpful?</span>
+      <span>Did this audit help you?</span>
       <button class="feedback-btn" data-vote="up">👍</button>
       <button class="feedback-btn" data-vote="down">👎</button>
-      <button id="re-audit-btn" class="link-btn">Audit Another Page</button>
+      <button id="re-audit-btn" class="link-btn">Audit a Different Page</button>
     </div>
   `;
 }
@@ -101,8 +101,8 @@ export function renderDossierListHTML(dossierItems) {
   if (!Array.isArray(dossierItems) || dossierItems.length === 0) {
     return `
       <div class="dossier-empty">
-        <p>No items in dossier yet.</p>
-        <p class="help-text">Audit pages and click &ldquo;Add to Dossier&rdquo; to build your course dossier.</p>
+        <p>The dossier is empty.</p>
+        <p class="help-text">To add an audit to the dossier, audit a page and click &ldquo;Add to Dossier&rdquo;.</p>
       </div>
     `;
   }
