@@ -1731,6 +1731,33 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the extension neuromyth text drifts from the CLI text" python3 "$WORK/r/test/test-consensus-cli.py"
 
+# 47a-47b. The extension's model prompts carry a copy of the preamble's
+# ASD-STE100 rules. test-ste-rules.mjs compares the copy with the ste-core block
+# and checks that both prompts carry it.
+# 47a. The extension copy drifts by one word -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/ste-rules.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '| "utilize" | "use" | |'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '| "utilize" | "employ" | |', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the extension copy of the STE rules drifts" "$WORK/r/test/test-extension.sh"
+
+# 47b. The course prompt drops the STE rules -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/prompts.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'revised assessment scaffolding."\n  }\n}\n\n${WRITING_STANDARD}`;'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'revised assessment scaffolding."\n  }\n}`;', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course prompt drops the STE rules" "$WORK/r/test/test-extension.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

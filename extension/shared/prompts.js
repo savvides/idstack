@@ -1,6 +1,11 @@
 import { TIER_METADATA } from './evidence-base.js';
+import { STE_RULES } from './ste-rules.js';
 
 const TIER_SCALE = Object.entries(TIER_METADATA).map(([tier, m]) => `   ${tier}: ${m.description}`).join('\n');
+// The side panel shows the model's text to people, so the model gets the
+// writing rules that the skills obey.
+const WRITING_STANDARD = `Obey the rules that follow when you write keyTakeaway, observation, evidence, recommendation and improvedDraft. Do not change JSON keys, severity and tier values, citations or quotations from the course.
+${STE_RULES}`;
 
 export function buildAuditPrompt({ title, pageType, content = '' }) {
   return `You are idstack, an evidence-based instructional design co-pilot.
@@ -27,23 +32,25 @@ You MUST respond strictly with valid JSON conforming to this schema:
   "summary": {
     "bloomsLevel": "Remember | Understand | Apply | Analyze | Evaluate | Create",
     "alignmentScore": "Strong | Moderate | Weak",
-    "keyTakeaway": "1-2 sentence executive summary of findings"
+    "keyTakeaway": "Summary of the findings in one or two sentences"
   },
   "findings": [
     {
       "severity": "critical | warning | info",
       "tier": "T1 | T2 | T3 | T4 | T5",
       "citation": "[Domain-Code] Short Citation",
-      "observation": "What is present in the current material",
-      "evidence": "What peer-reviewed research indicates",
-      "recommendation": "Specific actionable suggestion"
+      "observation": "What is in the current material",
+      "evidence": "What peer-reviewed research shows",
+      "recommendation": "One clear change that idstack recommends"
     }
   ],
   "improvedDraft": {
-    "title": "Improved Rubric / Learning Objective / Assignment Prompt",
-    "content": "Full markdown text ready for the instructor to copy-paste into Canvas"
+    "title": "Recommended Rubric / Learning Objective / Assignment Prompt",
+    "content": "Full markdown text that the instructor can paste into Canvas"
   }
-}`;
+}
+
+${WRITING_STANDARD}`;
 }
 
 export function buildCourseAuditPrompt(courseData = {}) {
@@ -81,25 +88,27 @@ ${TIER_SCALE}
 Respond with ONLY a valid JSON object matching this schema:
 {
   "summary": {
-    "bloomsLevel": "Overall Cognitive Demand (e.g. Apply / Analyze)",
+    "bloomsLevel": "Bloom's level of the course (for example Apply / Analyze)",
     "alignmentScore": "High (90%) | Moderate (70%) | Low (40%)",
-    "keyTakeaway": "1-2 sentence executive summary of course-wide curriculum alignment."
+    "keyTakeaway": "Summary of the alignment of the full course in one or two sentences."
   },
   "findings": [
     {
       "severity": "critical" | "warning" | "info",
       "tier": "T1" | "T2" | "T3" | "T4" | "T5",
       "citation": "[Domain-ID] Citation Name",
-      "observation": "What was identified across the course syllabus and assignments.",
+      "observation": "What idstack found in the course syllabus and assignments.",
       "evidence": "Author (Year) [Tier description]: Empirical finding.",
-      "recommendation": "Concrete actionable curriculum fix."
+      "recommendation": "One clear change to the curriculum that idstack recommends."
     }
   ],
   "improvedDraft": {
     "title": "Course Alignment & Scaffolding Matrix",
     "content": "Markdown formatted course roadmap and revised assessment scaffolding."
   }
-}`;
+}
+
+${WRITING_STANDARD}`;
 }
 
 export { TIER_METADATA };
