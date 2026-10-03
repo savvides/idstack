@@ -179,6 +179,19 @@ for skill in needs-analysis course-import; do
   check "$skill SKILL.md.tmpl justifies its Write-tool fallback" "grep -q 'Write-tool fallback' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
+# The learning_preferences_note text has two copies: the schema default and the
+# needs-analysis step that fills it. Both are fixed STE text and must keep the
+# same words, or the manifest says one thing and the skill writes another.
+NOTE_SYNC_PY='import re, sys
+d = sys.argv[1]
+schema = open(d + "/templates/manifest-schema.md", encoding="utf-8").read()
+skill = open(d + "/skills/needs-analysis/SKILL.md.tmpl", encoding="utf-8").read()
+a = re.search(r"\x22learning_preferences_note\x22: \x22([^\x22]+)\x22", schema)
+b = re.search(r"always populated with:\s*\x22([^\x22]+)\x22", skill)
+same = a and b and " ".join(a.group(1).split()) == " ".join(b.group(1).split())
+sys.exit(0 if same else 1)'
+check "learning_preferences_note has the same words in manifest-schema.md and needs-analysis" "python3 -c '$NOTE_SYNC_PY' '$IDSTACK_DIR'"
+
 # Canonical manifest section names only — these five non-canonical tokens once
 # shipped in re-run checks and prose, making re-run detection dead in 5 skills.
 for skill in $SKILLS; do

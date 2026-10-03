@@ -3,7 +3,7 @@ name: course-export
 description: |
   Export course content to any LMS. Generates IMS Common Cartridge files (.imscc)
   compatible with Canvas, Blackboard, Moodle, and D2L, or pushes directly to
-  Canvas via REST API. Reads from /course-builder output and the idstack manifest.
+  Canvas through the REST API. Reads from /course-builder output and the idstack manifest.
   The output IS the course. (idstack)
 allowed-tools:
   - Bash
@@ -206,7 +206,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -287,8 +287,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -314,8 +314,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -421,15 +421,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `export_metadata` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 ## Pre-Export Readiness Check
 
@@ -459,8 +459,8 @@ done
 
 Show the readiness table to the user. If the verdict is:
 - **READY TO EXPORT:** Proceed normally.
-- **ISSUES:** Show the issues and ask: "There are unresolved issues. Continue with export anyway?"
-- **INCOMPLETE:** Show what's missing and ask: "Some review skills haven't run yet. Continue with export anyway, or run the missing skills first?"
+- **NOT-READY:** Show the problems and ask: "The readiness check found problems. Do you want to export the course, or correct the problems first?"
+- **INCOMPLETE:** Show what's missing and ask: "Some review skills did not run. Do you want to export the course, or run those skills first?"
 
 This is advisory — the user can always choose to export regardless.
 
@@ -522,7 +522,7 @@ fi
 ```
 
 **If NO_MANIFEST or NO_CONTENT:**
-Tell the user: "I need generated course content to export. Run `/idstack:course-builder`
+Tell the user: "idstack must have generated course content to export. Run `/idstack:course-builder`
 first to generate your syllabus, modules, and assessments. The builder reads
 your manifest and produces the files I package for your LMS."
 
@@ -856,8 +856,8 @@ it is visible to both instructors and students after import.
   significantly larger learning gains [Assessment-8] [T1]
 - Quiz question generation is best-effort. The instructional designer should
   review and edit questions in the LMS after import. Flag this clearly:
-  "Quiz questions are auto-generated from your assessment specs. Review each
-  question in your LMS before publishing to students."
+  "idstack generated the quiz questions from your assessment specs. Review each
+  question in your LMS before you publish the quiz to students."
 - Support these question types: multiple choice, true/false, short answer
   (essay type in QTI)
 
@@ -931,8 +931,8 @@ Contents:
   - {Q} discussion topics (.xml)
   - Syllabus (.html)
 
-Quiz questions are auto-generated from your assessment specs. Review each
-question in your LMS before publishing to students.
+idstack generated the quiz questions from your assessment specs. Review each
+question in your LMS before you publish the quiz to students.
 
 To import into your LMS:
 - **Canvas:** Settings > Import Course Content > Common Cartridge 1.x
@@ -949,19 +949,19 @@ To import into your LMS:
 
 Ask the user for Canvas connection details. Use AskUserQuestion:
 
-"I need three things to push your course to Canvas:
+"idstack must have three things to push your course to Canvas:
 
 1. **Canvas URL** — Your institution's Canvas address
-   (e.g., `https://canvas.university.edu`)
+   (for example, `https://canvas.university.edu`)
 
 2. **Access token** — Generate one in Canvas:
    Account > Settings > scroll to 'Approved Integrations' > New Access Token
 
 3. **Course ID** — The number in the URL when you open the course
-   (e.g., `https://canvas.university.edu/courses/12345` > course ID is `12345`)
+   (for example, `https://canvas.university.edu/courses/12345` > course ID is `12345`)
    Use an existing empty course shell, or create a new course first in Canvas.
 
-Your token is used for this session only and is NEVER saved to any file."
+idstack uses your token for this session only. It does NOT save the token to a file."
 
 ### B2. Validate Connection
 
@@ -978,9 +978,9 @@ echo "$BODY" | head -5
 Handle errors:
 - HTTP 401: "Token rejected. Make sure you copied the full token. In Canvas:
   Account > Settings > New Access Token."
-- HTTP 403: "Access denied. Your token may not have the right permissions for
-  this course. You need at least Teacher or Designer role."
-- Network error: "Can't reach Canvas at that URL. Check the address and make
+- HTTP 403: "Access denied. Your token does not have the necessary permissions for
+  this course. You must have the Teacher role, the Designer role or a higher role."
+- Network error: "idstack cannot connect to Canvas at that URL. Check the address and make
   sure it includes `https://`."
 
 Verify course access:
@@ -992,8 +992,8 @@ curl -s -w "\n%{http_code}" \
 
 - HTTP 404: "Course not found. Check the course ID. You can find it in the URL
   when you open the course in Canvas."
-- HTTP 403: "You don't have access to this course. Ask your Canvas admin for
-  Teacher or Designer role."
+- HTTP 403: "You do not have access to this course. Get the Teacher or Designer
+  role from your Canvas admin."
 
 **SECURITY RULE: The token variable is used ONLY in curl commands within this
 section. NEVER write the token to the manifest, to any file, or to conversation
@@ -1126,7 +1126,7 @@ Each API call is wrapped in error checking. Handle these cases:
 - **HTTP 422:** Validation error. Report the error message from Canvas.
   Common causes: duplicate page titles, missing required fields.
 - **HTTP 429:** Rate limited. Wait 10 seconds, retry once. If still 429:
-  "Canvas is rate-limiting requests. Waiting 30 seconds before continuing."
+  "Canvas limits the request rate. idstack waits 30 seconds and then continues."
   Wait 30 seconds and retry. If still failing, log the item as failed and
   continue with the rest.
 - **Timeout / network error:** Log the item as failed, continue with the rest.
@@ -1150,8 +1150,8 @@ URL: {Canvas URL}/courses/{course_id}
 | Assignments  | {P}     | {0}    | {0}     |
 | Discussions  | {Q}     | {0}    | {0}     |
 
-Assignments and discussions are unpublished. Review them in Canvas before
-publishing to students.
+Assignments and discussions are not published. Review them in Canvas before
+you publish them to students.
 
 Open your course: {Canvas URL}/courses/{course_id}
 ```
@@ -1311,17 +1311,17 @@ Total files: [count]
 - **Canvas:** Settings > Import Course Content > SCORM package
 - **Moodle:** Add Activity > SCORM package > Upload
 - **Blackboard:** Content > Build Content > SCORM package
-- **Corporate LMS (Cornerstone, SAP SuccessFactors, etc.):**
+- **Corporate LMS (for example, Cornerstone or SAP SuccessFactors):**
   Upload through your content management interface
 
 ### Limitations
 
-- This SCORM package contains static HTML content. Interactive elements
-  (drag-and-drop, branching scenarios) are not generated.
-- SCORM API tracking (completion, score reporting) is not included.
-  The LMS will mark the SCO as complete when the learner opens it.
-- For richer interactivity, author in Articulate Rise or Storyline and
-  use idstack's /idstack:course-quality-review and /idstack:red-team on the exported package.
+- This SCORM package contains static HTML content. idstack does not generate
+  interactive elements (drag-and-drop, branching scenarios).
+- The package does not include SCORM API tracking (completion, score reports).
+  The LMS marks the SCO as completed when the learner opens it.
+- For more interactivity, create the course in Articulate Rise or Storyline. Then
+  use /idstack:course-quality-review and /idstack:red-team on the exported package.
 ```
 
 ### C8. Cleanup
@@ -1339,12 +1339,12 @@ After the export completes (any path), write the HTML report at `$_REPORT_PATH` 
 - **`{{skill_title}}`:** "Course Export Report"
 - **`{{skill_name}}`:** `course-export`
 - **`{{mode}}`:** include `format: imscc|canvas-api|scorm` in the header `meta` line.
-- **Summary:** 2–3 sentences. What was exported, where it landed, and the readiness verdict (clean / with warnings) at the time of export. Include the optional one-line scoreboard: "Modules N · Pages M · Assignments P · Quizzes Q · Discussions R".
+- **Summary:** 2–3 sentences. What was exported, where it landed, and the readiness verdict (READY TO EXPORT / NOT-READY / INCOMPLETE) at the time of export. Include the optional one-line scoreboard: "Modules N · Pages M · Assignments P · Quizzes Q · Discussions R".
 - **Skill-specific section before Findings** — add a `<section class="export-manifest">` with `<h2>Export contents</h2>` and an HTML `<table>` (Item type, Count, Notes). For Canvas API: include Created / Failed / Skipped columns instead.
 - **Finding ids:** `export-1`, `readiness-1`, `qti-1`, etc. Findings come from auto-generated content the designer should review before publishing (quiz questions, rubric formatting, missing placeholders), readiness-check items at time of export, and items the API call failed on. If everything is clean, the Findings section can simply contain an `info` finding noting the clean state.
 - **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="failed-items">` with `<h2>Failed items</h2>` only when the Canvas API path produced failed items.
-- **Limitations:** SCORM/IMSCC packages contain static HTML; interactive elements aren't generated. Quiz questions are auto-generated from assessment specs and need designer review. Tokens are never written to disk.
-- **Next steps:** Verify that the LMS import preserved everything correctly. Pay particular attention to quiz questions, assignment rubrics, discussion prompts, and module sequencing. If the readiness verdict was "with warnings," address the flagged findings before publishing.
+- **Limitations:** SCORM and IMSCC packages contain static HTML only. They do not include interactive elements. The quiz questions come from the assessment specs, and the designer must review them. The export does not write tokens to disk.
+- **Next steps:** Make sure that the LMS import kept all of the content correctly. Look carefully at quiz questions, assignment rubrics, discussion prompts, and the module sequence. If the readiness verdict was NOT-READY, correct the flagged findings before you publish the course.
 
 **Writing standard check.** In this command, replace `<path>` with the path of `course-export.html` in the folder from the "Course export folder:" line. Then run the command.
 
@@ -1480,14 +1480,14 @@ sections from the manifest (if they exist). The `verdict` is:
 
 Run the merge, then confirm:
 
-"Your export metadata has been saved to `.idstack/project.json`.
+"I saved your export metadata to `.idstack/project.json`.
 
-Your course has been exported. Verify that the LMS import preserved
-everything correctly. Pay particular attention to:
-- Quiz questions (auto-generated, may need editing)
-- Assignment rubrics (verify formatting survived the transfer)
-- Discussion prompts (check that instructions are clear)
-- Module sequencing (verify order matches your intended flow)"
+I exported your course. Make sure that the LMS import kept
+all of the content correctly. Look carefully at:
+- Quiz questions (idstack generated them. If necessary, edit them.)
+- Assignment rubrics (make sure that the format did not change in the transfer)
+- Discussion prompts (make sure that the instructions are clear)
+- Module sequence (make sure that the module sequence is correct)"
 
 ---
 
@@ -1600,7 +1600,7 @@ The merge tool replaces only the named top-level section, preserves every other 
       "motivation_factors": [],
       "demographics": "",
       "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
     },
     "training_justification": {
       "justified": true,

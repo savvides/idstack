@@ -2,7 +2,7 @@
 name: assessment-design
 description: |
   Evidence-based assessment design with rubrics, feedback strategies, and formative
-  checkpoints. Aligns each assessment to learning objectives using Bloom's taxonomy.
+  checkpoints. Aligns each assessment to learning objectives with Bloom's taxonomy.
   Applies Nicol's 7 principles of good feedback practice. Reads from /learning-objectives
   manifest and extends it with assessment specs. (idstack)
 allowed-tools:
@@ -205,7 +205,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -286,8 +286,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -313,8 +313,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -420,15 +420,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `assessments` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Assessment Design — Rubrics, Feedback Strategies & Formative Checkpoints
 
@@ -522,9 +522,9 @@ The shared preamble above already ran the manifest existence check
 (`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
 
 **If NO_MANIFEST:**
-- Say: "I see you haven't run `/idstack:learning-objectives` yet. Running it first gives me
-  your ILOs with Bloom's classifications, which helps me recommend assessment types
-  that actually measure your stated outcomes. Want to continue anyway, or run
+- Say: "You did not run `/idstack:learning-objectives`. That skill gives me
+  your ILOs with Bloom's classifications. With them, I can recommend assessment types
+  that measure your stated outcomes. Do you want to continue without it, or run
   `/idstack:learning-objectives` first?"
 - If the user wants to continue, proceed without manifest context. You can still
   design assessments; you just won't have the upstream alignment data. The manifest
@@ -550,11 +550,11 @@ Summarize what you have:
 | ILO-1 | [text] | [dimension] | [level] |
 | ... | ... | ... | ... |
 
-I'll use these Bloom's classifications to recommend assessment types that align with
+I will use these Bloom's classifications to recommend assessment types that align with
 each objective's cognitive level."
 
 If `needs_analysis.learner_profile` is also available, note the prior knowledge level:
-"Your learners are [level]. I'll factor this into feedback strategy recommendations."
+"Your learners are [level]. I will use this level in the feedback strategy recommendations."
 
 Proceed directly to the Assessment Design Workflow using manifest data.
 
@@ -565,7 +565,7 @@ Proceed directly to the Assessment Design Workflow using manifest data.
 Ask the user:
 
 **"What are the key learning objectives for this course? For each one, tell me what
-learners should be able to DO after completing it. I'll classify them and design
+learners must be able to DO after they complete it. I will classify them and design
 assessments to match."**
 
 For each objective provided, classify on both Bloom's dimensions (knowledge and
@@ -581,7 +581,7 @@ ambiguous [Alignment-12] [T2].
 
 **Announce the chosen mode to the user as the first sentence:**
 
-> "Mode 3: audit-existing. The imported course already contains [N] assessments and [M] rubrics — I'll audit them against your ILOs rather than designing new ones from scratch. If you want to add new assessments, say 'design more' at any point."
+> "Mode 3: audit-existing. The imported course contains [N] assessments and [M] rubrics. I will audit them against your ILOs. I will not design new assessments. To add new assessments, say 'design more'."
 
 **What audit-existing does (and doesn't do):**
 
@@ -631,9 +631,9 @@ Use this alignment table:
 "**ILO-X:** [objective text]
 - Bloom's level: [process] / [knowledge dimension]
 - Recommended assessment types: [list from table above]
-- My suggestion: [specific recommendation with rationale]
+- idstack recommends: [specific recommendation with rationale]
 
-Does this assessment type work for your context, or would you prefer a different
+Does this assessment type work for your context, or do you want a different
 format?"
 
 Use one AskUserQuestion per assessment to confirm or adjust.
@@ -641,14 +641,14 @@ Use one AskUserQuestion per assessment to confirm or adjust.
 **Flag misalignments.** If the user requests an assessment type that does not match
 the ILO's cognitive level, flag it directly:
 
-"You've asked for multiple-choice for ILO-X, which targets '[evaluate].' Multiple-choice
-primarily measures recognition and recall (remember level). This creates a constructive
-alignment gap — you won't know if students can actually evaluate because you're
-measuring whether they can recognize [Alignment-1] [T5].
+"You asked for multiple-choice for ILO-X, which targets '[evaluate]'. Multiple-choice
+primarily measures recognition and recall (remember level). This causes a constructive
+alignment gap. You cannot know if students can evaluate, because the test measures
+only if they can recognize [Alignment-1] [T5].
 
-Consider instead: [aligned alternatives]. Want to adjust, or keep multiple-choice
-with the understanding that it measures a lower cognitive level than the objective
-states?"
+idstack recommends: [aligned alternatives]. Do you want to change the format, or keep
+multiple-choice? Multiple-choice measures a lower cognitive level than the objective
+states."
 
 Do not silently accept misaligned choices. Present the evidence, let the user decide,
 and record their decision.
@@ -825,7 +825,7 @@ After completing the full workflow, present a consolidated summary.
 |-----------|--------|--------|----------|
 | Practice quiz on Module 3 concepts | A-1 Midterm | auto-graded, elaborated | immediate |
 | Draft outline peer review | A-2 Final project | peer, structured | delayed |
-| Self-assessment checklist | A-1 Midterm | self-check against rubric | student-initiated |
+| Self-assessment checklist | A-1 Midterm | self-check against rubric | student-led |
 
 ### Alignment Verification
 | ILO | Bloom's Level | Assessment | Assessment Level | Status |
@@ -836,8 +836,8 @@ After completing the full workflow, present a consolidated summary.
 ```
 
 Flag any remaining alignment issues. If the user accepted a misalignment in Step 1,
-note it here: "ILO-3 / A-3: User accepted misalignment (quiz for evaluate-level ILO).
-Consider adding a formative peer review checkpoint to partially address the gap."
+note it here: "ILO-3 / A-3: The user accepted the misalignment (quiz for evaluate-level ILO).
+idstack recommends a formative peer review checkpoint to make the gap smaller."
 
 ---
 
@@ -939,8 +939,8 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Skill-specific section before Findings** — add a `<section class="assessment-plan">` with `<h2>Assessment plan</h2>` and an HTML `<table>` (columns: ID, Assessment, Type, Format, Aligned ILOs, Feedback, Points).
 - **Finding ids:** `assess-1`, `rubric-1`, `feedback-1`, etc. Findings come from alignment mismatches, correctness-only feedback at apply+ Bloom's levels, missing rubrics, missing formative checkpoints before high-stakes summatives, and fewer than 5 of Nicol's 7 feedback principles.
 - **Optional skill-specific section** (Mode 3 only, after Top recommendations, before Limitations): `<section class="mode3-audit-notes">` with `<h2>Mode 3 audit notes</h2>` listing the existing assessments audited, the Bloom's level each rubric criterion targets, where the gap is, and which gaps the designer chose to act on vs. defer.
-- **Limitations:** report reads rubric criteria as documented in the manifest, not as enacted in instructor grading; `feedback_quality_score` is a heuristic, not a validated instrument; Mode 3 doesn't propose new assessments.
-- **Next steps:** Run `/idstack:course-builder` to generate the full course content including assessment documents, rubric handouts, and assignment instructions. (For imported courses in gap-fill mode, course-builder will only generate the artifacts flagged as missing here.)
+- **Limitations:** The report reads rubric criteria as the manifest records them, not as instructors apply them to student work. `feedback_quality_score` is a heuristic, not a validated instrument. Mode 3 does not recommend new assessments.
+- **Next steps:** Run `/idstack:course-builder` to generate the full course content, with assessment documents, rubric handouts, and assignment instructions. (For imported courses in gap-fill mode, course-builder will only generate the missing artifacts that this report found.)
 
 In Mode 3 (audit-existing), every finding should reference the audited rubric criterion or assessment item and explicitly state the gap, not propose a wholesale redesign.
 
@@ -1119,14 +1119,14 @@ Map each ILO to its aligned assessment(s):
 
 Write the manifest, then confirm to the user:
 
-"Your assessment designs are saved. Two artifacts:
+"I saved your assessment designs in two files:
 
 - **Read this:** `.idstack/exports/<course-slug>/assessment-design.html` — the assessment
   plan, the feedback-quality score with evidence-backed findings, and per-rubric
-  alignment notes. Open it in any browser; the folder is self-contained.
+  alignment notes. Open it in a web browser. The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
-**Next step:** Run `/idstack:course-builder` to generate the full course content including
+**Next step:** Run `/idstack:course-builder` to generate the full course content, with
 assessment documents, rubric handouts, and assignment instructions."
 
 ---
@@ -1240,7 +1240,7 @@ The merge tool replaces only the named top-level section, preserves every other 
       "motivation_factors": [],
       "demographics": "",
       "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
     },
     "training_justification": {
       "justified": true,

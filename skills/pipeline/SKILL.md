@@ -1,8 +1,8 @@
 ---
 name: pipeline
 description: |
-  Pipeline orchestrator for idstack. Chains skills from /needs-analysis through
-  /course-export in evidence-based order, auto-skipping completed skills.
+  Pipeline orchestrator for idstack. Runs the skills from /needs-analysis to
+  /course-export in the evidence-based sequence. It skips the skills that are complete.
   Handles fresh starts (no manifest) and resumption (partial pipeline). (idstack)
 allowed-tools:
   - Bash
@@ -205,7 +205,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -286,8 +286,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -313,8 +313,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -420,10 +420,10 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
@@ -495,7 +495,7 @@ starting point.
 **Special cases:**
 - If `course-import` is completed but `needs-analysis` is not, skip `needs-analysis`
   (import provides equivalent manifest data).
-- If ALL skills are completed, tell the user via AskUserQuestion: "All pipeline skills have been completed. What would you like to do?" Options:
+- If ALL skills are completed, tell the user via AskUserQuestion: "All pipeline skills are completed. What do you want to do?" Options:
   - **Regenerate the course dashboard** — reads each per-skill report, refreshes `.idstack/exports/<course-slug>/index.html` with the latest cross-cutting view (no skills re-run). Recommended after editing per-skill outputs by hand.
   - **Re-run a specific skill** — e.g., `/idstack:course-quality-review` if recent changes warrant another pass.
   - **Exit** — leave everything as-is.
@@ -509,7 +509,7 @@ Show the user a status table before starting:
 Pipeline Status:
   [done] /idstack:needs-analysis
   [done] /idstack:learning-objectives
-  [next] /idstack:assessment-design      <-- starting here
+  [next] /idstack:assessment-design      <-- the run starts here
   [    ] /idstack:course-builder
   [    ] /idstack:course-quality-review
   [    ] /idstack:accessibility-review
@@ -527,7 +527,7 @@ ask which one using AskUserQuestion with the skill list as options.
 
 For each skill from the starting point onward:
 
-1. Announce: "Starting /idstack:<skill-name>..."
+1. Announce: "/idstack:<skill-name> starts."
 2. Invoke the skill using the `Skill` tool with the **plugin-namespaced** skill name
    (e.g., `skill: "idstack:needs-analysis"`). Plugin skills are addressed as
    `plugin:skill` — a bare `"needs-analysis"` does not resolve in Claude Code.
@@ -537,14 +537,14 @@ For each skill from the starting point onward:
 
 **If the `Skill` invocation fails** (the tool is unavailable, or the child skill cannot be
 resolved), degrade gracefully rather than silently skipping the stage: print exactly what
-the user should type to run it themselves (e.g., "Type `/idstack:needs-analysis` to run the
-next stage, then resume by typing `/idstack:pipeline` again") and STOP. The pipeline picks
+the user should type to run it themselves (for example, "Type `/idstack:needs-analysis` to run the
+next stage. Then type `/idstack:pipeline` again to continue the pipeline") and STOP. The pipeline picks
 up on the next `/idstack:pipeline` invocation by re-reading the timeline and continuing from
 the new starting point. Generate the course dashboard (Step 4) before stopping so the
 partial-run dashboard is up to date.
 
 **Between skills**, briefly announce the transition:
-"[skill-name] complete. Course dashboard refreshed. Moving to /idstack:<next-skill>..."
+"[skill-name] is completed. I updated the course dashboard. The next skill is /idstack:<next-skill>."
 
 ### Step 4: Generate Course Dashboard
 
@@ -643,8 +643,8 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 ### Step 5: Pipeline Complete
 
 When all remaining skills have been executed:
-- Announce: "Pipeline complete. Your course has been through all 8 stages."
-- Confirm the dashboard path: "Course dashboard at `.idstack/exports/<course-slug>/index.html` — open it in any browser for the cross-cutting view; the per-skill HTML reports in the same folder carry the full detail. Zip the folder to hand it to a stakeholder."
+- Announce: "The pipeline is completed. Your course went through all 8 stages."
+- Confirm the dashboard path: "The course dashboard is at `.idstack/exports/<course-slug>/index.html`. Open it in a web browser to see the cross-cutting view. The per-skill HTML reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
 - If `/idstack:course-quality-review` produced a score, show it.
 - Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.
 - Log the pipeline run so "the pipeline was run" is recoverable from the timeline:

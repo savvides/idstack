@@ -206,7 +206,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -287,8 +287,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -314,8 +314,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -421,15 +421,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `import_metadata` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Course Import — Universal LMS Course Import
 
@@ -508,8 +508,8 @@ Options:
 
 ### A1. Get the file path
 
-Ask: "Where is your .imscc file? Provide the file path (drag and drop the file
-into this window to paste the path)."
+Ask: "Where is your .imscc file? Give the file path. To paste the path, drag the file
+into this window."
 
 ### A2. Validate and extract
 
@@ -524,8 +524,8 @@ fi
 ```
 
 If FILE_NOT_FOUND: "File not found at that path. Check the path and try again."
-If not a ZIP: "This doesn't look like a Common Cartridge file. It should be a
-.imscc file exported from your LMS."
+If not a ZIP: "This file does not look like a Common Cartridge file. Use the
+.imscc file that your LMS exports."
 
 Extract the cartridge. **Use `mktemp -d` with no other flags** — `-t` on macOS treats the
 argument as a literal prefix instead of substituting the `XXXXXX`, producing a broken
@@ -550,8 +550,8 @@ else
 fi
 ```
 
-If no imsmanifest.xml found: "This ZIP doesn't contain an IMS manifest. Is this
-a Common Cartridge export? Try re-exporting from your LMS."
+If no imsmanifest.xml found: "This ZIP does not contain an IMS manifest. Is this
+a Common Cartridge export? Export the course from your LMS again."
 
 Read the manifest XML:
 
@@ -619,11 +619,11 @@ Continue to Step 2 (Quality Flags).
 
 ### B1. Get the documents
 
-Ask: "Paste your course documents below. This could be a syllabus, module outline,
-assignment list, or course description. The more detail you provide, the better I
-can map your course structure.
+Ask: "Paste your course documents below. For example, paste a syllabus, a module outline,
+an assignment list, or a course description. If you give more information, I can
+map your course structure better.
 
-Paste the content and I'll extract the structure."
+Paste the content, and I will identify the structure."
 
 ### B2. Extract structure
 
@@ -671,11 +671,11 @@ Continue to Step 2 (Quality Flags).
 
 ### D1. Get the file path
 
-Ask: "Where is your PDF or document file? Provide the file path (drag and drop the
-file into this window to paste the path).
+Ask: "Where is your PDF or document file? Give the file path. To paste the path, drag the
+file into this window.
 
 This works with PDFs exported from Articulate Rise, Storyline, Adobe Captivate,
-or any authoring tool. Also works with Word documents, course packets, and syllabus PDFs."
+or a different authoring tool. It also works with Word documents, course packets, and syllabus PDFs."
 
 ### D2. Read the file
 
@@ -687,8 +687,8 @@ If the file does not exist, ask the user to check the path.
 If the PDF is large (more than 10 pages), read in chunks using the `pages` parameter:
 - First pass: pages "1-10"
 - If more content exists: pages "11-20", etc.
-- Maximum 50 pages total. If the PDF is longer, note: "Reading first 50 pages.
-  If important content is after page 50, let me know which pages to focus on."
+- Maximum 50 pages total. If the PDF is longer, note: "idstack reads the first 50 pages only.
+  If important content is after page 50, tell me which pages to read."
 
 ### D3. Extract structure
 
@@ -725,15 +725,15 @@ Continue to Step 2 (Quality Flags).
 Ask: "I need two things to connect to Canvas:
 
 1. **Canvas URL** — Your institution's Canvas address
-   (e.g., `https://canvas.university.edu`)
+   (for example, `https://canvas.university.edu`)
 
 2. **Access token** — Generate one in Canvas:
    Account → Settings → scroll to 'Approved Integrations' → New Access Token
 
 3. **Course ID** — The number in the URL when you open the course
-   (e.g., `https://canvas.university.edu/courses/12345` → course ID is `12345`)
+   (for example, `https://canvas.university.edu/courses/12345` → course ID is `12345`)
 
-Your token is used for this session only and is NEVER saved to any file."
+idstack uses your token for this session only. It does NOT save the token to a file."
 
 ### C2. Validate connection
 
@@ -750,8 +750,8 @@ echo "$BODY" | head -5
 Handle errors:
 - HTTP 401: "Token rejected. Make sure you copied the full token. In Canvas:
   Account → Settings → New Access Token."
-- HTTP 403: "Access denied. Your token may not have the right permissions."
-- Network error: "Can't reach Canvas at that URL. Check the address."
+- HTTP 403: "Access denied. Your token does not have the necessary permissions."
+- Network error: "idstack cannot connect to Canvas at that URL. Check the address."
 
 ### C3. Fetch course data
 
@@ -809,9 +809,9 @@ it for up to 10 pages (500 items max per endpoint). After 500 items, stop and no
 
 **Error handling for each call:**
 - 404: Skip this endpoint, note what's missing
-- 429: Wait 10 seconds, retry once. If still 429: "Canvas is rate-limiting.
-  Wait a minute and try `/idstack:course-import` again."
-- Timeout: "Canvas didn't respond for [endpoint]. Continuing with what we have."
+- 429: Wait 10 seconds, retry once. If still 429: "Canvas limits the request rate.
+  Wait one minute and run `/idstack:course-import` again."
+- Timeout: "Canvas did not send a response for [endpoint]. idstack continues with the data that it has."
 
 ### C4. Map API response to course structure
 
@@ -832,8 +832,8 @@ Continue to Step 2 (Quality Flags).
 
 ### E1. Get the file path
 
-Ask: "Where is your SCORM package (.zip)? Provide the file path (drag and drop the
-file into this window to paste the path).
+Ask: "Where is your SCORM package (.zip)? Give the file path. To paste the path, drag the
+file into this window.
 
 This works with SCORM 1.2 and SCORM 2004 packages from Articulate Rise, Storyline,
 Adobe Captivate, Lectora, iSpring, or any SCORM-compliant authoring tool."
@@ -850,8 +850,8 @@ fi
 ```
 
 If FILE_NOT_FOUND: "File not found at that path. Check the path and try again."
-If not a ZIP: "This doesn't look like a SCORM package. It should be a .zip file
-exported from your authoring tool."
+If not a ZIP: "This file does not look like a SCORM package. Use the .zip file
+that your authoring tool exports."
 
 Extract the package:
 
@@ -873,16 +873,16 @@ else
 fi
 ```
 
-If NO_SCORM_MANIFEST: "No imsmanifest.xml found in this ZIP. This may not be a valid
-SCORM package. Try exporting again from your authoring tool, or use Path D (PDF import)
-instead."
+If NO_SCORM_MANIFEST: "This ZIP does not contain imsmanifest.xml. Without this file, it is not a valid
+SCORM package. Export the package from your authoring tool again, or use Path D (PDF import)
+for this file."
 
 ### E4. Detect SCORM version
 
 From the manifest XML, check namespaces and schema references:
 - If `adlcp_rootv1p2` or `adlcp:scormtype` (lowercase) → SCORM 1.2
 - If `adlcp_v1p3` or `adlcp:scormType` (camelCase) → SCORM 2004
-- Note the version for the user: "Detected SCORM [version] package."
+- Note the version for the user: "idstack found a SCORM [version] package."
 
 ### E5. Parse manifest structure
 
@@ -987,19 +987,19 @@ flags problems visible in the structural data alone.
 - Check for accessibility info. Flag if none:
   "⚠ No accessibility information found for course materials"
 - Check for learner support resources. Flag if none:
-  "⚠ No learner support section detected (tutoring, office hours, tech support)"
+  "⚠ idstack found no learner support section (tutoring, office hours, tech support)"
 
 **Alignment flags:**
 - If objectives exist AND assessments exist but no clear mapping between them:
-  "⚠ Objectives and assessments found but no alignment mapping detected"
+  "⚠ The course has objectives and assessments, but idstack found no alignment matrix between them"
 - If all assessments are the same type (e.g., all quizzes):
-  "⚠ All {X} assessments are {type} — consider varied assessment for different
+  "⚠ All {X} assessments are {type}. idstack recommends different assessment types for different
   Bloom's levels [Assessment-10] [T1]"
 
 **Assessment feedback flags:**
 - If quizzes are auto-graded with no indication of elaborated feedback:
-  "⚠ Auto-graded assessments detected. Elaborated feedback (explaining WHY) produces
-  larger learning gains than correctness-only feedback [Assessment-8] [T1]"
+  "⚠ idstack found auto-graded assessments. Elaborated feedback (that explains WHY) increases
+  learning more than correctness-only feedback [Assessment-8] [T1]"
 
 Present the flags:
 
@@ -1013,7 +1013,7 @@ These are quick observations from the course structure, not a full review.
 Run /idstack:course-quality-review for an evidence-based audit with specific recommendations.
 ```
 
-If zero flags: "No obvious structural issues detected during import. Run
+If zero flags: "idstack found no structural problems in the import. Run
 /idstack:course-quality-review for a deeper analysis."
 
 ---
@@ -1052,15 +1052,15 @@ Present for user review:
 ```
 ## Inferred Task Analysis
 
-I've mapped your {N} modules to task analysis entries. Please review and adjust:
+I mapped your {N} modules to task analysis entries. Review and adjust them:
 
 | ID | Task | Frequency | Criticality | Difficulty |
 |----|------|-----------|-------------|------------|
 | T-1 | [performance statement] | [est.] | [est.] | [est.] |
 ...
 
-These estimates are based on module structure. Edit any that don't match your
-actual course context.
+These estimates come from the module structure. Edit each estimate that is not correct for your
+course context.
 ```
 
 Ask the user to confirm or edit via AskUserQuestion.
@@ -1092,7 +1092,7 @@ For each objective:
 4. **Confidence level:**
    - High: verb maps clearly to one Bloom's level
    - Ambiguous: verb could map to multiple levels (e.g., "analyze", "demonstrate")
-     Mark as "verify with /idstack:learning-objectives" [Alignment-12] [T2]
+     Mark as "check with /idstack:learning-objectives" [Alignment-12] [T2]
 
 5. **Set alignment_status to "imported-unverified"** — the user should run
    /idstack:learning-objectives to verify and check bidirectional alignment
@@ -1107,11 +1107,11 @@ Present for review:
 | ID | Objective | Knowledge | Process | Status |
 |----|-----------|-----------|---------|--------|
 | ILO-1 | [text] | [dim] | [proc] | high confidence |
-| ILO-2 | [text] | [dim] | [proc] | ambiguous — verify |
+| ILO-2 | [text] | [dim] | [proc] | ambiguous — check |
 ...
 
-All classifications are marked "imported-unverified." Run /idstack:learning-objectives
-to verify Bloom's levels and check alignment with activities and assessments.
+All classifications have the status "imported-unverified." Run /idstack:learning-objectives
+to check the Bloom's levels and the alignment with activities and assessments.
 ```
 
 ---
@@ -1154,16 +1154,16 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **`{{skill_title}}`:** "Course Import Report"
 - **`{{skill_name}}`:** `course-import`
 - **`{{mode}}`:** include `source: cartridge|paste|canvas-api|pdf|scorm` and `source LMS: canvas|blackboard|moodle|d2l|rise|storyline|unknown` in the header `meta` line.
-- **Summary:** 2–3 sentences. What came in (N modules, M objectives, P assessments), how many quality flags were raised, and the single most important thing the designer should know — e.g., "Import is structurally clean but objectives are sparse." or "Cartridge schema is valid but 8/12 modules are missing rubrics."
+- **Summary:** 2–3 sentences. What came in (N modules, M objectives, P assessments), how many quality flags were raised, and the single most important thing the designer should know — e.g., "Import is structurally clean but objectives are sparse." or "Cartridge schema is valid but 8/12 modules have no rubric."
 - **Skill-specific sections before Findings**:
   - `<section class="imported">` with `<h2>Imported</h2>` and an HTML `<table>` (Item, Count). Rows: Modules, Objectives, Assessments, Activities/discussions, Pages, Rubrics.
 - **Finding ids:** `import-1`, `quality-1`, `bloom-1`, etc. Findings come from import quality flags, missing rubrics, missing objectives, alignment-already-broken-on-arrival, and Bloom's-inference low-confidence classifications.
 - **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="blooms-classification">` with `<h2>Bloom's classification</h2>` and an HTML `<table>` (ILO ID, Statement (truncated), Bloom's level, Confidence). Note any low-confidence classifications the designer should verify.
-- **Limitations:** structural metadata only — interactive elements (Storyline, flashcards) don't render in PDF; Canvas API auth tokens are never written to disk; SCORM packages with non-standard manifest extensions may have been parsed loosely.
+- **Limitations:** The import reads structural metadata only. Interactive elements (Storyline, flashcards) do not show in a PDF. The import does not write Canvas API auth tokens to disk. The import can miss data in SCORM packages that have non-standard manifest extensions.
 - **Next steps** (use an `<ol>`):
   1. Run `/idstack:course-quality-review` for the full evidence-based audit.
-  2. Run `/idstack:learning-objectives` to verify the Bloom's inference and check bidirectional alignment.
-  3. Run `/idstack:needs-analysis` (in audit-existing mode) to add the organizational context and learner profile that can't be extracted from the cartridge.
+  2. Run `/idstack:learning-objectives` to check the Bloom's inference and the bidirectional alignment.
+  3. Run `/idstack:needs-analysis` (in audit-existing mode) to add the organizational context and learner profile that idstack cannot get from the cartridge.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
@@ -1261,16 +1261,16 @@ Write the manifest, then confirm:
 **Two artifacts:**
 - **Read this:** `.idstack/exports/<course-slug>/course-import.html` — the import report
   with evidence-backed quality flags, the Bloom's classification table, and recommended
-  next steps tied to specific findings. Open it in any browser; the folder is self-contained.
+  next steps tied to specific findings. Open it in a web browser. The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Recommended next steps:**
 1. `/idstack:course-quality-review` — Full evidence-based audit with QM standards and
    CoI presence analysis
-2. `/idstack:learning-objectives` — Verify Bloom's classifications and check
+2. `/idstack:learning-objectives` — Check the Bloom's classifications and the
    bidirectional alignment (objectives ↔ activities ↔ assessments)
 3. `/idstack:needs-analysis` — Add organizational context and learner profile data
-   that can't be extracted from the course structure alone
+   that idstack cannot find in the course structure alone
 ```
 
 ---
@@ -1384,7 +1384,7 @@ The merge tool replaces only the named top-level section, preserves every other 
       "motivation_factors": [],
       "demographics": "",
       "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
     },
     "training_justification": {
       "justified": true,

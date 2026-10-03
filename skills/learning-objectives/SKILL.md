@@ -2,7 +2,7 @@
 name: learning-objectives
 description: |
   Evidence-based learning objective development with revised Bloom's taxonomy
-  classification and bidirectional alignment checking. Reads from /needs-analysis
+  classification and a bidirectional alignment check. Reads from /needs-analysis
   manifest and extends it with ILOs, alignment matrix, and expertise reversal
   flags. (idstack)
 allowed-tools:
@@ -205,7 +205,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -286,8 +286,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -313,8 +313,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -420,15 +420,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `learning_objectives` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Learning Objectives — Revised Bloom's Taxonomy & Constructive Alignment
 
@@ -486,9 +486,9 @@ The shared preamble above already ran the manifest existence check
 (`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
 
 **If NO_MANIFEST:**
-- Say: "I notice you haven't run `/idstack:needs-analysis` yet. Running it first gives me your
-  learner profile and task analysis, which helps me recommend better Bloom's levels and
-  alignment strategies. Want to continue anyway, or run `/idstack:needs-analysis` first?"
+- Say: "You did not run `/idstack:needs-analysis`. That skill gives me your
+  learner profile and task analysis. With them, I can recommend better Bloom's levels and
+  alignment strategies. Do you want to continue without it, or run `/idstack:needs-analysis` first?"
 - If the user wants to continue, proceed without manifest context. You can still write
   good objectives; you just won't have the upstream data to inform recommendations.
 
@@ -499,8 +499,8 @@ The shared preamble above already ran the manifest existence check
 If the manifest exists and has `needs_analysis` data, use it to inform your guidance.
 
 **Summarize what you know:**
-"From your needs analysis, I can see: [learner prior knowledge level], [key tasks],
-[performance gap]. I'll use this to guide objective development."
+"Your needs analysis gives: [learner prior knowledge level], [key tasks],
+[performance gap]. I will use this data to develop the objectives."
 
 **Use upstream data:**
 - `needs_analysis.task_analysis.job_tasks` — Suggest which objectives are needed based on
@@ -527,8 +527,8 @@ using AskUserQuestion. Do not batch multiple questions.
 
 Ask the user:
 
-**"What do you want learners to be able to DO after completing this course? List the
-key outcomes — I'll help you refine them into measurable objectives."**
+**"What do you want learners to be able to DO after they complete this course? List the
+key outcomes. I will help you change them into measurable objectives."**
 
 For each outcome the user provides:
 
@@ -578,17 +578,17 @@ identify, describe, compare, apply, design, develop, assess, interpret, create.
 
 When you encounter one of these:
 
-"The verb '[verb]' can operate at different cognitive levels depending on context. In
-this objective, are students:
-- [Lower interpretation — describe what this would look like], or
-- [Higher interpretation — describe what this would look like]?"
+"The verb '[verb]' can be at different cognitive levels. The context sets the level. In
+this objective, do students:
+- [Lower interpretation — describe what this looks like], or
+- [Higher interpretation — describe what this looks like]?"
 
 **Example:**
-"The verb 'analyze' in 'Analyze patient data to identify trends' could mean:
+"The verb 'analyze' in 'Analyze patient data to identify trends' can mean:
 - **Apply level:** Follow a prescribed analysis procedure step by step, or
-- **Analyze level:** Independently break down the data, identify patterns, and draw
-  connections that aren't explicitly taught.
-Which is closer to what you intend?"
+- **Analyze level:** Independently break down the data, identify patterns, and find
+  connections that the course does not teach explicitly.
+Which level do you want?"
 
 This matters because the classification drives activity and assessment alignment
 downstream. Getting it wrong here cascades [Alignment-12] [T2].
@@ -603,11 +603,11 @@ After all objectives are drafted and classified, review the set as a whole.
 If the objectives follow a strict low-to-high Bloom's sequence (remember -> understand ->
 apply -> analyze -> evaluate -> create), flag it:
 
-"Your objectives follow a strict low-to-high Bloom's sequence. Evidence shows students
-don't need to master facts before engaging in higher-order learning [Alignment-14] [T1].
-Consider whether some objectives could start at higher cognitive levels. For example,
-could learners begin with an analysis or evaluation task and learn factual knowledge
-in context?"
+"Your objectives follow a strict low-to-high Bloom's sequence. Evidence shows that students
+can start higher-order learning before they master facts [Alignment-14] [T1].
+You can start some objectives at higher cognitive levels. For example, learners
+can start with an analysis or evaluation task and learn factual knowledge
+in context."
 
 **Cross-reference with learner profile (if available from manifest):**
 
@@ -623,8 +623,8 @@ in context?"
   objectives (remember, understand) may add extraneous cognitive load for learners who
   already have this knowledge [CogLoad-19] [T1]. Recommend starting at apply or higher.
 
-- **Mixed audience:** Flag that a single sequence won't serve everyone. Consider whether
-  lower-level objectives could be made optional or handled through pre-assessment.
+- **Mixed audience:** Flag that one sequence does not serve all learners. Recommend that
+  lower-level objectives become optional, or that a pre-assessment covers them.
 
 Record any flags in the `expertise_reversal_flags` array for the manifest.
 
@@ -640,15 +640,15 @@ both a learning activity AND an assessment, and all three target the same cognit
 
 For each ILO, ask:
 
-**"What learning activity will help students achieve ILO-X: [objective text]?"**
+**"What learning activity will help students meet ILO-X: [objective text]?"**
 
 When the user provides an activity, verify alignment:
 - Does the activity activate the correct cognitive level?
 - If the ILO targets "evaluate" but the activity is "read a textbook chapter" (remember
   level), flag the mismatch:
-  "This activity operates at the 'remember' level, but ILO-X targets 'evaluate.' Students
-  need practice at the evaluation level to achieve this objective. Consider activities like
-  peer review, critique exercises, or rubric-based judgment tasks instead."
+  "This activity is at the 'remember' level, but ILO-X targets 'evaluate'. Students
+  must practice at the evaluation level to meet this objective. idstack recommends a different
+  activity, for example peer review, a critique exercise, or a rubric-based judgment task."
 - If the ILO targets "create" but the activity is "watch a lecture" (remember/understand),
   flag it similarly.
 
@@ -659,14 +659,14 @@ describes. Passive activities cannot prepare students for active objectives.
 
 For each ILO, ask:
 
-**"How will you assess whether students achieved ILO-X: [objective text]?"**
+**"How will you assess if students met ILO-X: [objective text]?"**
 
 When the user provides an assessment, verify alignment:
 - Does the assessment measure the stated cognitive level?
 - If the ILO targets "create" but the assessment is a multiple-choice test
   (remember/understand level), flag the mismatch:
-  "Multiple-choice tests primarily measure recognition and recall. ILO-X targets 'create.'
-  Consider assessments where students actually produce something: a project, design,
+  "Multiple-choice tests primarily measure recognition and recall. ILO-X targets 'create'.
+  idstack recommends an assessment where students make a product: a project, design,
   portfolio, or prototype."
 - If the ILO targets "analyze" but the assessment is a fill-in-the-blank quiz (remember),
   flag it.
@@ -679,17 +679,17 @@ stated in the objective.
 After both passes are complete, identify gaps:
 
 **ILOs with no mapped activity:**
-"ILO-X has no learning activity. Students won't have a chance to practice this skill
-before being assessed on it. This is a critical alignment gap."
+"ILO-X has no learning activity. Students cannot practice this skill
+before the assessment. This is a critical alignment gap."
 
 **ILOs with no mapped assessment:**
-"ILO-X has no assessment. You won't know if students achieved this objective. Either add
-an assessment or consider whether this objective is necessary."
+"ILO-X has no assessment. You cannot know if students met this objective. Add
+an assessment. If the objective is not necessary, remove it."
 
 **Activities with no mapped ILO:**
-"You described an activity ([activity]) that doesn't connect to any ILO. Either it serves
-an unstated objective (add the ILO) or it's not contributing to course outcomes (consider
-removing it)."
+"You described an activity ([activity]) that does not connect to an ILO. If it is for
+an unstated objective, add the ILO. If it does not help the course outcomes, you can
+remove it."
 
 Present gaps prominently. These are the primary findings from the alignment check.
 
@@ -763,7 +763,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Skill-specific section before Findings** — add a `<section class="alignment-table">` with `<h2>Alignment table</h2>` and an HTML `<table>` (columns: ID, Objective, Knowledge, Process, Activity, Assessment, Alignment). Alignment values: `aligned` / `MISMATCH` / `GAP`.
 - **Finding ids:** `align-1`, `bloom-1`, `expertise-1`, etc. Findings come from bidirectional alignment gaps, Bloom's-level mismatches, expertise-reversal flags, and ambiguous verbs that were clarified.
 - **Top recommendations:** the 3-5 highest-impact alignment fixes, ordered by priority; cite each ([Domain-N] [TN]) and reference the finding id it addresses.
-- **Limitations:** alignment is read from manifest descriptions, not from the actual rubric criteria; expertise-reversal flags are inferred from the learner profile without a learner survey.
+- **Limitations:** The alignment data comes from the manifest descriptions, not from the rubric criteria. The expertise-reversal flags come from the learner profile, without a learner survey.
 - **Next steps:** Run `/idstack:assessment-design` to design assessments aligned to these objectives with evidence-based rubrics and feedback strategies.
 
 Every finding in the HTML must correspond to an entry in `learning_objectives.alignment_matrix.gaps[]` or `learning_objectives.expertise_reversal_flags[]` so downstream skills can read them programmatically.
@@ -871,11 +871,11 @@ the bash block above — i.e., `.idstack/exports/<course-slug>/learning-objectiv
 
 Write the manifest, then confirm to the user:
 
-"Your learning objectives are saved. Two artifacts:
+"I saved your learning objectives in two files:
 
 - **Read this:** `.idstack/exports/<course-slug>/learning-objectives.html` — the alignment
   table, evidence-backed findings on gaps and mismatches, and a Bloom's-level expertise
-  read. Open it in any browser; the folder is self-contained.
+  read. Open it in a web browser. The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Next step:** Run `/idstack:assessment-design` to design assessments aligned to your objectives
@@ -992,7 +992,7 @@ The merge tool replaces only the named top-level section, preserves every other 
       "motivation_factors": [],
       "demographics": "",
       "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
     },
     "training_justification": {
       "justified": true,

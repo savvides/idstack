@@ -149,7 +149,7 @@ expect_fail "bare /skill reference regression" "$WORK/r/test/smoke-test.sh" "$WO
 # "/assessment-design is the natural next step" — a command that does nothing. The
 # preamble is spliced into all 22 skill files, so this reached every user.
 fresh
-sed -i.bak 's|/idstack:assessment-design is the natural next step|/assessment-design is the natural next step|' \
+sed -i.bak 's|the next skill is /idstack:assessment-design|the next skill is /assessment-design|' \
   "$WORK/r/templates/preamble.md"
 regen
 expect_fail "unbackticked bare /skill in preamble regression" "$WORK/r/test/smoke-test.sh" "$WORK/r"
@@ -1631,6 +1631,21 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 regen
 expect_fail "course-builder drops its course-content check step" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 49a. The two learning_preferences_note copies drift apart -> smoke-test must fail.
+# The schema default and the needs-analysis step carry the same fixed STE sentence.
+# Changing one copy without the other makes the manifest and the skill disagree.
+fresh
+python3 - "$WORK/r/skills/needs-analysis/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "because the evidence does\nnot support them."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "because the evidence does\nnot support it.", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "the learning_preferences_note copies drift apart" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

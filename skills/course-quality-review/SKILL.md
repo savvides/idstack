@@ -206,7 +206,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -287,8 +287,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -314,8 +314,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -421,15 +421,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `quality_review` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Course Quality Review — QM-Aligned Audit with CoI Presence Layer
 
@@ -517,8 +517,8 @@ with substantive data (not just empty defaults).
 This is the richest review. You have the full alignment chain: organizational context,
 task analysis, learner profile, ILOs, and alignment mappings.
 
-Tell the user: "I have your needs analysis and [X] learning objectives. I'll use
-these for a deep alignment audit, checking the full chain from organizational need
+Tell the user: "I have your needs analysis and [X] learning objectives. I will use
+them for a deep alignment audit. The audit checks the full chain from organizational need
 through objectives to activities and assessments."
 
 Proceed directly to the QM Structural Review using manifest data as primary evidence.
@@ -529,8 +529,8 @@ Proceed directly to the QM Structural Review using manifest data as primary evid
 
 Review what is available, and flag what is missing.
 
-Tell the user: "I have [populated sections] but not [missing sections]. I'll review
-what I can and flag gaps. For a complete audit, consider running [missing skill]
+Tell the user: "I have [populated sections] but not [missing sections]. I will review
+the available data and show the gaps. For a full audit, run [missing skill]
 first."
 
 Common gaps and their impact:
@@ -818,7 +818,7 @@ Ask the user targeted questions:
    complete to practice that skill?"
 2. "How is each objective assessed? What does the learner produce or
    demonstrate?"
-3. "Are there any objectives that you teach but don't formally assess?"
+3. "Do you teach objectives that you do not formally assess?"
 
 Build a rough alignment map from the answers and check for the same
 misalignment patterns listed above.
@@ -1018,7 +1018,7 @@ Then present the detailed findings:
 (Scores summed and scaled: raw X/30 -> XX/25)
 
 ### Constructive Alignment Audit (XX/15)
-[findings or "Full alignment verified across all ILOs"]
+[findings or "All ILOs are fully aligned"]
 
 ### Cross-Domain Evidence Checks (XX/20)
 | Check | Flags | Severity | Fix |
@@ -1057,8 +1057,8 @@ When recommending fixes, point users to the appropriate idstack skill:
 
 - Misaligned or weak ILOs: "Run `/idstack:learning-objectives` to realign ILO-3 with
   its assessment."
-- Missing learner profile: "Run `/idstack:needs-analysis` to establish the learner
-  profile that is currently missing."
+- Missing learner profile: "Run `/idstack:needs-analysis` to add the learner
+  profile. The course does not have a learner profile."
 - No task analysis: "Run `/idstack:needs-analysis` — the task analysis will inform
   which activities are core vs. reference."
 - Weak alignment chain: "Run `/idstack:learning-objectives` to rebuild the alignment
@@ -1231,7 +1231,7 @@ scores. The preamble's context recovery already reads this file, but the score t
 display should also appear in the completion message.
 
 - If 1 prior score exists: show delta. "Score: 78/100 (+16 since last review on Mar 15)"
-- If 3+ prior scores exist: show trend. "Trending up: 62 -> 72 -> 78 across 3 reviews."
+- If 3+ prior scores exist: show trend. "The score went up: 62 -> 72 -> 78 in 3 reviews."
 - If no prior scores exist: just show the current score.
 
 The manifest stores the current overall_score. The timeline stores historical scores.
@@ -1284,7 +1284,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
   - `<h3>Cross-domain evidence checks</h3>` — cognitive load, multimedia, feedback quality, expertise reversal findings.
   Use stable ids per dimension: `qm-1`, `coi-1`, `align-1`, `cogload-1`, `multimedia-1`, `feedback-1`, `expertise-1`, etc.
 - **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="quick-wins">` with `<h2>Top 3 quick wins</h2>` and an HTML `<table>` (#, Finding, Impact, Skill to Run).
-- **Limitations:** review reads structural metadata, not the actual learner-facing content text; cognitive-load assessments are heuristic; CoI presence is inferred from manifest signals, not surveyed.
+- **Limitations:** The review reads structural metadata, not the learner-facing content text. The cognitive-load assessments are heuristic. The CoI presence scores come from manifest signals, not from a survey.
 - **Next steps:** 1–3 specific next actions referencing other idstack skills. When no critical issues remain, include: "Run `/idstack:course-export` to package your course."
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
@@ -1315,11 +1315,11 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 After writing both the manifest and the quality report, confirm to the user:
 
-"Your quality review has been saved to `.idstack/project.json` and a shareable HTML
-report generated at `.idstack/exports/<course-slug>/course-quality-review.html`. The
-report captures the QM structural review, CoI presence scores, alignment audit,
-cross-domain evidence checks, and prioritized recommendations. Open it in any browser;
-the folder is self-contained (CSS bundled).
+"I saved your quality review to `.idstack/project.json`. I also wrote a shareable HTML
+report to `.idstack/exports/<course-slug>/course-quality-review.html`. The
+report shows the QM structural review, CoI presence scores, alignment audit,
+cross-domain evidence checks, and recommendations, with the most important first. Open it in a web browser.
+The folder also contains the CSS file.
 
 **Score: XX/100** [If previous: "Previous: X/100 (DATE). Delta: +/-Z."]
 
@@ -1440,7 +1440,7 @@ The merge tool replaces only the named top-level section, preserves every other 
       "motivation_factors": [],
       "demographics": "",
       "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
     },
     "training_justification": {
       "justified": true,

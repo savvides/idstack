@@ -4,7 +4,7 @@ description: |
   Adversarial course design audit across 5 dimensions: alignment stress test,
   evidence verification, cognitive load analysis, learner persona simulation,
   and prerequisite chain integrity. Produces a confidence score (0-100).
-  Runs in a clean-context sub-agent so synthesis is unbiased by build history.
+  Runs in a clean-context sub-agent. Thus the build history does not change the synthesis.
   Works standalone or reads from the idstack project manifest. (idstack)
 allowed-tools:
   - Bash
@@ -208,7 +208,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -289,8 +289,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -316,8 +316,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -423,15 +423,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `red_team_audit` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Red Team — Adversarial Course Design Audit
 
@@ -479,7 +479,7 @@ The preamble above already ran the manifest check. Now confirm scope.
 
 **Ask one focus question** via AskUserQuestion:
 
-> "Any specific angle to red-team, or a full sweep?"
+> "Do you want a full sweep, or a red-team audit with one focus?"
 
 Options:
 - **Full sweep (recommended)** — all 5 dimensions at equal depth
@@ -581,7 +581,7 @@ Check every evidence citation in the manifest or course design for accuracy.
   [Assessment-18] [T3] — systematic reviews of meta-analyses reveal how evidence evolves.
 - Only flag contradictions from clearly relevant papers. Ignore tangential matches.
 - Check for retractions of cited papers.
-- If WebSearch is unavailable, set `mode: limited` in the report and note: "currency verification requires internet."
+- If WebSearch is unavailable, set `mode: limited` in the report and note: "the currency check must have internet access."
 
 ### Dimension 3 — Cognitive Load Analysis
 
@@ -693,9 +693,9 @@ Severity weights reflect that structural misalignment and cognitive overload are
 
 Contextualize:
 - 80+ "High confidence" — minor issues only
-- 60-79 "Moderate, needs work" — several design gaps
-- 40-59 "Low confidence, significant gaps" — multiple problem dimensions
-- <40 "Course needs redesign" — structural issues across most dimensions
+- 60-79 "Moderate confidence, changes necessary" — several design gaps
+- 40-59 "Low confidence, important gaps" — multiple problem dimensions
+- <40 "New design necessary" — structural issues across most dimensions
 
 ---
 
@@ -792,7 +792,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **`{{skill_title}}`:** "Red Team Audit"
 - **`{{skill_name}}`:** `red-team`
 - **`{{mode}}`:** `full` or `limited` (include the optional mode segment in the header `meta` line; you may also append `· focus: {{FOCUS}}`).
-- **Summary:** 2–3 sentences. Lead with the confidence score (0–100) and the band ("High confidence" / "Moderate, needs work" / "Low confidence, significant gaps" / "Course needs redesign"). Include the optional one-line scoreboard: "Confidence XX/100 · Critical N · Warning N · Info N".
+- **Summary:** 2–3 sentences. Lead with the confidence score (0–100) and the band ("High confidence" / "Moderate confidence, changes necessary" / "Low confidence, important gaps" / "New design necessary"). Include the optional one-line scoreboard: "Confidence XX/100 · Critical N · Warning N · Info N".
 - **Findings** ordered by severity (`sev-critical` → `sev-warning` → `sev-info`) inside a single `<section class="findings">`. Stable ids of the form `<dimension>-<n>` (e.g., `alignment-1`, `cogload-3`) so the parent can reference findings when applying fixes. Each `<article class="finding sev-...">` should include the affected module/objective/assessment in the "What we saw" `<dd>`.
 - **Skill-specific section before Findings** — add a `<section class="dimension-summary">` with `<h2>Per-dimension summary</h2>` and an HTML `<table>` with a row for each dimension (Alignment, Evidence, Cognitive Load, Personas, Prerequisites) showing the per-dimension `pass | warning | critical` score and a one-line summary.
 - **Top recommendations:** the 3 changes that would most improve the score. Reference finding ids.
@@ -830,7 +830,7 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 ## Return value
 
 After writing the report, return ONLY a short executive summary (≤200 words) to the parent:
-- Confidence score and band ("Moderate, needs work")
+- Confidence score and band ("Moderate confidence, changes necessary")
 - Severity counts
 - Top 1 critical finding (one line)
 - Path: the value of `$_REPORT_PATH` (e.g., `.idstack/exports/<course-slug>/red-team.html`)
@@ -844,19 +844,19 @@ Do NOT return the full report inline. The parent will read the file.
 After the orchestrator returns:
 1. Read the HTML report file at the path the orchestrator returned (e.g., `.idstack/exports/<course-slug>/red-team.html`). HTML is fine to Read — extract the content sections by tag.
 2. Show the user the executive summary in your own words: confidence score, severity counts, top critical finding, and the report path.
-3. Mention: "Full HTML report at the path above — open it in any browser for the complete finding list."
+3. Mention: "The full HTML report is at the path above. Open it in a web browser to see all of the findings."
 
 ### Step 4: Triage — choose fix scope
 
 Ask one AskUserQuestion:
 
-> "Which findings would you like to address?"
+> "Which findings do you want to correct?"
 
 Options:
 - **Critical only (recommended)** — highest-impact fixes, smallest scope
 - **Critical + Warning** — broader cleanup
-- **All findings** — including Info; can be a lot
-- **Skip — review report manually** — no fixes now; user will read the file themselves
+- **All findings** — Info findings also. This can be many changes.
+- **Skip — review report manually** — no changes. You read the report.
 
 If the user chooses **Skip**, jump straight to Step 6.
 
@@ -952,7 +952,7 @@ Each finding object: `{"id": "alignment-1", "description": "...", "module": "Mod
 
 `fixes_applied[]` — each item: `{"id": "alignment-1", "description": "Optional one-line summary of the change applied"}`.
 
-`fixes_deferred[]` — each item: `{"id": "alignment-3", "reason": "One-line reason — e.g., requires re-running /idstack:assessment-design"}`.
+`fixes_deferred[]` — each item: `{"id": "alignment-3", "reason": "One-line reason — for example, the fix needs a new run of /idstack:assessment-design"}`.
 
 The merge tool exits non-zero (and prints a diagnostic on stderr) if the payload is malformed,
 the manifest is corrupt, or the section name is misspelled — never silently overwriting. If
@@ -989,7 +989,7 @@ canonical schema for reference is in `templates/manifest-schema.md`.
 ### Step 7: Final summary to user
 
 Two sentences:
-- "Confidence: X/100. Applied N fixes (M deferred). Report at `.idstack/exports/<course-slug>/red-team.html`."
+- "Confidence: X/100. I made N changes and deferred M changes. The report is at `.idstack/exports/<course-slug>/red-team.html`."
 - If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
 
 If the user wants to verify fixes hold, they can re-run `/idstack:red-team` — that's deliberately manual to avoid token costs of automatic re-verification.

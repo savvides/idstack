@@ -2,8 +2,8 @@
 name: accessibility-review
 description: |
   WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0)
-  enhancement review for course designs. Two-tier output: "Must Fix" for
-  accessibility violations and "Should Improve" for UDL recommendations.
+  enhancement review for course designs. Two-tier output: "Necessary changes" for
+  accessibility violations and "Recommended changes" for UDL recommendations.
   Works standalone or reads from the idstack project manifest. (idstack)
 allowed-tools:
   - Bash
@@ -206,7 +206,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -287,8 +287,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -314,8 +314,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -421,15 +421,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `accessibility_review` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Accessibility Review — WCAG + UDL Two-Tier Audit
 
@@ -439,9 +439,9 @@ inclusive (UDL Guidelines 3.0).
 
 Your two-layer approach:
 1. **WCAG Compliance** — Does the course meet accessibility standards? These are
-   "Must Fix" items with legal and institutional implications.
+   "Necessary changes" items with legal and institutional implications.
 2. **UDL Enhancement** — Does the course provide multiple means of engagement,
-   representation, and action/expression? These are "Should Improve" items backed
+   representation, and action/expression? These are "Recommended changes" items backed
    by evidence that improve learning for ALL learners, not just those with disabilities.
 
 A course can be technically accessible (screen readers work, captions exist) and still
@@ -484,10 +484,10 @@ The shared preamble above already ran the manifest existence check
 
 **Without manifest:** Ask the user via AskUserQuestion (one question at a time):
 
-1. "Describe your course at a high level. What subject, how many modules, what's the
+1. "Describe your course at a high level. What is the subject, how many modules does it have, and what is the
    target audience?"
-2. "What types of assessments do you use? (quizzes, essays, projects, discussions,
-   presentations, etc.)"
+2. "What types of assessments do you use? (for example, quizzes, essays, projects, discussions, or
+   presentations)"
 3. "What media formats are in your course? (text, video, audio, images, interactive
    elements, simulations)"
 4. "Are there any timed activities or assessments?"
@@ -508,13 +508,13 @@ If you have access to the **Agent tool**, dispatch the WCAG audit and UDL review
 
 Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in each agent prompt. The agents cannot see the preamble.
 
-**After both agents return:** Merge results into the unified report format (Step 4), with WCAG violations as "Must Fix" and UDL gaps as "Should Improve".
+**After both agents return:** Merge results into the unified report format (Step 4), with WCAG violations as "Necessary changes" and UDL gaps as "Recommended changes".
 
 **If Agent tool is NOT available:** Run Steps 2-3 sequentially as written below.
 
 ---
 
-### Step 2: WCAG 2.1 AA Compliance Audit (Tier 1: Must Fix)
+### Step 2: WCAG 2.1 AA Compliance Audit (Tier 1: Necessary changes)
 
 Review the course design against these WCAG-derived accessibility requirements.
 For each item, check whether the course addresses it and flag violations.
@@ -634,7 +634,7 @@ For each violation found, provide:
 - Specific remediation with an example
 - Evidence citation
 
-### Step 3: UDL Guidelines 3.0 Enhancement Review (Tier 2: Should Improve)
+### Step 3: UDL Guidelines 3.0 Enhancement Review (Tier 2: Recommended changes)
 
 Review the course design against the three UDL principles. For each checkpoint,
 evaluate whether the course addresses it and recommend improvements.
@@ -695,13 +695,13 @@ Calculate the accessibility score (0-100):
 
 **Combined Score:**
 - 80+ "Strong accessibility" — meets compliance and supports diverse learners
-- 60-79 "Needs improvement" — basic compliance but gaps in inclusivity
-- 40-59 "Significant gaps" — multiple compliance issues and limited UDL coverage
-- <40 "Major accessibility barriers" — course needs substantial redesign
+- 60-79 "Some accessibility problems" — basic compliance but gaps in inclusivity
+- 40-59 "Important accessibility problems" — multiple compliance issues and limited UDL coverage
+- <40 "Many accessibility barriers" — course needs substantial redesign
 
 ### Step 5: Generate Report
 
-Generate an HTML report so the designer has a single document covering both compliance (WCAG, the Must Fix layer) and inclusion (UDL, the Should Improve layer). The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
+Generate an HTML report so the designer has a single document covering both compliance (WCAG, the Necessary changes layer) and inclusion (UDL, the Recommended changes layer). The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
 
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
@@ -736,13 +736,13 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 
 - **`{{skill_title}}`:** "Accessibility Review"
 - **`{{skill_name}}`:** `accessibility-review`
-- **Summary:** 2–3 sentences. Lead with the overall score, the number of Must Fix items at WCAG Level A, and the biggest single barrier the designer should know about. Include the optional one-line scoreboard: "Overall XX/100 · WCAG XX/100 · UDL XX/100".
+- **Summary:** 2–3 sentences. Lead with the overall score, the number of necessary changes at WCAG Level A, and the biggest single barrier the designer should know about. Include the optional one-line scoreboard: "Overall XX/100 · WCAG XX/100 · UDL XX/100".
 - **Findings** organized into two clearly-labeled subgroups inside `<section class="findings">`:
-  - `<h3>Tier 1 — Must Fix (WCAG 2.1 AA)</h3>` — one `<article class="finding sev-...">` per violation, stable ids `wcag-1`, `wcag-2`, etc. Order: Level A first (the floor), then AA; within level, by impact.
-  - `<h3>Tier 2 — Should Improve (UDL 3.0)</h3>` — one `<article class="finding sev-info">` per UDL recommendation, stable ids `udl-1`, `udl-2`, etc. Group by principle (Engagement, Representation, Action & Expression). Phrase suggestions as enhancement, not compliance — UDL is enhancement.
+  - `<h3>Tier 1 — Necessary changes (WCAG 2.1 AA)</h3>` — one `<article class="finding sev-...">` per violation, stable ids `wcag-1`, `wcag-2`, etc. Order: Level A first (the floor), then AA; within level, by impact.
+  - `<h3>Tier 2 — Recommended changes (UDL 3.0)</h3>` — one `<article class="finding sev-info">` per UDL recommendation, stable ids `udl-1`, `udl-2`, etc. Group by principle (Engagement, Representation, Action & Expression). Write recommendations as enhancement, not compliance — UDL is enhancement.
 - **Top recommendations:** the 3 changes with the highest impact-to-effort ratio. Cite each.
-- **Limitations:** review reads structural metadata, not the actual learner-facing content text; alt-text quality is checked for presence not for descriptive accuracy; UDL recommendations are generated from manifest signals, not from observed learner use.
-- **Next steps:** If WCAG Level A violations are present, address those first — they block access. Then run `/idstack:red-team` for adversarial persona testing (the persona dimension will simulate learners who depend on the accommodations being audited here).
+- **Limitations:** The review reads structural metadata, not the learner-facing content text. The review checks that alt text is present, not that it is accurate. The UDL recommendations come from manifest signals, not from observed learner use.
+- **Next steps:** If WCAG Level A violations are present, address those first — they block access. Then run `/idstack:red-team` for an adversarial persona test (the persona dimension simulates learners who depend on the accommodations that this review audited).
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
@@ -865,19 +865,19 @@ verbatim.
 
 After writing the manifest, confirm to the user:
 
-"Your accessibility review is saved. Two artifacts:
+"I saved your accessibility review in two files:
 
 - **Read this:** `.idstack/exports/<course-slug>/accessibility-review.html` — the report
-  with WCAG violations (Must Fix), UDL recommendations (Should Improve), evidence-backed
-  findings on every item, and the 3 highest-impact quick wins. Open it in any browser;
-  the folder is self-contained.
+  with WCAG violations (Necessary changes), UDL recommendations (Recommended changes), evidence-backed
+  findings on every item, and the 3 highest-impact quick wins. Open it in a web browser.
+  The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Score:** Overall XX/100 · WCAG XX/100 · UDL XX/100. [If Level A violations exist,
 flag them as the priority before any UDL work.]
 
-**Next step:** Run `/idstack:red-team` for adversarial persona testing — the persona
-dimension will stress-test the accommodations from this review against learners who
+**Next step:** Run `/idstack:red-team` for an adversarial persona test. The persona
+dimension tests the accommodations from this review against learners who
 depend on them."
 
 ---
@@ -991,7 +991,7 @@ The merge tool replaces only the named top-level section, preserves every other 
       "motivation_factors": [],
       "demographics": "",
       "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
     },
     "training_justification": {
       "justified": true,

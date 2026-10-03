@@ -2,8 +2,8 @@
 name: needs-analysis
 description: |
   Evidence-based three-level needs assessment for instructional design.
-  Guides you through organizational, task, and learner analysis before
-  building a course. Creates a shared project manifest that downstream
+  Guides you through the organizational, task, and learner analysis before
+  you design a course. Creates a shared project manifest that downstream
   skills (/learning-objectives, /course-quality-review) read and extend. (idstack)
 allowed-tools:
   - Bash
@@ -205,7 +205,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -286,8 +286,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -313,8 +313,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -420,15 +420,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `needs_analysis` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Needs Analysis — Three-Level Assessment Protocol
 
@@ -488,8 +488,8 @@ Before gathering context, decide which mode this skill is operating in. Read
 
 **Announce the chosen mode to the user as the first sentence of the conversation.**
 Examples:
-- "Mode: design-new (no import detected). I'll walk you through fresh needs analysis."
-- "Mode: audit-existing (cartridge import from Canvas). The course already exists; I'll skip the 'is training justified?' gate and assess design-fit instead."
+- "Mode: design-new (idstack found no import). I will help you do a new needs analysis."
+- "Mode: audit-existing (cartridge import from Canvas). The course is available. I will not use the 'is training justified?' gate. I will assess design-fit."
 
 If the user says they meant a different mode (e.g., they imported but want to redesign from scratch), accept and switch. The mode determines the rest of the workflow.
 
@@ -503,8 +503,8 @@ Before diving into the three levels, establish the project context.
 
 **In design-new mode**, ask the user:
 
-"What course or training program are we designing? Give me the basics: title, subject
-area, and who requested it."
+"What course or training program do you want to design? Tell me the title, the subject
+area and the person who requested it."
 
 Then establish the delivery context. Ask about:
 - **Modality:** Online, face-to-face, hybrid, or hyflex?
@@ -530,11 +530,11 @@ Store these in the `context` section of the manifest.
 
 **In audit-existing mode, the "is training justified?" question is moot.** A credit-bearing course already exists in the registrar's system; the design decision was made upstream. Skip the decision-gate logic below and instead ask one design-fit question:
 
-> "Given the course as imported (from `import_metadata.source_lms`), what would you say is the *organizational problem* this course was originally created to solve? (e.g., 'undergraduates lack synthesis skills before entering capstone'). Be specific — this anchors the rest of the design audit."
+> "The course came from `import_metadata.source_lms`. What *organizational problem* did your institution create this course to solve? For example: 'Undergraduates do not have synthesis skills when they start the capstone.' Give a clear answer. The rest of the design audit uses this answer."
 
 Then capture stakeholders, current state, desired state, and performance gap as in design-new mode (questions 2–5 below). Set `needs_analysis.training_justification` to:
 ```json
-{"justified": true, "confidence": 10, "rationale": "Existing credit-bearing course; design audit only — training-fit decision is upstream of this skill.", "alternatives_considered": []}
+{"justified": true, "confidence": 10, "rationale": "This course is in use for credit. This skill does a design audit only. The decision about training occurred before this skill.", "alternatives_considered": []}
 ```
 Then proceed to Step 3.
 
@@ -557,9 +557,9 @@ Ask these questions (one at a time):
 2. **"Who are the stakeholders? Who requested this, who approves it, who will be
    affected by it?"**
 
-3. **"What is the current state? How are people performing right now?"**
+3. **"What is the current state? How well do people do the task now?"**
 
-4. **"What is the desired state? What should performance look like after this
+4. **"What is the desired state? What performance do you want after this
    intervention?"**
 
 5. **"What is the gap between current and desired state?"**
@@ -572,14 +572,14 @@ Ask these questions (one at a time):
 After gathering answers, make a judgment:
 
 - If the gap is **knowledge or skill**: Training is likely justified. Proceed.
-- If the gap is **motivation**: Training alone won't fix this. Flag it. Consider
-  incentive redesign, performance support, or management intervention. Training
-  may be part of the solution but not the whole solution [T3].
+- If the gap is **motivation**: Training alone is not the solution to this problem. Flag it. Tell the user that
+  incentive redesign, performance support, or management intervention can help. Training
+  can be part of the solution, but not all of the solution [T3].
 - If the gap is **environmental** (bad tools, unclear processes, insufficient resources):
-  Training is NOT the right intervention. Say so directly. "Based on what you've
-  described, the performance gap is caused by [environmental factor], not a lack of
-  knowledge or skills. Training won't fix this. Consider [alternative intervention]
-  instead." [Needs-8] [T3]
+  Training is NOT the right intervention. Say so directly. "From what you
+  described, [environmental factor] causes the performance gap. The cause is not
+  knowledge or skills. Training is not the solution to this problem. idstack recommends
+  [alternative intervention]." [Needs-8] [T3]
 
 Populate the `training_justification` object:
 - `justified`: true or false (you CAN recommend against training)
@@ -589,7 +589,7 @@ Populate the `training_justification` object:
 
 **If training is NOT justified:** Present the finding clearly. Ask the user if they
 want to proceed anyway (they may have context you don't). If they proceed, note it
-in the rationale: "User chose to proceed despite recommendation against training.
+in the rationale: "The user continued after idstack recommended against training.
 Reason: [user's reason]."
 
 ---
@@ -600,8 +600,8 @@ Reason: [user's reason]."
 
 Ask:
 
-1. **"What are the key tasks or activities that learners need to perform after
-   completing this course?"**
+1. **"What are the key tasks or activities that learners must do after
+   they complete this course?"**
    Push for observable, measurable performance. "Understand ethics" is not a task.
    "Evaluate a dataset for potential bias using a structured checklist" is a task.
 
@@ -615,7 +615,7 @@ Ask:
 3. **"What prerequisite knowledge or skills do learners need before they can learn
    these tasks?"**
 
-4. **"What tools, resources, or systems do learners use to perform these tasks?"**
+4. **"What tools, resources, or systems do learners use to do these tasks?"**
 
 Assign task IDs: T-1, T-2, T-3, etc.
 
@@ -648,7 +648,7 @@ Ask:
    [CogLoad-19] [T1]. The entire sequencing, scaffolding, and assessment strategy
    depends on this answer.
 
-2. **"What motivates your learners? Why would they engage with this course?"**
+2. **"What motivates your learners? Why do they do the work in this course?"**
    Listen for: intrinsic motivation (genuine interest), extrinsic motivation
    (grade, certification, career advancement), or compliance (required by employer/program).
 
@@ -663,19 +663,19 @@ Ask:
 If the user mentions "learning styles," "VARK," "visual learners," "auditory
 learners," or similar: respond with this exact framing:
 
-"I appreciate you thinking about learner differences. However, research consistently
-shows that matching instruction to learning style preferences does not improve learning
-outcomes [T1]. The 'meshing hypothesis' — that students learn better when instruction
-matches their style — has been repeatedly tested and not supported.
+"It is good that you think about learner differences. But many studies show that
+instruction that matches learning style preferences does not make learning outcomes
+better [T1]. Researchers tested the 'meshing hypothesis' — that students learn better when
+instruction matches their style — many times. The results do not support it.
 
-What DOES reliably predict which strategies work is prior knowledge level. Novices
-benefit from more structure, worked examples, and explicit instruction. Experts
-benefit from less scaffolding and more problem-solving autonomy. Let's focus on
-prior knowledge instead."
+Prior knowledge level is the factor that predicts which strategies work. Novices
+learn more with more structure, worked examples, and explicit instruction. Experts
+learn more with less scaffolding and more problem-solving autonomy. Thus, this
+analysis uses prior knowledge level."
 
 The `learning_preferences_note` field in the manifest is always populated with:
-"Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge
-is the primary differentiator."
+"idstack does NOT use learning styles to differentiate instruction because the evidence does
+not support them. Prior knowledge is the primary differentiator."
 
 ---
 
@@ -696,7 +696,7 @@ After completing all three levels, present a structured summary:
 - Performance Gap: [knowledge/skill/motivation/environment]
 - Training Justified: [Yes/No] (Confidence: X/10)
 - Rationale: [one paragraph]
-- Alternatives Considered: [list]
+- Alternatives Evaluated: [list]
 
 ### Level 2: Task Analysis
 [task table]
@@ -766,9 +766,9 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Skill-specific section before Findings** — add a `<section class="project-context">` with `<h2>Project context</h2>` and a `<dl>` listing modality, timeline, class size, institution type, and available tech.
 - **Finding ids:** `needs-1`, `needs-2`, etc. Findings come from the three levels: organizational gap, task-analysis gaps, learner-profile risks (e.g., expertise mismatch with the planned design).
 - **Optional skill-specific sections** (after Top recommendations, before Limitations):
-  - `<section class="training-justification">` with `<h2>Training justification</h2>` — show `Justified: Yes/No`, `Confidence: X/10`, the rationale paragraph, and alternatives considered (or "n/a — imported credit-bearing course" in audit-existing mode).
+  - `<section class="training-justification">` with `<h2>Training justification</h2>` — show `Justified: Yes/No`, `Confidence: X/10`, the rationale paragraph, and alternatives evaluated (or "n/a — imported credit-bearing course" in audit-existing mode).
   - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence so the read isn't opinion: `[CogLoad-4] [T1]` for novices; `[CogLoad-19] [T1]` for advanced; `[Learner-16] [T1]` for mixed.
-- **Limitations:** imported-course mode skips the training-decision gate; learner profile draws on the registrar/syllabus, not a learner survey; task analysis is from job-task lists, not observed performance.
+- **Limitations:** In imported-course mode, idstack skips the training-decision gate. The learner profile comes from the registrar or syllabus data, not from a learner survey. The task analysis comes from job-task lists, not from observed performance.
 - **Next steps:** Run `/idstack:learning-objectives` to develop ILOs grounded in this analysis. The objectives skill reads your task analysis and learner profile to recommend appropriate Bloom's levels and alignment strategies.
 
 Every finding in the HTML must correspond to a finding the manifest's `needs_analysis` section can carry, so downstream skills and `bin/idstack-status` can refer to them programmatically.
@@ -819,17 +819,17 @@ Create or update the project manifest. Use the Write tool to write `.idstack/pro
 
 Write the manifest, then confirm to the user:
 
-"Your needs analysis is saved. Two artifacts:
+"I saved your needs analysis in two files:
 
 - **Read this:** `.idstack/exports/<course-slug>/needs-analysis.html` — the branded HTML
   report with evidence-backed findings, the training-justification read, and a
-  learner-profile expertise check. Open it in any browser. The folder is self-contained
-  (CSS is bundled), so you can zip or email it.
+  learner-profile expertise check. Open it in a web browser. The folder also contains
+  the CSS file. You can zip or email the folder.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
-**Next step:** Run `/idstack:learning-objectives` to develop learning objectives based on
-this analysis. The objectives skill will read your task analysis and learner profile
-to recommend appropriate Bloom's levels and alignment strategies."
+**Next step:** Run `/idstack:learning-objectives` to develop learning objectives from
+this analysis. The objectives skill reads your task analysis and learner profile
+to recommend Bloom's levels and alignment strategies."
 
 ---
 
@@ -942,7 +942,7 @@ The merge tool replaces only the named top-level section, preserves every other 
       "motivation_factors": [],
       "demographics": "",
       "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
     },
     "training_justification": {
       "justified": true,

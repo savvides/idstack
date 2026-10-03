@@ -4,7 +4,7 @@ description: |
   Generate complete course content from the idstack manifest. Produces syllabus,
   module pages, assignment descriptions, and rubric documents. Content follows
   cognitive load principles and adapts to learner expertise level. Reads from
-  the full pipeline (needs, objectives, assessments) for richest output. (idstack)
+  the full pipeline (needs, objectives, assessments) for the best output. (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -206,7 +206,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -287,8 +287,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -314,8 +314,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -421,15 +421,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `course_content` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Course Builder — Evidence-Based Content Generation
 
@@ -530,7 +530,7 @@ The shared preamble above already ran the manifest existence check
   - `context` — at least `modality` and `timeline`
 
 **If NO_MANIFEST:**
-- Say: "I need a project manifest with learning objectives to generate course content.
+- Say: "idstack must have a project manifest with learning objectives to generate course content.
   Run `/idstack:needs-analysis` followed by `/idstack:learning-objectives` to build the foundation.
   If you have objectives ready, I can create a minimal manifest to work from — just
   tell me your learning objectives, course modality, and timeline."
@@ -540,10 +540,10 @@ The shared preamble above already ran the manifest existence check
 
 **Nudge for assessment design:**
 If the manifest exists but has no `assessments` section (or it is empty), say:
-"I notice you haven't run `/idstack:assessment-design` yet. I can generate basic assessment
-documents from the alignment matrix in your objectives, but running `/idstack:assessment-design`
-first would give me richer assessment data — rubric criteria, feedback strategies, and
-assessment type recommendations. Want to continue with what I have, or run
+"You did not run `/idstack:assessment-design`. I can generate basic assessment
+documents from the alignment matrix in your objectives. But `/idstack:assessment-design`
+gives me more assessment data: rubric criteria, feedback strategies, and
+assessment type recommendations. Do you want to continue with the data that I have, or run
 `/idstack:assessment-design` first?"
 
 ---
@@ -588,13 +588,13 @@ Decide which mode this skill is operating in **before** running the content gene
 - **Build-new mode** — anything else (no manifest, no import_metadata, manual source, or zero modules in course_content).
 
 **Announce the chosen mode to the user as the first sentence:**
-- "Mode: build-new. I'll generate the syllabus, module pages, and assessment documents from scratch."
-- "Mode: gap-fill (cartridge import detected). The course already exists; I'll generate ONLY the artifacts that upstream skills flagged as missing — not a fresh syllabus or modules. Say 'rebuild' if you want a full regeneration anyway."
+- "Mode: build-new. I will generate a new syllabus, new module pages, and new assessment documents."
+- "Mode: gap-fill (idstack found a cartridge import). The course is available. I will generate ONLY the missing artifacts that upstream skills found. I will not generate a new syllabus or new modules. To generate all of the course again, say 'rebuild'."
 
 In gap-fill mode, **skip Steps 2–7 entirely** (instructor info, syllabus, module pages, assessments, rubrics, content review). Instead:
 
 1. **Identify gaps.** Read `red_team_audit.top_actions` and `quality_review.recommendations` from the manifest (if those skills already ran) plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
-2. **Confirm with user.** Show the list of generation targets ("I'll generate: discussion rubric for Module 5, vision/mission framework module, formative practice quiz set"). Ask via `AskUserQuestion` which to generate (all / specific / skip).
+2. **Confirm with user.** Show the list of generation targets ("I will generate: discussion rubric for Module 5, vision/mission framework module, formative practice quiz set"). Ask via `AskUserQuestion` which to generate (all / specific / skip).
 3. **Generate only what's missing.** For each confirmed target, follow the relevant sub-step from Steps 4–6 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration.
 4. **Record outputs.** Update `course_content.generated_files` (additive) and `course_content.recommended_generation_targets` (the list, with status `generated | deferred | declined`).
 
@@ -642,7 +642,7 @@ Wait for user confirmation before proceeding.
 
 ### Step 2: Gather Instructor Information
 
-"I need a few details that are not in the manifest:"
+"Some information is not in the manifest. Give me this information:"
 
 Ask using AskUserQuestion:
 - Instructor name and title
@@ -667,7 +667,7 @@ instructor and student — it must be clear, complete, and welcoming.
 ## Course Information
 - **Term:** [from context.timeline or placeholder]
 - **Modality:** [from context.modality]
-- **Meeting times:** [placeholder or from context]
+- **Class times:** [placeholder or from context]
 - **Location:** [placeholder or from context]
 
 ## Instructor Information
@@ -681,7 +681,7 @@ administrators. Should answer: what is this course about, why does it matter,
 what will you be able to do after completing it.]
 
 ## Learning Objectives
-By the end of this course, you will be able to:
+When you complete this course, you can:
 1. [ILO-1, rewritten in student-friendly language]
 2. [ILO-2, rewritten in student-friendly language]
 ...
@@ -705,24 +705,24 @@ By the end of this course, you will be able to:
 [Adapted to modality. Online: participation in discussions. F2F: attendance.]
 
 ### Late Work
-[Institution policy or reasonable default: deduction per day, grace period,
+[Institution policy as a Markdown block quotation, or a reasonable default: deduction per day, grace period,
 communication expectations.]
 
 ### Academic Integrity
-[Standard academic integrity statement. Note: include specific guidance on
+[Institution academic integrity statement as a Markdown block quotation. Note: include specific guidance on
 AI tool use if relevant to the discipline.]
 
 ### Accessibility
-[ADA/accessibility statement. Point to institution disability services.]
+[Institution ADA/accessibility statement as a Markdown block quotation. Point to institution disability services.]
 
 ### Technology Requirements
 [From context.available_tech. Include LMS, required software, hardware.]
 
-## Required Materials
-[From user input or manifest. If none specified, state "No required textbook.
-All materials provided through the course site."]
+## Course Materials
+[From user input or manifest. If none specified, state "A textbook is not necessary for this course.
+All of the materials are on the course site."]
 
-## Getting Help
+## Student Support
 - **Academic support:** [tutoring, writing center, library]
 - **Technical support:** [help desk, LMS support]
 - **Wellness resources:** [counseling, health services]
@@ -732,9 +732,11 @@ All materials provided through the course site."]
 - Write the course description for students, not accreditation reviewers. It should
   make students want to take the course.
 - Rewrite ILOs in student-friendly language. "Evaluate research proposals for
-  ethical compliance using APA guidelines" becomes "You will learn to evaluate
-  whether a research study meets ethical standards, using APA's guidelines as
-  your framework."
+  ethical compliance using APA guidelines" becomes "You will learn to use the APA
+  guidelines to evaluate if a research study meets ethical standards."
+- Institutional statements (academic integrity, accessibility, late work) are
+  institution text. Put the institution's own words in a Markdown block quotation
+  (lines that start with `> `). The writing check skips block quotations.
 - The schedule should show a clear progression. If spaced practice is built in,
   note where earlier topics resurface [CogLoad-6] [T1].
 
@@ -756,7 +758,7 @@ generation step and the most evidence-sensitive.
 Why does it matter? How does it connect to what came before and what comes next?]
 
 ## Module Objectives
-By the end of this module, you will be able to:
+When you complete this module, you can:
 - [Subset of course ILOs that map to this module]
 - [Module-specific enabling objectives if needed]
 
@@ -772,14 +774,13 @@ lectures or for a student to understand the structure of the content.]
 ## Learning Activities
 
 ### Activity 1: [Title]
-**Type:** [individual/group/discussion/lab/practice]
-**Estimated time:** [minutes]
-**Instructions:**
-[Detailed, step-by-step instructions. A student should be able to complete
-this activity from these instructions alone.]
+- **Type:** [individual/group/discussion/lab/practice]
+- **Estimated time:** [minutes]
+- **Instructions:** [Detailed, step-by-step instructions. A student should be able to complete
+  this activity from these instructions alone.]
 
 **Purpose:** This activity helps you practice [cognitive operation] at the
-[Bloom's level] level, preparing you for [related assessment].
+[Bloom's level] level. It prepares you for [related assessment].
 
 ### Activity 2: [Title]
 ...
@@ -797,11 +798,11 @@ Should connect to the module's ILOs at the appropriate cognitive level.]
 - [Specific guidance on what "substantive" means for this discussion]
 
 ## Connections to Assessment
-- [Assessment name] addresses objectives from this module. See the assignment
-  description for details.
+- [Assessment name] measures objectives from this module. For more information, read the
+  assignment description.
 - [If formative assessment exists: quiz, check-in, or practice activity]
 
-## Summary and Looking Ahead
+## Summary and Next Steps
 [2-3 sentences synthesizing key takeaways. Preview of next module and how
 it builds on this one. If spaced practice is planned, note what from this
 module will resurface later.]
@@ -885,12 +886,12 @@ produce, how to produce it, and what "good" looks like.]
 
 ### Submission
 - **Format:** [file type, naming convention]
-- **Submit via:** [LMS, email, in-class — placeholder if unknown]
+- **Submit through:** [LMS, email, in-class — placeholder if unknown]
 - **Due:** [date placeholder]
 
 ## Rubric
-| Criterion | Excellent (A) | Proficient (B) | Developing (C) | Beginning (D/F) |
-|-----------|---------------|-----------------|-----------------|------------------|
+| Criterion | Excellent (A) | Proficient (B) | Satisfactory (C) | Unsatisfactory (D/F) |
+|-----------|---------------|-----------------|------------------|----------------------|
 | [criterion 1] | [description] | [description] | [description] | [description] |
 | [criterion 2] | [description] | [description] | [description] | [description] |
 ...
@@ -898,11 +899,11 @@ produce, how to produce it, and what "good" looks like.]
 **Points:** [total points or weight]
 
 ## Feedback
-You will receive feedback within [X] days of submission. Feedback will address
-[what aspects — see rubric criteria]. [If peer review is part of the process,
+You will get feedback in [X] days or less after you submit your work. The feedback
+will tell you about [what aspects — see rubric criteria]. [If peer review is part of the process,
 describe it here.]
 
-## Tips for Success
+## Recommendations
 - [Practical advice derived from the rubric — what distinguishes excellent
   from proficient work]
 - [Common pitfalls to avoid]
@@ -925,8 +926,8 @@ that can be imported into an LMS or printed for grading:
 
 **Total Points:** [points]
 
-| Criterion | Weight | Excellent | Proficient | Developing | Beginning |
-|-----------|--------|-----------|------------|------------|-----------|
+| Criterion | Weight | Excellent | Proficient | Satisfactory | Unsatisfactory |
+|-----------|--------|-----------|------------|--------------|----------------|
 | ... | ... | ... | ... | ... | ... |
 ```
 
@@ -1021,7 +1022,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Skill-specific section before Findings** — add a `<section class="generated-artifacts">` with `<h2>Generated artifacts</h2>` and an HTML `<table>` (columns: File, Purpose, Notes).
 - **Finding ids:** `cogload-1`, `multimedia-1`, `placeholder-1`, etc. Findings come from cognitive-load decisions made during generation, multimedia-principle applications and tradeoffs, places where placeholders were inserted, and expertise-reversal flags from the learner profile that shaped the build. In gap-fill mode, every finding should reference the upstream flag (e.g., `red-team:alignment-3`) that triggered the generation.
 - **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="placeholders-used">` with `<h2>Placeholders used</h2>` listing the placeholder fields the designer must fill in before the course is ready for learners.
-- **Limitations:** content adaptation is structural, not voice/style; cognitive-load estimates are heuristic; placeholders are detected by template, not by reading the surrounding paragraph.
+- **Limitations:** The content adaptation changes the structure, not the voice or style. The cognitive-load estimates are heuristic. The placeholder list comes from the template, not from the text around each placeholder.
 - **Next steps:** Review and edit the generated files to add your voice and institutional details. Then run `/idstack:course-quality-review` to audit the complete course against QM standards and CoI presence.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
@@ -1117,12 +1118,12 @@ The `placeholders_used` array lists any fields where placeholder text was used b
 
 After writing the manifest, confirm:
 
-"Your course content is generated. Three artifacts:
+"I generated your course content. You have three outputs:
 
 - **Read this:** `.idstack/exports/<course-slug>/course-builder.html` — the build report
   with evidence-backed design choices, cognitive-load notes, and a placeholders list.
-  Open it in any browser; the folder is self-contained.
-- Course content: `.idstack/course-content/` (the actual files — review and add
+  Open it in a web browser. The folder has all of the files for the report.
+- Course content: `.idstack/course-content/` (the course files — review them and add
   your voice and institutional details).
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
@@ -1177,7 +1178,7 @@ Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in the
 If you or the agent changed course files in this step, do the writing standard check at the end of Step 6 again. Show the user each sentence that you changed, before and after the change.
 
 **If Agent tool is NOT available:** Skip this step. Add a note to the output:
-"Tip: Run `/idstack:course-quality-review` next for a full alignment audit."
+"Note: For a full alignment audit, run `/idstack:course-quality-review` next."
 
 ---
 
@@ -1290,7 +1291,7 @@ The merge tool replaces only the named top-level section, preserves every other 
       "motivation_factors": [],
       "demographics": "",
       "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
     },
     "training_justification": {
       "justified": true,
