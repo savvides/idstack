@@ -1688,6 +1688,49 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "a contraction in the setup closing text" "$WORK/r/test/test-setup.sh" "$WORK/r"
 
+# 45a-45c. The text that `idstack-consensus verify` writes into findings. Skills copy
+# it into HTML reports and the manifest, so it must obey the writing standard, and
+# the extension's copy of the neuromyth text must stay the same as the CLI's copy.
+# 45a. A semicolon returns to a neuromyth note -> test-consensus-cli must fail.
+# The mutation changes both copies the same way, so only the STE guard can fail.
+fresh
+python3 - "$WORK/r/bin/idstack-consensus" "$WORK/r/extension/shared/consensus-client.js" <<'PY'
+import sys
+for p in sys.argv[1:]:
+    s = open(p, encoding='utf-8').read()
+    old = "Sensory learning styles are a known neuromyth. idstack recommends"
+    assert s.count(old) == 1, 'anchor not unique in %s: %d' % (p, s.count(old))
+    s = s.replace(old, "Sensory learning styles are a known neuromyth; idstack recommends", 1)
+    open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a neuromyth note has a semicolon again" python3 "$WORK/r/test/test-consensus-cli.py"
+
+# 45b. "should" returns to a tier-calibration note -> test-consensus-cli must fail.
+# This note has no copy in the extension.
+fresh
+python3 - "$WORK/r/bin/idstack-consensus" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'to T4 because the evidence has no meta-analysis or controlled trial.]"'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'to T4 because the evidence should have a meta-analysis or controlled trial.]"', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a tier-calibration note says should again" python3 "$WORK/r/test/test-consensus-cli.py"
+
+# 45c. The extension's neuromyth text drifts from the CLI's -> test-consensus-cli must fail.
+# Before this guard, nothing kept the two copies the same.
+fresh
+python3 - "$WORK/r/extension/shared/consensus-client.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "'Multimodal dual coding helps all learners.';"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "'Multimodal dual coding helps every learner.';", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the extension neuromyth text drifts from the CLI text" python3 "$WORK/r/test/test-consensus-cli.py"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

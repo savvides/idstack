@@ -11,24 +11,24 @@ BUILD_DIR="$REPO_ROOT/build"
 ZIP_NAME="idstack-chrome-extension-v$(node -p 'require(process.argv[1]).version' "$EXT_DIR/manifest.json").zip"
 ZIP_PATH="$BUILD_DIR/$ZIP_NAME"
 
-echo "==> Verifying extension test suite..."
+echo "==> The script runs the extension tests."
 "$REPO_ROOT/test/test-extension.sh"
 
-echo "==> Creating build directory: $BUILD_DIR"
+echo "==> The script makes the directory $BUILD_DIR."
 mkdir -p "$BUILD_DIR"
 rm -f "$ZIP_PATH"
 
-echo "==> Packaging extension from $EXT_DIR..."
+echo "==> The script puts the extension from $EXT_DIR into a zip file."
 # Zip contents directly so manifest.json is at root of archive
 # icons/generate-icons.js is a dev-time script that drew the PNGs; it is not part of the extension.
 (cd "$EXT_DIR" && zip -r "$ZIP_PATH" . -x "*.DS_Store" "*__MACOSX*" "*.git*" "icons/generate-icons.js")
 
 echo ""
-echo "✅ Extension packaged successfully!"
+echo "✅ The script made the extension zip file."
 echo "📦 Archive path: $ZIP_PATH"
 echo "📏 Archive size: $(du -h "$ZIP_PATH" | cut -f1)"
 echo ""
-echo "To publish to the Chrome Web Store:"
+echo "To publish the extension in the Chrome Web Store, do these steps:"
 echo "1. Go to https://chrome.google.com/webstore/devconsole"
 echo "2. Click 'New Item'"
-echo "3. Upload: $ZIP_PATH"
+echo "3. Upload $ZIP_PATH."

@@ -2,7 +2,7 @@
 # Promote a local learning to the global store.
 # Usage: idstack-learnings-promote <key>
 # Copies the matching learning from .idstack/learnings.jsonl to ~/.idstack/global/learnings.jsonl
-# Tags it with the source project. Exit 0 always.
+# Tags it with the source project. Exits 0 on success, 1 on error.
 
 set -e
 
@@ -13,10 +13,10 @@ LOCAL_LEARNINGS=".idstack/learnings.jsonl"
 GLOBAL_DIR="$HOME/.idstack/global"
 GLOBAL_LEARNINGS="$GLOBAL_DIR/learnings.jsonl"
 
-[ -f "$LOCAL_LEARNINGS" ] || { echo "No local learnings found." >&2; exit 1; }
+[ -f "$LOCAL_LEARNINGS" ] || { echo "There are no local learnings." >&2; exit 1; }
 
 if ! command -v python3 &>/dev/null; then
-  echo "python3 required for promote." >&2
+  echo "python3 is necessary for this command." >&2
   exit 1
 fi
 
@@ -39,7 +39,7 @@ for line in open(local_file):
         pass
 
 if not match:
-    print(f'No learning found with key: {key}', file=sys.stderr)
+    print(f'idstack found no learning with the key: {key}', file=sys.stderr)
     sys.exit(1)
 
 # Tag with source project
@@ -58,5 +58,5 @@ os.makedirs(global_dir, exist_ok=True)
 with open(global_file, 'a') as f:
     f.write(json.dumps(match) + '\n')
 
-print(f'Promoted \"{key}\" to global learnings (source: {project_name})')
+print(f'idstack added \"{key}\" to the global learnings (source: {project_name})')
 " "$KEY"

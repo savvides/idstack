@@ -60,21 +60,21 @@ ALLOWED_SECTIONS = {
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Atomically replace one section of an idstack manifest.",
+        description="Replace one section of an idstack manifest with an atomic write.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--section", required=True, help="Section name to replace.")
+    parser.add_argument("--section", required=True, help="The name of the section to replace.")
     parser.add_argument(
         "--payload",
         required=True,
-        help='Path to JSON payload file, or "-" for stdin.',
+        help='The path to the JSON payload file. Use "-" for stdin.',
     )
     parser.add_argument(
         "--manifest",
         default=".idstack/project.json",
-        help="Path to manifest. Default: .idstack/project.json",
+        help="The path to the manifest. Default: .idstack/project.json",
     )
-    parser.add_argument("--quiet", action="store_true", help="Suppress progress output.")
+    parser.add_argument("--quiet", action="store_true", help="Show only error messages.")
     return parser.parse_args()
 
 
@@ -88,7 +88,7 @@ def load_payload(payload_arg):
         try:
             text = sys.stdin.read()
         except Exception as exc:
-            die(6, f"failed to read payload from stdin: {exc}")
+            die(6, f"cannot read the payload from stdin: {exc}")
     else:
         if not os.path.isfile(payload_arg):
             die(5, f"payload file not found: {payload_arg}")
@@ -96,13 +96,13 @@ def load_payload(payload_arg):
             with open(payload_arg, "r", encoding="utf-8") as handle:
                 text = handle.read()
         except Exception as exc:
-            die(6, f"failed to read payload file {payload_arg!r}: {exc}")
+            die(6, f"cannot read the payload file {payload_arg!r}: {exc}")
     try:
         data = json.loads(text)
     except json.JSONDecodeError as exc:
-        die(1, f"payload is not valid JSON: {exc}")
+        die(1, f"the payload has a JSON error: {exc}")
     if not isinstance(data, dict):
-        die(1, f"payload root must be a JSON object: got {type(data).__name__}")
+        die(1, f"the payload root must be a JSON object, not {type(data).__name__}")
     return data
 
 
@@ -113,13 +113,13 @@ def load_manifest(manifest_path):
         with open(manifest_path, "r", encoding="utf-8") as handle:
             text = handle.read()
     except Exception as exc:
-        die(6, f"failed to read manifest {manifest_path!r}: {exc}")
+        die(6, f"cannot read the manifest {manifest_path!r}: {exc}")
     try:
         data = json.loads(text)
     except json.JSONDecodeError as exc:
-        die(2, f"manifest is not valid JSON ({manifest_path}): {exc}")
+        die(2, f"the manifest has a JSON error ({manifest_path}): {exc}")
     if not isinstance(data, dict):
-        die(2, f"manifest root must be a JSON object ({manifest_path}): got {type(data).__name__}")
+        die(2, f"the manifest root must be a JSON object, not {type(data).__name__} ({manifest_path})")
     return data
 
 
@@ -138,7 +138,7 @@ def write_atomic(manifest_path, data):
             os.unlink(tmp_path)
         except OSError:
             pass
-        die(6, f"failed to write manifest {manifest_path!r}: {exc}")
+        die(6, f"cannot write the manifest {manifest_path!r}: {exc}")
 
 
 def main():
@@ -146,7 +146,7 @@ def main():
 
     if args.section not in ALLOWED_SECTIONS:
         allowed = ", ".join(sorted(ALLOWED_SECTIONS))
-        die(3, f"unknown section {args.section!r}. Allowed: {allowed}")
+        die(3, f"unknown section {args.section!r}. The known sections are: {allowed}")
 
     payload = load_payload(args.payload)
     manifest = load_manifest(args.manifest)
@@ -157,7 +157,7 @@ def main():
     write_atomic(args.manifest, manifest)
 
     if not args.quiet:
-        print(f"merged section {args.section!r} into {args.manifest}")
+        print(f"idstack replaced the section {args.section!r} in {args.manifest}")
 
 
 if __name__ == "__main__":

@@ -2,6 +2,8 @@
 """Tests for bin/idstack-consensus client and caching engine."""
 
 import hashlib
+import importlib.machinery
+import importlib.util
 import json
 import os
 import shutil
@@ -9,9 +11,13 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CLI_PATH = os.path.join(REPO_ROOT, "bin", "idstack-consensus")
+STE_CHECK_PATH = os.path.join(REPO_ROOT, "bin", "idstack-ste-check")
+JS_CLIENT_PATH = os.path.join(REPO_ROOT, "extension", "shared", "consensus-client.js")
+MYTH_TYPES = ["learning_styles", "hemisphere_learning", "ten_percent_brain", "dales_cone_percentages"]
 
 
 class TestConsensusCLI(unittest.TestCase):
@@ -396,7 +402,7 @@ class TestConsensusCLI(unittest.TestCase):
     def test_sync_evidence_cards_compatibility(self):
         proc = self.run_cli(["sync", "--dry-run"])
         self.assertEqual(proc.returncode, 0)
-        self.assertIn("verified", proc.stdout.lower())
+        self.assertIn("check-evidence-cards.py found 0 mismatches", proc.stdout)
 
     def test_sync_uses_cached_papers_when_available(self):
         os.makedirs(self.cache_dir, exist_ok=True)
@@ -425,6 +431,101 @@ class TestConsensusCLI(unittest.TestCase):
         self.assertEqual(proc.returncode, 0)
         self.assertIn("Custom Cached Formative Feedback Review", proc.stdout)
         self.assertIn("CachedAuthor", proc.stdout)
+
+    # The text that verify writes goes into HTML reports and the manifest, so it
+    # must obey the writing standard. The input fields are empty or in STE, and
+    # the trigger is in the recommendation, which verify replaces. Thus a problem
+    # that the checker finds comes from idstack's own text.
+    def run_verify(self, findings):
+        input_file = os.path.join(self.test_dir, "ste-in.json")
+        output_file = os.path.join(self.test_dir, "ste-out.json")
+        with open(input_file, "w", encoding="utf-8") as f:
+            json.dump({"findings": findings}, f)
+        proc = self.run_cli(["verify", "--findings", input_file, "--output", output_file])
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        with open(output_file, "r", encoding="utf-8") as f:
+            return json.load(f)["findings"]
+
+    def assert_ste_clean(self, text):
+        proc = subprocess.run(
+            [sys.executable, STE_CHECK_PATH, "-"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            input=text,
+            cwd=REPO_ROOT,
+        )
+        self.assertEqual(proc.returncode, 0, "idstack-ste-check found problems:\n" + proc.stdout + proc.stderr)
+
+    def test_verify_neuromyth_text_obeys_ste(self):
+        triggers = {
+            "learning_styles": "Cater to visual learners.",
+            "hemisphere_learning": "Give tasks to right-brain learners.",
+            "ten_percent_brain": "Learners use 10% of their brain.",
+            "dales_cone_percentages": "Learners remember 10% of what they read.",
+        }
+        findings = [
+            {"severity": "warning", "tier": "T1", "citation": "[Novel-Claim]",
+             "observation": "", "evidence": "", "recommendation": triggers[t]}
+            for t in MYTH_TYPES
+        ]
+        texts = []
+        for finding in self.run_verify(findings):
+            self.assertTrue(finding.get("auto_corrected"))
+            self.assertIn("[Auto-Corrected Neuromyth]", finding["evidence"])
+            self.assertIn("[Note:", finding["observation"])
+            texts += [finding["recommendation"], finding["evidence"], finding["observation"]]
+        self.assertEqual(len(texts), 12)
+        self.assert_ste_clean("\n\n".join(texts) + "\n")
+
+    def test_verify_tier_calibration_text_obeys_ste(self):
+        evidence = [
+            "A quasi-experimental study with a comparison group.",
+            "A systematic review of peer grading.",
+            "An observational survey of 45 students.",
+            "A study of 30 students in one class.",
+        ]
+        findings = [
+            {"severity": "warning", "tier": "T1", "citation": "Zzyzx (2021)",
+             "observation": "", "evidence": e, "recommendation": "Add a rubric."}
+            for e in evidence
+        ]
+        result = self.run_verify(findings)
+        self.assertEqual([f["tier"] for f in result], ["T2", "T3", "T4", "T4"])
+        for finding in result:
+            self.assertIn("[Tier calibrated:", finding["evidence"])
+        self.assert_ste_clean("\n\n".join(f["evidence"] for f in result) + "\n")
+
+    # The extension has a copy of the neuromyth text. The two copies must stay
+    # the same, word for word.
+    @unittest.skipUnless(shutil.which("node"), "node is not installed")
+    def test_neuromyth_text_matches_extension_copy(self):
+        script = (
+            "import { autoCorrectNeuromyth } from %s;\n"
+            "const out = {};\n"
+            "for (const t of %s) {\n"
+            "  out[t] = autoCorrectNeuromyth({ observation: '', evidence: '', recommendation: '' }, t);\n"
+            "}\n"
+            "console.log(JSON.stringify(out));\n"
+        ) % (json.dumps(Path(JS_CLIENT_PATH).as_uri()), json.dumps(MYTH_TYPES))
+        proc = subprocess.run(
+            ["node", "--input-type=module", "-e", script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        js = json.loads(proc.stdout)
+
+        loader = importlib.machinery.SourceFileLoader("idstack_consensus", CLI_PATH)
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        for myth_type in MYTH_TYPES:
+            finding = {"observation": "", "evidence": "", "recommendation": ""}
+            module.auto_correct_neuromyth(finding, myth_type)
+            for key in ("recommendation", "evidence", "observation"):
+                self.assertEqual(js[myth_type][key], finding[key], "%s %s" % (myth_type, key))
 
 
 if __name__ == "__main__":

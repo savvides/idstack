@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Generate the Claude Code SKILL.md files from their .tmpl templates.
+# Make the Claude Code SKILL.md files from their .tmpl templates.
 #
 # Usage:
 #   idstack-gen-skills [--dry-run]
 #
-# Writes skills/<name>/SKILL.md — the layout Claude Code's plugin loader reads.
+# The script writes skills/<name>/SKILL.md. The Claude Code plugin loader reads
+# this layout.
 #
-# Source of truth is skills/<name>/SKILL.md.tmpl with {{PREAMBLE}},
-# {{MANIFEST_SCHEMA}}, and {{IDSTACK_RESOLVE}} placeholders. {{IDSTACK_RESOLVE}}
-# splices the canonical $_IDSTACK resolution (templates/snippets/idstack-resolve.sh)
-# into each bash block that needs it — blocks run in separate shells and must be
-# self-contained.
+# The source file is skills/<name>/SKILL.md.tmpl. It contains the {{PREAMBLE}},
+# {{MANIFEST_SCHEMA}} and {{IDSTACK_RESOLVE}} placeholders. {{IDSTACK_RESOLVE}}
+# puts the canonical $_IDSTACK resolution (templates/snippets/idstack-resolve.sh)
+# into each bash block that uses it. Each block runs in a different shell.
+# Thus each block must contain all of its code.
 
 set -e
 
@@ -30,22 +31,22 @@ while [ $# -gt 0 ]; do
       # Pattern-based range — robust to header edits.
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
-    *) echo "Unknown argument: $1" >&2; exit 2 ;;
+    *) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 
 if [ ! -f "$PREAMBLE" ]; then
-  echo "ERROR: templates/preamble.md not found at $PREAMBLE" >&2
+  echo "ERROR: templates/preamble.md is missing ($PREAMBLE)" >&2
   exit 1
 fi
 
 if [ ! -f "$MANIFEST_SCHEMA" ]; then
-  echo "ERROR: templates/manifest-schema.md not found at $MANIFEST_SCHEMA" >&2
+  echo "ERROR: templates/manifest-schema.md is missing ($MANIFEST_SCHEMA)" >&2
   exit 1
 fi
 
 if [ ! -f "$RESOLVE_SNIPPET" ]; then
-  echo "ERROR: templates/snippets/idstack-resolve.sh not found at $RESOLVE_SNIPPET" >&2
+  echo "ERROR: templates/snippets/idstack-resolve.sh is missing ($RESOLVE_SNIPPET)" >&2
   exit 1
 fi
 
@@ -61,7 +62,7 @@ REPORT_FORMAT="$IDSTACK_DIR/templates/report-format.md"
 
 for f in "$REPORT_HTML_TMPL" "$INDEX_HTML_TMPL" "$REPORT_CSS" "$REPORT_FORMAT"; do
   if [ ! -f "$f" ]; then
-    echo "ERROR: report asset not found at ${f#$IDSTACK_DIR/}" >&2
+    echo "ERROR: the report asset ${f#$IDSTACK_DIR/} is missing" >&2
     exit 1
   fi
 done
@@ -129,13 +130,13 @@ render_template() {
       local current
       current=$(cat "$output")
       if [ "$result" != "$current" ]; then
-        echo "  STALE: ${output#$IDSTACK_DIR/} (would be updated)"
+        echo "  STALE: ${output#$IDSTACK_DIR/} (a run without --dry-run updates it)"
         ERRORS=$((ERRORS + 1))
       else
         echo "  OK: ${output#$IDSTACK_DIR/} (up to date)"
       fi
     else
-      echo "  MISSING: ${output#$IDSTACK_DIR/} (would be created)"
+      echo "  MISSING: ${output#$IDSTACK_DIR/} (a run without --dry-run makes it)"
       ERRORS=$((ERRORS + 1))
     fi
   else
@@ -154,19 +155,19 @@ for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
 done
 
 if [ "$GENERATED" -eq 0 ] && [ "$ERRORS" -eq 0 ]; then
-  echo "No .tmpl files found."
+  echo "There are no .tmpl files."
   exit 1
 fi
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo ""
-  echo "$GENERATED templates checked. $ERRORS stale or failed."
+  echo "The script examined $GENERATED templates. $ERRORS have problems."
   if [ "$ERRORS" -gt 0 ]; then exit 1; fi
 else
   echo ""
-  echo "$GENERATED skill files generated."
+  echo "The script wrote $GENERATED skill files."
   if [ "$ERRORS" -gt 0 ]; then
-    echo "ERROR: $ERRORS template(s) failed to render." >&2
+    echo "ERROR: $ERRORS template(s) have errors. The script did not write their SKILL.md files." >&2
     exit 1
   fi
 fi
