@@ -21,20 +21,21 @@ bin/idstack-migrate                        # Migrate an existing .idstack/projec
 bin/idstack-migrate --init                 # Also create a canonical manifest when none exists (standalone skill runs)
 bin/idstack-manifest-merge --section <s> --payload <f>   # Canonical manifest write path (atomic, section-scoped)
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
+bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 ```
 
 Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 
 ```bash
-./test/smoke-test.sh              # 365 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 384 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 51 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
-./test/test-setup.sh              # 17 behavioral tests for ./setup (flags, scope, legacy cleanup, failure handling)
-./test/test-doctor.sh             # 13 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
-./test/test-status.sh             # 22 tests for bin/idstack-status, incl. the --readiness export gate
+./test/test-setup.sh              # 19 behavioral tests for ./setup (flags, scope, legacy cleanup, failure handling)
+./test/test-doctor.sh             # 14 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
+./test/test-status.sh             # 24 tests for bin/idstack-status, incl. the --readiness export gate
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
 ./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
@@ -44,12 +45,13 @@ Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 ./test/test-responsive-landing.js # Responsive/mobile invariants for docs/index.html, as CSS text (node; via smoke-test)
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
+python3 test/test-ste-check.py          # bin/idstack-ste-check unit tests (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails
 ```
 
-`test/test-helper.sh` is not a suite — it is sourced by every **bash** suite that runs assertions itself and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion (`test-extension.sh` is the exception: it delegates to node). Do not add a local counter block to a bash suite; smoke-test fails on one, and a mutation proves that guard works. The node suites (`test-extension.sh`'s sixteen unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it; they accumulate their own problems and report a count, which is the same contract in another language.
+`test/test-helper.sh` is not a suite — it is sourced by every **bash** suite that runs assertions itself and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion (`test-extension.sh` is the exception: it delegates to node). Do not add a local counter block to a bash suite; smoke-test fails on one, and a mutation proves that guard works. The node suites (`test-extension.sh`'s seventeen unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it; they accumulate their own problems and report a count, which is the same contract in another language.
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9. The test, mutation and release jobs pin Node 22 for the extension and rendered-landing tests.
 
@@ -105,9 +107,9 @@ Rules for writing the manifest:
 
 Rules for writing the report:
 
-- Follow the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md` — observation → evidence → why-it-matters → suggestion, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. Use the CSS hooks the stylesheet styles: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`.
+- Follow the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md` — observation → evidence → why-it-matters → recommendation, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. Use the CSS hooks the stylesheet styles: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`.
 - Every skill that writes a report copies `$_IDSTACK/templates/assets/idstack.css` into `.idstack/exports/<course-slug>/assets/idstack.css` so the folder is self-contained when zipped or moved.
-- Phrase recommendations as suggestions ("consider…"), not directives. idstack is a collaborator.
+- Write all report text in ASD-STE100, as the "Writing Standard (ASD-STE100)" section of `templates/preamble.md` tells. Write a recommendation as "idstack recommends that you …" or "You can …". Do not use "consider", "may", "should" or "suggest". idstack is a collaborator.
 - Cite every recommendation. Findings without a `[Domain-N] [Tier]` citation belong in *Limitations* or *Notes*, not *Findings*.
 
 ### SKILL.md.tmpl structure
@@ -120,8 +122,9 @@ Every skill template follows this pattern:
 4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`)
 5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`CLAUDE_PLUGIN_ROOT`, `IDSTACK_HOME`, then the Claude Code marketplace cache). `templates/manifest-schema.md` is spliced verbatim and so writes the resolution out longhand — smoke-test keeps the two in lockstep.
 6. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
+7. **Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/bin/idstack-ste-check"` on that file. smoke-test fails if a skill template has fewer check steps than it must have. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.
 
-The shared preamble includes: interaction conventions (defines how skills use `AskUserQuestion`, `Agent`, and `Skill`), update check, manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
+The shared preamble includes: interaction conventions (defines how skills use `AskUserQuestion`, `Agent`, and `Skill`), writing standard (the ASD-STE100 rules and word list), update check, manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
 
 Python embedded in the preamble must parse on Python 3.9 — the version macOS ships. `test/test-preamble-python.sh` runs every embedded block on 3.9 and 3.12; a syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases.
 
@@ -133,6 +136,15 @@ Logic used by more than one script — or that deserves a unit test — lives in
 - `bin/lib/plugin-status.sh` — parses `claude plugin list` output into idstack's own entry
 
 Test the shipped file, never a copy. The version classifier drifted across three PRs while a mirrored copy in its test passed green.
+
+### Writing standard (ASD-STE100)
+
+All text that idstack shows to a person follows the ASD-STE100 Simplified Technical English rules. This includes skill chat, reports, the dashboard, learner content, CLI messages and the Chrome extension.
+
+- The text between `<!-- ste-core:begin -->` and `<!-- ste-core:end -->` in `templates/preamble.md` is the only source of the rules and the word list. `extension/shared/ste-rules.js` has a copy. `test/test-ste-rules.mjs` fails when the two are different.
+- `bin/idstack-ste-check` finds the problems that a script can find. Each skill runs it on each file that the skill writes. The CLI suites, `test/smoke-test.sh` and `test/test-consensus-cli.py` run it on fixed output.
+- Do not add the ASD-STE100 dictionary, or a list that comes from it, to the repo. The idstack word list has a maximum of 50 words. ASD does not endorse idstack, so do not write "STE-compliant" or "certified".
+- The terms of instructional design and software are technical nouns and technical verbs. Do not add them to the word list.
 
 ### Course memory
 

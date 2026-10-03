@@ -44,7 +44,7 @@ allowed-tools:
 
 The bare `name` field becomes the slash-command suffix: `name: course-import` is invoked as `/idstack:course-import`. The installed plugin handles the `idstack:` namespace; do not prefix the name yourself.
 
-**2. `{{PREAMBLE}}` placeholder** — this is replaced by `bin/idstack-gen-skills` with the shared preamble (update check, manifest check, context recovery).
+**2. `{{PREAMBLE}}` placeholder** — this is replaced by `bin/idstack-gen-skills` with the shared preamble (writing standard, update check, manifest check, context recovery).
 
 **3. Skill implementation** — the rest of the file is Markdown that defines the skill's workflow, decision trees, and outputs.
 
@@ -53,6 +53,8 @@ The bare `name` field becomes the slash-command suffix: `name: course-import` is
 **5. `{{IDSTACK_RESOLVE}}` placeholder** — replaced with `templates/snippets/idstack-resolve.sh`. Put this at the top of **every** bash block that calls `$_IDSTACK/bin/...`, not just the first. Bash blocks run in separate shells, so a value derived in an earlier block isn't there in a later one. Skipping it is how `learn` and `course-export` ended up pointing `bin/` calls at a nonexistent directory for marketplace installs.
 
 **6. Timeline logging** — at the end, a section that logs the session to `.idstack/timeline.jsonl` with skill-specific fields.
+
+**7. Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/bin/idstack-ste-check"` on that file. `test/smoke-test.sh` fails if a skill template has fewer check steps than it must have. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.
 
 ### Template system
 
@@ -85,9 +87,9 @@ Point the test at the shipped file, never at a copy of the logic. The version cl
 Every skill that produces findings writes **both**:
 
 1. **JSON section** in `.idstack/project.json` — system state for downstream skills, the pipeline orchestrator, and `bin/idstack-status`.
-2. **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the branded, self-contained human view. Follow the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md`: observation → evidence → why-it-matters → suggestion, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. The skill writes the relative path back into its section's `report_path` field, and copies `templates/assets/idstack.css` into the course folder so the deliverable is self-contained when zipped.
+2. **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the branded, self-contained human view. Follow the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md`: observation → evidence → why-it-matters → recommendation, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. The skill writes the relative path back into its section's `report_path` field, and copies `templates/assets/idstack.css` into the course folder so the deliverable is self-contained when zipped.
 
-Phrase recommendations as suggestions ("consider…"), not directives. Cite every recommendation with `[DomainCode-N] [Tier]`; uncited claims belong in *Limitations* or *Notes*, not *Findings*.
+Write report text in ASD-STE100 (see the "Writing Standard (ASD-STE100)" section of `templates/preamble.md`). Write a recommendation as "idstack recommends that you …" or "You can …". Do not use "consider", "may", "should" or "suggest". Cite every recommendation with `[DomainCode-N] [Tier]`; uncited claims belong in *Limitations* or *Notes*, not *Findings*.
 
 ### Manifest-write rules
 
@@ -131,7 +133,7 @@ Every suite below runs in CI (`.github/workflows/test.yml`) on every push and pu
 
 | Suite | Covers |
 |-------|--------|
-| `test/smoke-test.sh` | Install, `SKILL.md` freshness, YAML frontmatter, version agreement across `VERSION` / `plugin.json` / `CHANGELOG.md`, canonical manifest section names, `/idstack:` namespacing, resolve-snippet lockstep, schema migrations, `bash -n` on every script |
+| `test/smoke-test.sh` | Install, `SKILL.md` freshness, YAML frontmatter, version agreement across `VERSION` / `plugin.json` / `CHANGELOG.md`, canonical manifest section names, `/idstack:` namespacing, resolve-snippet lockstep, schema migrations, `bash -n` on every script, and the ASD-STE100 checks on the report templates and the extension output |
 | `test/integration-test.sh` | Behavioral tests across the `bin/` scripts; also asserts the suite leaves your working tree untouched |
 | `test/test-setup.sh` | `./setup` behavior — flag parsing, scope selection, all three legacy-cleanup shapes, failure handling. Runs against a repo copy with a fake `$HOME` and a stub `claude` |
 | `test/test-doctor.sh` | `bin/idstack-doctor` — every PROBLEM/WARNING branch and the exit contract. Runs against a repo copy with a pinned `PATH`, so "claude not found" means genuinely not found |
@@ -144,6 +146,7 @@ Every suite below runs in CI (`.github/workflows/test.yml`) on every push and pu
 | `test/test-rendered-landing.js` | Renders `docs/index.html` in headless Chrome across 11 widths and asserts the rendered outcome: no horizontal scroll, 44px touch targets, breakpoint column counts, sticky nav. Catches regressions the text suite cannot see (selector lists, `@container`, nested or print-only media queries, a `<style>` inside an HTML comment). Skips loudly with no browser |
 | `test/test-responsive-landing.js` | Responsive and mobile-ergonomics invariants for `docs/index.html` — fluid tokens, notch-safe gutters, breakpoint-scoped rules, touch targets. Runs on node, via `smoke-test.sh` |
 | `python3 test/check-evidence-cards.py .` | Verifies landing page evidence card study counts and tier ranges against `evidence/references.md` |
+| `python3 test/test-ste-check.py` | `bin/idstack-ste-check`: each rule that it examines, the text that it does not examine, and the clean fixtures in `test/fixtures/ste/`. `test/smoke-test.sh` runs it |
 | `python3 test/check-doc-accuracy.py .` | Validates version agreement, manifest schema version, binary/flag references, link targets, and surface accuracy across docs |
 | `test/mutation-test.sh` | Reintroduces each known defect into a throwaway copy and asserts the guarding test fails. Add a mutation here whenever you fix a bug — it is what proves your new test would have caught it |
 
