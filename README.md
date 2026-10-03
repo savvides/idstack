@@ -152,19 +152,20 @@ Setup is idempotent — re-run it any time.
 You should see:
 ```
   regenerated skill files
-Installing idstack (user)...
+Setup installs idstack (scope: user)...
   source: /path/to/idstack
 
-idstack installed (Claude Code) — scope: user.
+Setup installed idstack in Claude Code (scope: user).
 
-  If Claude Code is already running, restart it (plugins load at session start).
+  If Claude Code is open, close it and open it again.
+  Claude Code reads plugins only when a session starts.
 
-  Usage: /idstack:<skill>
+  To use a skill, run /idstack:<skill>
 
-  Have an existing course?
+  If you have a course, import it and examine it:
     /idstack:course-import -> /idstack:course-quality-review
 
-  Starting fresh?
+  To start a new course:
     /idstack:needs-analysis
 
   Run the full pipeline:
@@ -174,7 +175,7 @@ idstack installed (Claude Code) — scope: user.
     course-builder, course-quality-review, accessibility-review,
     red-team, course-export, course-import, pipeline, learn
 
-  More info: https://idstack.org
+  More information: https://idstack.org
 ```
 
 ### Chrome Extension (No-Terminal Mode)

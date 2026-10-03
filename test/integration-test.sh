@@ -161,7 +161,7 @@ echo ""
 echo "## idstack-status"
 
 check "no timeline shows empty state message" \
-  "rm -f .idstack/timeline.jsonl && $IDSTACK_DIR/bin/idstack-status | grep -q 'No course data yet'"
+  "rm -f .idstack/timeline.jsonl && $IDSTACK_DIR/bin/idstack-status | grep -q 'There is no course data'"
 
 # Rebuild timeline for status tests
 $IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"needs-analysis","event":"completed","training_justified":true}'
@@ -174,7 +174,7 @@ check "shows quality trend" \
   "$IDSTACK_DIR/bin/idstack-status | grep -q 'Quality trend: 65'"
 
 check "suggests next skill" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q 'Suggested next'"
+  "$IDSTACK_DIR/bin/idstack-status | grep -q 'Recommended next'"
 
 # Quote-injection regression: a project name with an apostrophe must render,
 # not blank the dashboard with a Python SyntaxError.
@@ -185,15 +185,15 @@ EOF
 check "apostrophe in project name renders" \
   "'$IDSTACK_DIR/bin/idstack-status' | grep -qF \"Project: Bob's Advanced Course\""
 
-check "apostrophe in project name: no 'Error reading timeline'" \
-  "! '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Error reading timeline'"
+check "apostrophe in project name: no 'cannot read the timeline' error" \
+  "! '$IDSTACK_DIR/bin/idstack-status' | grep -q 'idstack cannot read the timeline'"
 
 # course-import is an alternative pipeline entry: with only course-import
 # completed, the suggestion must be learning-objectives, not nothing.
 mkdir -p importcase && ( cd importcase && \
   "$IDSTACK_DIR/bin/idstack-timeline-log" '{"skill":"course-import","event":"completed"}' )
 check "course-import alone suggests learning-objectives" \
-  "( cd importcase && '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Suggested next: /idstack:learning-objectives' )"
+  "( cd importcase && '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Recommended next: /idstack:learning-objectives' )"
 
 # Everything idstack-status prints is text a user may type back. It must carry
 # the /idstack: prefix for the same reason skill templates do — a bare /skill

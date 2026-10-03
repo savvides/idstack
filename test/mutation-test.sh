@@ -257,12 +257,12 @@ python3 - "$WORK/r/setup" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
 s = s.replace('''      if [ "$KEEP_LEGACY" = "1" ]; then
-        echo "  KEEPING legacy symlink: $legacy (--keep-legacy)"
+        echo "  KEPT legacy symlink: $legacy (--keep-legacy)"
       else
         rm "$legacy"
-        echo "  cleaned up legacy: $legacy"
+        echo "  removed legacy symlink: $legacy"
       fi''', '''      rm "$legacy"
-      echo "  cleaned up legacy: $legacy"''')
+      echo "  removed legacy symlink: $legacy"''')
 open(p,'w').write(s)
 PY
 expect_fail "--keep-legacy ignored by per-skill loop" "$WORK/r/test/test-setup.sh" "$WORK/r"
@@ -279,12 +279,12 @@ else
 fi
 if [ -L "$vestigial" ]; then
   rm "$vestigial"
-  echo "  removed vestigial symlink: $vestigial (pre-marketplace install method)"
+  echo "  removed legacy plugin symlink: $vestigial (pre-marketplace install method)"
 fi''', '''for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
   vestigial="$plugins_base/idstack"
   if [ -L "$vestigial" ]; then
     rm "$vestigial"
-    echo "  removed vestigial symlink: $vestigial"
+    echo "  removed legacy plugin symlink: $vestigial"
   fi
 done''')
 open(p,'w').write(s)
@@ -1646,6 +1646,47 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 regen
 expect_fail "the learning_preferences_note copies drift apart" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 44a-44c. The CLI text checks. setup, doctor and status print text that a person
+# reads. Each case puts back one non-STE message that no older pin matches, so
+# only the writing-standard check of the suite can catch it.
+# 44a. A semicolon returns to a doctor PROBLEM explanation -> test-doctor must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-doctor" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'echo "  Claude Code installs plugins through a marketplace manifest."'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'echo "  Claude Code installs plugins through a marketplace manifest;"', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a semicolon in a doctor PROBLEM explanation" "$WORK/r/test/test-doctor.sh"
+
+# 44b. "should" returns to the --readiness text -> test-status must fail.
+# course-export reads this output. No pin matches the empty-state line, so only
+# the --readiness text check sees it.
+fresh
+python3 - "$WORK/r/bin/idstack-status" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'echo "No timeline data. Run the pipeline skills first."'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'echo "No timeline data. You should run the pipeline skills first."', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a word-list word in the --readiness text" "$WORK/r/test/test-status.sh"
+
+# 44c. A contraction returns to the closing text of setup -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'echo "  Claude Code reads plugins only when a session starts."'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'echo "  Claude Code doesn\'t read plugins until a session starts."', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a contraction in the setup closing text" "$WORK/r/test/test-setup.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

@@ -42,10 +42,11 @@ fi
 
 if [ ! -f "$TIMELINE" ]; then
   if [ "$READINESS_ONLY" -eq 1 ]; then
-    echo "No timeline data. Run pipeline skills first."
+    echo "No timeline data. Run the pipeline skills first."
   else
-    echo "No course data yet."
-    echo "Run /idstack:needs-analysis to start a new course, or /idstack:course-import to bring in an existing one."
+    echo "There is no course data."
+    echo "To start a new course, run /idstack:needs-analysis."
+    echo "To import a course that you have, run /idstack:course-import."
   fi
   exit 0
 fi
@@ -54,8 +55,8 @@ if ! command -v python3 &>/dev/null; then
   echo "Project: $PROJECT_NAME"
   echo ""
   TOTAL=$(wc -l < "$TIMELINE" 2>/dev/null | tr -d ' ')
-  echo "Timeline: $TOTAL events"
-  echo "(Install python3 for score trends and dimension analysis)"
+  echo "Timeline: $TOTAL entries"
+  echo "(To see score trends and dimension analysis, install python3.)"
   exit 0
 fi
 
@@ -75,7 +76,7 @@ for line in lines:
         pass
 
 if not events:
-    print('No valid timeline entries.')
+    print('The timeline has no entries that idstack can read.')
     sys.exit(0)
 
 print('Project: ' + os.environ.get('PROJECT_NAME', 'unknown'))
@@ -140,15 +141,15 @@ if not next_skill and 'needs-analysis' not in completed and 'course-import' not 
     next_skill = 'needs-analysis'
 
 if next_skill:
-    print(f'Suggested next: /idstack:{next_skill}')
+    print(f'Recommended next: /idstack:{next_skill}')
     print()
-" || echo "Error reading timeline."
+" || echo "Error: idstack cannot read the timeline."
 fi
 
 # Learnings count
 if [ -f "$LEARNINGS" ] && [ "$READINESS_ONLY" -eq 0 ]; then
   LEARN_COUNT=$(wc -l < "$LEARNINGS" 2>/dev/null | tr -d ' ')
-  [ "$LEARN_COUNT" -gt 0 ] 2>/dev/null && echo "Learnings: $LEARN_COUNT discoveries stored"
+  [ "$LEARN_COUNT" -gt 0 ] 2>/dev/null && echo "Learnings: $LEARN_COUNT entries"
 fi
 
 # Reports — list every per-skill HTML report present under the course's export
@@ -174,7 +175,7 @@ if [ -d ".idstack/exports" ] && [ "$READINESS_ONLY" -eq 0 ]; then
     REPORT_COUNT=$(find "$COURSE_DIR" -maxdepth 1 -name '*.html' -type f 2>/dev/null | wc -l | tr -d ' ')
     if [ "$REPORT_COUNT" -gt 0 ] 2>/dev/null; then
       echo ""
-      echo "Reports (open in a browser for the human view):"
+      echo "Reports (open these files in a browser):"
       if [ -f "$COURSE_DIR/index.html" ]; then
         echo "  $COURSE_DIR/index.html  <-- course dashboard, start here"
       fi
@@ -204,7 +205,7 @@ READY_RED_CRITICAL_MAX = $READY_RED_CRITICAL_MAX
 
 if not os.path.exists(timeline_file):
     if readiness_only:
-        print('No timeline data. Run pipeline skills first.')
+        print('No timeline data. Run the pipeline skills first.')
     sys.exit(0)
 
 # Read timeline for completed skills
@@ -290,5 +291,5 @@ def verdict():
 
 print(f'  Verdict: {verdict()}')
 print()
-" || echo "  (readiness computation failed)"
+" || echo "  (Error: idstack cannot calculate the readiness.)"
 fi
