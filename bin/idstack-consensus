@@ -617,7 +617,7 @@ def cmd_verify(args):
         json.dump(out_payload, f, indent=2)
 
     print(
-        "Evidence QA: idstack found evidence for %d findings (%d cached, %d auto-corrected)"
+        "Evidence QA: idstack checked %d findings (%d cached, %d auto-corrected)"
         % (total_verified, cached_count, auto_corrected_count)
     )
     return 0

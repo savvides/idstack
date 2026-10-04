@@ -1550,7 +1550,7 @@ open(p, 'w').write(s)
 PY
 expect_fail "a selector list shrinks the touch target past the text guard" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 43a-43c. The ASD-STE100 checker. Skills trust its exit code to end their rewrite
+# 43a-43d. The ASD-STE100 checker. Skills trust its exit code to end their rewrite
 # loop, so a checker that stops finding a problem lets non-STE text ship silently.
 # 43a. The word list in the preamble loses its rows -> test-ste-check must fail.
 # An empty list must stop the checker, not turn the word rule off.
@@ -1581,6 +1581,19 @@ fresh
 sed -i.bak 's/^DESCRIPTIVE_MAX = 25$/DESCRIPTIVE_MAX = 26/' "$WORK/r/bin/idstack-ste-check"
 expect_fail "the checker accepts a 26-word description" python3 "$WORK/r/test/test-ste-check.py"
 
+# 43d. The checker loses its no-text guard -> test-ste-check must fail.
+# An empty input must give exit 2, not "no problems".
+fresh
+python3 - "$WORK/r/bin/idstack-ste-check" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    if not files or (read and not units):\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    if False:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the checker accepts input that has no text" python3 "$WORK/r/test/test-ste-check.py"
+
 # 48a-48b. The writing standard reaches a report only through the skill steps and
 # the report template. A skill without the check step ships text that no check
 # has seen, and a bad template label goes into every report.
@@ -1590,12 +1603,14 @@ fresh
 python3 - "$WORK/r/skills/learn/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = ('**Writing standard check.** Run this command on the export file.\n\n'
+old = ('**Writing standard check.** Run this command on the export file. This check only shows '
+       'problems. Do not change the learnings in the export. Other sessions wrote them, many '
+       'before the writing standard.\n\n'
        '```bash\n{{IDSTACK_RESOLVE}}\n'
-       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" '
+       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" '
        '".idstack/learnings-export.md"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n\n'
-       'For the result, do the steps in "How to use the standard" in the "Writing Standard '
-       '(ASD-STE100)" section of the preamble. Do the check a maximum of three times.\n\n')
+       'If the output is `STE_CHECK_UNAVAILABLE`, tell the user one time that the check did not run. '
+       'If the checker shows problems, show them to the user. Do not change the export file.\n\n')
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '', 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1623,7 +1638,7 @@ python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = ('```bash\n{{IDSTACK_RESOLVE}}\n'
-       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ]; then "$_IDSTACK/bin/idstack-ste-check" '
+       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" '
        '".idstack/course-content"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n')
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '', 1)

@@ -7,7 +7,7 @@ Skills completed:
   [ ] /idstack:learning-objectives
 Quality trend: 65 -> 85
 Recommended next: /idstack:learning-objectives
-Reports (open in a browser for the human view):
+Reports (open these files in a browser):
   .idstack/exports/bobs-advanced-course/index.html  <-- course dashboard, start here
 ─── Course Readiness ───
   Quality Review:       READY       Score: 80/100  (READY threshold: 70)

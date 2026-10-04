@@ -211,9 +211,9 @@ class SteCheckTest(unittest.TestCase):
     def test_quoted_text_is_not_examined(self):
         self.assert_clean(self.check_file('a.md', 'The syllabus says "you should utilize it; do not wait".\n'))
         self.assert_clean(self.check_file('b.html', '<p>It says <q>you should utilize it; do not wait</q>.</p>'))
-        self.assert_clean(self.check_file('c.html', '<blockquote>You should utilize it; do not wait.</blockquote>'))
-        self.assert_clean(self.check_file('d.html', '<ul><li data-ste="quoted">You should utilize it; wait.</li></ul>'))
-        self.assert_clean(self.check_file('e.md', '> You should utilize it; do not wait.\n'))
+        self.assert_clean(self.check_file('c.html', '<p>The text is good.</p><blockquote>You should utilize it; do not wait.</blockquote>'))
+        self.assert_clean(self.check_file('d.html', '<p>The text is good.</p><ul><li data-ste="quoted">You should utilize it; wait.</li></ul>'))
+        self.assert_clean(self.check_file('e.md', 'The text is good.\n\n> You should utilize it; do not wait.\n'))
 
     def test_text_after_an_open_element_is_examined(self):
         bad = '<p>You should utilize it.</p>'
@@ -269,6 +269,20 @@ class SteCheckTest(unittest.TestCase):
         proc = run_checker([os.path.join(self.work, 'nothing.md')])
         self.assertEqual(proc.returncode, 2)
         self.assertNotIn('no problems', proc.stdout)
+
+    def test_input_with_no_text_gives_exit_2(self):
+        empty_dir = os.path.join(self.work, 'empty')
+        os.mkdir(empty_dir)
+        code_only = self.write('code.html', '<html><body><code>idstack-status</code></body></html>\n')
+        cases = [('empty stdin', ['-'], ''),
+                 ('empty folder', [empty_dir], None),
+                 ('code only', [code_only], None)]
+        for label, args, stdin in cases:
+            with self.subTest(case=label):
+                proc = run_checker(args, stdin=stdin)
+                self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+                self.assertIn('idstack-ste-check: error: no text to examine', proc.stderr)
+                self.assertNotIn('no problems', proc.stdout)
 
     def test_unreadable_file_does_not_stop_the_other_files(self):
         with open(os.path.join(self.work, 'a.md'), 'wb') as handle:

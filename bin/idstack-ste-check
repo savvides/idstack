@@ -21,7 +21,8 @@ Text that the script does not examine: code, quotations, citations, URLs, placeh
 HTML script and style, Markdown block quotations and fenced code. Each code span,
 quotation, citation, URL and placeholder counts as one word (ASD-STE100 rule 8.6).
 
-Exit codes: 0 no problems, 1 problems, 2 an error in the command or the word list.
+Exit codes: 0 no problems, 1 problems, 2 an error in the command or the word list, or
+no text to examine (no file to read, or no text in the files that it reads).
 If the script cannot read a file, it examines the other files. Then the exit code is 2
 if it finds no problems.
 This script finds only some rule problems. ASD does not endorse idstack.
@@ -476,6 +477,7 @@ def detect_format(path, requested):
 
 
 def check_text(text, fmt, words):
+    """Return the problems and the number of text units that the script examined."""
     problems = []
     if fmt == 'html':
         parser = UnitParser()
@@ -492,7 +494,7 @@ def check_text(text, fmt, words):
         units = text_units(text)
     for unit in units:
         problems.extend(check_unit(unit, words))
-    return problems
+    return problems, len(units)
 
 
 def expand(paths):
@@ -530,6 +532,7 @@ def main(argv=None):
 
     total = 0
     unread = 0
+    units = 0
     files = expand(args.paths)
     for path in files:
         try:
@@ -543,7 +546,9 @@ def main(argv=None):
             unread += 1
             continue
         name = 'stdin' if path == '-' else path
-        for problem in check_text(text, detect_format(path, args.format), words):
+        found, count = check_text(text, detect_format(path, args.format), words)
+        units += count
+        for problem in found:
             print('%s:%s: %s: %s' % (name, problem.line, problem.rule, problem.message))
             total += 1
     read = len(files) - unread
@@ -551,6 +556,9 @@ def main(argv=None):
     if total:
         print('idstack-ste-check: %d problem(s) in %d file(s)%s' % (total, read, note))
         return 1
+    if not files or (read and not units):
+        print('idstack-ste-check: error: no text to examine', file=sys.stderr)
+        return 2
     if unread:
         if read:
             print('idstack-ste-check: no problems in %d file(s)%s' % (read, note))
