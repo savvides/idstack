@@ -260,6 +260,7 @@ class UnitParser(HTMLParser):
     def __init__(self):
         HTMLParser.__init__(self, convert_charrefs=True)
         self.units = []
+        self.problems = []
         self.stack = []
         self.skip_tag = None
         self.skip_depth = 0
@@ -293,6 +294,8 @@ class UnitParser(HTMLParser):
     def end_inline_skip(self, tag):
         # An inline span that is not closed ends at the next block tag.
         if self.skip_tag and tag in BLOCK_TAGS and self.skip_tag not in BLOCK_TAGS | SKIP_TAGS:
+            self.problems.append(Problem(self.skip_line, 'html', '<%s> has no end tag. Add the end tag. The checker '
+                                         'did not examine the text from it to the end of the block.' % self.skip_tag))
             self.skip_tag = None
 
     def handle_starttag(self, tag, attrs):
@@ -485,6 +488,7 @@ def check_text(text, fmt, words):
         parser.close()
         parser.flush()
         units = parser.units
+        problems.extend(parser.problems)
         if parser.skip_tag:
             problems.append(Problem(parser.skip_line, 'html', '<%s> has no end tag. Add the end tag. The checker '
                                     'did not examine the text after it.' % parser.skip_tag))

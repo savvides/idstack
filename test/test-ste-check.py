@@ -217,10 +217,15 @@ class SteCheckTest(unittest.TestCase):
 
     def test_text_after_an_open_element_is_examined(self):
         bad = '<p>You should utilize it.</p>'
-        self.assert_problem(self.check_file('a.html', '<p>It says <q>wait.</p>' + bad), 'word')
-        self.assert_problem(self.check_file('b.html', '<p>Run <code>./setup.</p>' + bad), 'word')
-        self.assert_problem(self.check_file('c.html', '<p><img data-ste="quoted" src="x.png"> Text.</p>' + bad),
-                            'word')
+        for name, text in (('a.html', '<p>It says <q>wait.</p>' + bad), ('b.html', '<p>Run <code>./setup.</p>' + bad)):
+            proc = self.check_file(name, text)
+            self.assert_problem(proc, 'word')
+            self.assertIn(': html: ', proc.stdout)
+        proc = self.check_file('c.html', '<p><img data-ste="quoted" src="x.png"> Text.</p>' + bad)
+        self.assert_problem(proc, 'word')
+        self.assertNotIn(': html: ', proc.stdout)
+        # The text in an inline element that has no end tag is not examined, so report the element.
+        self.assert_problem(self.check_file('e.html', '<p>Clean <code>you should utilize this.</p>'), 'html')
         self.assert_problem(self.check_file('d.html', '<blockquote>Quoted text.' + bad), 'html')
 
     def test_long_fence_ends_only_at_a_long_fence(self):

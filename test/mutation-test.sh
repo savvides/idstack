@@ -1550,7 +1550,7 @@ open(p, 'w').write(s)
 PY
 expect_fail "a selector list shrinks the touch target past the text guard" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 43a-43d. The ASD-STE100 checker. Skills trust its exit code to end their rewrite
+# 43a-43e. The ASD-STE100 checker. Skills trust its exit code to end their rewrite
 # loop, so a checker that stops finding a problem lets non-STE text ship silently.
 # 43a. The word list in the preamble loses its rows -> test-ste-check must fail.
 # An empty list must stop the checker, not turn the word rule off.
@@ -1593,6 +1593,19 @@ s = s.replace(old, "    if False:\n", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the checker accepts input that has no text" python3 "$WORK/r/test/test-ste-check.py"
+
+# 43e. The checker stops reporting an inline element that has no end tag -> test-ste-check
+# must fail. The text in that element is not examined, so a silent recovery lets it pass.
+fresh
+python3 - "$WORK/r/bin/idstack-ste-check" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "            self.problems.append(Problem(self.skip_line, 'html', "
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "            (lambda *a: None)(Problem(self.skip_line, 'html', ", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the checker misses an inline element that has no end tag" python3 "$WORK/r/test/test-ste-check.py"
 
 # 48a-48b. The writing standard reaches a report only through the skill steps and
 # the report template. A skill without the check step ships text that no check
