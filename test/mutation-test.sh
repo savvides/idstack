@@ -1383,7 +1383,7 @@ fresh
 python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = '<span class="badge-version">v1.1</span>'
+old = '<span class="badge-version">v1.2</span>'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '<span class="badge-version">v1.0</span>', 1)
 open(p, 'w', encoding='utf-8').write(s)

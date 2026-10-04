@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "idstack — Evidence-Based Course Design",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "minimum_chrome_version": "116",
   "description": "idstack audits course pages in Canvas LMS, Google Docs and on the web against instructional design evidence.",
   "homepage_url": "https://idstack.org",
