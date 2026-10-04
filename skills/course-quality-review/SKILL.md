@@ -42,6 +42,143 @@ lean on:
 
 These are **directives to the model**, not magic words — interpret them as the protocol above.
 
+## Preamble: Writing Standard (ASD-STE100)
+
+All text that idstack writes for a person must obey the rules in this section. This
+includes chat text, AskUserQuestion questions and options, HTML reports, the course
+dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
+reads the word list between the two `ste-core` markers. `extension/shared/ste-rules.js`
+has a copy of the text between the markers. If you change this text, change the copy at
+the same time.
+
+The rules also apply to the text that idstack writes in `.idstack/project.json` and in
+learnings, for example finding text and recommendations. Other skills use this text in
+their output. The checker does not read these files. Do not change text that comes from
+the course. Do not change JSON keys or the values that a script or a skill reads.
+
+<!-- ste-core:begin -->
+Writing standard: ASD-STE100 Simplified Technical English (STE)
+
+This summary uses the ASD-STE100 writing rules. ASD does not endorse idstack. This summary does not replace the ASD-STE100 standard.
+
+Use these rules only for text in English. If the text is not in English, do not use these rules.
+
+Words:
+- Use one word for one meaning. Use the same term for the same item in all of the text.
+- Use short words that are easy to understand. Do not use the words in the first column of the word list.
+- Use the technical nouns and technical verbs of instructional design when no simple word has the same meaning. Examples of technical nouns are learning objective, ILO, rubric, criterion, formative assessment, scaffold, cognitive load, meta-analysis, evidence tier, finding and severity.
+- The Bloom's taxonomy verbs are technical verbs. Examples are remember, understand, apply, analyze, evaluate, create, assess, critique, demonstrate, design and implement. Use them in learning objectives and in text about Bloom's levels.
+- Software verbs are technical verbs. Examples are run, click, open, save, install and update.
+- Do not use a technical noun as a verb.
+- Do not use contractions. Write "do not", not "don't".
+- Do not use Latin abbreviations. Write "for example", not "e.g.".
+
+Verbs:
+- Use the active voice. In a description, use the passive voice only when you do not know who or what does the work.
+- Use only the simple tenses. Write "writes", "wrote" or "will write". Do not write "has written", "had written" or "is writing".
+- Do not use a verb that ends in "-ing". You can use an "-ing" word only in a technical noun, for example "learning objective".
+
+Sentences:
+- Write one topic in each sentence.
+- An instruction has a maximum of 20 words. A description has a maximum of 25 words.
+- Do not remove words, for example "the", "a" and "is", to make a sentence shorter.
+- A noun cluster has a maximum of three nouns.
+- Do not use semicolons. Write two sentences.
+- Use a vertical list for text that has many parts.
+
+Instructions and descriptions:
+- Write an instruction as a command. Write one instruction in each sentence. Give a number to each step.
+- If the reader must know a condition first, write the condition first. Example: "If the course has no rubric, add a rubric."
+- Do not write commands in a description. A paragraph has one topic and a maximum of six sentences.
+
+Recommendations:
+- First show the problem that idstack found. Then show the evidence. Then give the recommendation.
+- In a description, write a recommendation as "idstack recommends that you ..." or as "You can ...".
+- In a numbered list of steps, write each step as a command.
+- Do not use "consider", "may", "should" or "suggest".
+
+Text that you do not change:
+- Do not change a quotation from a course, a person, a standard or a different software tool. Put each quotation in quotation marks. A new version of a text is not a quotation. Write it with these rules.
+- Do not change code, file names, commands, URLs, citations, for example [Domain-N] [T1], or the names of products and standards.
+
+Word list. Do not use the word in the first column. Use the word in the second column.
+
+| Do not use | Use | Note |
+|---|---|---|
+| "utilize" | "use" | |
+| "ensure" | "make sure" | |
+| "verify" | "make sure" | |
+| "confirm" | "make sure" | |
+| "commence" | "start" | |
+| "begin" | "start" | |
+| "initiate" | "start" | |
+| "terminate" | "stop" | |
+| "prior to" | "before" | |
+| "in order to" | "to" | |
+| "assist" | "help" | |
+| "facilitate" | "help" | |
+| "obtain" | "get" | |
+| "achieve" | "get" | |
+| "require" | "necessary" | |
+| "indicate" | "show" | |
+| "appear" | "show" | |
+| "consider" | "idstack recommends that you" or "think about" | |
+| "suggest" | "recommend" | |
+| "suggestion" | "recommendation" | |
+| "may" | "can" | lowercase only |
+| "might" | "can" | |
+| "should" | "must" or "idstack recommends that you" | |
+| "would" | "can" | |
+| "shall" | "must" | |
+| "perform" | "do" | |
+| "accomplish" | "do" | |
+| "additional" | "more" | |
+| "numerous" | "many" | |
+| "enough" | "sufficient" | |
+| "provide" | "give" | |
+| "allow" | "let" | |
+| "choose" | "select" | |
+| "determine" | "find" | |
+| "locate" | "find" | |
+| "modify" | "change" | |
+| "attempt" | "try" | |
+| "therefore" | "thus" | |
+| "however" | "but" | |
+| "whether" | "if" | |
+| "via" | "through" | |
+| "upon" | "on" | |
+| "such as" | "for example" | |
+| "e.g." | "for example" | |
+| "i.e." | "that is" | |
+| "etc." | (write the full list) | |
+| "please" | (remove the word) | |
+<!-- ste-core:end -->
+
+How to use the standard:
+
+1. If the conversation or the course is not in English, do not run the checker.
+2. When you write a file for a person, run `bin/idstack-ste-check` on it at the step that the skill shows.
+3. If the checker shows problems, write each sentence that it shows again. Then write the file again and run the checker again.
+4. Run the checker a maximum of three times. If problems stay after the third time, tell the user which lines have problems.
+5. If the checker does not run, continue the skill. Tell the user one time that the check did not run.
+
+The checker finds only some problems: long sentences, long paragraphs, semicolons,
+contractions, "has been" verbs and the words in the word list. Apply all of the rules
+when you write. The verbosity and experience settings change how much you write. They do
+not change these rules.
+
+Identify text from a different source for the checker:
+- In HTML, put a short quotation in `<q>` and a long quotation in `<blockquote>`. If a full list item or table cell is a quotation, add `data-ste="quoted"` to that element.
+- In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
+- The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
+- The checker counts each quotation, citation, code span and placeholder as one word.
+
+When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
+prompt. The sub-agent cannot see this preamble.
+
+Example sentences in a skill show the content of a message. Write them in STE when you
+use them.
+
 ## Preamble: Update Check
 
 ```bash
@@ -69,7 +206,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -150,8 +287,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -177,8 +314,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -284,15 +421,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `quality_review` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Course Quality Review — QM-Aligned Audit with CoI Presence Layer
 
@@ -380,8 +517,8 @@ with substantive data (not just empty defaults).
 This is the richest review. You have the full alignment chain: organizational context,
 task analysis, learner profile, ILOs, and alignment mappings.
 
-Tell the user: "I have your needs analysis and [X] learning objectives. I'll use
-these for a deep alignment audit, checking the full chain from organizational need
+Tell the user: "I have your needs analysis and [X] learning objectives. I will use
+them for a deep alignment audit. The audit checks the full chain from organizational need
 through objectives to activities and assessments."
 
 Proceed directly to the QM Structural Review using manifest data as primary evidence.
@@ -392,8 +529,8 @@ Proceed directly to the QM Structural Review using manifest data as primary evid
 
 Review what is available, and flag what is missing.
 
-Tell the user: "I have [populated sections] but not [missing sections]. I'll review
-what I can and flag gaps. For a complete audit, consider running [missing skill]
+Tell the user: "I have [populated sections] but not [missing sections]. I will review
+the available data and show the gaps. For a full audit, run [missing skill]
 first."
 
 Common gaps and their impact:
@@ -435,6 +572,8 @@ as parallel subagents after gathering course information (Mode 1/2/3 above).
 2. **CoI Presence Analysis** — "You are a Community of Inquiry analyst. Given this course data: [paste manifest/course info]. Score three presences 0-10: (a) Teaching Presence (design/facilitation/direct instruction indicators), (b) Social Presence (affective expression, open communication, group cohesion indicators), (c) Cognitive Presence (triggering event, exploration, integration, resolution indicators). For each, explain score rationale with specific evidence from the course."
 
 3. **Constructive Alignment Audit** — "You are a constructive alignment auditor. Given this course data: [paste objectives, assessments, activities]. For every ILO, verify: (a) at least one assessment directly measures it, (b) at least one activity prepares learners for it, (c) the Bloom's level of assessment matches or exceeds the ILO level. Report gaps, orphaned activities, and level mismatches."
+
+Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in each agent prompt. The agents cannot see the preamble.
 
 **After all 3 agents return:** Merge results, then proceed to Cross-Domain Checks and Quick Wins ranking (run these sequentially since they synthesize across all three frameworks).
 
@@ -679,7 +818,7 @@ Ask the user targeted questions:
    complete to practice that skill?"
 2. "How is each objective assessed? What does the learner produce or
    demonstrate?"
-3. "Are there any objectives that you teach but don't formally assess?"
+3. "Do you teach objectives that you do not formally assess?"
 
 Build a rough alignment map from the answers and check for the same
 misalignment patterns listed above.
@@ -879,7 +1018,7 @@ Then present the detailed findings:
 (Scores summed and scaled: raw X/30 -> XX/25)
 
 ### Constructive Alignment Audit (XX/15)
-[findings or "Full alignment verified across all ILOs"]
+[findings or "All ILOs are fully aligned"]
 
 ### Cross-Domain Evidence Checks (XX/20)
 | Check | Flags | Severity | Fix |
@@ -918,8 +1057,8 @@ When recommending fixes, point users to the appropriate idstack skill:
 
 - Misaligned or weak ILOs: "Run `/idstack:learning-objectives` to realign ILO-3 with
   its assessment."
-- Missing learner profile: "Run `/idstack:needs-analysis` to establish the learner
-  profile that is currently missing."
+- Missing learner profile: "Run `/idstack:needs-analysis` to add the learner
+  profile. The course does not have a learner profile."
 - No task analysis: "Run `/idstack:needs-analysis` — the task analysis will inform
   which activities are core vs. reference."
 - Weak alignment chain: "Run `/idstack:learning-objectives` to rebuild the alignment
@@ -1092,7 +1231,7 @@ scores. The preamble's context recovery already reads this file, but the score t
 display should also appear in the completion message.
 
 - If 1 prior score exists: show delta. "Score: 78/100 (+16 since last review on Mar 15)"
-- If 3+ prior scores exist: show trend. "Trending up: 62 -> 72 -> 78 across 3 reviews."
+- If 3+ prior scores exist: show trend. "The score went up: 62 -> 72 -> 78 in 3 reviews."
 - If no prior scores exist: just show the current score.
 
 The manifest stores the current overall_score. The timeline stores historical scores.
@@ -1145,16 +1284,42 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
   - `<h3>Cross-domain evidence checks</h3>` — cognitive load, multimedia, feedback quality, expertise reversal findings.
   Use stable ids per dimension: `qm-1`, `coi-1`, `align-1`, `cogload-1`, `multimedia-1`, `feedback-1`, `expertise-1`, etc.
 - **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="quick-wins">` with `<h2>Top 3 quick wins</h2>` and an HTML `<table>` (#, Finding, Impact, Skill to Run).
-- **Limitations:** review reads structural metadata, not the actual learner-facing content text; cognitive-load assessments are heuristic; CoI presence is inferred from manifest signals, not surveyed.
+- **Limitations:** The review reads structural metadata, not the learner-facing content text. The cognitive-load assessments are heuristic. The CoI presence scores come from manifest signals, not from a survey.
 - **Next steps:** 1–3 specific next actions referencing other idstack skills. When no critical issues remain, include: "Run `/idstack:course-export` to package your course."
+
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
 
 After writing both the manifest and the quality report, confirm to the user:
 
-"Your quality review has been saved to `.idstack/project.json` and a shareable HTML
-report generated at `.idstack/exports/<course-slug>/course-quality-review.html`. The
-report captures the QM structural review, CoI presence scores, alignment audit,
-cross-domain evidence checks, and prioritized recommendations. Open it in any browser;
-the folder is self-contained (CSS bundled).
+"I saved your quality review to `.idstack/project.json`. I also wrote a shareable HTML
+report to `.idstack/exports/<course-slug>/course-quality-review.html`. The
+report shows the QM structural review, CoI presence scores, alignment audit,
+cross-domain evidence checks, and recommendations, with the most important first. Open it in a web browser.
+The folder also contains the CSS file.
 
 **Score: XX/100** [If previous: "Previous: X/100 (DATE). Delta: +/-Z."]
 
@@ -1179,7 +1344,7 @@ Every skill that produces findings emits **both**:
 - a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
 - an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
 
-The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → suggestion, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
+The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → recommendation, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
 
 `<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
 
@@ -1275,7 +1440,7 @@ The merge tool replaces only the named top-level section, preserves every other 
       "motivation_factors": [],
       "demographics": "",
       "access_constraints": [],
-      "learning_preferences_note": "Learning styles are NOT used as a differentiation basis per evidence. Prior knowledge is the primary differentiator."
+      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
     },
     "training_justification": {
       "justified": true,

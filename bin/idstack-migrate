@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 # Migrate .idstack/project.json to the latest schema version.
-# Reads the manifest, applies any needed migrations, writes it back, and
-# outputs the (possibly updated) JSON to stdout.
-# Prints "MIGRATED <from> <to>" to stderr when a migration is applied.
-# If the file does not exist, prints nothing and exits 0.
-# If python3 is unavailable, falls back to cat (graceful degradation).
+# The script reads the manifest, applies the necessary migrations and writes
+# the manifest again. It also writes the JSON to stdout, changed or not.
+# When it applies a migration, it writes "MIGRATED <from> <to>" to stderr.
+# If there is no file, the script writes no output and exits 0.
+# If python3 is not available, the script writes the file to stdout with cat.
 #
 # Usage:
 #   idstack-migrate [--init] [path]
 #
-#   --init   create a canonical manifest with every section at its default
-#            when none exists (still migrates in place when one does). Skills
-#            running standalone use this so a first run has something for
-#            bin/idstack-manifest-merge to merge into — that tool replaces one
-#            section and errors (exit 4) when the manifest is absent.
+#   --init   If there is no manifest, make a canonical manifest with each
+#            section at its default value. If there is a manifest, migrate it.
+#            Skills that run without the pipeline use this flag. Then the first
+#            run has a manifest for bin/idstack-manifest-merge. That tool
+#            replaces one section, and it exits 4 when there is no manifest.
 #
-# The --init skeleton is produced by seeding a minimal v1.0 document and
-# running the normal migration chain over it, so there is exactly one
-# definition of "every section at its default" — the migrations themselves.
+# To make the --init manifest, the script writes a small v1.0 document and
+# applies the usual migrations to it. Thus the migrations are the only
+# definition of "each section at its default value".
 
 set -e
 
@@ -31,7 +31,7 @@ for arg in "$@"; do
     -h|--help)
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
-    -*) echo "idstack-migrate: unknown option: $arg" >&2; exit 2 ;;
+    -*) echo "idstack-migrate: unknown flag: $arg" >&2; exit 2 ;;
     *) [ -z "$MANIFEST" ] && MANIFEST="$arg" ;;
   esac
 done
@@ -41,7 +41,7 @@ MANIFEST="${MANIFEST:-.idstack/project.json}"
 # section, so this only has to carry the fields migrations do not default.
 if [ ! -f "$MANIFEST" ] && [ "$INIT" = "1" ]; then
   if ! command -v python3 &>/dev/null; then
-    echo "idstack-migrate: --init requires python3" >&2
+    echo "idstack-migrate: python3 is necessary for --init" >&2
     exit 3
   fi
   mkdir -p "$(dirname "$MANIFEST")"

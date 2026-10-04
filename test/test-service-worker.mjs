@@ -84,7 +84,7 @@ const modelCalls = (h) => h.fetchCalls.filter((c) => new URL(c.url).host === 'ge
 // Modules item title never reaches the model, with or without a key.
 for (const [content, apiKey] of [['', 'k'], ['  \n ', undefined], ['Week 1 Reading', 'k']]) {
   h = await loadWorker({ apiKey, fetchHandler: async () => llmReply(VALID) });
-  await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload: { ...payload, content } }), /too little readable text/);
+  await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload: { ...payload, content } }), /does not have sufficient text/);
   assert.strictEqual(h.fetchCalls.length, 0, `page content ${JSON.stringify(content)} must not be sent to the model`);
 }
 
@@ -124,7 +124,7 @@ assert.ok(call.init.signal instanceof AbortSignal && !call.init.signal.aborted, 
 // rejects it with AbortError, so the worker must check the signal, not the name.
 h = await loadWorker({ apiKey: 'k', fetchHandler: async () => { throw new DOMException('The user aborted a request.', 'AbortError'); } });
 timeouts.fire = true;
-await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload }), /did not respond within 25 seconds/);
+await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload }), /did not send a result in 25 seconds/);
 // Control: any other network error passes through unchanged.
 h = await loadWorker({ apiKey: 'k', fetchHandler: async () => { throw new TypeError('Failed to fetch'); } });
 await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload }), /^Failed to fetch$/);

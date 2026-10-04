@@ -80,8 +80,8 @@ assert.ok(dossierMd.includes('Biggs (1996)'));
 assert.strictEqual(compileSingleAuditToMarkdown(null), '');
 assert.strictEqual(compileSingleAuditToMarkdown({}), '');
 const emptyDossierMd = compileDossierToMarkdown([], 'Empty Course');
-assert.ok(emptyDossierMd.includes('*No audit materials in dossier.*'));
+assert.ok(emptyDossierMd.includes('*The dossier has no audits.*'));
 const nullDossierMd = compileDossierToMarkdown(null);
-assert.ok(nullDossierMd.includes('*No audit materials in dossier.*'));
+assert.ok(nullDossierMd.includes('*The dossier has no audits.*'));
 
 console.log('✅ Task 1 Dossier compiler tests passed.');

@@ -27,7 +27,7 @@
 set -e
 
 if ! command -v python3 >/dev/null 2>&1; then
-  echo "idstack-slugify: python3 is required" >&2
+  echo "idstack-slugify: python3 is necessary" >&2
   exit 2
 fi
 
@@ -36,7 +36,7 @@ if [ $# -gt 0 ] && [ "$1" != "-" ]; then
   INPUT="$1"
 else
   if [ -t 0 ]; then
-    echo "idstack-slugify: no input given (pass an argument or pipe via stdin)" >&2
+    echo "idstack-slugify: there is no input. Give an argument, or send the text to stdin." >&2
     exit 3
   fi
   INPUT=$(cat)

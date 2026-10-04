@@ -50,7 +50,7 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus idstack-ste-check; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
@@ -178,6 +178,19 @@ done
 for skill in needs-analysis course-import; do
   check "$skill SKILL.md.tmpl justifies its Write-tool fallback" "grep -q 'Write-tool fallback' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
+
+# The learning_preferences_note text has two copies: the schema default and the
+# needs-analysis step that fills it. Both are fixed STE text and must keep the
+# same words, or the manifest says one thing and the skill writes another.
+NOTE_SYNC_PY='import re, sys
+d = sys.argv[1]
+schema = open(d + "/templates/manifest-schema.md", encoding="utf-8").read()
+skill = open(d + "/skills/needs-analysis/SKILL.md.tmpl", encoding="utf-8").read()
+a = re.search(r"\x22learning_preferences_note\x22: \x22([^\x22]+)\x22", schema)
+b = re.search(r"always populated with:\s*\x22([^\x22]+)\x22", skill)
+same = a and b and " ".join(a.group(1).split()) == " ".join(b.group(1).split())
+sys.exit(0 if same else 1)'
+check "learning_preferences_note has the same words in manifest-schema.md and needs-analysis" "python3 -c '$NOTE_SYNC_PY' '$IDSTACK_DIR'"
 
 # Canonical manifest section names only — these five non-canonical tokens once
 # shipped in re-run checks and prose, making re-run detection dead in 5 skills.
@@ -311,6 +324,27 @@ if command -v python3 &>/dev/null; then
   check "consensus cli unit tests pass" "python3 '$IDSTACK_DIR/test/test-consensus-cli.py'"
 fi
 
+# The ASD-STE100 checker. Skills run it on each file they write, so a false
+# positive costs the user three rewrite passes on every run.
+if command -v python3 &>/dev/null; then
+  check "ste checker unit tests pass" "python3 '$IDSTACK_DIR/test/test-ste-check.py'"
+fi
+# Each skill runs the checker on the files it writes for a person. The match is
+# the bash call itself, not the prose around it, so a step that loses its
+# command fails here even when the text that names the check stays.
+for skill in $SKILLS; do
+  case "$skill" in course-builder|course-export|red-team) want=2 ;; *) want=1 ;; esac
+  # grep -c exits 1 on zero matches; without "|| true", set -e ends the run with no FAIL line.
+  got=$(grep -cF '"$_IDSTACK/bin/idstack-ste-check"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
+  check "$skill SKILL.md.tmpl runs the ste checker at all $want check steps" "[ '$got' -eq $want ]"
+done
+# Every report and the course dashboard copy the fixed labels in these two
+# templates, so one bad label puts a problem in every report.
+if command -v python3 &>/dev/null; then
+  check "report and dashboard templates pass the ste checker" \
+    "'$IDSTACK_DIR/bin/idstack-ste-check' --format html '$IDSTACK_DIR/templates/report.html.tmpl' '$IDSTACK_DIR/templates/index.html.tmpl'"
+fi
+
 # ./setup is what a new user runs first; it is exercised against a repo copy
 # with a fake $HOME and a stub `claude`, never the real install.
 if [ -x "$IDSTACK_DIR/test/test-setup.sh" ]; then
@@ -328,10 +362,21 @@ if command -v node &>/dev/null; then
   # targets, column counts) rather than the CSS text. Skips loudly without a browser; the
   # text suite above still runs. See test/test-rendered-landing.js for why both exist.
   check "rendered landing page tests pass" "node '$IDSTACK_DIR/test/test-rendered-landing.js'"
+  # The fixed text that the extension shows must obey ASD-STE100: the demo audits,
+  # the Markdown export, the rendered findings, the error messages and the side-panel
+  # page. pipefail: a printer that crashes must fail here, not send empty text.
+  if command -v python3 &>/dev/null; then
+    check "extension Markdown output passes the STE checker" "( set -o pipefail; node '$IDSTACK_DIR/test/print-extension-output.mjs' markdown | python3 '$IDSTACK_DIR/bin/idstack-ste-check' --format markdown - )"
+    check "extension HTML output passes the STE checker" "( set -o pipefail; node '$IDSTACK_DIR/test/print-extension-output.mjs' html | python3 '$IDSTACK_DIR/bin/idstack-ste-check' --format html - )"
+    check "side-panel page passes the STE checker" "python3 '$IDSTACK_DIR/bin/idstack-ste-check' '$IDSTACK_DIR/extension/sidepanel/index.html'"
+  else
+    echo "  SKIP: extension STE checks (python3 not installed)"
+  fi
 else
   echo "  SKIP: chrome extension tests (node not installed)"
   echo "  SKIP: responsive landing page tests (node not installed)"
   echo "  SKIP: rendered landing page tests (node not installed)"
+  echo "  SKIP: extension STE checks (node not installed)"
 fi
 
 # Check generated files have auto-generated header

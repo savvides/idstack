@@ -4,7 +4,7 @@ description: |
   Adversarial course design audit across 5 dimensions: alignment stress test,
   evidence verification, cognitive load analysis, learner persona simulation,
   and prerequisite chain integrity. Produces a confidence score (0-100).
-  Runs in a clean-context sub-agent so synthesis is unbiased by build history.
+  Runs in a clean-context sub-agent. Thus the build history does not change the synthesis.
   Works standalone or reads from the idstack project manifest. (idstack)
 allowed-tools:
   - Bash
@@ -44,6 +44,143 @@ lean on:
 
 These are **directives to the model**, not magic words — interpret them as the protocol above.
 
+## Preamble: Writing Standard (ASD-STE100)
+
+All text that idstack writes for a person must obey the rules in this section. This
+includes chat text, AskUserQuestion questions and options, HTML reports, the course
+dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
+reads the word list between the two `ste-core` markers. `extension/shared/ste-rules.js`
+has a copy of the text between the markers. If you change this text, change the copy at
+the same time.
+
+The rules also apply to the text that idstack writes in `.idstack/project.json` and in
+learnings, for example finding text and recommendations. Other skills use this text in
+their output. The checker does not read these files. Do not change text that comes from
+the course. Do not change JSON keys or the values that a script or a skill reads.
+
+<!-- ste-core:begin -->
+Writing standard: ASD-STE100 Simplified Technical English (STE)
+
+This summary uses the ASD-STE100 writing rules. ASD does not endorse idstack. This summary does not replace the ASD-STE100 standard.
+
+Use these rules only for text in English. If the text is not in English, do not use these rules.
+
+Words:
+- Use one word for one meaning. Use the same term for the same item in all of the text.
+- Use short words that are easy to understand. Do not use the words in the first column of the word list.
+- Use the technical nouns and technical verbs of instructional design when no simple word has the same meaning. Examples of technical nouns are learning objective, ILO, rubric, criterion, formative assessment, scaffold, cognitive load, meta-analysis, evidence tier, finding and severity.
+- The Bloom's taxonomy verbs are technical verbs. Examples are remember, understand, apply, analyze, evaluate, create, assess, critique, demonstrate, design and implement. Use them in learning objectives and in text about Bloom's levels.
+- Software verbs are technical verbs. Examples are run, click, open, save, install and update.
+- Do not use a technical noun as a verb.
+- Do not use contractions. Write "do not", not "don't".
+- Do not use Latin abbreviations. Write "for example", not "e.g.".
+
+Verbs:
+- Use the active voice. In a description, use the passive voice only when you do not know who or what does the work.
+- Use only the simple tenses. Write "writes", "wrote" or "will write". Do not write "has written", "had written" or "is writing".
+- Do not use a verb that ends in "-ing". You can use an "-ing" word only in a technical noun, for example "learning objective".
+
+Sentences:
+- Write one topic in each sentence.
+- An instruction has a maximum of 20 words. A description has a maximum of 25 words.
+- Do not remove words, for example "the", "a" and "is", to make a sentence shorter.
+- A noun cluster has a maximum of three nouns.
+- Do not use semicolons. Write two sentences.
+- Use a vertical list for text that has many parts.
+
+Instructions and descriptions:
+- Write an instruction as a command. Write one instruction in each sentence. Give a number to each step.
+- If the reader must know a condition first, write the condition first. Example: "If the course has no rubric, add a rubric."
+- Do not write commands in a description. A paragraph has one topic and a maximum of six sentences.
+
+Recommendations:
+- First show the problem that idstack found. Then show the evidence. Then give the recommendation.
+- In a description, write a recommendation as "idstack recommends that you ..." or as "You can ...".
+- In a numbered list of steps, write each step as a command.
+- Do not use "consider", "may", "should" or "suggest".
+
+Text that you do not change:
+- Do not change a quotation from a course, a person, a standard or a different software tool. Put each quotation in quotation marks. A new version of a text is not a quotation. Write it with these rules.
+- Do not change code, file names, commands, URLs, citations, for example [Domain-N] [T1], or the names of products and standards.
+
+Word list. Do not use the word in the first column. Use the word in the second column.
+
+| Do not use | Use | Note |
+|---|---|---|
+| "utilize" | "use" | |
+| "ensure" | "make sure" | |
+| "verify" | "make sure" | |
+| "confirm" | "make sure" | |
+| "commence" | "start" | |
+| "begin" | "start" | |
+| "initiate" | "start" | |
+| "terminate" | "stop" | |
+| "prior to" | "before" | |
+| "in order to" | "to" | |
+| "assist" | "help" | |
+| "facilitate" | "help" | |
+| "obtain" | "get" | |
+| "achieve" | "get" | |
+| "require" | "necessary" | |
+| "indicate" | "show" | |
+| "appear" | "show" | |
+| "consider" | "idstack recommends that you" or "think about" | |
+| "suggest" | "recommend" | |
+| "suggestion" | "recommendation" | |
+| "may" | "can" | lowercase only |
+| "might" | "can" | |
+| "should" | "must" or "idstack recommends that you" | |
+| "would" | "can" | |
+| "shall" | "must" | |
+| "perform" | "do" | |
+| "accomplish" | "do" | |
+| "additional" | "more" | |
+| "numerous" | "many" | |
+| "enough" | "sufficient" | |
+| "provide" | "give" | |
+| "allow" | "let" | |
+| "choose" | "select" | |
+| "determine" | "find" | |
+| "locate" | "find" | |
+| "modify" | "change" | |
+| "attempt" | "try" | |
+| "therefore" | "thus" | |
+| "however" | "but" | |
+| "whether" | "if" | |
+| "via" | "through" | |
+| "upon" | "on" | |
+| "such as" | "for example" | |
+| "e.g." | "for example" | |
+| "i.e." | "that is" | |
+| "etc." | (write the full list) | |
+| "please" | (remove the word) | |
+<!-- ste-core:end -->
+
+How to use the standard:
+
+1. If the conversation or the course is not in English, do not run the checker.
+2. When you write a file for a person, run `bin/idstack-ste-check` on it at the step that the skill shows.
+3. If the checker shows problems, write each sentence that it shows again. Then write the file again and run the checker again.
+4. Run the checker a maximum of three times. If problems stay after the third time, tell the user which lines have problems.
+5. If the checker does not run, continue the skill. Tell the user one time that the check did not run.
+
+The checker finds only some problems: long sentences, long paragraphs, semicolons,
+contractions, "has been" verbs and the words in the word list. Apply all of the rules
+when you write. The verbosity and experience settings change how much you write. They do
+not change these rules.
+
+Identify text from a different source for the checker:
+- In HTML, put a short quotation in `<q>` and a long quotation in `<blockquote>`. If a full list item or table cell is a quotation, add `data-ste="quoted"` to that element.
+- In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
+- The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
+- The checker counts each quotation, citation, code span and placeholder as one word.
+
+When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
+prompt. The sub-agent cannot see this preamble.
+
+Example sentences in a skill show the content of a message. Write them in STE when you
+use them.
+
 ## Preamble: Update Check
 
 ```bash
@@ -71,7 +208,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -152,8 +289,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -179,8 +316,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -286,15 +423,15 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
 **Skill-specific manifest check:** If the manifest `red_team_audit` section already has data,
-ask the user: "I see you've already run this skill. Want to update the results or start fresh?"
+ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
 # Red Team — Adversarial Course Design Audit
 
@@ -342,7 +479,7 @@ The preamble above already ran the manifest check. Now confirm scope.
 
 **Ask one focus question** via AskUserQuestion:
 
-> "Any specific angle to red-team, or a full sweep?"
+> "Do you want a full sweep, or a red-team audit with one focus?"
 
 Options:
 - **Full sweep (recommended)** — all 5 dimensions at equal depth
@@ -360,6 +497,8 @@ Use the **Agent tool** with `subagent_type=general-purpose`. The prompt is the f
 - `{{FOCUS}}` → the user's choice from Step 1 (or `Full sweep` by default)
 - `{{MANIFEST_INFO}}` → either `Manifest at .idstack/project.json — read it directly.` or, in standalone mode, the captured course information from Step 1
 - `{{COURSE_FILES_HINT}}` → if the manifest has `course_content.content_dir`, set this to that path; otherwise `Look under ./course/ or ./modules/ for generated course files.`
+
+Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble at the end of the prompt. The orchestrator cannot see the preamble.
 
 Then call Agent. Block on its return.
 
@@ -397,6 +536,8 @@ Otherwise, audit the named dimension at full depth and cover the others at reduc
 If you have access to the **Agent tool**, dispatch the 5 dimensions in parallel as nested sub-agents using the briefs in "Dimension Briefs" below. Wait for all 5 to return, then deduplicate findings.
 
 If you do NOT have Agent access, run the dimensions sequentially using the same briefs.
+
+The "Writing Standard (ASD-STE100)" section is at the end of this prompt. Put a copy of it in each sub-agent prompt. The sub-agents cannot see it.
 
 ---
 
@@ -440,7 +581,7 @@ Check every evidence citation in the manifest or course design for accuracy.
   [Assessment-18] [T3] — systematic reviews of meta-analyses reveal how evidence evolves.
 - Only flag contradictions from clearly relevant papers. Ignore tangential matches.
 - Check for retractions of cited papers.
-- If WebSearch is unavailable, set `mode: limited` in the report and note: "currency verification requires internet."
+- If WebSearch is unavailable, set `mode: limited` in the report and note: "the currency check must have internet access."
 
 ### Dimension 3 — Cognitive Load Analysis
 
@@ -552,9 +693,9 @@ Severity weights reflect that structural misalignment and cognitive overload are
 
 Contextualize:
 - 80+ "High confidence" — minor issues only
-- 60-79 "Moderate, needs work" — several design gaps
-- 40-59 "Low confidence, significant gaps" — multiple problem dimensions
-- <40 "Course needs redesign" — structural issues across most dimensions
+- 60-79 "Moderate confidence, changes necessary" — several design gaps
+- 40-59 "Low confidence, important gaps" — multiple problem dimensions
+- <40 "New design necessary" — structural issues across most dimensions
 
 ---
 
@@ -651,7 +792,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **`{{skill_title}}`:** "Red Team Audit"
 - **`{{skill_name}}`:** `red-team`
 - **`{{mode}}`:** `full` or `limited` (include the optional mode segment in the header `meta` line; you may also append `· focus: {{FOCUS}}`).
-- **Summary:** 2–3 sentences. Lead with the confidence score (0–100) and the band ("High confidence" / "Moderate, needs work" / "Low confidence, significant gaps" / "Course needs redesign"). Include the optional one-line scoreboard: "Confidence XX/100 · Critical N · Warning N · Info N".
+- **Summary:** 2–3 sentences. Lead with the confidence score (0–100) and the band ("High confidence" / "Moderate confidence, changes necessary" / "Low confidence, important gaps" / "New design necessary"). Include the optional one-line scoreboard: "Confidence XX/100 · Critical N · Warning N · Info N".
 - **Findings** ordered by severity (`sev-critical` → `sev-warning` → `sev-info`) inside a single `<section class="findings">`. Stable ids of the form `<dimension>-<n>` (e.g., `alignment-1`, `cogload-3`) so the parent can reference findings when applying fixes. Each `<article class="finding sev-...">` should include the affected module/objective/assessment in the "What we saw" `<dd>`.
 - **Skill-specific section before Findings** — add a `<section class="dimension-summary">` with `<h2>Per-dimension summary</h2>` and an HTML `<table>` with a row for each dimension (Alignment, Evidence, Cognitive Load, Personas, Prerequisites) showing the per-dimension `pass | warning | critical` score and a one-line summary.
 - **Top recommendations:** the 3 changes that would most improve the score. Reference finding ids.
@@ -660,10 +801,36 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 
 Each finding **must** have a stable id of the form `<dimension>-<n>` (e.g., `alignment-1`, `cogload-3`) so the parent can reference findings when applying fixes.
 
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section at the end of this prompt. Do the check a maximum of three times. If these steps tell you to tell the user something, put it in your executive summary.
+
 ## Return value
 
 After writing the report, return ONLY a short executive summary (≤200 words) to the parent:
-- Confidence score and band ("Moderate, needs work")
+- Confidence score and band ("Moderate confidence, changes necessary")
 - Severity counts
 - Top 1 critical finding (one line)
 - Path: the value of `$_REPORT_PATH` (e.g., `.idstack/exports/<course-slug>/red-team.html`)
@@ -677,19 +844,19 @@ Do NOT return the full report inline. The parent will read the file.
 After the orchestrator returns:
 1. Read the HTML report file at the path the orchestrator returned (e.g., `.idstack/exports/<course-slug>/red-team.html`). HTML is fine to Read — extract the content sections by tag.
 2. Show the user the executive summary in your own words: confidence score, severity counts, top critical finding, and the report path.
-3. Mention: "Full HTML report at the path above — open it in any browser for the complete finding list."
+3. Mention: "The full HTML report is at the path above. Open it in a web browser to see all of the findings."
 
 ### Step 4: Triage — choose fix scope
 
 Ask one AskUserQuestion:
 
-> "Which findings would you like to address?"
+> "Which findings do you want to correct?"
 
 Options:
 - **Critical only (recommended)** — highest-impact fixes, smallest scope
 - **Critical + Warning** — broader cleanup
-- **All findings** — including Info; can be a lot
-- **Skip — review report manually** — no fixes now; user will read the file themselves
+- **All findings** — Info findings also. This can be many changes.
+- **Skip — review report manually** — no changes. You read the report.
 
 If the user chooses **Skip**, jump straight to Step 6.
 
@@ -705,6 +872,32 @@ For each finding in the chosen severity bucket, in order of severity:
 Do not spawn additional sub-agents for fixes. The parent has the relevant context to edit course files directly.
 
 If the user pushes back on any specific fix, mark it deferred and continue.
+
+**Writing standard check.** Run this command one time for each course file that you edited in this step. Replace `<path>` with the path of the file. Do not run it on `.idstack/project.json`.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Change only the sentences that you wrote or changed in this step. Do not change the other text in the file. Do the check a maximum of three times. If the checker shows problems only in sentences that you did not write or change, the check of that file is complete. Tell the user one time that these lines had problems before your changes.
 
 ### Step 6: Update manifest
 
@@ -759,7 +952,7 @@ Each finding object: `{"id": "alignment-1", "description": "...", "module": "Mod
 
 `fixes_applied[]` — each item: `{"id": "alignment-1", "description": "Optional one-line summary of the change applied"}`.
 
-`fixes_deferred[]` — each item: `{"id": "alignment-3", "reason": "One-line reason — e.g., requires re-running /idstack:assessment-design"}`.
+`fixes_deferred[]` — each item: `{"id": "alignment-3", "reason": "One-line reason — for example, the fix needs a new run of /idstack:assessment-design"}`.
 
 The merge tool exits non-zero (and prints a diagnostic on stderr) if the payload is malformed,
 the manifest is corrupt, or the section name is misspelled — never silently overwriting. If
@@ -796,7 +989,7 @@ canonical schema for reference is in `templates/manifest-schema.md`.
 ### Step 7: Final summary to user
 
 Two sentences:
-- "Confidence: X/100. Applied N fixes (M deferred). Report at `.idstack/exports/<course-slug>/red-team.html`."
+- "Confidence: X/100. I made N changes and deferred M changes. The report is at `.idstack/exports/<course-slug>/red-team.html`."
 - If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
 
 If the user wants to verify fixes hold, they can re-run `/idstack:red-team` — that's deliberately manual to avoid token costs of automatic re-verification.

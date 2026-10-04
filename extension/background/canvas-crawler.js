@@ -18,14 +18,14 @@ const MAX_ASSIGNMENT_PAGES = 10;
 
 export async function crawlCanvasCourse(origin, courseId, fetchImpl = fetch) {
   if (!origin || !courseId) {
-    throw new Error('Canvas origin and courseId are required for course crawling.');
+    throw new Error('A course audit must have a Canvas origin and a courseId.');
   }
 
   // 1. Fetch Course details & syllabus
   const courseUrl = `${origin}/api/v1/courses/${courseId}?include[]=syllabus_body`;
   const courseRes = await fetchImpl(courseUrl, { credentials: 'include' });
   if (!courseRes.ok) {
-    throw new Error(`Failed to fetch Canvas course info (${courseRes.status})`);
+    throw new Error(`idstack cannot get the Canvas course information (${courseRes.status}).`);
   }
   const courseJson = await courseRes.json();
 
@@ -36,11 +36,11 @@ export async function crawlCanvasCourse(origin, courseId, fetchImpl = fetch) {
   let assignmentsUrl = `${origin}/api/v1/courses/${courseId}/assignments?per_page=50`;
   for (let page = 1; assignmentsUrl; page++) {
     if (page > MAX_ASSIGNMENT_PAGES) {
-      throw new Error(`This course has more than ${assignments.length} assignments, more than the full-course audit can read. Try auditing individual assignment pages instead.`);
+      throw new Error(`This course has more than ${assignments.length} assignments. The full-course audit cannot read that many. Audit the assignment pages one at a time.`);
     }
     const assignRes = await fetchImpl(assignmentsUrl, { credentials: 'include' });
     if (!assignRes.ok) {
-      throw new Error(`Failed to fetch Canvas assignments (${assignRes.status})`);
+      throw new Error(`idstack cannot get the Canvas assignments (${assignRes.status}).`);
     }
     const assignJson = await assignRes.json();
     assignments.push(...assignJson.map((a) => ({

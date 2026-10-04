@@ -57,7 +57,7 @@ if [ -f "$plugin_manifest" ]; then
     version=$(grep -o '"version": *"[^"]*"' "$plugin_manifest" | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
   fi
   if [ -n "$version" ]; then
-    echo "  plugin.json present (version $version)"
+    echo "  found plugin.json (version $version)"
   else
     echo "  PROBLEM: could not parse version from $plugin_manifest"
     note_problem
@@ -67,11 +67,11 @@ else
   note_problem
 fi
 if [ -f "$market_manifest" ]; then
-  echo "  marketplace.json present"
+  echo "  found marketplace.json"
 else
   echo "  PROBLEM: missing $market_manifest"
-  echo "  Claude Code installs plugins through a marketplace manifest;"
-  echo "  without it, ./setup cannot register the plugin."
+  echo "  Claude Code installs plugins through a marketplace manifest."
+  echo "  Without this file, ./setup cannot install the plugin."
   note_problem
 fi
 echo ""
@@ -86,9 +86,9 @@ for skill in $SKILLS; do
   fi
 done
 if [ "$missing_skills" = "0" ]; then
-  echo "  all 11 SKILL.md files present"
+  echo "  found all 11 SKILL.md files"
 else
-  echo "  PROBLEM: $missing_skills SKILL.md file(s) missing under skills/"
+  echo "  PROBLEM: $missing_skills SKILL.md file(s) missing in skills/"
   note_problem
 fi
 echo ""
@@ -103,7 +103,7 @@ if command -v claude >/dev/null 2>&1; then
     # -A4 window read a neighboring plugin's status line and called a disabled
     # idstack enabled. Pinned by test/test-plugin-status.sh.
     if echo "$plugin_list" | plugin_is_enabled "idstack@idstack"; then
-      echo "  idstack@idstack installed and enabled"
+      echo "  idstack@idstack is installed and enabled."
     else
       echo "  PROBLEM: idstack@idstack is installed but not enabled."
       echo "  Fix: claude plugin enable idstack@idstack"
@@ -111,19 +111,19 @@ if command -v claude >/dev/null 2>&1; then
     fi
   else
     echo "  PROBLEM: idstack@idstack is not installed."
-    echo "  Fix: run ./setup from the repo, or manually:"
+    echo "  Fix: run ./setup from the repo. You can also install idstack manually:"
     echo "    claude plugin marketplace add \"$IDSTACK_DIR\""
     echo "    claude plugin install idstack@idstack"
     note_problem
   fi
 else
-  echo "  WARNING: 'claude' not found on PATH — cannot verify the install."
-  echo "           Install Claude Code, then run ./setup from the repo."
+  echo "  WARNING: 'claude' not found on PATH. Doctor cannot examine the Claude Code install."
+  echo "           Install Claude Code. Then run ./setup from the repo."
 fi
 echo ""
 
 # 4. Legacy / vestigial install conflicts.
-echo "Legacy install conflicts:"
+echo "Legacy installs:"
 legacy_problem=0
 
 # Vestigial bare symlink from the pre-marketplace setup method. Harmless on
@@ -132,8 +132,8 @@ legacy_problem=0
 # checks only ./.claude/plugins, the default checks only $HOME/.claude/plugins.
 vestigial="$LEGACY_BASE/plugins/idstack"
 if [ -L "$vestigial" ]; then
-  echo "  NOTE: vestigial symlink at $vestigial (pre-marketplace install method)."
-  echo "        Harmless — ./setup removes it. Or: rm \"$vestigial\""
+  echo "  NOTE: legacy plugin symlink at $vestigial (pre-marketplace install method)."
+  echo "        This symlink is safe. ./setup removes it. You can also run: rm \"$vestigial\""
 fi
 
 # Pre-v2.0.1.0 dispatcher install — the failure mode that surfaced as
@@ -158,13 +158,13 @@ elif [ -d "$LEGACY_DIR" ]; then
   fi
   if [ -n "$signature" ]; then
     echo "  PROBLEM: pre-v2.0.1.0 install at $LEGACY_DIR ($signature)"
-    echo "           This shadows /idstack:<skill> namespacing — slash"
-    echo "           commands resolve to a broken dispatcher."
-    echo "  Fix: rm -rf \"$LEGACY_DIR\"   (then restart Claude Code)"
+    echo "           This install overrides the /idstack:<skill> namespace."
+    echo "           Slash commands go to a defective dispatcher."
+    echo "  Fix: rm -rf \"$LEGACY_DIR\"   (then start Claude Code again)"
     legacy_problem=1
   else
-    echo "  WARNING: directory at $LEGACY_DIR is not a recognized idstack install."
-    echo "           Not auto-removed. Inspect and remove manually if unwanted."
+    echo "  WARNING: directory at $LEGACY_DIR is not a known idstack install."
+    echo "           ./setup does not remove it. Examine it. If you do not want it, remove it manually."
   fi
 fi
 # Pre-v2 individual skill symlinks pointing into idstack.
@@ -180,7 +180,7 @@ for skill in $SKILLS; do
   fi
 done
 if [ "$legacy_problem" = "0" ]; then
-  echo "  none detected"
+  echo "  no problems found"
 else
   note_problem
 fi
@@ -195,7 +195,7 @@ elif [ ! -x "$IDSTACK_DIR/bin/idstack-consensus" ]; then
   echo "  PROBLEM: bin/idstack-consensus is not executable"
   note_problem
 else
-  echo "  idstack-consensus present and executable"
+  echo "  found idstack-consensus (executable)"
   consensus_status=""
   if command -v python3 >/dev/null 2>&1; then
     consensus_status=$(python3 "$IDSTACK_DIR/bin/idstack-consensus" status 2>/dev/null || true)
@@ -220,7 +220,7 @@ except Exception:
     fi
     echo "  cached queries: ${cached_count:-0}"
   else
-    echo "  Consensus status: unavailable"
+    echo "  Consensus status: not available"
   fi
 fi
 echo ""

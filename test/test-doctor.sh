@@ -36,6 +36,10 @@ mkdir -p "$MOCK_IDSTACK_DIR/bin"
 cp -R "$REPO_DIR/bin/." "$MOCK_IDSTACK_DIR/bin/"
 DOCTOR_CMD="$MOCK_IDSTACK_DIR/bin/idstack-doctor"
 
+# The writing-standard check runs bin/idstack-ste-check from the real repo
+# (the mock repo has no templates/ word list), with the python3 found here.
+PYTHON="$(command -v python3)"
+
 # Pinned PATH: only what doctor and its libs actually invoke, plus whatever
 # mock we drop in. `claude` is absent unless a test installs it.
 MOCK_BIN="$TEST_ROOT/bin"
@@ -165,6 +169,42 @@ status: enabled"
 mkdir -p "$HOME/.claude/skills/idstack"
 echo "someone else's thing" > "$HOME/.claude/skills/idstack/README.md"
 check "unrecognized dir warns rather than claiming ownership" "'$DOCTOR_CMD'" 0 "WARNING: directory at"
+
+# --- writing standard (ASD-STE100) ---
+# A person reads every line that doctor prints. Send a healthy run and three
+# problem runs, which print all of the explanation lines, through the checker.
+STE_OUT="$TEST_ROOT/ste-out"
+mkdir -p "$STE_OUT"
+setup_happy_path
+mock_claude_output "idstack@idstack
+status: enabled"
+"$DOCTOR_CMD" > "$STE_OUT/healthy.txt" 2>&1 || true
+
+setup_happy_path
+mock_claude_output "idstack@idstack
+status: disabled"
+rm "$MOCK_IDSTACK_DIR/.claude-plugin/plugin.json" "$MOCK_IDSTACK_DIR/.claude-plugin/marketplace.json"
+rm "$MOCK_IDSTACK_DIR/skills/learn/SKILL.md"
+"$DOCTOR_CMD" > "$STE_OUT/manifests.txt" 2>&1 || true
+
+setup_happy_path
+mock_claude_output "some-other-plugin
+status: enabled"
+echo 'not json at all' > "$MOCK_IDSTACK_DIR/.claude-plugin/plugin.json"
+mkdir -p "$HOME/.claude/skills/idstack"
+echo "someone else's thing" > "$HOME/.claude/skills/idstack/README.md"
+"$DOCTOR_CMD" > "$STE_OUT/not-installed.txt" 2>&1 || true
+
+setup_happy_path
+remove_mock_claude
+mkdir -p "$HOME/.claude/skills/idstack" "$HOME/.claude/plugins"
+echo "2.0.0" > "$HOME/.claude/skills/idstack/VERSION"
+ln -s "$TEST_ROOT/dummy-idstack/some-skill" "$HOME/.claude/skills/needs-analysis"
+ln -s "$TEST_ROOT/dummy" "$HOME/.claude/plugins/idstack"
+"$DOCTOR_CMD" > "$STE_OUT/legacy.txt" 2>&1 || true
+
+check "doctor output obeys the writing standard (healthy and problem runs)" \
+  "'$PYTHON' '$REPO_DIR/bin/idstack-ste-check' --format text '$STE_OUT'/*.txt"
 
 echo ""
 echo "  $PASS/$TOTAL passed"

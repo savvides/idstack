@@ -123,16 +123,16 @@ def cmd_configure(args):
     if not key:
         if sys.stdin.isatty():
             try:
-                key = input("Enter Consensus API key: ").strip()
+                key = input("Consensus API key: ").strip()
             except (EOFError, KeyboardInterrupt):
-                print("\nAborted.", file=sys.stderr)
+                print("\nidstack did not save a key.", file=sys.stderr)
                 return 1
         else:
             line = sys.stdin.readline()
             if line:
                 key = line.strip()
     if not key:
-        print("Error: No API key provided.", file=sys.stderr)
+        print("Error: You did not give an API key.", file=sys.stderr)
         return 1
 
     profile_path = os.path.expanduser("~/.idstack/profile.yaml")
@@ -163,7 +163,7 @@ def cmd_configure(args):
     with open(profile_path, "w", encoding="utf-8") as f:
         f.writelines(new_lines)
 
-    print("Consensus API key saved to " + profile_path)
+    print("idstack saved the Consensus API key to " + profile_path)
     return 0
 
 
@@ -188,7 +188,7 @@ def cmd_query(args):
             "api_key_configured": False,
             "consensus_meter": None,
             "top_papers": [],
-            "note": "No Consensus API key configured; use local references or set CONSENSUS_API_KEY.",
+            "note": "idstack found no Consensus API key. Use the local references, or set CONSENSUS_API_KEY.",
         }
         print(json.dumps(fallback, indent=2))
         return 0
@@ -366,67 +366,69 @@ def auto_correct_neuromyth(finding, myth_type):
 
     if myth_type == "learning_styles":
         finding["recommendation"] = (
-            "Provide multimodal presentation and dual coding (combining complementary visual representations "
-            "and verbal/textual explanations for all learners) rather than attempting to segregate "
-            "or adapt materials to putative learning styles."
+            "idstack recommends that you use multimodal presentation and dual coding for all learners, "
+            "not different materials for each learning style. Dual coding shows related visuals and "
+            "verbal or text explanations together."
         )
         corr_ev = (
-            "[Auto-Corrected Neuromyth] The 'learning styles' (meshing hypothesis) lacks empirical support "
-            "(Pashler et al., 2008; Rogowsky et al., 2015). Empirical evidence supports multimodal "
-            "presentation and dual coding (Mayer, 2021; Paivio, 1986) for all learners."
+            "[Auto-Corrected Neuromyth] Research evidence does not show that 'learning styles' (the meshing "
+            "hypothesis) help learners (Pashler et al., 2008; Rogowsky et al., 2015). Research evidence shows "
+            "that multimodal presentation and dual coding help all learners (Mayer, 2021; Paivio, 1986)."
         )
         if finding.get("evidence"):
             finding["evidence"] = finding["evidence"] + " " + corr_ev
         else:
             finding["evidence"] = corr_ev
-        obs_note = " [Note: Differentiating by sensory learning styles is a recognized neuromyth; multimodal presentation should be applied instead.]"
+        obs_note = " [Note: Sensory learning styles are a known neuromyth. idstack recommends that you use multimodal presentation for all learners.]"
         finding["observation"] = (finding.get("observation", "") + obs_note).strip()
     elif myth_type == "hemisphere_learning":
         finding["recommendation"] = (
-            "Provide multimodal presentation and integrated cognitive activities rather than "
-            "attempting to cater to left-brain or right-brain learners."
+            "idstack recommends that you use multimodal presentation and integrated cognitive tasks for all "
+            "learners, not different tasks for left-brain or right-brain learners."
         )
         corr_ev = (
-            "[Auto-Corrected Neuromyth] Hemispheric specialization for learning is an empirically "
-            "unsupported neuromyth. Cognitive architecture operates through integrated networks; "
-            "multimodal dual coding benefits all learners."
+            "[Auto-Corrected Neuromyth] Hemispheric specialization for learning is a neuromyth with no "
+            "research evidence. Cognitive architecture operates through integrated networks. "
+            "Multimodal dual coding helps all learners."
         )
         if finding.get("evidence"):
             finding["evidence"] = finding["evidence"] + " " + corr_ev
         else:
             finding["evidence"] = corr_ev
-        obs_note = " [Note: Left/right brain learning categorization is a neuromyth; integrated multimodal tasks should be used.]"
+        obs_note = " [Note: Left-brain and right-brain learner types are a neuromyth. idstack recommends that you use integrated multimodal tasks.]"
         finding["observation"] = (finding.get("observation", "") + obs_note).strip()
     elif myth_type == "ten_percent_brain":
         finding["recommendation"] = (
-            "Design instructional activities that optimize working memory capacity and cognitive load "
-            "rather than relying on 10% brain capacity claims."
+            "idstack recommends that you design learning tasks for working memory capacity and cognitive "
+            "load, not for claims about 10% brain capacity."
         )
         corr_ev = (
-            "[Auto-Corrected Neuromyth] The 10% brain usage claim is a debunked neuromyth. Instructional "
-            "design should be guided by Cognitive Load Theory (Sweller, 1994) and working memory limits."
+            "[Auto-Corrected Neuromyth] The 10% brain claim is a neuromyth. Research shows that the claim "
+            "is incorrect. Instructional design must agree with Cognitive Load Theory (Sweller, 1994) and "
+            "working memory limits."
         )
         if finding.get("evidence"):
             finding["evidence"] = finding["evidence"] + " " + corr_ev
         else:
             finding["evidence"] = corr_ev
-        obs_note = " [Note: The 10% brain claim is a recognized neuromyth; Cognitive Load Theory should guide design.]"
+        obs_note = " [Note: The 10% brain claim is a known neuromyth. idstack recommends that you use Cognitive Load Theory for the design.]"
         finding["observation"] = (finding.get("observation", "") + obs_note).strip()
     elif myth_type == "dales_cone_percentages":
         finding["recommendation"] = (
-            "Structure learning through active retrieval and generative processing rather than "
-            "bogus retention percentage hierarchies."
+            "idstack recommends that you design learning tasks with active retrieval and generative "
+            "processing, not with incorrect retention percentage hierarchies."
         )
         corr_ev = (
-            "[Auto-Corrected Neuromyth] Numerical retention claims ('we remember 10% of what we read') "
-            "are fabricated percentages falsely attributed to Dale's Cone of Experience. Retention "
-            "depends on retrieval practice and cognitive processing depth (Agarwal, 2019)."
+            "[Auto-Corrected Neuromyth] Retention percentage claims ('we remember 10% of what we read') "
+            "use numbers that have no research source. Some texts incorrectly connect these numbers to "
+            "Dale's Cone of Experience. Retention changes with retrieval practice and the depth of "
+            "cognitive processing (Agarwal, 2019)."
         )
         if finding.get("evidence"):
             finding["evidence"] = finding["evidence"] + " " + corr_ev
         else:
             finding["evidence"] = corr_ev
-        obs_note = " [Note: Retention percentage pyramids are fabricated; active retrieval principles should be used.]"
+        obs_note = " [Note: Retention percentage pyramids are incorrect. idstack recommends that you use active retrieval.]"
         finding["observation"] = (finding.get("observation", "") + obs_note).strip()
 
 
@@ -455,7 +457,7 @@ def calibrate_tier(finding, study_design=None):
             finding["tier"] = "T2"
             finding["tier_calibrated"] = True
             finding["original_tier"] = "T1"
-            cal_note = " [Tier calibrated: downgraded from T1 to T2 because study design is controlled trial, not meta-analysis/RCT]"
+            cal_note = " [Tier calibrated: idstack lowered the tier from T1 to T2 because the study design is a controlled trial, not a meta-analysis or an RCT.]"
             finding["evidence"] = (finding.get("evidence", "") + cal_note).strip()
         return
 
@@ -464,7 +466,7 @@ def calibrate_tier(finding, study_design=None):
         finding["tier"] = "T3"
         finding["tier_calibrated"] = True
         finding["original_tier"] = tier
-        cal_note = " [Tier calibrated: downgraded from " + tier + " to T3 because study design is systematic review without meta-analysis]"
+        cal_note = " [Tier calibrated: idstack lowered the tier from " + tier + " to T3 because the study design is a systematic review without a meta-analysis.]"
         finding["evidence"] = (finding.get("evidence", "") + cal_note).strip()
         return
 
@@ -473,7 +475,7 @@ def calibrate_tier(finding, study_design=None):
         finding["tier"] = "T4"
         finding["tier_calibrated"] = True
         finding["original_tier"] = tier
-        cal_note = " [Tier calibrated: downgraded from " + tier + " to T4 because study design is observational/qualitative without control group]"
+        cal_note = " [Tier calibrated: idstack lowered the tier from " + tier + " to T4 because the study design is observational or qualitative, with no control group.]"
         finding["evidence"] = (finding.get("evidence", "") + cal_note).strip()
         return
 
@@ -481,21 +483,21 @@ def calibrate_tier(finding, study_design=None):
     finding["tier"] = "T4"
     finding["tier_calibrated"] = True
     finding["original_tier"] = tier
-    cal_note = " [Tier calibrated: downgraded from " + tier + " to T4: lacks meta-analysis or controlled trial evidence]"
+    cal_note = " [Tier calibrated: idstack lowered the tier from " + tier + " to T4 because the evidence has no meta-analysis or controlled trial.]"
     finding["evidence"] = (finding.get("evidence", "") + cal_note).strip()
 
 
 def cmd_verify(args):
     """Run evidence QA gate and auto-correction on findings payload."""
     if not os.path.isfile(args.findings):
-        print("Error: Input findings file not found: " + args.findings, file=sys.stderr)
+        print("Error: idstack cannot find the findings file: " + args.findings, file=sys.stderr)
         return 1
 
     try:
         with open(args.findings, "r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
-        print("Error reading findings file: " + str(e), file=sys.stderr)
+        print("Error: idstack cannot read the findings file: " + str(e), file=sys.stderr)
         return 1
 
     if isinstance(data, dict):
@@ -505,7 +507,7 @@ def cmd_verify(args):
         findings = data
         is_dict = False
     else:
-        print("Error: Expected JSON object or array in findings file", file=sys.stderr)
+        print("Error: The findings file must contain a JSON object or a JSON array.", file=sys.stderr)
         return 1
 
     if not isinstance(findings, list):
@@ -615,7 +617,7 @@ def cmd_verify(args):
         json.dump(out_payload, f, indent=2)
 
     print(
-        "Evidence QA: %d findings verified (%d cached, %d auto-corrected)"
+        "Evidence QA: idstack checked %d findings (%d cached, %d auto-corrected)"
         % (total_verified, cached_count, auto_corrected_count)
     )
     return 0
@@ -936,7 +938,7 @@ def cmd_sync(args):
         if not target_domain:
             valid_names = [d["short_name"] for d in RESEARCH_DOMAINS]
             print(
-                "Error: Unknown domain '%s'. Known domains are: %s"
+                "Error: Unknown domain '%s'. The known domains are: %s"
                 % (domain_filter, ", ".join(valid_names)),
                 file=sys.stderr,
             )
@@ -954,7 +956,7 @@ def cmd_sync(args):
         d = domains_to_sync[0]
         print("Target Domain: Domain %d: %s (%s)" % (d["id"], d["name"], d["short_name"]))
     else:
-        print("Scanning %d research domains for recent meta-analyses (2024–2026)..." % len(domains_to_sync))
+        print("idstack examines %d research domains for recent meta-analyses (2024–2026)." % len(domains_to_sync))
     print("")
 
     for domain in domains_to_sync:
@@ -990,15 +992,15 @@ def cmd_sync(args):
     compat_ok, compat_msg = check_evidence_cards_compatibility()
     print("")
     if compat_ok:
-        print("Compatibility: test/check-evidence-cards.py verified (0 mismatches).")
+        print("Compatibility: test/check-evidence-cards.py found 0 mismatches.")
     else:
-        print("Compatibility warning: test/check-evidence-cards.py detected issues:")
+        print("Compatibility warning: test/check-evidence-cards.py found problems:")
         print(compat_msg)
 
     if dry_run:
-        print("Dry run complete. No changes made to evidence/references.md.")
+        print("Dry run: idstack did not change evidence/references.md.")
     else:
-        print("Notice: Non-dry-run flag acknowledged. Automated references.md update skipped to maintain card count verification.")
+        print("Notice: idstack does not change references.md automatically. An automatic change can make the evidence cards not agree with references.md. Add the candidate citations manually.")
 
     return 0 if compat_ok else 1
 
@@ -1007,27 +1009,27 @@ def main():
     parser = argparse.ArgumentParser(description="idstack Consensus API client & cache")
     subparsers = parser.add_subparsers(dest="command")
 
-    status_parser = subparsers.add_parser("status", help="Report cache and configuration status")
+    status_parser = subparsers.add_parser("status", help="Show the cache and configuration status")
     status_parser.set_defaults(func=cmd_status)
 
-    configure_parser = subparsers.add_parser("configure", help="Configure Consensus API key in profile.yaml")
-    configure_parser.add_argument("--key", help="Consensus API key to save")
+    configure_parser = subparsers.add_parser("configure", help="Save a Consensus API key in profile.yaml")
+    configure_parser.add_argument("--key", help="The Consensus API key to save")
     configure_parser.set_defaults(func=cmd_configure)
 
-    query_parser = subparsers.add_parser("query", help="Query evidence for a pedagogical claim")
-    query_parser.add_argument("--claim", required=True, help="Pedagogical claim to query")
+    query_parser = subparsers.add_parser("query", help="Find evidence for an instructional design claim")
+    query_parser.add_argument("--claim", required=True, help="The claim to find evidence for")
     query_parser.set_defaults(func=cmd_query)
 
-    verify_parser = subparsers.add_parser("verify", help="Pre-response evidence QA gate & auto-correction")
-    verify_parser.add_argument("--findings", required=True, help="Path to findings JSON file")
-    verify_parser.add_argument("--output", required=True, help="Path to output verified findings JSON file")
+    verify_parser = subparsers.add_parser("verify", help="Do the evidence QA check and correct known problems in findings")
+    verify_parser.add_argument("--findings", required=True, help="The path to the findings JSON file")
+    verify_parser.add_argument("--output", required=True, help="The path for the output JSON file")
     verify_parser.set_defaults(func=cmd_verify)
 
-    sync_parser = subparsers.add_parser("sync", help="On-demand literature sync across research domains")
-    sync_parser.add_argument("--domain", help="Target specific research domain (e.g. Assessment, Models)")
-    sync_parser.add_argument("--dry-run", dest="dry_run", action="store_true", default=True, help="Simulate sync without modifying references.md (default)")
-    sync_parser.add_argument("--no-dry-run", dest="dry_run", action="store_false", help="Apply candidate citations to references.md")
-    sync_parser.add_argument("--apply", dest="dry_run", action="store_false", help="Apply candidate citations to references.md")
+    sync_parser = subparsers.add_parser("sync", help="Find candidate citations for the research domains")
+    sync_parser.add_argument("--domain", help="Use only this research domain (for example, Assessment or Models)")
+    sync_parser.add_argument("--dry-run", dest="dry_run", action="store_true", default=True, help="Show the citations, but do not change references.md (default)")
+    sync_parser.add_argument("--no-dry-run", dest="dry_run", action="store_false", help="Show the citations. idstack does not change references.md. Add the citations manually.")
+    sync_parser.add_argument("--apply", dest="dry_run", action="store_false", help="Show the citations. idstack does not change references.md. Add the citations manually.")
     sync_parser.set_defaults(func=cmd_sync)
 
     args = parser.parse_args()

@@ -149,7 +149,7 @@ expect_fail "bare /skill reference regression" "$WORK/r/test/smoke-test.sh" "$WO
 # "/assessment-design is the natural next step" — a command that does nothing. The
 # preamble is spliced into all 22 skill files, so this reached every user.
 fresh
-sed -i.bak 's|/idstack:assessment-design is the natural next step|/assessment-design is the natural next step|' \
+sed -i.bak 's|the next skill is /idstack:assessment-design|the next skill is /assessment-design|' \
   "$WORK/r/templates/preamble.md"
 regen
 expect_fail "unbackticked bare /skill in preamble regression" "$WORK/r/test/smoke-test.sh" "$WORK/r"
@@ -257,12 +257,12 @@ python3 - "$WORK/r/setup" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
 s = s.replace('''      if [ "$KEEP_LEGACY" = "1" ]; then
-        echo "  KEEPING legacy symlink: $legacy (--keep-legacy)"
+        echo "  KEPT legacy symlink: $legacy (--keep-legacy)"
       else
         rm "$legacy"
-        echo "  cleaned up legacy: $legacy"
+        echo "  removed legacy symlink: $legacy"
       fi''', '''      rm "$legacy"
-      echo "  cleaned up legacy: $legacy"''')
+      echo "  removed legacy symlink: $legacy"''')
 open(p,'w').write(s)
 PY
 expect_fail "--keep-legacy ignored by per-skill loop" "$WORK/r/test/test-setup.sh" "$WORK/r"
@@ -279,12 +279,12 @@ else
 fi
 if [ -L "$vestigial" ]; then
   rm "$vestigial"
-  echo "  removed vestigial symlink: $vestigial (pre-marketplace install method)"
+  echo "  removed legacy plugin symlink: $vestigial (pre-marketplace install method)"
 fi''', '''for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
   vestigial="$plugins_base/idstack"
   if [ -L "$vestigial" ]; then
     rm "$vestigial"
-    echo "  removed vestigial symlink: $vestigial"
+    echo "  removed legacy plugin symlink: $vestigial"
   fi
 done''')
 open(p,'w').write(s)
@@ -702,7 +702,7 @@ fresh
 python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "throw new Error('The AI response did not match the audit format. Please retry the audit.');"
+old = "throw new Error('The AI response is not in the audit format. Try the audit again.');"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "", 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -889,7 +889,7 @@ fresh
 python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "      emptyReason: 'idstack cannot read this tab. If you just switched to it, click the idstack toolbar icon, then audit again. Browser pages such as chrome:// and the Chrome Web Store cannot be read.'\n"
+old = "      emptyReason: 'idstack cannot read this tab. If you moved to this tab from a different tab, click the idstack toolbar icon. Then audit again. idstack cannot read browser pages, for example chrome:// pages and the Chrome Web Store.'\n"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "", 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1066,7 +1066,7 @@ expect_fail "HTML sign-in page audited as the Google Doc" "$WORK/r/test/test-ext
 # 30a-30l. The side panel labelled a result with whatever tab was active when
 # the reply landed, let a slow tab refresh overwrite a newer one, left the last
 # result behind Add to Dossier after an error, retried the single-page audit
-# whatever had failed, wiped Audit Another Page on a vote, and said "Copied!"
+# whatever had failed, wiped Audit a Different Page on a vote, and said "Copied!"
 # when the clipboard write failed. The renderer threw on malformed findings,
 # inside the sendMessage callback, so the spinner stayed up.
 # test-sidepanel-state.mjs drives the shipped sidepanel.js through each case.
@@ -1195,7 +1195,7 @@ PY
 expect_fail "Retry audits the course or site now active, not the one that failed" node "$WORK/r/test/test-sidepanel-state.mjs"
 
 # 30i. a feedback vote rewrites the whole row -> test-sidepanel-state must fail.
-# The row also holds Audit Another Page, the only way back to the ready state.
+# The row also holds Audit a Different Page, the only way back to the ready state.
 fresh
 python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
 import sys
@@ -1205,7 +1205,7 @@ assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "row.innerHTML = '<em>Thank you for your feedback!</em>';", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "feedback vote wipes Audit Another Page" node "$WORK/r/test/test-sidepanel-state.mjs"
+expect_fail "feedback vote wipes Audit a Different Page" node "$WORK/r/test/test-sidepanel-state.mjs"
 
 # 30j. the renderer trusts a non-array findings value -> test-renderer-helper must fail.
 fresh
@@ -1269,7 +1269,7 @@ fresh
 python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = " On Google's free tier, Google may use that content to improve its products, and human reviewers may read it."
+old = " On Google's free tier, Google can use this content to improve its products."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "", 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1281,7 +1281,7 @@ fresh
 python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "Without a key, idstack runs in demo mode: every audit shows the same sample findings, whatever the page says, and the page's text is not sent anywhere."
+old = "Without a key, idstack runs in demo mode. Each audit then shows the same sample findings for all pages. In demo mode, idstack does not send the page text out of your browser."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "Leave blank to use the built-in free demo tier.", 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1549,6 +1549,297 @@ s = s.replace(old, "    @media (max-width: 480px) { .copy-btn, .btn-badge { min-
 open(p, 'w').write(s)
 PY
 expect_fail "a selector list shrinks the touch target past the text guard" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 43a-43e. The ASD-STE100 checker. Skills trust its exit code to end their rewrite
+# loop, so a checker that stops finding a problem lets non-STE text ship silently.
+# 43a. The word list in the preamble loses its rows -> test-ste-check must fail.
+# An empty list must stop the checker, not turn the word rule off.
+fresh
+python3 - "$WORK/r/templates/preamble.md" <<'PY'
+import re, sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+new = re.sub(r'(?m)^\| "[^"]+" \|.*\n', '', s)
+assert new != s, 'no word-list rows found'
+open(p, 'w', encoding='utf-8').write(new)
+PY
+expect_fail "the checker runs with an empty word list" python3 "$WORK/r/test/test-ste-check.py"
+
+# 43b. The checker stops finding semicolons -> test-ste-check must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-ste-check" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "        if ';' in part:\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "        if '\\x00' in part:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the checker misses a semicolon" python3 "$WORK/r/test/test-ste-check.py"
+
+# 43c. The description limit drifts from 25 to 26 words -> test-ste-check must fail.
+fresh
+sed -i.bak 's/^DESCRIPTIVE_MAX = 25$/DESCRIPTIVE_MAX = 26/' "$WORK/r/bin/idstack-ste-check"
+expect_fail "the checker accepts a 26-word description" python3 "$WORK/r/test/test-ste-check.py"
+
+# 43d. The checker loses its no-text guard -> test-ste-check must fail.
+# An empty input must give exit 2, not "no problems".
+fresh
+python3 - "$WORK/r/bin/idstack-ste-check" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    if not files or (read and not units):\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    if False:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the checker accepts input that has no text" python3 "$WORK/r/test/test-ste-check.py"
+
+# 43e. The checker stops reporting an inline element that has no end tag -> test-ste-check
+# must fail. The text in that element is not examined, so a silent recovery lets it pass.
+fresh
+python3 - "$WORK/r/bin/idstack-ste-check" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "            self.problems.append(Problem(self.skip_line, 'html', "
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "            (lambda *a: None)(Problem(self.skip_line, 'html', ", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the checker misses an inline element that has no end tag" python3 "$WORK/r/test/test-ste-check.py"
+
+# 48a-48b. The writing standard reaches a report only through the skill steps and
+# the report template. A skill without the check step ships text that no check
+# has seen, and a bad template label goes into every report.
+# 48a. A skill loses its writing standard check step -> smoke-test must fail.
+# learn has one check step only, so removing it leaves no other call to match.
+fresh
+python3 - "$WORK/r/skills/learn/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ('**Writing standard check.** Run this command on the export file. This check only shows '
+       'problems. Do not change the learnings in the export. Other sessions wrote them, many '
+       'before the writing standard.\n\n'
+       '```bash\n{{IDSTACK_RESOLVE}}\n'
+       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" '
+       '".idstack/learnings-export.md"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n\n'
+       'If the output is `STE_CHECK_UNAVAILABLE`, tell the user one time that the check did not run. '
+       'If the checker shows problems, show them to the user. Do not change the export file.\n\n')
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "a skill drops its writing standard check" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 48b. The report template labels a recommendation "Consider" again -> smoke-test
+# must fail. The template is not spliced into a skill, so no regen.
+fresh
+python3 - "$WORK/r/templates/report.html.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "          <dt>Recommendation</dt>\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "          <dt>Consider</dt>\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the report template labels a recommendation Consider" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 48c. course-builder loses its course-content check step but keeps the report check ->
+# smoke-test must fail. A guard that only asks "is the call present" passes here.
+fresh
+python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ('```bash\n{{IDSTACK_RESOLVE}}\n'
+       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" '
+       '".idstack/course-content"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n')
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-builder drops its course-content check step" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 49a. The two learning_preferences_note copies drift apart -> smoke-test must fail.
+# The schema default and the needs-analysis step carry the same fixed STE sentence.
+# Changing one copy without the other makes the manifest and the skill disagree.
+fresh
+python3 - "$WORK/r/skills/needs-analysis/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "because the evidence does\nnot support them."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "because the evidence does\nnot support it.", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "the learning_preferences_note copies drift apart" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 44a-44c. The CLI text checks. setup, doctor and status print text that a person
+# reads. Each case puts back one non-STE message that no older pin matches, so
+# only the writing-standard check of the suite can catch it.
+# 44a. A semicolon returns to a doctor PROBLEM explanation -> test-doctor must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-doctor" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'echo "  Claude Code installs plugins through a marketplace manifest."'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'echo "  Claude Code installs plugins through a marketplace manifest;"', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a semicolon in a doctor PROBLEM explanation" "$WORK/r/test/test-doctor.sh"
+
+# 44b. "should" returns to the --readiness text -> test-status must fail.
+# course-export reads this output. No pin matches the empty-state line, so only
+# the --readiness text check sees it.
+fresh
+python3 - "$WORK/r/bin/idstack-status" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'echo "No timeline data. Run the pipeline skills first."'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'echo "No timeline data. You should run the pipeline skills first."', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a word-list word in the --readiness text" "$WORK/r/test/test-status.sh"
+
+# 44c. A contraction returns to the closing text of setup -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'echo "  Claude Code reads plugins only when a session starts."'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'echo "  Claude Code doesn\'t read plugins until a session starts."', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a contraction in the setup closing text" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 45a-45c. The text that `idstack-consensus verify` writes into findings. Skills copy
+# it into HTML reports and the manifest, so it must obey the writing standard, and
+# the extension's copy of the neuromyth text must stay the same as the CLI's copy.
+# 45a. A semicolon returns to a neuromyth note -> test-consensus-cli must fail.
+# The mutation changes both copies the same way, so only the STE guard can fail.
+fresh
+python3 - "$WORK/r/bin/idstack-consensus" "$WORK/r/extension/shared/consensus-client.js" <<'PY'
+import sys
+for p in sys.argv[1:]:
+    s = open(p, encoding='utf-8').read()
+    old = "Sensory learning styles are a known neuromyth. idstack recommends"
+    assert s.count(old) == 1, 'anchor not unique in %s: %d' % (p, s.count(old))
+    s = s.replace(old, "Sensory learning styles are a known neuromyth; idstack recommends", 1)
+    open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a neuromyth note has a semicolon again" python3 "$WORK/r/test/test-consensus-cli.py"
+
+# 45b. "should" returns to a tier-calibration note -> test-consensus-cli must fail.
+# This note has no copy in the extension.
+fresh
+python3 - "$WORK/r/bin/idstack-consensus" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'to T4 because the evidence has no meta-analysis or controlled trial.]"'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'to T4 because the evidence should have a meta-analysis or controlled trial.]"', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a tier-calibration note says should again" python3 "$WORK/r/test/test-consensus-cli.py"
+
+# 45c. The extension's neuromyth text drifts from the CLI's -> test-consensus-cli must fail.
+# Before this guard, nothing kept the two copies the same.
+fresh
+python3 - "$WORK/r/extension/shared/consensus-client.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "'Multimodal dual coding helps all learners.';"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "'Multimodal dual coding helps every learner.';", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the extension neuromyth text drifts from the CLI text" python3 "$WORK/r/test/test-consensus-cli.py"
+
+# 47a-47b. The extension's model prompts carry a copy of the preamble's
+# ASD-STE100 rules. test-ste-rules.mjs compares the copy with the ste-core block
+# and checks that both prompts carry it.
+# 47a. The extension copy drifts by one word -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/ste-rules.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '| "utilize" | "use" | |'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '| "utilize" | "employ" | |', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the extension copy of the STE rules drifts" "$WORK/r/test/test-extension.sh"
+
+# 47b. The course prompt drops the STE rules -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/prompts.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'revised assessment scaffolding."\n  }\n}\n\n${WRITING_STANDARD}`;'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'revised assessment scaffolding."\n  }\n}`;', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "course prompt drops the STE rules" "$WORK/r/test/test-extension.sh"
+
+# 46a-46c. The extension's fixed text obeys ASD-STE100. smoke-test sends the printed
+# extension output and the side-panel page through bin/idstack-ste-check. Only the
+# STE checks catch 46a and 46b: every other suite still passes.
+# 46a. The Markdown export labels a recommendation in non-STE text again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/extension/shared/dossier-compiler.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "      md += `- **Recommendation:** ${f.recommendation || ''}\\n\\n`;\n    });"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "      md += `- **Actionable Recommendation:** ${f.recommendation || ''}; consider it before you publish.\\n\\n`;\n    });", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the Markdown export writes non-STE text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 46b. The side-panel privacy note says "may" again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Google can use this content to improve its products."
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Google may use this content to improve its products.", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the side-panel privacy note says may" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 46c. An STE rewording drops a refused page from the side-panel privacy note ->
+# test-extension must fail. test-disclosures checks the extractor only for the pages
+# that the note names, so without its name check the dropped page passes silently.
+fresh
+python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Gradebook, SpeedGrader, People"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Gradebook, People", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the privacy note drops SpeedGrader" "$WORK/r/test/test-extension.sh"
+
+# 46d. A side-panel loader step that no test runs gets non-STE text again ->
+# smoke-test must fail. The printer also prints the fixed string literals of the
+# side panel and the service worker, so text on a path that it does not run is checked.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "'idstack reads the assignments...'"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "'Fetching assignments; please wait...'", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "a side-panel loader step writes non-STE text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

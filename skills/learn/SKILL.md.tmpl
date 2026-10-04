@@ -2,7 +2,7 @@
 name: learn
 description: |
   Manage project learnings. Search, list, delete, promote, and export what idstack
-  has learned across sessions. Use when asked to "what have we learned", "show learnings",
+  learned across sessions. Use when asked to "what have we learned", "show learnings",
   "prune stale learnings", or "export learnings". (idstack)
 allowed-tools:
   - Bash
@@ -41,7 +41,7 @@ Format the output as a readable table:
 Key              | Type         | Insight                          | Confidence
 ─────────────────┼──────────────┼──────────────────────────────────┼───────────
 canvas-rubrics   | operational  | Uses HTML format for rubrics     | 8/10
-bloom-verbs      | pedagogical  | Avoid "understand" as ILO verb   | 9/10
+bloom-verbs      | pedagogical  | Do not use "understand" in ILOs  | 9/10
 ```
 
 ### search <keyword>
@@ -90,6 +90,15 @@ Export all learnings to a markdown file.
 
 Format as markdown with sections grouped by type (operational, pedagogical, etc.)
 and write to `.idstack/learnings-export.md`.
+
+**Writing standard check.** Run this command on the export file. This check only shows problems. Do not change the learnings in the export. Other sessions wrote them, many before the writing standard.
+
+```bash
+{{IDSTACK_RESOLVE}}
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+If the output is `STE_CHECK_UNAVAILABLE`, tell the user one time that the check did not run. If the checker shows problems, show them to the user. Do not change the export file.
 
 ## Workflow
 

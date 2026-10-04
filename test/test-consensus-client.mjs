@@ -71,7 +71,7 @@ async function runTests() {
       'Evidence must cite empirical literature debunking learning styles'
     );
     assert.ok(
-      corrected.observation.includes('recognized neuromyth'),
+      corrected.observation.includes('known neuromyth'),
       'Observation must note the debunked status'
     );
     console.log('  ✔ Test 2: Neuromyth auto-correction passed');
@@ -85,7 +85,7 @@ async function runTests() {
       evidence: 'Right-brain learners need creative tasks.'
     };
     const correctedHemisphere = autoCorrectNeuromyth(hemisphereFinding, 'hemisphere_learning');
-    assert.ok(correctedHemisphere.recommendation.includes('integrated cognitive activities'));
+    assert.ok(correctedHemisphere.recommendation.includes('integrated cognitive tasks'));
     assert.ok(correctedHemisphere.evidence.includes('Hemispheric specialization'));
 
     const tenPercentFinding = {

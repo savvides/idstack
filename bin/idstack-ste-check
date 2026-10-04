@@ -1,0 +1,575 @@
+#!/usr/bin/env python3
+"""Find the ASD-STE100 writing-rule problems that a script can find in idstack output.
+
+Usage:
+  idstack-ste-check [--format auto|html|markdown|text] [--word-list PATH] PATH...
+
+PATH is a file, a directory (all .html, .htm and .md files below it), or "-" for
+standard input. The word list comes from the text between the ste-core markers in
+templates/preamble.md.
+
+Rules that this script examines:
+  sentence-length    more than 20 words in a numbered step, more than 25 words in other text
+  paragraph-length   more than 6 sentences in a paragraph
+  semicolon          a semicolon in text
+  contraction        a contraction, for example "don't"
+  verb-form          "has been", "have been" or "had been", also with "not" or an adverb
+  word               a word from the word list
+  html               an HTML element that has no end tag (the text after it is not examined)
+
+Text that the script does not examine: code, quotations, citations, URLs, placeholders,
+HTML script and style, Markdown block quotations and fenced code. Each code span,
+quotation, citation, URL and placeholder counts as one word (ASD-STE100 rule 8.6).
+
+Exit codes: 0 no problems, 1 problems, 2 an error in the command or the word list, or
+no text to examine (no file to read, or no text in the files that it reads).
+If the script cannot read a file, it examines the other files. Then the exit code is 2
+if it finds no problems.
+This script finds only some rule problems. ASD does not endorse idstack.
+"""
+
+import argparse
+import html
+import os
+import re
+import sys
+from html.parser import HTMLParser
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+DEFAULT_WORD_LIST = os.path.join(HERE, '..', 'templates', 'preamble.md')
+BEGIN_MARKER = '<!-- ste-core:begin -->'
+END_MARKER = '<!-- ste-core:end -->'
+
+PROCEDURAL_MAX = 20
+DESCRIPTIVE_MAX = 25
+PARAGRAPH_MAX = 6
+
+# One private-use character stands in for each exempt span, so that the span
+# counts as one word and is not examined.
+SLOT = '\ue000'
+
+CHECK_SUFFIXES = ('.html', '.htm', '.md')
+
+CONTRACTION_RES = [
+    re.compile(r"\b[A-Za-z]+n['\u2019]t\b", re.I),
+    re.compile(r"\b[A-Za-z]+['\u2019](?:re|ve|ll|d|m)\b", re.I),
+    re.compile(r"\b(?!(?-i:IT)['\u2019]s)(?:it|that|there|what|let|here|who|where|how)['\u2019]s\b", re.I),
+]
+VERB_FORM_RE = re.compile(
+    r'\b(?:has|have|had|having)(?:\s+(?:not|never|already|also|just|always))?\s+been\b', re.I)
+
+# Words that end in a period but do not end a sentence.
+ABBREVIATIONS = ['e.g.', 'i.e.', 'etc.', 'vs.', 'et al.', 'No.', 'Dr.', 'Mr.', 'Mrs.',
+                 'Ms.', 'St.', 'Fig.', 'approx.', 'U.S.', 'a.m.', 'p.m.']
+SENTENCE_SPLIT_RE = re.compile('(?<=[.!?])["\'\u201d\u2019)\\]]*\\s+')
+
+YEAR_RE = re.compile(r'\b(?:1[89]|20)\d\d[a-z]?\b')
+# Lowercase words that an author-year citation can contain.
+CITATION_WORDS = {'e.g.', 'see', 'also', 'cf.', 'et', 'al.', 'and', 'p.', 'pp.',
+                  'van', 'von', 'de', 'der', 'den', 'du', 'da', 'di', 'la', 'le'}
+PAREN_RE = re.compile(r'\(([^()]*)\)')
+EXEMPT_BRACKET_RE = re.compile(
+    r"\[(?:[A-Z][A-Za-z]*-(?:\d+|N)|[A-Z0-9][A-Z0-9 _'/&.,:-]*|[ x])\]")
+INLINE_CODE_RE = re.compile(r'`[^`\n]*`')
+# Punctuation at the end of a URL or an identifier stays outside the span, so
+# that it still ends a sentence and a semicolon after the span is still found.
+SPAN_END = r'(?=[.,;:!?)\]"\'\u2019\u201d]*(?:\s|$))'
+URL_RE = re.compile(r'\b(?:https?|ftp|chrome)://\S+?' + SPAN_END + r'|\bwww\.\S+?' + SPAN_END)
+TEMPLATE_RE = re.compile(r'\{\{[^{}]*\}\}|\$\{[^{}]*\}')
+QUOTE_RE = re.compile('"[^"\\n]{1,300}"|\u201c[^\u201d\\n]{1,300}\u201d')
+MD_IMAGE_RE = re.compile(r'!\[([^\]]*)\]\([^)]*\)')
+MD_LINK_RE = re.compile(r'\[([^\]]+)\]\([^)]*\)')
+IDENTIFIER_RE = re.compile(r'(?<!\S)\S*?[/@=$_\\]\S*?' + SPAN_END + r'|(?<!\S)--?[A-Za-z][\w-]*')
+WORD_TOKEN_RE = re.compile('[A-Za-z0-9' + SLOT + ']')
+
+
+class DataError(Exception):
+    pass
+
+
+class Problem(object):
+    def __init__(self, line, rule, message):
+        self.line = line
+        self.rule = rule
+        self.message = message
+
+
+class Unit(object):
+    """A block of text: a paragraph, a list item, a table cell or a heading."""
+
+    def __init__(self, line, kind, text, paragraph):
+        self.line = line
+        self.kind = kind            # 'procedural', 'descriptive' or 'label'
+        self.text = text
+        self.paragraph = paragraph  # True if the 6-sentence rule applies
+
+
+# ---------------------------------------------------------------------------
+# Word list
+# ---------------------------------------------------------------------------
+
+def word_pattern(word, case_sensitive):
+    flags = 0 if case_sensitive else re.I
+    if '.' in word:
+        body = r'\s?'.join(re.escape(part + '.') for part in word.rstrip('.').split('.'))
+        return re.compile(r'(?<![A-Za-z])' + body + r'(?![A-Za-z])', flags)
+    parts = word.split()
+    if len(parts) > 1:
+        return re.compile(r'\b' + r'\s+'.join(re.escape(p) for p in parts) + r'\b', flags)
+    forms = [re.escape(word) + '(?:s|es|d|ed|ing)?']
+    if word.endswith('e'):
+        forms.append(re.escape(word[:-1]) + '(?:ing|ed)')
+    if word.endswith('y') and len(word) > 2 and word[-2] not in 'aeiou':
+        forms.append(re.escape(word[:-1]) + '(?:ies|ied)')
+    if re.search(r'[^aeiou][aeiou][^aeiouwxy]$', word):
+        forms.append(re.escape(word + word[-1]) + '(?:ing|ed)')
+    forms += {'begin': ['began', 'begun'], 'choose': ['chose', 'chosen']}.get(word.lower(), [])
+    return re.compile(r'\b(?:' + '|'.join(forms) + r')\b', flags)
+
+
+def load_word_list(path):
+    try:
+        with open(path, encoding='utf-8') as handle:
+            text = handle.read()
+    except OSError as exc:
+        raise DataError('cannot read the word list %s: %s' % (path, exc))
+    start = text.find(BEGIN_MARKER)
+    end = text.find(END_MARKER)
+    if start < 0 or end < start:
+        raise DataError('the ste-core markers are missing from %s' % path)
+    words = []
+    for line in text[start:end].splitlines():
+        match = re.match(r'^\|\s*"([^"]+)"\s*\|([^|]*)\|([^|]*)\|\s*$', line)
+        if not match:
+            continue
+        word = match.group(1).strip()
+        use = match.group(2).strip().strip('"')
+        case_sensitive = 'lowercase only' in match.group(3)
+        words.append((word, use, word_pattern(word, case_sensitive)))
+    if not words:
+        raise DataError('the word list in %s has no rows' % path)
+    return words
+
+
+# ---------------------------------------------------------------------------
+# Text preparation
+# ---------------------------------------------------------------------------
+
+def citation_or_text(match):
+    """Replace a parenthesis that holds only author-year citations, for example
+    (Mayer, 2019) or (e.g., Paas & van Gog, 2006, p. 3; Mayer, 2021)."""
+    for part in match.group(1).split(';'):
+        if not YEAR_RE.search(part):
+            return match.group(0)
+        for token in part.replace(',', ' ').split():
+            if token[0].islower() and token not in CITATION_WORDS:
+                return match.group(0)
+    return SLOT
+
+
+def replace_spans(text):
+    """Replace the spans that STE counts as one word. Return text and inner sentences."""
+    text = INLINE_CODE_RE.sub(SLOT, text)
+    text = URL_RE.sub(SLOT, text)
+    text = TEMPLATE_RE.sub(SLOT, text)
+    text = QUOTE_RE.sub(SLOT, text)
+    text = EXEMPT_BRACKET_RE.sub(SLOT, text)
+    text = PAREN_RE.sub(citation_or_text, text)
+    inner = []
+    while True:
+        found = PAREN_RE.search(text)
+        if not found:
+            break
+        if found.group(1).strip(' ' + SLOT):
+            inner.append(found.group(1))
+        text = text[:found.start()] + SLOT + text[found.end():]
+    text = IDENTIFIER_RE.sub(SLOT, text)
+    inner = [IDENTIFIER_RE.sub(SLOT, part) for part in inner]
+    return text, inner
+
+
+def split_sentences(text):
+    protected = text
+    for abbreviation in ABBREVIATIONS:
+        protected = protected.replace(abbreviation, abbreviation.replace('.', '\ue001'))
+    parts = SENTENCE_SPLIT_RE.split(protected)
+    return [part.replace('\ue001', '.').strip() for part in parts if part.strip()]
+
+
+def count_words(sentence):
+    return len([token for token in sentence.split() if WORD_TOKEN_RE.search(token)])
+
+
+def excerpt(text):
+    text = ' '.join(text.replace(SLOT, '[...]').split())
+    return text if len(text) <= 70 else text[:67] + '...'
+
+
+def check_unit(unit, words):
+    problems = []
+    text, inner = replace_spans(unit.text)
+    for part in [text] + inner:
+        if ';' in part:
+            problems.append(Problem(unit.line, 'semicolon',
+                                    'write two sentences: "%s"' % excerpt(part)))
+        for pattern in CONTRACTION_RES:
+            for match in pattern.finditer(part):
+                problems.append(Problem(unit.line, 'contraction',
+                                        'write the full words for "%s"' % match.group(0)))
+        for match in VERB_FORM_RE.finditer(part):
+            problems.append(Problem(unit.line, 'verb-form',
+                                    'use a simple tense, not "%s"' % match.group(0)))
+        for word, use, pattern in words:
+            for match in pattern.finditer(part):
+                advice = use if use.startswith('(') else 'use "%s"' % use
+                problems.append(Problem(unit.line, 'word',
+                                        '"%s": %s' % (match.group(0), advice)))
+    if unit.kind == 'label':
+        return problems
+    limit = PROCEDURAL_MAX if unit.kind == 'procedural' else DESCRIPTIVE_MAX
+    sentences = split_sentences(text)
+    for sentence in sentences + [s for part in inner for s in split_sentences(part)]:
+        count = count_words(sentence)
+        if count > limit:
+            problems.append(Problem(unit.line, 'sentence-length',
+                                    '%d words (maximum %d): "%s"' % (count, limit, excerpt(sentence))))
+    if unit.paragraph and unit.kind == 'descriptive' and len(sentences) > PARAGRAPH_MAX:
+        problems.append(Problem(unit.line, 'paragraph-length',
+                                '%d sentences (maximum %d): "%s"' % (len(sentences), PARAGRAPH_MAX, excerpt(text))))
+    return problems
+
+
+# ---------------------------------------------------------------------------
+# HTML
+# ---------------------------------------------------------------------------
+
+BLOCK_TAGS = {'address', 'article', 'aside', 'body', 'button', 'caption', 'dd', 'details',
+              'div', 'dl', 'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form',
+              'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'html', 'label',
+              'legend', 'li', 'main', 'nav', 'ol', 'option', 'p', 'section', 'select',
+              'summary', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'title', 'tr', 'ul'}
+LABEL_TAGS = {'button', 'caption', 'dt', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'label',
+              'legend', 'option', 'summary', 'th', 'title'}
+SKIP_TAGS = {'blockquote', 'pre', 'script', 'style', 'svg', 'template', 'textarea'}
+ONE_WORD_TAGS = {'cite', 'code', 'kbd', 'q', 'samp', 'var'}
+VOID_TAGS = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta',
+             'source', 'track', 'wbr'}
+
+
+class UnitParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self, convert_charrefs=True)
+        self.units = []
+        self.problems = []
+        self.stack = []
+        self.skip_tag = None
+        self.skip_depth = 0
+        self.skip_line = None
+        self.buffer = []
+        self.buffer_line = None
+
+    def flush(self):
+        text = ''.join(self.buffer)
+        if text.strip(' \t\r\n' + SLOT):
+            block = 'p'
+            for tag in reversed(self.stack):
+                if tag in BLOCK_TAGS:
+                    block = tag
+                    break
+            if block in LABEL_TAGS:
+                kind = 'label'
+            elif block in ('li', 'p') and 'li' in self.stack and 'ol' in self.stack:
+                kind = 'procedural'
+            else:
+                kind = 'descriptive'
+            self.units.append(Unit(self.buffer_line, kind, ' '.join(text.split()), True))
+        self.buffer = []
+        self.buffer_line = None
+
+    def add(self, text):
+        if self.buffer_line is None and text.strip():
+            self.buffer_line = self.getpos()[0]
+        self.buffer.append(text)
+
+    def end_inline_skip(self, tag):
+        # An inline span that is not closed ends at the next block tag.
+        if self.skip_tag and tag in BLOCK_TAGS and self.skip_tag not in BLOCK_TAGS | SKIP_TAGS:
+            self.problems.append(Problem(self.skip_line, 'html', '<%s> has no end tag. Add the end tag. The checker '
+                                         'did not examine the text from it to the end of the block.' % self.skip_tag))
+            self.skip_tag = None
+
+    def handle_starttag(self, tag, attrs):
+        self.end_inline_skip(tag)
+        if self.skip_tag:
+            if tag == self.skip_tag:
+                self.skip_depth += 1
+            return
+        quoted = ('data-ste', 'quoted') in attrs
+        if tag in BLOCK_TAGS:
+            self.flush()
+        if tag in VOID_TAGS:
+            if tag == 'br':
+                self.flush()
+            self.add(' ')
+            return
+        if tag in SKIP_TAGS or (quoted and tag in BLOCK_TAGS):
+            self.skip_tag, self.skip_depth = tag, 1
+            self.skip_line = self.getpos()[0]
+            return
+        if tag in ONE_WORD_TAGS or quoted:
+            self.add(' ' + SLOT + ' ')
+            self.skip_tag, self.skip_depth = tag, 1
+            self.skip_line = self.getpos()[0]
+            return
+        self.stack.append(tag)
+
+    def handle_startendtag(self, tag, attrs):
+        if tag == 'br' and not self.skip_tag:
+            self.flush()
+        if not self.skip_tag:
+            self.add(' ')
+
+    def handle_endtag(self, tag):
+        self.end_inline_skip(tag)
+        if self.skip_tag:
+            if tag == self.skip_tag:
+                self.skip_depth -= 1
+                if self.skip_depth == 0:
+                    self.skip_tag = None
+            return
+        if tag in BLOCK_TAGS:
+            self.flush()
+        if tag in self.stack:
+            while self.stack:
+                if self.stack.pop() == tag:
+                    break
+
+    def handle_data(self, data):
+        if not self.skip_tag:
+            self.add(data)
+
+
+# ---------------------------------------------------------------------------
+# Markdown and plain text
+# ---------------------------------------------------------------------------
+
+LIST_ITEM_RE = re.compile(r'^(\s*)([-*+]|\d+[.)])\s+(.*)$')
+TABLE_SEPARATOR_RE = re.compile(r'^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$')
+RULE_RE = re.compile(r'^\s*([-*_])(\s*\1){2,}\s*$')
+
+
+def markdown_inline(text):
+    text = MD_IMAGE_RE.sub(r'\1', text)
+    text = MD_LINK_RE.sub(r'\1', text)
+    text = re.sub(r'<(code|kbd|samp|q|cite|var)\b[^>]*>.*?</\1>', ' ' + SLOT + ' ', text)
+    text = re.sub(r'<[^>\n]+>', ' ', text)
+    text = re.sub(r'(\*\*|__|\*)', '', text)
+    text = re.sub(r'(?<![\w$])_([^_\n]+)_(?!\w)', r'\1', text)
+    return html.unescape(text)
+
+
+def markdown_units(text):
+    units = []
+    lines = text.splitlines()
+    current = None
+    in_fence = None
+    in_comment = False
+    in_table = False
+
+    def close():
+        if current is not None and current['text'].strip():
+            units.append(Unit(current['line'], current['kind'],
+                              markdown_inline(current['text']), current['paragraph']))
+
+    index = 0
+    if lines and lines[0].strip() == '---':
+        for end in range(1, len(lines)):
+            if lines[end].strip() == '---':
+                index = end + 1
+                break
+    while index < len(lines):
+        line = lines[index]
+        number = index + 1
+        stripped = line.strip()
+        index += 1
+        was_table, in_table = in_table, False
+        if in_fence:
+            # A fence ends only at a line of the same character, at least as long.
+            if re.match(re.escape(in_fence[0]) + '{%d,}$' % len(in_fence), stripped):
+                in_fence = None
+            continue
+        if in_comment:
+            if '-->' in line:
+                in_comment = False
+            continue
+        fence = re.match(r'(`{3,}|~{3,})', stripped)
+        if fence:
+            close()
+            current = None
+            in_fence = fence.group(1)
+            continue
+        if stripped.startswith('<!--'):
+            close()
+            current = None
+            in_comment = '-->' not in stripped
+            continue
+        if not stripped or RULE_RE.match(line) or stripped.startswith('>'):
+            close()
+            current = None
+            continue
+        if stripped.startswith('#'):
+            close()
+            current = None
+            units.append(Unit(number, 'label', markdown_inline(stripped.lstrip('#')), False))
+            continue
+        following = lines[index].strip() if index < len(lines) else ''
+        header = '|' in following and TABLE_SEPARATOR_RE.match(following)
+        if stripped.startswith('|') or ('|' in stripped and (was_table or header)):
+            in_table = True
+            close()
+            current = None
+            if TABLE_SEPARATOR_RE.match(stripped):
+                continue
+            for cell in stripped.strip('|').split('|'):
+                if cell.strip():
+                    units.append(Unit(number, 'label' if header else 'descriptive',
+                                      markdown_inline(cell.strip()), False))
+            continue
+        item = LIST_ITEM_RE.match(line)
+        if item:
+            close()
+            kind = 'procedural' if item.group(2)[0].isdigit() else 'descriptive'
+            current = {'line': number, 'kind': kind, 'text': item.group(3), 'paragraph': True}
+        elif current is None:
+            current = {'line': number, 'kind': 'descriptive', 'text': stripped, 'paragraph': True}
+        else:
+            current['text'] += ' ' + stripped
+        if line.endswith('  ') or line.endswith('\\'):
+            # A hard line break ends the unit, as <br> does in HTML.
+            current['text'] = current['text'].rstrip(' \\')
+            close()
+            current = {'line': number + 1, 'kind': current['kind'], 'text': '', 'paragraph': True}
+    close()
+    return units
+
+
+def text_units(text):
+    units = []
+    for number, line in enumerate(text.splitlines(), 1):
+        stripped = html.unescape(line.strip())
+        if not stripped:
+            continue
+        kind = 'procedural' if re.match(r'^\d+[.)]\s', stripped) else 'descriptive'
+        units.append(Unit(number, kind, stripped, False))
+    return units
+
+
+# ---------------------------------------------------------------------------
+# Driver
+# ---------------------------------------------------------------------------
+
+def detect_format(path, requested):
+    if requested != 'auto':
+        return requested
+    lower = path.lower()
+    if lower.endswith('.html') or lower.endswith('.htm'):
+        return 'html'
+    if lower.endswith('.md') or lower.endswith('.markdown'):
+        return 'markdown'
+    return 'text'
+
+
+def check_text(text, fmt, words):
+    """Return the problems and the number of text units that the script examined."""
+    problems = []
+    if fmt == 'html':
+        parser = UnitParser()
+        parser.feed(text)
+        parser.close()
+        parser.flush()
+        units = parser.units
+        problems.extend(parser.problems)
+        if parser.skip_tag:
+            problems.append(Problem(parser.skip_line, 'html', '<%s> has no end tag. Add the end tag. The checker '
+                                    'did not examine the text after it.' % parser.skip_tag))
+    elif fmt == 'markdown':
+        units = markdown_units(text)
+    else:
+        units = text_units(text)
+    for unit in units:
+        problems.extend(check_unit(unit, words))
+    return problems, len(units)
+
+
+def expand(paths):
+    files = []
+    for path in paths:
+        if path != '-' and os.path.isdir(path):
+            for root, dirs, names in os.walk(path):
+                dirs.sort()
+                for name in sorted(names):
+                    if name.lower().endswith(CHECK_SUFFIXES):
+                        files.append(os.path.join(root, name))
+        else:
+            files.append(path)
+    return files
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        prog='idstack-ste-check',
+        description='Find ASD-STE100 writing-rule problems in idstack output.')
+    parser.add_argument('paths', nargs='+', metavar='PATH',
+                        help='a file, a directory, or "-" for standard input')
+    parser.add_argument('--format', default='auto',
+                        choices=['auto', 'html', 'markdown', 'text'],
+                        help='the input format (default: from the file name, text for "-")')
+    parser.add_argument('--word-list', default=DEFAULT_WORD_LIST,
+                        help='the file with the ste-core word list (default: templates/preamble.md)')
+    args = parser.parse_args(argv)
+
+    try:
+        words = load_word_list(args.word_list)
+    except DataError as exc:
+        print('idstack-ste-check: error: %s' % exc, file=sys.stderr)
+        return 2
+
+    total = 0
+    unread = 0
+    units = 0
+    files = expand(args.paths)
+    for path in files:
+        try:
+            if path == '-':
+                text = sys.stdin.read()
+            else:
+                with open(path, encoding='utf-8-sig') as handle:
+                    text = handle.read()
+        except (OSError, UnicodeDecodeError) as exc:
+            print('idstack-ste-check: error: cannot read %s: %s' % (path, exc), file=sys.stderr)
+            unread += 1
+            continue
+        name = 'stdin' if path == '-' else path
+        found, count = check_text(text, detect_format(path, args.format), words)
+        units += count
+        for problem in found:
+            print('%s:%s: %s: %s' % (name, problem.line, problem.rule, problem.message))
+            total += 1
+    read = len(files) - unread
+    note = '. The checker did not read %d file(s).' % unread if unread else ''
+    if total:
+        print('idstack-ste-check: %d problem(s) in %d file(s)%s' % (total, read, note))
+        return 1
+    if not files or (read and not units):
+        print('idstack-ste-check: error: no text to examine', file=sys.stderr)
+        return 2
+    if unread:
+        if read:
+            print('idstack-ste-check: no problems in %d file(s)%s' % (read, note))
+        return 2
+    print('idstack-ste-check: no problems in %d file(s)' % read)
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

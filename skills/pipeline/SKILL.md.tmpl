@@ -1,8 +1,8 @@
 ---
 name: pipeline
 description: |
-  Pipeline orchestrator for idstack. Chains skills from /needs-analysis through
-  /course-export in evidence-based order, auto-skipping completed skills.
+  Pipeline orchestrator for idstack. Runs the skills from /needs-analysis to
+  /course-export in the evidence-based sequence. It skips the skills that are complete.
   Handles fresh starts (no manifest) and resumption (partial pipeline). (idstack)
 allowed-tools:
   - Bash
@@ -85,7 +85,7 @@ starting point.
 **Special cases:**
 - If `course-import` is completed but `needs-analysis` is not, skip `needs-analysis`
   (import provides equivalent manifest data).
-- If ALL skills are completed, tell the user via AskUserQuestion: "All pipeline skills have been completed. What would you like to do?" Options:
+- If ALL skills are completed, tell the user via AskUserQuestion: "All pipeline skills are completed. What do you want to do?" Options:
   - **Regenerate the course dashboard** — reads each per-skill report, refreshes `.idstack/exports/<course-slug>/index.html` with the latest cross-cutting view (no skills re-run). Recommended after editing per-skill outputs by hand.
   - **Re-run a specific skill** — e.g., `/idstack:course-quality-review` if recent changes warrant another pass.
   - **Exit** — leave everything as-is.
@@ -99,7 +99,7 @@ Show the user a status table before starting:
 Pipeline Status:
   [done] /idstack:needs-analysis
   [done] /idstack:learning-objectives
-  [next] /idstack:assessment-design      <-- starting here
+  [next] /idstack:assessment-design      <-- the run starts here
   [    ] /idstack:course-builder
   [    ] /idstack:course-quality-review
   [    ] /idstack:accessibility-review
@@ -117,7 +117,7 @@ ask which one using AskUserQuestion with the skill list as options.
 
 For each skill from the starting point onward:
 
-1. Announce: "Starting /idstack:<skill-name>..."
+1. Announce: "/idstack:<skill-name> starts."
 2. Invoke the skill using the `Skill` tool with the **plugin-namespaced** skill name
    (e.g., `skill: "idstack:needs-analysis"`). Plugin skills are addressed as
    `plugin:skill` — a bare `"needs-analysis"` does not resolve in Claude Code.
@@ -127,14 +127,14 @@ For each skill from the starting point onward:
 
 **If the `Skill` invocation fails** (the tool is unavailable, or the child skill cannot be
 resolved), degrade gracefully rather than silently skipping the stage: print exactly what
-the user should type to run it themselves (e.g., "Type `/idstack:needs-analysis` to run the
-next stage, then resume by typing `/idstack:pipeline` again") and STOP. The pipeline picks
+the user should type to run it themselves (for example, "Type `/idstack:needs-analysis` to run the
+next stage. Then type `/idstack:pipeline` again to continue the pipeline") and STOP. The pipeline picks
 up on the next `/idstack:pipeline` invocation by re-reading the timeline and continuing from
 the new starting point. Generate the course dashboard (Step 4) before stopping so the
 partial-run dashboard is up to date.
 
 **Between skills**, briefly announce the transition:
-"[skill-name] complete. Course dashboard refreshed. Moving to /idstack:<next-skill>..."
+"[skill-name] is completed. I updated the course dashboard. The next skill is /idstack:<next-skill>."
 
 ### Step 4: Generate Course Dashboard
 
@@ -175,20 +175,32 @@ Also read `.idstack/project.json` for project_name, scores (`quality_review.over
 
 - **`{{project_name}}`:** from the manifest top-level.
 - **`{{pipeline_run_status}}`:** e.g., "complete · 8 of 8 skills" or "partial · 4 of 8 skills".
-- **Cross-cutting summary** (replaces `{{cross_cutting_summary_2_to_3_paragraphs}}`): 2–3 paragraphs of cross-cutting synthesis. Designed to be read by a designer (or stakeholder) who hasn't yet opened the per-skill reports. Lead with the verdict, follow with the themes that recur across multiple skills, end with where to start.
+- **Cross-cutting summary** (replaces `{{cross_cutting_verdict_paragraph}}`, `{{cross_cutting_themes_paragraph}}` and `{{cross_cutting_start_paragraph}}`): two or three paragraphs of cross-cutting synthesis for a designer or stakeholder who did not open the per-skill reports. Put each paragraph in a different `<p>`, with a maximum of six sentences.
+  - The first paragraph gives the verdict.
+  - The second paragraph gives the themes that occur in more than one skill.
+  - The third paragraph tells where to start. It is optional. If you do not use it, remove its `<p>`.
 - **Readiness scoreboard** — populate the four `<div class="score verdict-{verdict}">` cards (Quality, Accessibility, Red-team confidence, Overall verdict). Verdict values: `ready` (green border) / `issues` (amber) / `blocked` (red) / `pending` (grey, when skill hasn't run yet). Thresholds match `bin/idstack-status --readiness`.
 - **Pipeline status table** — one row per pipeline skill. `status-done` if the per-skill HTML report file exists, `status-pending` otherwise. `signal` column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). Link the report cell to the relative HTML filename (e.g., `<a href="needs-analysis.html">needs-analysis.html</a>`). Add an optional course-import row when that report is present.
 - **Top cross-cutting issues** (`<ol>` items): 3–5 highest-impact findings that appear in or affect multiple per-skill reports. Each item shows the source skill(s) and the evidence tier as a `<cite class="citation">` element.
-- **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: `<p>No LMS packages produced yet. Run <code>/idstack:course-export</code> to package this course.</p>`.
+- **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: `<p>This folder has no LMS packages. To make them, run <code>/idstack:course-export</code>.</p>`.
 - **Where to start** — one paragraph. The single change (or 2–3 changes) that would address the largest number of cross-cutting concerns. Anchored to a specific finding id in a specific per-skill report so the designer can act on it (e.g., "Address `assess-1` in <code>assessment-design.html</code> first…").
 
 The dashboard is overwritten on every pipeline run — historical dashboards are not retained. The timeline at `.idstack/timeline.jsonl` carries the run history.
 
+**Writing standard check.** In this command, replace `<path>` with the path from the "Dashboard:" line. Then run the command.
+
+```bash
+{{IDSTACK_RESOLVE}}
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+
 ### Step 5: Pipeline Complete
 
 When all remaining skills have been executed:
-- Announce: "Pipeline complete. Your course has been through all 8 stages."
-- Confirm the dashboard path: "Course dashboard at `.idstack/exports/<course-slug>/index.html` — open it in any browser for the cross-cutting view; the per-skill HTML reports in the same folder carry the full detail. Zip the folder to hand it to a stakeholder."
+- Announce: "The pipeline is completed. Your course went through all 8 stages."
+- Confirm the dashboard path: "The course dashboard is at `.idstack/exports/<course-slug>/index.html`. Open it in a web browser to see the cross-cutting view. The per-skill HTML reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
 - If `/idstack:course-quality-review` produced a score, show it.
 - Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.
 - Log the pipeline run so "the pipeline was run" is recoverable from the timeline:

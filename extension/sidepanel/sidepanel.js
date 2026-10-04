@@ -36,7 +36,7 @@ async function copyWithFeedback(btn, text, idleLabel) {
     await navigator.clipboard.writeText(text);
     btn.textContent = '✓ Copied!';
   } catch (e) {
-    btn.textContent = 'Copy failed';
+    btn.textContent = 'Not copied';
   }
   setTimeout(() => {
     btn.textContent = idleLabel;
@@ -73,7 +73,7 @@ export async function updateDossierUI() {
       });
     });
   } catch (e) {
-    listEl.innerHTML = '<div class="dossier-empty"><p>Error loading dossier.</p></div>';
+    listEl.innerHTML = '<div class="dossier-empty"><p>idstack cannot read the dossier.</p></div>';
   }
 }
 
@@ -129,7 +129,7 @@ export async function refreshActiveTab() {
       pageType: activeCourseContext.isCourseRoot ? 'Canvas Course Root' : 'Web Page',
       content: '',
       // The service worker shows this instead of auditing an empty page.
-      emptyReason: 'idstack cannot read this tab. If you just switched to it, click the idstack toolbar icon, then audit again. Browser pages such as chrome:// and the Chrome Web Store cannot be read.'
+      emptyReason: 'idstack cannot read this tab. If you moved to this tab from a different tab, click the idstack toolbar icon. Then audit again. idstack cannot read browser pages, for example chrome:// pages and the Chrome Web Store.'
     };
   } catch (e) {
     console.warn('Error refreshing active tab:', e);
@@ -214,17 +214,17 @@ export function renderError(errorMessage) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;')
-    : 'Unknown error occurred during audit.';
+    : 'An unknown error occurred during the audit.';
 
   container.innerHTML = `
     <div class="context-card error-card">
       <div class="error-header">
         <span class="error-icon">⚠️</span>
-        <h4>Audit Encountered an Issue</h4>
+        <h4>Audit Error</h4>
       </div>
       <p class="error-msg">${safeError}</p>
       <div class="error-actions">
-        <button id="error-retry-btn" class="primary-btn">Retry Audit</button>
+        <button id="error-retry-btn" class="primary-btn">Try Again</button>
         <button id="error-settings-btn" class="secondary-btn">Open Settings</button>
       </div>
     </div>
@@ -292,7 +292,7 @@ if (auditBtn) {
     if (progressCard) progressCard.style.display = 'none';
 
     const loaderStatus = document.getElementById('loader-status');
-    if (loaderStatus) loaderStatus.textContent = 'Analyzing page content...';
+    if (loaderStatus) loaderStatus.textContent = 'idstack examines the page...';
 
     showState('loading');
 
@@ -306,7 +306,7 @@ if (auditBtn) {
           if (response && response.success) {
             renderResults(response.data, sent);
           } else {
-            renderError(response?.error || 'Unknown error occurred during audit.');
+            renderError(response?.error || 'An unknown error occurred during the audit.');
           }
         });
       } catch (err) {
@@ -334,7 +334,7 @@ if (auditCourseBtn) {
       // Not a requestable origin (optional_host_permissions covers https only)
     }
     if (!granted) {
-      renderError(`idstack needs access to ${origin} to audit the whole course.`);
+      renderError(`idstack must have access to ${origin} to audit the full course.`);
       return;
     }
 
@@ -343,20 +343,20 @@ if (auditCourseBtn) {
     const progressFill = document.getElementById('crawl-progress-fill');
     const loaderStatus = document.getElementById('loader-status');
 
-    if (loaderStatus) loaderStatus.textContent = 'Auditing Full Canvas Course...';
+    if (loaderStatus) loaderStatus.textContent = 'idstack audits the full Canvas course...';
     if (progressCard) progressCard.style.display = 'block';
-    if (statusText) statusText.textContent = 'Gathering syllabus...';
+    if (statusText) statusText.textContent = 'idstack reads the syllabus...';
     if (progressFill) progressFill.style.width = '25%';
 
     showState('loading');
 
     const timer1 = setTimeout(() => {
-      if (statusText) statusText.textContent = 'Fetching assignments...';
+      if (statusText) statusText.textContent = 'idstack reads the assignments...';
       if (progressFill) progressFill.style.width = '60%';
     }, 600);
 
     const timer2 = setTimeout(() => {
-      if (statusText) statusText.textContent = 'Analyzing constructive alignment...';
+      if (statusText) statusText.textContent = 'idstack examines the constructive alignment...';
       if (progressFill) progressFill.style.width = '85%';
     }, 1300);
 
@@ -381,7 +381,7 @@ if (auditCourseBtn) {
               pageType: 'Canvas Course (Full Audit)'
             });
           } else {
-            renderError(response?.error || 'Unknown error occurred during course audit.');
+            renderError(response?.error || 'An unknown error occurred during the course audit.');
           }
         });
       } catch (err) {

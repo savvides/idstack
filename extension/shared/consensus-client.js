@@ -72,47 +72,49 @@ export function autoCorrectNeuromyth(finding, mythType) {
 
   if (mythType === 'learning_styles') {
     finding.recommendation =
-      'Provide multimodal presentation and dual coding (combining complementary visual representations ' +
-      'and verbal/textual explanations for all learners) rather than attempting to segregate ' +
-      'or adapt materials to putative learning styles.';
+      'idstack recommends that you use multimodal presentation and dual coding for all learners, ' +
+      'not different materials for each learning style. Dual coding shows related visuals and ' +
+      'verbal or text explanations together.';
     const corrEv =
-      "[Auto-Corrected Neuromyth] The 'learning styles' (meshing hypothesis) lacks empirical support " +
-      '(Pashler et al., 2008; Rogowsky et al., 2015). Empirical evidence supports multimodal ' +
-      'presentation and dual coding (Mayer, 2021; Paivio, 1986) for all learners.';
+      "[Auto-Corrected Neuromyth] Research evidence does not show that 'learning styles' (the meshing " +
+      'hypothesis) help learners (Pashler et al., 2008; Rogowsky et al., 2015). Research evidence shows ' +
+      'that multimodal presentation and dual coding help all learners (Mayer, 2021; Paivio, 1986).';
     finding.evidence = finding.evidence ? `${finding.evidence} ${corrEv}` : corrEv;
-    const obsNote = ' [Note: Differentiating by sensory learning styles is a recognized neuromyth; multimodal presentation should be applied instead.]';
+    const obsNote = ' [Note: Sensory learning styles are a known neuromyth. idstack recommends that you use multimodal presentation for all learners.]';
     finding.observation = `${finding.observation || ''}${obsNote}`.trim();
   } else if (mythType === 'hemisphere_learning') {
     finding.recommendation =
-      'Provide multimodal presentation and integrated cognitive activities rather than ' +
-      'attempting to cater to left-brain or right-brain learners.';
+      'idstack recommends that you use multimodal presentation and integrated cognitive tasks for all ' +
+      'learners, not different tasks for left-brain or right-brain learners.';
     const corrEv =
-      '[Auto-Corrected Neuromyth] Hemispheric specialization for learning is an empirically ' +
-      'unsupported neuromyth. Cognitive architecture operates through integrated networks; ' +
-      'multimodal dual coding benefits all learners.';
+      '[Auto-Corrected Neuromyth] Hemispheric specialization for learning is a neuromyth with no ' +
+      'research evidence. Cognitive architecture operates through integrated networks. ' +
+      'Multimodal dual coding helps all learners.';
     finding.evidence = finding.evidence ? `${finding.evidence} ${corrEv}` : corrEv;
-    const obsNote = ' [Note: Left/right brain learning categorization is a neuromyth; integrated multimodal tasks should be used.]';
+    const obsNote = ' [Note: Left-brain and right-brain learner types are a neuromyth. idstack recommends that you use integrated multimodal tasks.]';
     finding.observation = `${finding.observation || ''}${obsNote}`.trim();
   } else if (mythType === 'ten_percent_brain') {
     finding.recommendation =
-      'Design instructional activities that optimize working memory capacity and cognitive load ' +
-      'rather than relying on 10% brain capacity claims.';
+      'idstack recommends that you design learning tasks for working memory capacity and cognitive ' +
+      'load, not for claims about 10% brain capacity.';
     const corrEv =
-      '[Auto-Corrected Neuromyth] The 10% brain usage claim is a debunked neuromyth. Instructional ' +
-      'design should be guided by Cognitive Load Theory (Sweller, 1994) and working memory limits.';
+      '[Auto-Corrected Neuromyth] The 10% brain claim is a neuromyth. Research shows that the claim ' +
+      'is incorrect. Instructional design must agree with Cognitive Load Theory (Sweller, 1994) and ' +
+      'working memory limits.';
     finding.evidence = finding.evidence ? `${finding.evidence} ${corrEv}` : corrEv;
-    const obsNote = ' [Note: The 10% brain claim is a recognized neuromyth; Cognitive Load Theory should guide design.]';
+    const obsNote = ' [Note: The 10% brain claim is a known neuromyth. idstack recommends that you use Cognitive Load Theory for the design.]';
     finding.observation = `${finding.observation || ''}${obsNote}`.trim();
   } else if (mythType === 'dales_cone_percentages') {
     finding.recommendation =
-      'Structure learning through active retrieval and generative processing rather than ' +
-      'bogus retention percentage hierarchies.';
+      'idstack recommends that you design learning tasks with active retrieval and generative ' +
+      'processing, not with incorrect retention percentage hierarchies.';
     const corrEv =
-      "[Auto-Corrected Neuromyth] Numerical retention claims ('we remember 10% of what we read') " +
-      "are fabricated percentages falsely attributed to Dale's Cone of Experience. Retention " +
-      'depends on retrieval practice and cognitive processing depth (Agarwal, 2019).';
+      "[Auto-Corrected Neuromyth] Retention percentage claims ('we remember 10% of what we read') " +
+      'use numbers that have no research source. Some texts incorrectly connect these numbers to ' +
+      "Dale's Cone of Experience. Retention changes with retrieval practice and the depth of " +
+      'cognitive processing (Agarwal, 2019).';
     finding.evidence = finding.evidence ? `${finding.evidence} ${corrEv}` : corrEv;
-    const obsNote = ' [Note: Retention percentage pyramids are fabricated; active retrieval principles should be used.]';
+    const obsNote = ' [Note: Retention percentage pyramids are incorrect. idstack recommends that you use active retrieval.]';
     finding.observation = `${finding.observation || ''}${obsNote}`.trim();
   }
   return finding;

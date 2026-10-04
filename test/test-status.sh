@@ -31,12 +31,24 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 cd "$WORK"
 
+# A person reads the dashboard, and course-export reads --readiness. The
+# outputs of each state go to $STE_OUT, and the ASD-STE100 checker reads them
+# at the end of this suite.
+STE_CHECK="$REPO_ROOT/bin/idstack-ste-check"
+STE_OUT="$WORK/ste-out"
+mkdir -p "$STE_OUT"
+ste_capture() { # <state name>
+  "$STATUS" > "$STE_OUT/dashboard-$1.txt" 2>&1
+  "$STATUS" --readiness > "$STE_OUT/readiness-$1.txt" 2>&1
+}
+
 echo "idstack-status tests"
 echo ""
 
 # --- dashboard ---
 check "no timeline shows the empty state" \
-  "$STATUS | grep -q 'No course data yet'"
+  "$STATUS | grep -q 'There is no course data'"
+ste_capture empty
 
 mkdir -p .idstack
 printf '%s\n' '{"project_name": "Test Course 123"}' > .idstack/project.json
@@ -59,15 +71,15 @@ check "completed skills render as namespaced checkboxes" \
 check "quality trend shows the progression" \
   "$STATUS | grep -q 'Quality trend: 65 -> 85'"
 
-check "next step is suggested, namespaced" \
-  "$STATUS | grep -q 'Suggested next: /idstack:learning-objectives'"
+check "next step is recommended, namespaced" \
+  "$STATUS | grep -q 'Recommended next: /idstack:learning-objectives'"
 
 cat > .idstack/learnings.jsonl <<'JSON'
 {"skill":"needs-analysis","type":"operational","insight":"Learned X"}
 {"skill":"needs-analysis","type":"pattern","insight":"Learned Y"}
 JSON
 check "learnings are counted" \
-  "$STATUS | grep -q 'Learnings: 2 discoveries stored'"
+  "$STATUS | grep -q 'Learnings: 2 entries'"
 
 mkdir -p .idstack/exports/test-course-123
 touch .idstack/exports/test-course-123/index.html
@@ -78,6 +90,7 @@ check "dashboard index.html is listed" \
   "$STATUS | grep -q 'test-course-123/index.html'"
 check "per-skill report is listed" \
   "$STATUS | grep -q 'test-course-123/other-report.html'"
+ste_capture partial
 
 echo ""
 
@@ -111,6 +124,7 @@ JSON
 write_manifest 80 0 90
 check "all thresholds met gives READY TO EXPORT" \
   "$STATUS --readiness | grep -q 'READY TO EXPORT'"
+ste_capture ready
 
 # --- threshold boundaries, one at a time ---
 # Each case holds the other two dimensions passing, so the verdict can only
@@ -158,6 +172,17 @@ check "Level-A violation also marks the accessibility row NEEDS-WORK" \
 write_manifest 80 0 95 '"wcag_violations": [{"level": "AA", "criterion": "1.4.3"}]'
 check "a Level-AA violation alone does not block export" \
   "$STATUS --readiness | grep -q 'READY TO EXPORT'"
+
+# --- writing standard (ASD-STE100) ---
+# NOT-READY with all four reasons, so the reason list is in the text too.
+write_manifest 60 2 70 '"wcag_violations": [{"level": "A", "criterion": "1.1.1"}, {"level": "A", "criterion": "2.1.1"}]'
+ste_capture not-ready
+printf 'not json\n' > .idstack/timeline.jsonl
+ste_capture unreadable-timeline
+check "the dashboard text obeys the writing standard in each state" \
+  "python3 '$STE_CHECK' --format text '$STE_OUT'/dashboard-*.txt"
+check "the --readiness text obeys the writing standard in each state" \
+  "python3 '$STE_CHECK' --format text '$STE_OUT'/readiness-*.txt"
 
 echo ""
 echo "idstack-status: $PASS/$TOTAL passed, $FAIL failed"

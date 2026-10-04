@@ -88,7 +88,7 @@ check(note, 'index.html has no privacy note');
 const at = privacy.indexOf('## idstack Chrome Extension');
 check(at >= 0, 'PRIVACY.md has no "## idstack Chrome Extension" section');
 const policy = at >= 0 ? privacy.slice(at) : '';
-for (const [word, url] of [
+const REFUSED = [
   [/Gradebook/, 'https://canvas.example.edu/courses/1/gradebook'],
   [/SpeedGrader/, 'https://canvas.example.edu/courses/1/gradebook/speed_grader?assignment_id=1'],
   [/\bgrades\b/, 'https://canvas.example.edu/courses/1/grades/7'],
@@ -98,7 +98,11 @@ for (const [word, url] of [
   [/\bsubmissions\b/, 'https://canvas.example.edu/courses/1/assignments/5/submissions/7'],
   [/Inbox/, 'https://canvas.example.edu/conversations'],
   [/\bdiscussion/i, 'https://canvas.example.edu/courses/1/discussion_topics/1'],
-]) {
+];
+// A rewording of the side-panel note must not drop a refused page: the check
+// below runs only for the pages that the note names, so a dropped name would pass.
+for (const [word] of REFUSED) check(word.test(note || ''), `side-panel privacy note no longer names ${word.source} pages as not read`);
+for (const [word, url] of REFUSED) {
   for (const [name, text] of [['side-panel privacy note', note || ''], ['PRIVACY.md', policy]]) {
     if (!word.test(text)) continue;
     const r = extractContentFromDOM(doc, url);
@@ -116,6 +120,11 @@ for (const pattern of manifest.host_permissions || []) {
 if (html.includes('id="consensus-api-key-input"')) {
   check(/Consensus/.test(note || ''), 'side-panel privacy note does not say what a saved Consensus key sends to Consensus');
 }
+
+// 8. A button the docs tell people to click must be a button the panel shows.
+const shown = html.replace(/<[^>]+>/g, ' ');
+const named = [...privacy.matchAll(/\*\*([A-Z][^*]*[^.:*])\*\*/g), ...readme.matchAll(/\*\*"([^"*]+)"\*\*/g)].map((m) => m[1]);
+for (const label of new Set(named)) check(shown.includes(label), `PRIVACY.md or README.md names a "${label}" button that extension/sidepanel/index.html does not show`);
 
 assert.ok(problems.size === 0, `Extension disclosures disagree with the shipped code:\n  ${[...problems].join('\n  ')}`);
 console.log('✅ Extension privacy and capability disclosures match the shipped code.');

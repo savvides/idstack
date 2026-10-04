@@ -27,7 +27,7 @@ function extractContentFromDOM(document, url = (typeof window !== 'undefined' &&
       pageType: 'Canvas Student Records',
       content: '',
       wordCount: 0,
-      emptyReason: 'idstack does not read Canvas pages that show student records (grades, People, Inbox, discussions, groups, submissions). Consider auditing an assignment, page, syllabus, rubric, or Modules view instead.'
+      emptyReason: 'idstack does not read Canvas pages that show student records (grades, People, Inbox, discussions, groups and submissions). You can audit an assignment, a page, a syllabus, a rubric or the Modules view.'
     };
   }
 
@@ -88,7 +88,7 @@ async function extractPageContent() {
     return { ...data, content: text.slice(0, 15000), wordCount: text.split(/\s+/).filter(Boolean).length };
   } catch (e) {
     // Offline, timed out, refused, or not plain text.
-    return { ...data, content: '', wordCount: 0, emptyReason: 'idstack could not read the text of this Google Doc. If downloading is turned off for it, consider asking the owner to allow downloads.' };
+    return { ...data, content: '', wordCount: 0, emptyReason: 'idstack cannot read the text of this Google Doc. If downloads are off for this document, the owner of the document can turn them on.' };
   }
 }
 

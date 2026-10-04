@@ -152,19 +152,20 @@ Setup is idempotent — re-run it any time.
 You should see:
 ```
   regenerated skill files
-Installing idstack (user)...
+Setup installs idstack (scope: user)...
   source: /path/to/idstack
 
-idstack installed (Claude Code) — scope: user.
+Setup installed idstack in Claude Code (scope: user).
 
-  If Claude Code is already running, restart it (plugins load at session start).
+  If Claude Code is open, close it and open it again.
+  Claude Code reads plugins only when a session starts.
 
-  Usage: /idstack:<skill>
+  To use a skill, run /idstack:<skill>
 
-  Have an existing course?
+  If you have a course, import it and examine it:
     /idstack:course-import -> /idstack:course-quality-review
 
-  Starting fresh?
+  To start a new course:
     /idstack:needs-analysis
 
   Run the full pipeline:
@@ -174,7 +175,7 @@ idstack installed (Claude Code) — scope: user.
     course-builder, course-quality-review, accessibility-review,
     red-team, course-export, course-import, pipeline, learn
 
-  More info: https://idstack.org
+  More information: https://idstack.org
 ```
 
 ### Chrome Extension (No-Terminal Mode)
@@ -199,12 +200,12 @@ If developing or modifying the extension locally:
 
 #### Full Course Audit (Canvas LMS)
 
-When viewing any Canvas course homepage or modules list (`/courses/:id`), idstack automatically detects the course environment and presents an **"Audit Entire Course"** button:
+When viewing any Canvas course homepage or modules list (`/courses/:id`), idstack automatically detects the course environment and presents an **"Audit Full Course"** button:
 - **Zero Developer Tokens Required:** Reads the course syllabus and assignment descriptions through Canvas's API using your active browser session. No Canvas API keys, LMS admin setup, or command line required.
 - **Course-level findings:** Reviews the syllabus and assignments together for alignment gaps, cognitive demand across Bloom's levels, and prioritized fixes, shown in the same results view as a page audit.
 - **Export Ready:** Add the course audit to your Course Dossier or export it as Markdown to share with instructional design teams and faculty stakeholders.
 
-On Canvas hosted outside `instructure.com` (for example, a university's own domain), Chrome asks once, for that site only, when you first click **"Audit Entire Course"**.
+On Canvas hosted outside `instructure.com` (for example, a university's own domain), Chrome asks once, for that site only, when you first click **"Audit Full Course"**.
 
 #### Multi-Page Course Dossier & Markdown Export
 
@@ -243,7 +244,7 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 | `/idstack:course-builder` | **Content Generator** | Generates complete course content from the manifest: syllabus, module pages, assignment descriptions, and rubric documents. Content follows cognitive load principles. Includes adversarial spec review (auto-validates alignment). For imported courses, switches to gap-fill mode: generates only the artifacts upstream skills flagged as missing, instead of regenerating what already exists in the cartridge. Writes `.idstack/exports/<course-slug>/course-builder.html`. |
 | `/idstack:course-export` | **LMS Publisher** | Exports to any LMS. Generates IMS Common Cartridge (.imscc), SCORM 1.2 packages, or pushes directly to Canvas via API. Shows readiness dashboard before export. The output IS the course. |
 | `/idstack:course-quality-review` | **Quality Auditor** | Full QM-aligned audit plus Community of Inquiry presence layer. 8 structural standards, 3 presence dimensions (teaching, social, cognitive), constructive alignment audit. Parallel sub-agents on Claude Code for speed. Writes `.idstack/exports/<course-slug>/course-quality-review.html`. |
-| `/idstack:accessibility-review` | **Accessibility Reviewer** | WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) enhancement review. Two-tier output: "Must Fix" for accessibility violations, "Should Improve" for UDL recommendations. Parallel sub-agents for WCAG and UDL. Writes `.idstack/exports/<course-slug>/accessibility-review.html`. |
+| `/idstack:accessibility-review` | **Accessibility Reviewer** | WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) enhancement review. Two-tier output: "Necessary changes" for accessibility violations, "Recommended changes" for UDL recommendations. Parallel sub-agents for WCAG and UDL. Writes `.idstack/exports/<course-slug>/accessibility-review.html`. |
 | `/idstack:red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Runs in a clean-context sub-agent so the audit can't inherit build-bias from the parent. Five dimensions in parallel: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Writes `.idstack/exports/<course-slug>/red-team.html` and returns to the parent for a triage-and-fix loop (Critical / Critical+High / All / Skip). Produces a confidence score. |
 | `/idstack:pipeline` | **Orchestrator** | Chains the 8-skill linear pipeline automatically. Auto-skips completed skills. Shows pipeline status. Pause anytime, resume later. Produces `.idstack/exports/<course-slug>/index.html`, a branded course dashboard linking to every per-skill report, with readiness scores, top recurring issues, evidence themes, and where to start. Open in any browser. |
 | `/idstack:learn` | **Memory Manager** | Search, list, delete, promote, and export project learnings. Supports cross-project intelligence. |
@@ -364,7 +365,7 @@ When you run `/idstack:course-import`, it creates the manifest with your course 
 ### How idstack reports back to you
 idstack functions as a design partner rather than an automated content generator. When a skill finishes, it produces two artifacts:
 
-- **Branded HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the human view. Open it in any browser. Every finding follows the same structure: *what we saw* in your course, *what the evidence says* (with a citation tag like `[Assessment-8] [T1]`), *why it matters* for learners, and *what to consider* changing. Suggestions, not directives: the designer owns the course, while idstack provides the analytical review.
+- **Branded HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the human view. Open it in any browser. Every finding follows the same structure: *what we saw* in your course, *what the evidence says* (with a citation tag like `[Assessment-8] [T1]`), *why it matters* for learners, and a *recommendation* for what to change. Recommendations, not orders: the designer owns the course, while idstack provides the analytical review.
 - **Manifest section** at `.idstack/project.json` — the system view. Same findings in JSON so other skills can read and act on them.
 
 The visual contract lives in [`templates/report.html.tmpl`](templates/report.html.tmpl) (the HTML skeleton) and [`templates/assets/idstack.css`](templates/assets/idstack.css) (the branded stylesheet). The content contract is in [`templates/report-format.md`](templates/report-format.md). Re-running a skill overwrites its report; the timeline at `.idstack/timeline.jsonl` carries the run history.

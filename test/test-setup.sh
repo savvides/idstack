@@ -37,13 +37,18 @@ EOF
   return 0
 }
 
-# run_setup <flags...> — runs setup with the fake HOME and stub PATH.
+# run_setup <flags...> — runs setup with the fake HOME and stub PATH. Each
+# run's output is also added to $WORK/ste-runs.txt for the writing-standard
+# check at the end of this suite.
 run_setup() {
+  local _rc=0
   ( export HOME="$WORK/env/home" \
            PATH="$WORK/env/bin:$PATH" \
            CLAUDE_STUB_LOG="$WORK/env/claude.log" \
            CLAUDE_STUB_EXIT="${STUB_EXIT:-0}"
-    cd "$WORK/env/idstack" && ./setup "$@" ) >"$WORK/env/out.log" 2>&1
+    cd "$WORK/env/idstack" && ./setup "$@" ) >"$WORK/env/out.log" 2>&1 || _rc=$?
+  cat "$WORK/env/out.log" >> "$WORK/ste-runs.txt"
+  return "$_rc"
 }
 
 echo "test-setup"
@@ -67,6 +72,10 @@ check "unknown flag exits 2" \
 setup_env
 check "--help exits 0 and documents --keep-legacy" \
   "raw_setup --help 2>/dev/null | grep -q -- '--keep-legacy'"
+
+setup_env
+check "--help text obeys the writing standard (ASD-STE100)" \
+  "( set -o pipefail; raw_setup --help 2>&1 | python3 '$SRC/bin/idstack-ste-check' --format text - )"
 
 # --- scope selection ---
 setup_env
@@ -168,6 +177,12 @@ check "fixture is genuinely stale before setup runs" \
 run_setup
 check "setup regenerates stale generated files" \
   "'$WORK/env/idstack/bin/idstack-gen-skills' --dry-run"
+
+# --- writing standard (ASD-STE100) ---
+# Every run_setup above: a normal install, --local, --keep-legacy, legacy
+# cleanup, an unknown directory and a failed 'claude' call.
+check "setup output obeys the writing standard in every run of this suite" \
+  "python3 '$SRC/bin/idstack-ste-check' --format text '$WORK/ste-runs.txt'"
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

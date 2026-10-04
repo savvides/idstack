@@ -37,7 +37,11 @@
 
     <section class="summary">
       <h2>Across your course</h2>
-      <p>{{cross_cutting_summary_2_to_3_paragraphs}}</p>
+      <!-- One paragraph in each <p>, with a maximum of six sentences.
+           Remove the third <p> if the summary has two paragraphs. -->
+      <p>{{cross_cutting_verdict_paragraph}}</p>
+      <p>{{cross_cutting_themes_paragraph}}</p>
+      <p>{{cross_cutting_start_paragraph}}</p>
     </section>
 
     <section class="readiness">
@@ -140,7 +144,7 @@
     <section class="cross-cutting">
       <h2>Top cross-cutting issues</h2>
       <ol>
-        <li><strong>{{issue_title}}</strong> — appears in {{skill_list}}. <cite class="citation">[{{domain}}-{{n}}] [{{tier}}]</cite><br>{{one_line_why}}</li>
+        <li><strong>{{issue_title}}</strong> — found in {{skill_list}}.<br>{{one_line_why}} <cite class="citation">[{{domain}}-{{n}}] [{{tier}}]</cite></li>
         <!-- 3–5 items pulled from per-skill reports -->
       </ol>
     </section>
@@ -148,7 +152,7 @@
     <section class="artifacts">
       <h2>LMS export artifacts</h2>
       <!-- Only show files actually present in the folder. If none, write:
-           <p>No LMS packages produced yet. Run <code>/idstack:course-export</code> to package this course.</p>
+           <p>This folder has no LMS packages. To make them, run <code>/idstack:course-export</code>.</p>
       -->
       <ul>
         <li><code>course-export.imscc</code> — IMS Common Cartridge (Canvas, Blackboard, Moodle, D2L)</li>

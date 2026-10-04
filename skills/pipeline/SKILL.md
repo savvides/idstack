@@ -1,8 +1,8 @@
 ---
 name: pipeline
 description: |
-  Pipeline orchestrator for idstack. Chains skills from /needs-analysis through
-  /course-export in evidence-based order, auto-skipping completed skills.
+  Pipeline orchestrator for idstack. Runs the skills from /needs-analysis to
+  /course-export in the evidence-based sequence. It skips the skills that are complete.
   Handles fresh starts (no manifest) and resumption (partial pipeline). (idstack)
 allowed-tools:
   - Bash
@@ -41,6 +41,143 @@ lean on:
 
 These are **directives to the model**, not magic words — interpret them as the protocol above.
 
+## Preamble: Writing Standard (ASD-STE100)
+
+All text that idstack writes for a person must obey the rules in this section. This
+includes chat text, AskUserQuestion questions and options, HTML reports, the course
+dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
+reads the word list between the two `ste-core` markers. `extension/shared/ste-rules.js`
+has a copy of the text between the markers. If you change this text, change the copy at
+the same time.
+
+The rules also apply to the text that idstack writes in `.idstack/project.json` and in
+learnings, for example finding text and recommendations. Other skills use this text in
+their output. The checker does not read these files. Do not change text that comes from
+the course. Do not change JSON keys or the values that a script or a skill reads.
+
+<!-- ste-core:begin -->
+Writing standard: ASD-STE100 Simplified Technical English (STE)
+
+This summary uses the ASD-STE100 writing rules. ASD does not endorse idstack. This summary does not replace the ASD-STE100 standard.
+
+Use these rules only for text in English. If the text is not in English, do not use these rules.
+
+Words:
+- Use one word for one meaning. Use the same term for the same item in all of the text.
+- Use short words that are easy to understand. Do not use the words in the first column of the word list.
+- Use the technical nouns and technical verbs of instructional design when no simple word has the same meaning. Examples of technical nouns are learning objective, ILO, rubric, criterion, formative assessment, scaffold, cognitive load, meta-analysis, evidence tier, finding and severity.
+- The Bloom's taxonomy verbs are technical verbs. Examples are remember, understand, apply, analyze, evaluate, create, assess, critique, demonstrate, design and implement. Use them in learning objectives and in text about Bloom's levels.
+- Software verbs are technical verbs. Examples are run, click, open, save, install and update.
+- Do not use a technical noun as a verb.
+- Do not use contractions. Write "do not", not "don't".
+- Do not use Latin abbreviations. Write "for example", not "e.g.".
+
+Verbs:
+- Use the active voice. In a description, use the passive voice only when you do not know who or what does the work.
+- Use only the simple tenses. Write "writes", "wrote" or "will write". Do not write "has written", "had written" or "is writing".
+- Do not use a verb that ends in "-ing". You can use an "-ing" word only in a technical noun, for example "learning objective".
+
+Sentences:
+- Write one topic in each sentence.
+- An instruction has a maximum of 20 words. A description has a maximum of 25 words.
+- Do not remove words, for example "the", "a" and "is", to make a sentence shorter.
+- A noun cluster has a maximum of three nouns.
+- Do not use semicolons. Write two sentences.
+- Use a vertical list for text that has many parts.
+
+Instructions and descriptions:
+- Write an instruction as a command. Write one instruction in each sentence. Give a number to each step.
+- If the reader must know a condition first, write the condition first. Example: "If the course has no rubric, add a rubric."
+- Do not write commands in a description. A paragraph has one topic and a maximum of six sentences.
+
+Recommendations:
+- First show the problem that idstack found. Then show the evidence. Then give the recommendation.
+- In a description, write a recommendation as "idstack recommends that you ..." or as "You can ...".
+- In a numbered list of steps, write each step as a command.
+- Do not use "consider", "may", "should" or "suggest".
+
+Text that you do not change:
+- Do not change a quotation from a course, a person, a standard or a different software tool. Put each quotation in quotation marks. A new version of a text is not a quotation. Write it with these rules.
+- Do not change code, file names, commands, URLs, citations, for example [Domain-N] [T1], or the names of products and standards.
+
+Word list. Do not use the word in the first column. Use the word in the second column.
+
+| Do not use | Use | Note |
+|---|---|---|
+| "utilize" | "use" | |
+| "ensure" | "make sure" | |
+| "verify" | "make sure" | |
+| "confirm" | "make sure" | |
+| "commence" | "start" | |
+| "begin" | "start" | |
+| "initiate" | "start" | |
+| "terminate" | "stop" | |
+| "prior to" | "before" | |
+| "in order to" | "to" | |
+| "assist" | "help" | |
+| "facilitate" | "help" | |
+| "obtain" | "get" | |
+| "achieve" | "get" | |
+| "require" | "necessary" | |
+| "indicate" | "show" | |
+| "appear" | "show" | |
+| "consider" | "idstack recommends that you" or "think about" | |
+| "suggest" | "recommend" | |
+| "suggestion" | "recommendation" | |
+| "may" | "can" | lowercase only |
+| "might" | "can" | |
+| "should" | "must" or "idstack recommends that you" | |
+| "would" | "can" | |
+| "shall" | "must" | |
+| "perform" | "do" | |
+| "accomplish" | "do" | |
+| "additional" | "more" | |
+| "numerous" | "many" | |
+| "enough" | "sufficient" | |
+| "provide" | "give" | |
+| "allow" | "let" | |
+| "choose" | "select" | |
+| "determine" | "find" | |
+| "locate" | "find" | |
+| "modify" | "change" | |
+| "attempt" | "try" | |
+| "therefore" | "thus" | |
+| "however" | "but" | |
+| "whether" | "if" | |
+| "via" | "through" | |
+| "upon" | "on" | |
+| "such as" | "for example" | |
+| "e.g." | "for example" | |
+| "i.e." | "that is" | |
+| "etc." | (write the full list) | |
+| "please" | (remove the word) | |
+<!-- ste-core:end -->
+
+How to use the standard:
+
+1. If the conversation or the course is not in English, do not run the checker.
+2. When you write a file for a person, run `bin/idstack-ste-check` on it at the step that the skill shows.
+3. If the checker shows problems, write each sentence that it shows again. Then write the file again and run the checker again.
+4. Run the checker a maximum of three times. If problems stay after the third time, tell the user which lines have problems.
+5. If the checker does not run, continue the skill. Tell the user one time that the check did not run.
+
+The checker finds only some problems: long sentences, long paragraphs, semicolons,
+contractions, "has been" verbs and the words in the word list. Apply all of the rules
+when you write. The verbosity and experience settings change how much you write. They do
+not change these rules.
+
+Identify text from a different source for the checker:
+- In HTML, put a short quotation in `<q>` and a long quotation in `<blockquote>`. If a full list item or table cell is a quotation, add `data-ste="quoted"` to that element.
+- In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
+- The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
+- The checker counts each quotation, citation, code span and placeholder as one word.
+
+When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
+prompt. The sub-agent cannot see this preamble.
+
+Example sentences in a skill show the content of a message. Write them in STE when you
+use them.
+
 ## Preamble: Update Check
 
 ```bash
@@ -68,7 +205,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD"
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A newer version of idstack is available. Run `cd $_IDSTACK && git pull && ./setup` to update. (The `./setup` step is required — it cleans up legacy symlinks.)" Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -149,8 +286,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Tip: create `~/.idstack/profile.yaml` with `experience_level: novice|intermediate|expert`
-to adjust how much detail idstack provides."
+mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
+with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Evidence Engine & Consensus QA
 
@@ -176,8 +313,8 @@ _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q 
 **If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
 subject-specific pedagogical claims will be verified against peer-reviewed research.
 **If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Tip: Set CONSENSUS_API_KEY
-to enable live literature verification via Consensus."
+run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
+to let idstack use Consensus to check its claims against published research."
 
 ## Preamble: Context Recovery
 
@@ -283,10 +420,10 @@ mention it as a recurring pattern with its evidence citation.
 Example: "Welcome back. Last session you ran /idstack:course-import."
 
 **If SUGGESTED_NEXT is shown:** Mention the suggested next skill naturally.
-Example: "Based on your progress, /idstack:assessment-design is the natural next step."
+Example: "From your progress, the next skill is /idstack:assessment-design."
 
 **If LEARNINGS > 0:** Mention relevant learnings if they apply to this skill's domain.
-Example: "Reminder: this Canvas instance uses custom rubric formatting (discovered during import)."
+Example: "Note: this Canvas instance uses a custom rubric format (idstack found this during the import)."
 
 ---
 
@@ -358,7 +495,7 @@ starting point.
 **Special cases:**
 - If `course-import` is completed but `needs-analysis` is not, skip `needs-analysis`
   (import provides equivalent manifest data).
-- If ALL skills are completed, tell the user via AskUserQuestion: "All pipeline skills have been completed. What would you like to do?" Options:
+- If ALL skills are completed, tell the user via AskUserQuestion: "All pipeline skills are completed. What do you want to do?" Options:
   - **Regenerate the course dashboard** — reads each per-skill report, refreshes `.idstack/exports/<course-slug>/index.html` with the latest cross-cutting view (no skills re-run). Recommended after editing per-skill outputs by hand.
   - **Re-run a specific skill** — e.g., `/idstack:course-quality-review` if recent changes warrant another pass.
   - **Exit** — leave everything as-is.
@@ -372,7 +509,7 @@ Show the user a status table before starting:
 Pipeline Status:
   [done] /idstack:needs-analysis
   [done] /idstack:learning-objectives
-  [next] /idstack:assessment-design      <-- starting here
+  [next] /idstack:assessment-design      <-- the run starts here
   [    ] /idstack:course-builder
   [    ] /idstack:course-quality-review
   [    ] /idstack:accessibility-review
@@ -390,7 +527,7 @@ ask which one using AskUserQuestion with the skill list as options.
 
 For each skill from the starting point onward:
 
-1. Announce: "Starting /idstack:<skill-name>..."
+1. Announce: "/idstack:<skill-name> starts."
 2. Invoke the skill using the `Skill` tool with the **plugin-namespaced** skill name
    (e.g., `skill: "idstack:needs-analysis"`). Plugin skills are addressed as
    `plugin:skill` — a bare `"needs-analysis"` does not resolve in Claude Code.
@@ -400,14 +537,14 @@ For each skill from the starting point onward:
 
 **If the `Skill` invocation fails** (the tool is unavailable, or the child skill cannot be
 resolved), degrade gracefully rather than silently skipping the stage: print exactly what
-the user should type to run it themselves (e.g., "Type `/idstack:needs-analysis` to run the
-next stage, then resume by typing `/idstack:pipeline` again") and STOP. The pipeline picks
+the user should type to run it themselves (for example, "Type `/idstack:needs-analysis` to run the
+next stage. Then type `/idstack:pipeline` again to continue the pipeline") and STOP. The pipeline picks
 up on the next `/idstack:pipeline` invocation by re-reading the timeline and continuing from
 the new starting point. Generate the course dashboard (Step 4) before stopping so the
 partial-run dashboard is up to date.
 
 **Between skills**, briefly announce the transition:
-"[skill-name] complete. Course dashboard refreshed. Moving to /idstack:<next-skill>..."
+"[skill-name] is completed. I updated the course dashboard. The next skill is /idstack:<next-skill>."
 
 ### Step 4: Generate Course Dashboard
 
@@ -465,20 +602,49 @@ Also read `.idstack/project.json` for project_name, scores (`quality_review.over
 
 - **`{{project_name}}`:** from the manifest top-level.
 - **`{{pipeline_run_status}}`:** e.g., "complete · 8 of 8 skills" or "partial · 4 of 8 skills".
-- **Cross-cutting summary** (replaces `{{cross_cutting_summary_2_to_3_paragraphs}}`): 2–3 paragraphs of cross-cutting synthesis. Designed to be read by a designer (or stakeholder) who hasn't yet opened the per-skill reports. Lead with the verdict, follow with the themes that recur across multiple skills, end with where to start.
+- **Cross-cutting summary** (replaces `{{cross_cutting_verdict_paragraph}}`, `{{cross_cutting_themes_paragraph}}` and `{{cross_cutting_start_paragraph}}`): two or three paragraphs of cross-cutting synthesis for a designer or stakeholder who did not open the per-skill reports. Put each paragraph in a different `<p>`, with a maximum of six sentences.
+  - The first paragraph gives the verdict.
+  - The second paragraph gives the themes that occur in more than one skill.
+  - The third paragraph tells where to start. It is optional. If you do not use it, remove its `<p>`.
 - **Readiness scoreboard** — populate the four `<div class="score verdict-{verdict}">` cards (Quality, Accessibility, Red-team confidence, Overall verdict). Verdict values: `ready` (green border) / `issues` (amber) / `blocked` (red) / `pending` (grey, when skill hasn't run yet). Thresholds match `bin/idstack-status --readiness`.
 - **Pipeline status table** — one row per pipeline skill. `status-done` if the per-skill HTML report file exists, `status-pending` otherwise. `signal` column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). Link the report cell to the relative HTML filename (e.g., `<a href="needs-analysis.html">needs-analysis.html</a>`). Add an optional course-import row when that report is present.
 - **Top cross-cutting issues** (`<ol>` items): 3–5 highest-impact findings that appear in or affect multiple per-skill reports. Each item shows the source skill(s) and the evidence tier as a `<cite class="citation">` element.
-- **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: `<p>No LMS packages produced yet. Run <code>/idstack:course-export</code> to package this course.</p>`.
+- **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: `<p>This folder has no LMS packages. To make them, run <code>/idstack:course-export</code>.</p>`.
 - **Where to start** — one paragraph. The single change (or 2–3 changes) that would address the largest number of cross-cutting concerns. Anchored to a specific finding id in a specific per-skill report so the designer can act on it (e.g., "Address `assess-1` in <code>assessment-design.html</code> first…").
 
 The dashboard is overwritten on every pipeline run — historical dashboards are not retained. The timeline at `.idstack/timeline.jsonl` carries the run history.
 
+**Writing standard check.** In this command, replace `<path>` with the path from the "Dashboard:" line. Then run the command.
+
+```bash
+# Resolve the idstack install dir. Re-derived at the top of every bash block —
+# blocks run in separate shells, so a value derived in an earlier block is not
+# available here. Priority: explicit env overrides, then the Claude Code
+# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
+_IDSTACK=""
+# Marketplace cache holds one dir per installed version. Sort the basenames by
+# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
+# 3.10.0.0 and would pick a stale install once the minor hits double digits.
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+
 ### Step 5: Pipeline Complete
 
 When all remaining skills have been executed:
-- Announce: "Pipeline complete. Your course has been through all 8 stages."
-- Confirm the dashboard path: "Course dashboard at `.idstack/exports/<course-slug>/index.html` — open it in any browser for the cross-cutting view; the per-skill HTML reports in the same folder carry the full detail. Zip the folder to hand it to a stakeholder."
+- Announce: "The pipeline is completed. Your course went through all 8 stages."
+- Confirm the dashboard path: "The course dashboard is at `.idstack/exports/<course-slug>/index.html`. Open it in a web browser to see the cross-cutting view. The per-skill HTML reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
 - If `/idstack:course-quality-review` produced a score, show it.
 - Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.
 - Log the pipeline run so "the pipeline was run" is recoverable from the timeline:
