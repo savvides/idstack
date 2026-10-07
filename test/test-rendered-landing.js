@@ -57,7 +57,9 @@ const problems = [];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const userDataDir = path.join(os.tmpdir(), `idstack-rendered-${process.pid}`);
-const port = 9400 + (process.pid % 500);
+// A cold Chrome on a fresh ubuntu runner has missed a 12s deadline. The wait costs time only
+// when Chrome is stuck, so it is generous.
+const STARTUP_SECONDS = 30;
 let chrome = null;
 
 function killChrome() {
@@ -69,22 +71,34 @@ process.on('exit', killChrome);
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { killChrome(); process.exit(1); });
 
 async function main() {
+  // Port 0: Chrome picks a free port and prints its address on stderr, so no other process can
+  // hold the port. Keep reading stderr for the whole run. A full pipe stops Chrome.
   chrome = spawn(chromePath, [
-    '--headless=new', `--remote-debugging-port=${port}`,
+    '--headless=new', '--remote-debugging-port=0',
     '--no-first-run', '--no-default-browser-check', '--disable-gpu',
     '--hide-scrollbars', '--no-sandbox',
     `--user-data-dir=${userDataDir}`, 'about:blank',
-  ], { stdio: 'ignore' });
+  ], { stdio: ['ignore', 'ignore', 'pipe'] });
 
-  let wsUrl = null;
-  for (let i = 0; i < 80; i++) {
-    try {
-      const res = await fetch(`http://127.0.0.1:${port}/json/version`);
-      wsUrl = (await res.json()).webSocketDebuggerUrl;
-      break;
-    } catch { await sleep(150); }
-  }
-  if (!wsUrl) throw new Error('Chrome did not expose a debugging port within 12s');
+  let stderr = '';
+  const lastOutput = () => stderr.trim().split('\n').slice(-3).join(' / ');
+  const wsUrl = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(
+      `Chrome did not open a debugging port within ${STARTUP_SECONDS}s. Last output: ${lastOutput()}`)),
+      STARTUP_SECONDS * 1000);
+    chrome.stderr.on('data', chunk => {
+      stderr += chunk;
+      const m = stderr.match(/DevTools listening on (ws:\/\/\S+)/);
+      if (m) { clearTimeout(timer); resolve(m[1]); }
+      stderr = stderr.slice(-2000);
+    });
+    chrome.on('error', err => { clearTimeout(timer); reject(err); });
+    chrome.on('exit', (code, signal) => {
+      clearTimeout(timer);
+      reject(new Error(`Chrome stopped (${signal || `exit code ${code}`}) before it opened ` +
+        `a debugging port. Last output: ${lastOutput()}`));
+    });
+  });
 
   const ws = new WebSocket(wsUrl);
   await new Promise((res, rej) => {

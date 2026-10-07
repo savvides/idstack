@@ -362,6 +362,16 @@ if command -v node &>/dev/null; then
   # targets, column counts) rather than the CSS text. Skips loudly without a browser; the
   # text suite above still runs. See test/test-rendered-landing.js for why both exist.
   check "rendered landing page tests pass" "node '$IDSTACK_DIR/test/test-rendered-landing.js'"
+  # A Chrome that stops at startup must fail the test at once and give its exit code and last
+  # output. Before, the test waited 12s and said only that no debugging port opened, so two CI
+  # failures left no clue. Needs no real browser: CHROME_PATH points at a stub that stops.
+  FAKE_CHROME_DIR=$(mktemp -d)
+  printf '#!/bin/sh\necho "fake-chrome-startup-failure" >&2\nexit 3\n' > "$FAKE_CHROME_DIR/chrome"
+  chmod +x "$FAKE_CHROME_DIR/chrome"
+  check "rendered landing test reports why Chrome stopped at startup" \
+    "CHROME_PATH='$FAKE_CHROME_DIR/chrome' node '$IDSTACK_DIR/test/test-rendered-landing.js'" \
+    1 "exit code 3.*fake-chrome-startup-failure"
+  rm -rf "$FAKE_CHROME_DIR"
   # The fixed text that the extension shows must obey ASD-STE100: the demo audits,
   # the Markdown export, the rendered findings, the error messages and the side-panel
   # page. pipefail: a printer that crashes must fail here, not send empty text.
@@ -376,6 +386,7 @@ else
   echo "  SKIP: chrome extension tests (node not installed)"
   echo "  SKIP: responsive landing page tests (node not installed)"
   echo "  SKIP: rendered landing page tests (node not installed)"
+  echo "  SKIP: rendered landing startup report (node not installed)"
   echo "  SKIP: extension STE checks (node not installed)"
 fi
 

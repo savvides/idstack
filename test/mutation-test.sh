@@ -1841,6 +1841,20 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "a side-panel loader step writes non-STE text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 50. The rendered landing test stops watching for a Chrome that stops at startup ->
+# smoke-test must fail. Then that Chrome costs the full startup wait and the error
+# does not give its exit code. Two CI failures left no clue in this way.
+fresh
+python3 - "$WORK/r/test/test-rendered-landing.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    chrome.on('exit', (code, signal) => {\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    chrome.on('no-such-event', (code, signal) => {\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the rendered landing test ignores a Chrome that stops at startup" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
