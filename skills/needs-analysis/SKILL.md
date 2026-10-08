@@ -730,6 +730,8 @@ Based on the learner profile, note which instructional strategies are appropriat
 
 Generate an HTML report so the designer has a single document to read. The report follows the **visual contract** in `templates/report.html.tmpl` (the skeleton) and the **content contract** in `templates/report-format.md` (severity ordering, citation format, what each placeholder must carry).
 
+In this command, replace `<project name>` with the course title from Step 1. Then run the command.
+
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
@@ -751,8 +753,12 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-# Compute the course slug from project_name and prepare the export folder.
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
+# Compute the course slug from this session's course title and prepare the export folder.
+# Do not read project_name from the manifest here. Step 7 writes it, so on a first run
+# the manifest has no name yet and the report lands in exports/untitled-course/.
+IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
+<project name>
+IDSTACK_PROJECT_NAME
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/needs-analysis.html"
@@ -822,6 +828,8 @@ Create or update the project manifest. Use the Write tool to write `.idstack/pro
 6. If this is a new manifest, initialize ALL sections (including learning_objectives
    and quality_review) with empty/default values so downstream skills find the
    expected structure.
+7. Set `project_name` to the text that you put in place of `<project name>` in
+   Step 6. The next skills use `project_name` to find the report folder.
 
 Write the manifest, then confirm to the user:
 

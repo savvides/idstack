@@ -192,6 +192,20 @@ same = a and b and " ".join(a.group(1).split()) == " ".join(b.group(1).split())
 sys.exit(0 if same else 1)'
 check "learning_preferences_note has the same words in manifest-schema.md and needs-analysis" "python3 -c '$NOTE_SYNC_PY' '$IDSTACK_DIR'"
 
+# needs-analysis and course-import write project_name, and they write the
+# report before the manifest. A slug read from the manifest at that point is
+# empty on a first run: the report went to exports/untitled-course/ and every
+# later skill wrote to exports/<real-slug>/. The slug must come from the
+# course title of the session, the same text the skill then writes as project_name.
+SLUG_SOURCE_PY='import re, sys
+s = open(sys.argv[1], encoding="utf-8").read()
+blocks = [b for b in re.findall(r"```bash\n(.*?)```", s, re.S) if "idstack-slugify" in b]
+ok = len(blocks) == 1 and ".idstack/project.json" not in blocks[0] and "<project name>" in blocks[0]
+sys.exit(0 if ok else 1)'
+for skill in needs-analysis course-import; do
+  check "$skill takes the report slug from the course title, not the manifest it writes later" "python3 -c '$SLUG_SOURCE_PY' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+
 # Canonical manifest section names only — these five non-canonical tokens once
 # shipped in re-run checks and prose, making re-run detection dead in 5 skills.
 for skill in $SKILLS; do

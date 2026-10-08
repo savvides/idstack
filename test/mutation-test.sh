@@ -1914,6 +1914,39 @@ PY
 regen
 expect_fail "a check step folds a missing checker into the python3 token" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 52a-52b. needs-analysis and course-import write project_name, and they write the
+# report before the manifest. A slug that comes from the manifest is empty on a
+# first run, so the report goes to exports/untitled-course/ and each later skill
+# writes to exports/<real-slug>/. Each skill has its own case, so a check that
+# only reads the first skill cannot report GUARDED.
+# 52a. needs-analysis reads the report slug from the manifest again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/needs-analysis/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'\n<project name>\nIDSTACK_PROJECT_NAME\n"
+new = '''_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")\n'''
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, new, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "needs-analysis reads the report slug from the manifest" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 52b. course-import reads the report slug from the manifest again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/course-import/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'\n<project name>\nIDSTACK_PROJECT_NAME\n"
+new = '''_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")\n'''
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, new, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-import reads the report slug from the manifest" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

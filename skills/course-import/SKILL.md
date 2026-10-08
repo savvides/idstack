@@ -1122,6 +1122,8 @@ to check the Bloom's levels and the alignment with activities and assessments.
 
 Before writing the manifest, generate an HTML report so the designer has a single document about what came in and where the quality flags are. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
 
+In this command, replace `<project name>` with the course title from the import. Then run the command.
+
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
@@ -1143,8 +1145,12 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-# Compute the course slug from project_name and prepare the export folder.
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
+# Compute the course slug from this session's course title and prepare the export folder.
+# Do not read project_name from the manifest here. Step 6 writes it, so on a first import
+# the manifest has no name yet and the report lands in exports/untitled-course/.
+IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
+<project name>
+IDSTACK_PROJECT_NAME
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-import.html"
@@ -1218,7 +1224,7 @@ Create or update the project manifest.
 
 **Fields populated by /idstack:course-import:**
 
-- `project_name` — from course title
+- `project_name` — from course title. Use the text that you put in place of `<project name>` in Step 5.
 - `context.modality` — inferred from course structure (async=online, sync sessions=hybrid)
 - `context.timeline` — from term/date info if available
 - `context.available_tech` — from detected resource types (LMS, video, discussions, etc.)
