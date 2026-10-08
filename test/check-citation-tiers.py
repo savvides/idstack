@@ -13,7 +13,9 @@ Forms checked, after HTML tags are removed:
   [A-1] [T1]             the code must be T1 in references.md
   [A-1] [B-2] [T1]       each code must be T1 in references.md
   [A-1] [B-2] [T1] [T3]  refused: put the tier after each code instead
-Each [Code-N] must also be an entry in references.md.
+Codes can have commas between them ("[A-1], [B-2] [T1]"), and one line break
+can split a citation. A blank line ends it. Each [Code-N] must also be an entry
+in references.md.
 
 Scope: skills/*/SKILL.md.tmpl, templates/, README.md and docs/index.html. The
 generated SKILL.md files are left out (they repeat the templates, and
@@ -33,8 +35,10 @@ import sys
 # "- [CogLoad-4] Sweller, J. (1994). ... *Learning and Instruction*. T5"
 REF_RE = re.compile(r"^- \[([A-Za-z]+-\d+)\] .* (T[1-5])\s*$")
 CODE_RE = re.compile(r"\[([A-Z][A-Za-z]*-\d+)\]")
+# Between two items: spaces, an optional comma, and at most one line break.
+SEP = r"[ \t]*(?:,[ \t]*)?(?:\n[ \t]*)?"
 # One or more codes, then one or more tiers.
-GROUP_RE = re.compile(r"((?:\[[A-Z][A-Za-z]*-\d+\]\s*)+)((?:\[T[1-5]\]\s*)+)")
+GROUP_RE = re.compile(r"((?:\[[A-Z][A-Za-z]*-\d+\]" + SEP + r")+)((?:\[T[1-5]\]" + SEP + r")+)")
 # The landing page shows a tier as <span class="tier tier-1">T1</span>.
 TIER_SPAN_RE = re.compile(r'<span class="tier tier-[1-5]">(T[1-5])</span>')
 TAG_RE = re.compile(r"<[^>]+>")
@@ -79,29 +83,29 @@ def main():
     cited = 0
     for path in sources(root):
         rel = os.path.relpath(path, root)
-        lines = io.open(path, encoding="utf-8").read().split("\n")
-        for n, raw in enumerate(lines, 1):
-            line = plain(raw)
-            where = "%s:%d" % (rel, n)
+        lines = [plain(raw) for raw in io.open(path, encoding="utf-8").read().split("\n")]
+        found = []
+        for n, line in enumerate(lines, 1):
             for code in CODE_RE.findall(line):
                 if code not in refs:
-                    problems.append("%s: [%s] is not in evidence/references.md" % (where, code))
-            for m in GROUP_RE.finditer(line):
-                codes = CODE_RE.findall(m.group(1))
-                tiers = re.findall(r"T[1-5]", m.group(2))
-                cited += 1
-                if len(tiers) > 1:
-                    problems.append(
-                        "%s: %s gives more than one tier. Put the tier after each code."
-                        % (where, m.group(0).strip())
-                    )
-                    continue
-                for code in codes:
-                    if code in refs and refs[code] != tiers[0]:
-                        problems.append(
-                            "%s: [%s] is %s in evidence/references.md, not %s"
-                            % (where, code, refs[code], tiers[0])
-                        )
+                    found.append((n, "[%s] is not in evidence/references.md" % code))
+        # Match on the whole file, so that a citation split by a line break is seen.
+        text = "\n".join(lines)
+        for m in GROUP_RE.finditer(text):
+            n = text.count("\n", 0, m.start()) + 1
+            codes = CODE_RE.findall(m.group(1))
+            tiers = re.findall(r"T[1-5]", m.group(2))
+            cited += 1
+            if len(tiers) > 1:
+                found.append((n, "%s gives more than one tier. Put the tier after each code."
+                              % " ".join(m.group(0).split())))
+                continue
+            for code in codes:
+                if code in refs and refs[code] != tiers[0]:
+                    found.append((n, "[%s] is %s in evidence/references.md, not %s"
+                                  % (code, refs[code], tiers[0])))
+        for n, message in sorted(found, key=lambda item: item[0]):
+            problems.append("%s:%d: %s" % (rel, n, message))
 
     # A pattern that stops matching would make every check above vacuous.
     if cited == 0:

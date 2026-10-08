@@ -95,8 +95,13 @@ async function main() {
     chrome.on('error', err => { clearTimeout(timer); reject(err); });
     chrome.on('exit', (code, signal) => {
       clearTimeout(timer);
-      reject(new Error(`Chrome stopped (${signal || `exit code ${code}`}) before it opened ` +
+      const fail = () => reject(new Error(`Chrome stopped (${signal || `exit code ${code}`}) before it opened ` +
         `a debugging port. Last output: ${lastOutput()}`));
+      // Chrome's helper processes can write to stderr after the main process exits.
+      // Wait for stderr to close, for 2s at most, so the message gives that output.
+      if (chrome.stderr.readableEnded) return fail();
+      const drained = setTimeout(fail, 2000);
+      chrome.stderr.once('end', () => { clearTimeout(drained); fail(); });
     });
   });
 

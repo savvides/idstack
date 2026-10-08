@@ -142,6 +142,9 @@ if command -v python3 &>/dev/null; then
 $TIER_DRIFT"
   check "skill and template citations state their evidence/references.md tier" \
     "if [ -n \"\$TIER_DRIFT\" ]; then printf '%s\n' \"\$TIER_DRIFT\"; false; fi"
+  # A clean repo proves nothing about a form the checker cannot see. These tests
+  # give it codes separated by commas and a citation that a line break splits.
+  check "citation-tier checker unit tests pass" "python3 '$IDSTACK_DIR/test/test-citation-tiers.py'"
 fi
 
 check "doc accuracy check passes" "python3 '$IDSTACK_DIR/test/check-doc-accuracy.py' '$IDSTACK_DIR'"
@@ -218,6 +221,24 @@ ok = len(blocks) == 1 and ".idstack/project.json" not in blocks[0] and "<project
 sys.exit(0 if ok else 1)'
 for skill in needs-analysis course-import; do
   check "$skill takes the report slug from the course title, not the manifest it writes later" "python3 -c '$SLUG_SOURCE_PY' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+# If the model runs the slug block with <project name> still in it, the block must
+# stop before it makes a folder. A warning alone left an empty exports/project-name/.
+# Run the generated block in an empty directory, as a skill does.
+SLUG_GUARD_PY='import os, re, shutil, subprocess, sys, tempfile
+s = open(sys.argv[1], encoding="utf-8").read()
+block = [b for b in re.findall(r"```bash\n(.*?)```", s, re.S) if "idstack-slugify" in b][0]
+env = dict(os.environ, IDSTACK_HOME=sys.argv[2])
+env.pop("CLAUDE_PLUGIN_ROOT", None)
+d = tempfile.mkdtemp()
+r = subprocess.run(["bash", "-c", block], cwd=d, env=env, stdout=subprocess.PIPE,
+                   stderr=subprocess.STDOUT, universal_newlines=True)
+made = os.path.exists(os.path.join(d, ".idstack", "exports", "project-name"))
+shutil.rmtree(d)
+print(r.stdout)
+sys.exit(0 if "PROJECT_NAME_NOT_SET" in r.stdout and r.returncode != 0 and not made else 1)'
+for skill in needs-analysis course-import; do
+  check "$skill stops before it makes a folder for an unreplaced course title" "python3 -c '$SLUG_GUARD_PY' '$IDSTACK_DIR/skills/$skill/SKILL.md' '$IDSTACK_DIR'"
 done
 
 # Canonical manifest section names only — these five non-canonical tokens once
@@ -426,6 +447,14 @@ if command -v node &>/dev/null; then
   check "rendered landing test reports why Chrome stopped at startup" \
     "CHROME_PATH='$FAKE_CHROME_DIR/chrome' node '$IDSTACK_DIR/test/test-rendered-landing.js'" \
     1 "exit code 3.*fake-chrome-startup-failure"
+  # Chrome's helper processes can write to stderr after the main process exits. The
+  # message must still give that output, so the test waits for stderr to close. The
+  # stub's child writes 0.2s after the stub exits, which makes the case certain.
+  printf '#!/bin/sh\n(sleep 0.2; echo "fake-chrome-late-output" >&2) &\nexit 4\n' > "$FAKE_CHROME_DIR/late"
+  chmod +x "$FAKE_CHROME_DIR/late"
+  check "rendered landing test gives output that Chrome writes after it exits" \
+    "CHROME_PATH='$FAKE_CHROME_DIR/late' node '$IDSTACK_DIR/test/test-rendered-landing.js'" \
+    1 "exit code 4.*fake-chrome-late-output"
   rm -rf "$FAKE_CHROME_DIR"
   # The fixed text that the extension shows must obey ASD-STE100: the demo audits,
   # the Markdown export, the rendered findings, the error messages and the side-panel
@@ -442,6 +471,7 @@ else
   echo "  SKIP: responsive landing page tests (node not installed)"
   echo "  SKIP: rendered landing page tests (node not installed)"
   echo "  SKIP: rendered landing startup report (node not installed)"
+  echo "  SKIP: rendered landing late-output report (node not installed)"
   echo "  SKIP: extension STE checks (node not installed)"
 fi
 
