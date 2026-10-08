@@ -464,7 +464,7 @@ Key findings encoded as decision rules in this skill:
   information in a carefully managed sequence — controlling the number of interacting
   elements learners must process simultaneously — produces better learning outcomes
   than unstructured content delivery. This applies to both the ordering of topics
-  within modules and the progression of complexity across a course [CogLoad-4] [T1].
+  within modules and the progression of complexity across a course [CogLoad-4] [T5].
 
 - **What helps novices hurts experts (expertise reversal effect).** Instructional
   strategies that reduce cognitive load for novice learners — worked examples,
@@ -472,7 +472,7 @@ Key findings encoded as decision rules in this skill:
   for advanced learners. The redundant information competes for working memory
   resources that experts would otherwise use for schema building. Content must be
   adapted to the audience's expertise level, not generated one-size-fits-all
-  [CogLoad-19] [T1].
+  [CogLoad-19] [T5].
 
 - **Shorter, segmented content improves learning.** Breaking complex material into
   smaller, learner-paced segments reduces cognitive overload and improves transfer.
@@ -498,7 +498,7 @@ Key findings encoded as decision rules in this skill:
   step by step are more effective than problem-solving practice. For advanced
   learners, the reverse is true — they learn better from problem-first approaches
   that activate existing schemas. Module activities must reflect this distinction
-  [CogLoad-4] [CogLoad-19] [T1].
+  [CogLoad-4] [CogLoad-19] [T5].
 
 - **Signaling and advance organizers improve comprehension.** Cues that highlight
   the organization and key concepts of material — headings, summaries, learning
@@ -812,7 +812,7 @@ module will resurface later.]
 
 **Content sequencing principles — apply based on learner profile:**
 
-**Novice learners** [CogLoad-4] [CogLoad-19] [T1]:
+**Novice learners** [CogLoad-4] [CogLoad-19] [T5]:
 - Open with explicit instruction and worked examples before practice
 - Scaffold activities: guided practice -> supported practice -> independent practice
 - Use integrated formats (combine related information sources rather than
@@ -820,7 +820,7 @@ module will resurface later.]
 - Provide more structure in activity instructions
 - Include process worksheets or checklists for complex tasks
 
-**Advanced learners** [CogLoad-19] [T1]:
+**Advanced learners** [CogLoad-19] [T5]:
 - Open with a problem, case, or scenario before instruction
 - Use completion problems (partially worked examples) rather than full
   worked examples
@@ -836,7 +836,7 @@ module will resurface later.]
 - Use pre-assessment or self-assessment to help learners choose their path
 - Ensure the core activity works at the median expertise level
 
-**Segmenting and spacing** [Multimedia-6] [CogLoad-6] [T1] [T3]:
+**Segmenting and spacing** [Multimedia-6] [T3] [CogLoad-6] [T1]:
 - No single content section should exceed what a learner can process in one
   sitting. For complex material, break into subsections with practice or
   reflection points between them.

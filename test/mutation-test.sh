@@ -1947,6 +1947,52 @@ PY
 regen
 expect_fail "course-import reads the report slug from the manifest" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 53a-53c. Skills cite evidence as "[Code-N] [Tn]" and the reports copy the
+# citations. Four skills cited the two Sweller papers ([CogLoad-4], [CogLoad-19])
+# as T1, but references.md files both as T5. check-citation-tiers.py reads each
+# tier from references.md; each case puts back one wrong form.
+# 53a. needs-analysis cites [CogLoad-19] as T1 again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/needs-analysis/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "(expertise reversal effect) [CogLoad-19] [T5].\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "(expertise reversal effect) [CogLoad-19] [T1].\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "needs-analysis cites [CogLoad-19] as T1" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 53b. A group of codes with one tier claims T1 for two T5 papers -> smoke-test
+# must fail. Each code in the group must be at the tier of the group.
+fresh
+python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "**Novice learners** [CogLoad-4] [CogLoad-19] [T5]:\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "**Novice learners** [CogLoad-4] [CogLoad-19] [T1]:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-builder cites a group of T5 papers as T1" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 53c. Two codes are followed by two tiers in the wrong order again -> smoke-test
+# must fail. The checker refuses this form, because the order of the tiers does
+# not show which tier belongs to which code.
+fresh
+python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "**Segmenting and spacing** [Multimedia-6] [T3] [CogLoad-6] [T1]:\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "**Segmenting and spacing** [Multimedia-6] [CogLoad-6] [T1] [T3]:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-builder gives two codes two tiers in one group" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

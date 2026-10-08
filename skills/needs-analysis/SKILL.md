@@ -449,7 +449,7 @@ of the idstack evidence synthesis. Key findings encoded in this skill:
 - Multi-level analysis (organizational, task, individual) is necessary but rarely done.
   Most TNAs operate at a single level, usually individual self-assessment [Needs-12] [T3].
 - Prior knowledge level is the strongest predictor of which instructional strategies work.
-  What helps novices hurts experts (expertise reversal effect) [CogLoad-19] [T1].
+  What helps novices hurts experts (expertise reversal effect) [CogLoad-19] [T5].
 - Learning styles (VARK, etc.) are NOT a reliable basis for differentiating instruction.
   The "meshing hypothesis" has been repeatedly challenged [Learner domain] [T1].
 
@@ -647,7 +647,7 @@ Ask:
    **This is the most important question in the entire needs assessment.** Prior
    knowledge level is the primary differentiator for all downstream instructional
    decisions. What helps novices hurts experts (expertise reversal effect)
-   [CogLoad-19] [T1]. The entire sequencing, scaffolding, and assessment strategy
+   [CogLoad-19] [T5]. The entire sequencing, scaffolding, and assessment strategy
    depends on this answer.
 
 2. **"What motivates your learners? Why do they do the work in this course?"**
@@ -716,11 +716,11 @@ After completing all three levels, present a structured summary:
 **Expertise Reversal Check:**
 Based on the learner profile, note which instructional strategies are appropriate:
 - **Novice learners:** More scaffolding, worked examples, explicit instruction,
-  structured guidance [CogLoad-4] [T1]
+  structured guidance [CogLoad-4] [T5]
 - **Intermediate learners:** Faded scaffolding, guided practice with feedback,
   increasing autonomy [CogLoad-5] [T5]
 - **Advanced learners:** Less scaffolding, problem-based learning, case studies,
-  avoid redundant information that adds extraneous cognitive load [CogLoad-19] [T1]
+  avoid redundant information that adds extraneous cognitive load [CogLoad-19] [T5]
 - **Mixed audience:** Adaptive approaches, tiered activities, or separate pathways
   [Learner-16] [T1]
 
@@ -777,7 +777,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Finding ids:** `needs-1`, `needs-2`, etc. Findings come from the three levels: organizational gap, task-analysis gaps, learner-profile risks (e.g., expertise mismatch with the planned design).
 - **Optional skill-specific sections** (after Top recommendations, before Limitations):
   - `<section class="training-justification">` with `<h2>Training justification</h2>` — show `Justified: Yes/No`, `Confidence: X/10`, the rationale paragraph, and alternatives evaluated (or "n/a — imported credit-bearing course" in audit-existing mode).
-  - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence so the read isn't opinion: `[CogLoad-4] [T1]` for novices; `[CogLoad-19] [T1]` for advanced; `[Learner-16] [T1]` for mixed.
+  - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence at its references.md tier: `[CogLoad-4] [T5]` for novices; `[CogLoad-19] [T5]` for advanced; `[Learner-16] [T1]` for mixed.
 - **Limitations:** In imported-course mode, idstack skips the training-decision gate. The learner profile comes from the registrar or syllabus data, not from a learner survey. The task analysis comes from job-task lists, not from observed performance.
 - **Next steps:** Run `/idstack:learning-objectives` to develop ILOs grounded in this analysis. The objectives skill reads your task analysis and learner profile to recommend appropriate Bloom's levels and alignment strategies.
 

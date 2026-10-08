@@ -130,6 +130,20 @@ $EVIDENCE_DRIFT"
     "if [ -n \"\$EVIDENCE_DRIFT\" ]; then printf '%s\n' \"\$EVIDENCE_DRIFT\"; false; fi"
 fi
 
+# Skills and templates cite evidence as "[Code-N] [Tn]", and the reports copy
+# those citations. Four skills cited the two Sweller papers ([CogLoad-4],
+# [CogLoad-19]) as T1, but references.md files both as T5. The tier is read
+# from the reference file, as for the cards above. test-evidence-labels.mjs
+# checks the extension. Same python3 guard and crash handling as the cards.
+TIER_DRIFT=""
+if command -v python3 &>/dev/null; then
+  TIER_DRIFT="$(python3 "$IDSTACK_DIR/test/check-citation-tiers.py" "$IDSTACK_DIR" 2>&1)" \
+    || TIER_DRIFT="citation-tier checker failed:
+$TIER_DRIFT"
+  check "skill and template citations state their evidence/references.md tier" \
+    "if [ -n \"\$TIER_DRIFT\" ]; then printf '%s\n' \"\$TIER_DRIFT\"; false; fi"
+fi
+
 check "doc accuracy check passes" "python3 '$IDSTACK_DIR/test/check-doc-accuracy.py' '$IDSTACK_DIR'"
 
 
