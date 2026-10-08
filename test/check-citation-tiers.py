@@ -14,7 +14,7 @@ Forms checked, after HTML tags are removed:
   [A-1] [B-2] [T1]       each code must be T1 in references.md
   [A-1] [B-2] [T1] [T3]  refused: put the tier after each code instead
 Codes can have commas between them ("[A-1], [B-2] [T1]"), and one line break
-can split a citation. A blank line ends it. Each [Code-N] must also be an entry
+can come between two items of a citation. A blank line ends it. Each [Code-N] must also be an entry
 in references.md.
 
 Scope: skills/*/SKILL.md.tmpl, templates/, README.md and docs/index.html. The
@@ -35,8 +35,8 @@ import sys
 # "- [CogLoad-4] Sweller, J. (1994). ... *Learning and Instruction*. T5"
 REF_RE = re.compile(r"^- \[([A-Za-z]+-\d+)\] .* (T[1-5])\s*$")
 CODE_RE = re.compile(r"\[([A-Z][A-Za-z]*-\d+)\]")
-# Between two items: spaces, an optional comma, and at most one line break.
-SEP = r"[ \t]*(?:,[ \t]*)?(?:\n[ \t]*)?"
+# Between two items: spaces of any kind, an optional comma, and at most one line break.
+SEP = r"[^\S\n]*(?:,[^\S\n]*)?(?:\n[^\S\n]*)?"
 # One or more codes, then one or more tiers.
 GROUP_RE = re.compile(r"((?:\[[A-Z][A-Za-z]*-\d+\]" + SEP + r")+)((?:\[T[1-5]\]" + SEP + r")+)")
 # The landing page shows a tier as <span class="tier tier-1">T1</span>.

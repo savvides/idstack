@@ -2033,9 +2033,9 @@ fresh
 python3 - "$WORK/r/test/check-citation-tiers.py" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = 'SEP = r"[ \\t]*(?:,[ \\t]*)?(?:\\n[ \\t]*)?"\n'
+old = 'SEP = r"[^\\S\\n]*(?:,[^\\S\\n]*)?(?:\\n[^\\S\\n]*)?"\n'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, 'SEP = r"[ \\t]*"\n', 1)
+s = s.replace(old, 'SEP = r"[^\\S\\n]*"\n', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the citation-tier checker misses commas and line breaks" python3 "$WORK/r/test/test-citation-tiers.py"

@@ -69,6 +69,11 @@ class CitationTierTest(unittest.TestCase):
         proc = self.check('Text that ends with [Beta-2]\n[T5] and goes on.\n')
         self.assertEqual(proc.returncode, 0, proc.stdout)
 
+    def test_a_no_break_space_between_code_and_tier_is_seen(self):
+        proc = self.check('Text [Beta-2] [T1].\n')
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn('[Beta-2] is T5 in evidence/references.md, not T1', proc.stdout)
+
     def test_a_blank_line_ends_a_citation(self):
         # A code at the end of one paragraph and a tier at the start of the next are not one citation.
         proc = self.check('Text [Beta-2] [T5] ends with [Alpha-1]\n\n[T5] starts here.\n')
