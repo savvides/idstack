@@ -105,7 +105,7 @@ def main():
 
     # A pattern that stops matching would make every check above vacuous.
     if cited == 0:
-        problems.append("no '[Code-N] [Tn]' citations found; the checker matched nothing")
+        problems.append("no '[Code-N] [Tn]' citations found. The checker matched nothing.")
 
     for line in problems:
         print(line)

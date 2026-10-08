@@ -141,6 +141,7 @@ How to use the standard:
 4. Run the checker a maximum of three times. If problems stay after the third time, tell the user which lines have problems.
 5. If the output is `STE_CHECK_UNAVAILABLE`, python3 is not available. Continue the skill. Tell the user one time that the check did not run.
 6. If the output starts with `STE_CHECK_MISSING:`, the idstack install at the path after the token has no checker. Continue the skill. Tell the user one time that the check did not run. Give the user the path and tell the user to update idstack. If the path is empty, tell the user that idstack did not find its install.
+7. If the checker shows an error, continue the skill. Tell the user one time which file the checker did not examine.
 
 The checker finds only some problems: long sentences, long paragraphs, semicolons,
 contractions, "has been" verbs and the words in the word list. Apply all of the rules

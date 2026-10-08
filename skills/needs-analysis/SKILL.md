@@ -161,6 +161,7 @@ How to use the standard:
 4. Run the checker a maximum of three times. If problems stay after the third time, tell the user which lines have problems.
 5. If the output is `STE_CHECK_UNAVAILABLE`, python3 is not available. Continue the skill. Tell the user one time that the check did not run.
 6. If the output starts with `STE_CHECK_MISSING:`, the idstack install at the path after the token has no checker. Continue the skill. Tell the user one time that the check did not run. Give the user the path and tell the user to update idstack. If the path is empty, tell the user that idstack did not find its install.
+7. If the checker shows an error, continue the skill. Tell the user one time which file the checker did not examine.
 
 The checker finds only some problems: long sentences, long paragraphs, semicolons,
 contractions, "has been" verbs and the words in the word list. Apply all of the rules
@@ -760,6 +761,7 @@ IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
 <project name>
 IDSTACK_PROJECT_NAME
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+[ "$_SLUG" = "project-name" ] && echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/needs-analysis.html"
 mkdir -p "$_EXPORT_DIR/assets"
@@ -777,7 +779,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Finding ids:** `needs-1`, `needs-2`, etc. Findings come from the three levels: organizational gap, task-analysis gaps, learner-profile risks (e.g., expertise mismatch with the planned design).
 - **Optional skill-specific sections** (after Top recommendations, before Limitations):
   - `<section class="training-justification">` with `<h2>Training justification</h2>` — show `Justified: Yes/No`, `Confidence: X/10`, the rationale paragraph, and alternatives evaluated (or "n/a — imported credit-bearing course" in audit-existing mode).
-  - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence at its references.md tier: `[CogLoad-4] [T5]` for novices; `[CogLoad-19] [T5]` for advanced; `[Learner-16] [T1]` for mixed.
+  - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence at its references.md tier: `[CogLoad-4] [T5]` for novices, `[CogLoad-19] [T5]` for advanced and `[Learner-16] [T1]` for mixed audiences.
 - **Limitations:** In imported-course mode, idstack skips the training-decision gate. The learner profile comes from the registrar or syllabus data, not from a learner survey. The task analysis comes from job-task lists, not from observed performance.
 - **Next steps:** Run `/idstack:learning-objectives` to develop ILOs grounded in this analysis. The objectives skill reads your task analysis and learner profile to recommend appropriate Bloom's levels and alignment strategies.
 

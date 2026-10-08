@@ -329,6 +329,7 @@ IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
 <project name>
 IDSTACK_PROJECT_NAME
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+[ "$_SLUG" = "project-name" ] && echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/needs-analysis.html"
 mkdir -p "$_EXPORT_DIR/assets"
@@ -346,7 +347,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 - **Finding ids:** `needs-1`, `needs-2`, etc. Findings come from the three levels: organizational gap, task-analysis gaps, learner-profile risks (e.g., expertise mismatch with the planned design).
 - **Optional skill-specific sections** (after Top recommendations, before Limitations):
   - `<section class="training-justification">` with `<h2>Training justification</h2>` — show `Justified: Yes/No`, `Confidence: X/10`, the rationale paragraph, and alternatives evaluated (or "n/a — imported credit-bearing course" in audit-existing mode).
-  - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence at its references.md tier: `[CogLoad-4] [T5]` for novices; `[CogLoad-19] [T5]` for advanced; `[Learner-16] [T1]` for mixed.
+  - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence at its references.md tier: `[CogLoad-4] [T5]` for novices, `[CogLoad-19] [T5]` for advanced and `[Learner-16] [T1]` for mixed audiences.
 - **Limitations:** In imported-course mode, idstack skips the training-decision gate. The learner profile comes from the registrar or syllabus data, not from a learner survey. The task analysis comes from job-task lists, not from observed performance.
 - **Next steps:** Run `/idstack:learning-objectives` to develop ILOs grounded in this analysis. The objectives skill reads your task analysis and learner profile to recommend appropriate Bloom's levels and alignment strategies.
 

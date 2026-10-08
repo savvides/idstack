@@ -721,6 +721,7 @@ IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
 <project name>
 IDSTACK_PROJECT_NAME
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+[ "$_SLUG" = "project-name" ] && echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-import.html"
 mkdir -p "$_EXPORT_DIR/assets"
