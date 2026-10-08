@@ -237,6 +237,23 @@ for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl does not hand-roll _IDSTACK" "! grep -Eq '_IDSTACK:?=' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 check "no legacy .claude/plugins/idstack path in skill templates" "! grep -rF '.claude/plugins/idstack' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
+# Claude Code writes the plugin root into a skill's text only where it finds the
+# exact token ${CLAUDE_PLUGIN_ROOT}. The Bash tool's shell does not have the
+# variable, and a token with a default (":-") stays as it is. The chain used
+# that form until this check, so every skill fell through to the newest cache
+# dir: under --plugin-dir, and for a marketplace added from a local path, that
+# was an old install with no bin/idstack-ste-check. Do to the generated text
+# what Claude Code does, then run the first chain with a stale cache present.
+RESOLVE_SIM=$(mktemp -d)
+mkdir -p "$RESOLVE_SIM/plugin" "$RESOLVE_SIM/home/.claude/plugins/cache/idstack/idstack/0.0.1.0"
+RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$IDSTACK_DIR/skills/learn/SKILL.md" \
+    | sed "s|\${CLAUDE_PLUGIN_ROOT}|$RESOLVE_SIM/plugin|g"; echo 'printf "%s" "$_IDSTACK"'; } \
+  | env -u CLAUDE_PLUGIN_ROOT -u IDSTACK_HOME HOME="$RESOLVE_SIM/home" bash)
+check "the substituted plugin root wins over a stale cache install" "[ '$RESOLVE_SIM_GOT' = '$RESOLVE_SIM/plugin' ]"
+rm -rf "$RESOLVE_SIM"
+# The x3 count above pins only the preamble's "for _p in" copies. The consensus
+# block ("for _dir in") and the longhand copy in manifest-schema.md need this.
+check "no resolve chain gives the plugin root a default" "! grep -rlF '\${CLAUDE_PLUGIN_ROOT:-' '$IDSTACK_DIR/templates' $IDSTACK_DIR/skills/*/SKILL.md.tmpl $IDSTACK_DIR/skills/*/SKILL.md"
 
 # Pipeline orchestrator must produce index.html under the course folder.
 # Use -E (extended regex) so the `|` alternation works under BSD grep too;
@@ -338,6 +355,16 @@ for skill in $SKILLS; do
   got=$(grep -cF '"$_IDSTACK/bin/idstack-ste-check"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
   check "$skill SKILL.md.tmpl runs the ste checker at all $want check steps" "[ '$got' -eq $want ]"
 done
+# A check step must tell an install with no checker apart from a missing
+# python3. Under --plugin-dir the chain once found a 3.5.1.0 install with no
+# checker, and the step printed the python3 token. The skill then said only
+# "the check did not run", and nothing told the user that the install was old.
+STE_NOCHK=$(mktemp -d)
+for skill in $SKILLS; do
+  check "$skill check steps name an install that has no checker" \
+    "grep -F '\"\$_IDSTACK/bin/idstack-ste-check\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | while IFS= read -r l; do _IDSTACK='$STE_NOCHK' bash -c \"\$l\" | grep -qxF 'STE_CHECK_MISSING: $STE_NOCHK' || exit 1; done"
+done
+rm -rf "$STE_NOCHK"
 # Every report and the course dashboard copy the fixed labels in these two
 # templates, so one bad label puts a problem in every report.
 if command -v python3 &>/dev/null; then

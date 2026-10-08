@@ -137,10 +137,10 @@ If the course content is not in English, do not run this check. Go to "Export Fo
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; else echo "STE_CHECK_UNAVAILABLE"; fi
+if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; fi
 ```
 
-1. If the output is `STE_CHECK_UNAVAILABLE`, tell the user one time that the check did not run. Continue the export.
+1. If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do step 5 or step 6 of "How to use the standard" in the preamble. Continue the export.
 2. If the checker shows no problems, continue the export.
 3. If the checker shows problems, show them to the user. Then use AskUserQuestion with two alternatives: "Continue the export" and "Stop the export to correct the content".
 4. If the user selects "Stop the export to correct the content", stop this skill. Tell the user to correct the files in `.idstack/course-content/` and then run `/idstack:course-export` again.
@@ -889,7 +889,7 @@ After the export completes (any path), write the HTML report at `$_REPORT_PATH` 
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.

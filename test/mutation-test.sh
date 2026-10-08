@@ -1620,9 +1620,11 @@ old = ('**Writing standard check.** Run this command on the export file. This ch
        'problems. Do not change the learnings in the export. Other sessions wrote them, many '
        'before the writing standard.\n\n'
        '```bash\n{{IDSTACK_RESOLVE}}\n'
-       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" '
-       '".idstack/learnings-export.md"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n\n'
-       'If the output is `STE_CHECK_UNAVAILABLE`, tell the user one time that the check did not run. '
+       'if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
+       'elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; '
+       'else "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; fi\n```\n\n'
+       'If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do step 5 or step 6 '
+       'of "How to use the standard" in the preamble. '
        'If the checker shows problems, show them to the user. Do not change the export file.\n\n')
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '', 1)
@@ -1651,8 +1653,9 @@ python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = ('```bash\n{{IDSTACK_RESOLVE}}\n'
-       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" '
-       '".idstack/course-content"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n')
+       'if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
+       'elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; '
+       'else "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; fi\n```\n')
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '', 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1854,6 +1857,62 @@ s = s.replace(old, "    chrome.on('no-such-event', (code, signal) => {\n", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the rendered landing test ignores a Chrome that stops at startup" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 51a-51c. Claude Code writes the plugin root into skill text only where it finds
+# the exact token ${CLAUDE_PLUGIN_ROOT}. The Bash tool's shell does not have the
+# variable. With a ":-" default the chain fell through to an old cache install that
+# had no checker, and the check step said only that the check did not run.
+# 51a. The chain gives the plugin root a ":-" default again in all five copies ->
+# smoke-test must fail. All copies move together, so the x3 lockstep count passes
+# and only the substitution checks can see it.
+fresh
+python3 - "$WORK/r" <<'PY'
+import sys
+r = sys.argv[1]
+for rel, n in (("templates/snippets/idstack-resolve.sh", 1), ("templates/preamble.md", 4),
+               ("templates/manifest-schema.md", 1)):
+    p = r + "/" + rel; s = open(p, encoding='utf-8').read()
+    old = '"${CLAUDE_PLUGIN_ROOT}"'
+    assert s.count(old) == n, '%s: anchor count %d' % (rel, s.count(old))
+    s = s.replace(old, '"${CLAUDE_PLUGIN_ROOT:-}"')
+    open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "the resolve chain gives the plugin root a default again" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 51b. Only the longhand copy in manifest-schema.md gets the ":-" default again ->
+# smoke-test must fail. The x3 count and the substitution run read only the
+# preamble's copies, so only the repo-wide grep sees this copy.
+fresh
+python3 - "$WORK/r/templates/manifest-schema.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "the manifest-schema resolve chain gives the plugin root a default" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 51c. learn's check step folds a missing checker into the python3 token again ->
+# smoke-test must fail. The step still calls the checker, so the count of check
+# steps passes, and only the missing-checker run sees it.
+fresh
+python3 - "$WORK/r/skills/learn/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ('if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
+       'elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; '
+       'else "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; fi')
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; '
+                   'then "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; '
+                   'else echo "STE_CHECK_UNAVAILABLE"; fi', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "a check step folds a missing checker into the python3 token" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
