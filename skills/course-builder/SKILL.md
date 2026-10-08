@@ -160,7 +160,9 @@ How to use the standard:
 2. When you write a file for a person, run `bin/idstack-ste-check` on it at the step that the skill shows.
 3. If the checker shows problems, write each sentence that it shows again. Then write the file again and run the checker again.
 4. Run the checker a maximum of three times. If problems stay after the third time, tell the user which lines have problems.
-5. If the checker does not run, continue the skill. Tell the user one time that the check did not run.
+5. If the output is `STE_CHECK_UNAVAILABLE`, python3 is not available. Continue the skill. Tell the user one time that the check did not run.
+6. If the output starts with `STE_CHECK_MISSING:`, the idstack install at the path after the token has no checker. Continue the skill. Tell the user one time that the check did not run. Give the user the path and tell the user to update idstack. If the path is empty, tell the user that idstack did not find its install.
+7. If the checker shows an error, continue the skill. Tell the user one time which file the checker did not examine.
 
 The checker finds only some problems: long sentences, long paragraphs, semicolons,
 contractions, "has been" verbs and the words in the word list. Apply all of the rules
@@ -184,9 +186,10 @@ use them.
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, then the Claude Code
-# marketplace cache (highest version). Empty if none found; guard
-# "$_IDSTACK/bin/..." calls accordingly.
+# available here. Priority: the plugin root that Claude Code writes into the
+# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache
+# (highest version). Empty if none found; guard "$_IDSTACK/bin/..." calls
+# accordingly.
 # Canonical copy: templates/snippets/idstack-resolve.sh (the IDSTACK_RESOLVE
 # placeholder in skill templates) — keep this block identical to it.
 _IDSTACK=""
@@ -199,7 +202,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
@@ -224,7 +227,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 if [ -f ".idstack/project.json" ]; then
@@ -304,7 +307,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _dir in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+for _dir in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_dir" ] && [ -d "$_dir" ]; then _IDSTACK="${_dir%/}"; break; fi
 done
 _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q '"api_key_configured": true' && echo "CONFIGURED" || echo "UNCONFIGURED")
@@ -334,7 +337,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 _HAS_TIMELINE=0
@@ -462,7 +465,7 @@ Key findings encoded as decision rules in this skill:
   information in a carefully managed sequence — controlling the number of interacting
   elements learners must process simultaneously — produces better learning outcomes
   than unstructured content delivery. This applies to both the ordering of topics
-  within modules and the progression of complexity across a course [CogLoad-4] [T1].
+  within modules and the progression of complexity across a course [CogLoad-4] [T5].
 
 - **What helps novices hurts experts (expertise reversal effect).** Instructional
   strategies that reduce cognitive load for novice learners — worked examples,
@@ -470,7 +473,7 @@ Key findings encoded as decision rules in this skill:
   for advanced learners. The redundant information competes for working memory
   resources that experts would otherwise use for schema building. Content must be
   adapted to the audience's expertise level, not generated one-size-fits-all
-  [CogLoad-19] [T1].
+  [CogLoad-19] [T5].
 
 - **Shorter, segmented content improves learning.** Breaking complex material into
   smaller, learner-paced segments reduces cognitive overload and improves transfer.
@@ -496,7 +499,7 @@ Key findings encoded as decision rules in this skill:
   step by step are more effective than problem-solving practice. For advanced
   learners, the reverse is true — they learn better from problem-first approaches
   that activate existing schemas. Module activities must reflect this distinction
-  [CogLoad-4] [CogLoad-19] [T1].
+  [CogLoad-4] [CogLoad-19] [T5].
 
 - **Signaling and advance organizers improve comprehension.** Cues that highlight
   the organization and key concepts of material — headings, summaries, learning
@@ -810,7 +813,7 @@ module will resurface later.]
 
 **Content sequencing principles — apply based on learner profile:**
 
-**Novice learners** [CogLoad-4] [CogLoad-19] [T1]:
+**Novice learners** [CogLoad-4] [CogLoad-19] [T5]:
 - Open with explicit instruction and worked examples before practice
 - Scaffold activities: guided practice -> supported practice -> independent practice
 - Use integrated formats (combine related information sources rather than
@@ -818,7 +821,7 @@ module will resurface later.]
 - Provide more structure in activity instructions
 - Include process worksheets or checklists for complex tasks
 
-**Advanced learners** [CogLoad-19] [T1]:
+**Advanced learners** [CogLoad-19] [T5]:
 - Open with a problem, case, or scenario before instruction
 - Use completion problems (partially worked examples) rather than full
   worked examples
@@ -834,7 +837,7 @@ module will resurface later.]
 - Use pre-assessment or self-assessment to help learners choose their path
 - Ensure the core activity works at the median expertise level
 
-**Segmenting and spacing** [Multimedia-6] [CogLoad-6] [T1] [T3]:
+**Segmenting and spacing** [Multimedia-6] [T3] [CogLoad-6] [T1]:
 - No single content section should exceed what a learner can process in one
   sitting. For complex material, break into subsections with practice or
   reflection points between them.
@@ -959,9 +962,9 @@ continue with remaining files.
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, then the Claude Code
-# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
+# available here. Priority: the plugin root that Claude Code writes into the
+# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
+# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -972,10 +975,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
+# the exact braced token in skill text. The Bash tool's shell does not have it.
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; else echo "STE_CHECK_UNAVAILABLE"; fi
+if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times. Show the user each sentence that you changed, before and after the change.
@@ -987,9 +992,9 @@ Before updating the manifest, generate an HTML build report so the designer can 
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, then the Claude Code
-# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
+# available here. Priority: the plugin root that Claude Code writes into the
+# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
+# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -1000,7 +1005,9 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
+# the exact braced token in skill text. The Bash tool's shell does not have it.
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 # Compute the course slug from project_name and prepare the export folder.
@@ -1030,9 +1037,9 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, then the Claude Code
-# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
+# available here. Priority: the plugin root that Claude Code writes into the
+# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
+# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -1043,10 +1050,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
+# the exact braced token in skill text. The Bash tool's shell does not have it.
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
@@ -1058,9 +1067,9 @@ Save the `course_content` section to `.idstack/project.json` via `bin/idstack-ma
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, then the Claude Code
-# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
+# available here. Priority: the plugin root that Claude Code writes into the
+# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
+# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -1071,7 +1080,9 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
+# the exact braced token in skill text. The Bash tool's shell does not have it.
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 "$_IDSTACK/bin/idstack-manifest-merge" --section course_content --payload - <<'PAYLOAD'
@@ -1208,9 +1219,9 @@ The HTML report follows the visual contract in `templates/report.html.tmpl` and 
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, then the Claude Code
-# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
+# available here. Priority: the plugin root that Claude Code writes into the
+# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
+# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -1221,7 +1232,7 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 # Write a payload for your skill's section, then:
@@ -1608,9 +1619,9 @@ After the skill workflow completes successfully, log the session to the timeline
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, then the Claude Code
-# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
+# available here. Priority: the plugin root that Claude Code writes into the
+# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
+# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -1621,7 +1632,9 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
+# the exact braced token in skill text. The Bash tool's shell does not have it.
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"course-builder","event":"completed"}'
@@ -1636,9 +1649,9 @@ import format issue, course structure pattern), also log it as a learning:
 ```bash
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: explicit env overrides, then the Claude Code
-# marketplace cache. Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
+# available here. Priority: the plugin root that Claude Code writes into the
+# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
+# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -1649,7 +1662,9 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
+# the exact braced token in skill text. The Bash tool's shell does not have it.
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 "$_IDSTACK/bin/idstack-learnings-log" '{"skill":"course-builder","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'

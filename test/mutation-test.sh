@@ -1620,9 +1620,11 @@ old = ('**Writing standard check.** Run this command on the export file. This ch
        'problems. Do not change the learnings in the export. Other sessions wrote them, many '
        'before the writing standard.\n\n'
        '```bash\n{{IDSTACK_RESOLVE}}\n'
-       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" '
-       '".idstack/learnings-export.md"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n\n'
-       'If the output is `STE_CHECK_UNAVAILABLE`, tell the user one time that the check did not run. '
+       'if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
+       'elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; '
+       'else "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; fi\n```\n\n'
+       'If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do step 5 or step 6 '
+       'of "How to use the standard" in the preamble. '
        'If the checker shows problems, show them to the user. Do not change the export file.\n\n')
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '', 1)
@@ -1651,8 +1653,9 @@ python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = ('```bash\n{{IDSTACK_RESOLVE}}\n'
-       'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" '
-       '".idstack/course-content"; else echo "STE_CHECK_UNAVAILABLE"; fi\n```\n')
+       'if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
+       'elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; '
+       'else "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; fi\n```\n')
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '', 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1840,6 +1843,155 @@ s = s.replace(old, "'Fetching assignments; please wait...'", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "a side-panel loader step writes non-STE text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 50. The rendered landing test stops watching for a Chrome that stops at startup ->
+# smoke-test must fail. Then that Chrome costs the full startup wait and the error
+# does not give its exit code. Two CI failures left no clue in this way.
+fresh
+python3 - "$WORK/r/test/test-rendered-landing.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    chrome.on('exit', (code, signal) => {\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    chrome.on('no-such-event', (code, signal) => {\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the rendered landing test ignores a Chrome that stops at startup" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 51a-51c. Claude Code writes the plugin root into skill text only where it finds
+# the exact token ${CLAUDE_PLUGIN_ROOT}. The Bash tool's shell does not have the
+# variable. With a ":-" default the chain fell through to an old cache install that
+# had no checker, and the check step said only that the check did not run.
+# 51a. The chain gives the plugin root a ":-" default again in all five copies ->
+# smoke-test must fail. All copies move together, so the x3 lockstep count passes
+# and only the substitution checks can see it.
+fresh
+python3 - "$WORK/r" <<'PY'
+import sys
+r = sys.argv[1]
+for rel, n in (("templates/snippets/idstack-resolve.sh", 1), ("templates/preamble.md", 4),
+               ("templates/manifest-schema.md", 1)):
+    p = r + "/" + rel; s = open(p, encoding='utf-8').read()
+    old = '"${CLAUDE_PLUGIN_ROOT}"'
+    assert s.count(old) == n, '%s: anchor count %d' % (rel, s.count(old))
+    s = s.replace(old, '"${CLAUDE_PLUGIN_ROOT:-}"')
+    open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "the resolve chain gives the plugin root a default again" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 51b. Only the longhand copy in manifest-schema.md gets the ":-" default again ->
+# smoke-test must fail. The x3 count and the substitution run read only the
+# preamble's copies, so only the repo-wide grep sees this copy.
+fresh
+python3 - "$WORK/r/templates/manifest-schema.md" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "the manifest-schema resolve chain gives the plugin root a default" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 51c. learn's check step folds a missing checker into the python3 token again ->
+# smoke-test must fail. The step still calls the checker, so the count of check
+# steps passes, and only the missing-checker run sees it.
+fresh
+python3 - "$WORK/r/skills/learn/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ('if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
+       'elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; '
+       'else "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; fi')
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; '
+                   'then "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; '
+                   'else echo "STE_CHECK_UNAVAILABLE"; fi', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "a check step folds a missing checker into the python3 token" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 52a-52b. needs-analysis and course-import write project_name, and they write the
+# report before the manifest. A slug that comes from the manifest is empty on a
+# first run, so the report goes to exports/untitled-course/ and each later skill
+# writes to exports/<real-slug>/. Each skill has its own case, so a check that
+# only reads the first skill cannot report GUARDED.
+# 52a. needs-analysis reads the report slug from the manifest again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/needs-analysis/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'\n<project name>\nIDSTACK_PROJECT_NAME\n"
+new = '''_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")\n'''
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, new, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "needs-analysis reads the report slug from the manifest" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 52b. course-import reads the report slug from the manifest again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/course-import/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'\n<project name>\nIDSTACK_PROJECT_NAME\n"
+new = '''_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")\n'''
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, new, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-import reads the report slug from the manifest" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 53a-53c. Skills cite evidence as "[Code-N] [Tn]" and the reports copy the
+# citations. Four skills cited the two Sweller papers ([CogLoad-4], [CogLoad-19])
+# as T1, but references.md files both as T5. check-citation-tiers.py reads each
+# tier from references.md; each case puts back one wrong form.
+# 53a. needs-analysis cites [CogLoad-19] as T1 again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/needs-analysis/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "(expertise reversal effect) [CogLoad-19] [T5].\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "(expertise reversal effect) [CogLoad-19] [T1].\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "needs-analysis cites [CogLoad-19] as T1" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 53b. A group of codes with one tier claims T1 for two T5 papers -> smoke-test
+# must fail. Each code in the group must be at the tier of the group.
+fresh
+python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "**Novice learners** [CogLoad-4] [CogLoad-19] [T5]:\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "**Novice learners** [CogLoad-4] [CogLoad-19] [T1]:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-builder cites a group of T5 papers as T1" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 53c. Two codes are followed by two tiers in the wrong order again -> smoke-test
+# must fail. The checker refuses this form, because the order of the tiers does
+# not show which tier belongs to which code.
+fresh
+python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "**Segmenting and spacing** [Multimedia-6] [T3] [CogLoad-6] [T1]:\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "**Segmenting and spacing** [Multimedia-6] [CogLoad-6] [T1] [T3]:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-builder gives two codes two tiers in one group" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

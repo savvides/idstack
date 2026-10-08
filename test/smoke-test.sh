@@ -130,6 +130,20 @@ $EVIDENCE_DRIFT"
     "if [ -n \"\$EVIDENCE_DRIFT\" ]; then printf '%s\n' \"\$EVIDENCE_DRIFT\"; false; fi"
 fi
 
+# Skills and templates cite evidence as "[Code-N] [Tn]", and the reports copy
+# those citations. Four skills cited the two Sweller papers ([CogLoad-4],
+# [CogLoad-19]) as T1, but references.md files both as T5. The tier is read
+# from the reference file, as for the cards above. test-evidence-labels.mjs
+# checks the extension. Same python3 guard and crash handling as the cards.
+TIER_DRIFT=""
+if command -v python3 &>/dev/null; then
+  TIER_DRIFT="$(python3 "$IDSTACK_DIR/test/check-citation-tiers.py" "$IDSTACK_DIR" 2>&1)" \
+    || TIER_DRIFT="citation-tier checker failed:
+$TIER_DRIFT"
+  check "skill and template citations state their evidence/references.md tier" \
+    "if [ -n \"\$TIER_DRIFT\" ]; then printf '%s\n' \"\$TIER_DRIFT\"; false; fi"
+fi
+
 check "doc accuracy check passes" "python3 '$IDSTACK_DIR/test/check-doc-accuracy.py' '$IDSTACK_DIR'"
 
 
@@ -192,6 +206,20 @@ same = a and b and " ".join(a.group(1).split()) == " ".join(b.group(1).split())
 sys.exit(0 if same else 1)'
 check "learning_preferences_note has the same words in manifest-schema.md and needs-analysis" "python3 -c '$NOTE_SYNC_PY' '$IDSTACK_DIR'"
 
+# needs-analysis and course-import write project_name, and they write the
+# report before the manifest. A slug read from the manifest at that point is
+# empty on a first run: the report went to exports/untitled-course/ and every
+# later skill wrote to exports/<real-slug>/. The slug must come from the
+# course title of the session, the same text the skill then writes as project_name.
+SLUG_SOURCE_PY='import re, sys
+s = open(sys.argv[1], encoding="utf-8").read()
+blocks = [b for b in re.findall(r"```bash\n(.*?)```", s, re.S) if "idstack-slugify" in b]
+ok = len(blocks) == 1 and ".idstack/project.json" not in blocks[0] and "<project name>" in blocks[0]
+sys.exit(0 if ok else 1)'
+for skill in needs-analysis course-import; do
+  check "$skill takes the report slug from the course title, not the manifest it writes later" "python3 -c '$SLUG_SOURCE_PY' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+
 # Canonical manifest section names only — these five non-canonical tokens once
 # shipped in re-run checks and prose, making re-run detection dead in 5 skills.
 for skill in $SKILLS; do
@@ -237,6 +265,23 @@ for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl does not hand-roll _IDSTACK" "! grep -Eq '_IDSTACK:?=' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 check "no legacy .claude/plugins/idstack path in skill templates" "! grep -rF '.claude/plugins/idstack' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
+# Claude Code writes the plugin root into a skill's text only where it finds the
+# exact token ${CLAUDE_PLUGIN_ROOT}. The Bash tool's shell does not have the
+# variable, and a token with a default (":-") stays as it is. The chain used
+# that form until this check, so every skill fell through to the newest cache
+# dir: under --plugin-dir, and for a marketplace added from a local path, that
+# was an old install with no bin/idstack-ste-check. Do to the generated text
+# what Claude Code does, then run the first chain with a stale cache present.
+RESOLVE_SIM=$(mktemp -d)
+mkdir -p "$RESOLVE_SIM/plugin" "$RESOLVE_SIM/home/.claude/plugins/cache/idstack/idstack/0.0.1.0"
+RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$IDSTACK_DIR/skills/learn/SKILL.md" \
+    | sed "s|\${CLAUDE_PLUGIN_ROOT}|$RESOLVE_SIM/plugin|g"; echo 'printf "%s" "$_IDSTACK"'; } \
+  | env -u CLAUDE_PLUGIN_ROOT -u IDSTACK_HOME HOME="$RESOLVE_SIM/home" bash)
+check "the substituted plugin root wins over a stale cache install" "[ '$RESOLVE_SIM_GOT' = '$RESOLVE_SIM/plugin' ]"
+rm -rf "$RESOLVE_SIM"
+# The x3 count above pins only the preamble's "for _p in" copies. The consensus
+# block ("for _dir in") and the longhand copy in manifest-schema.md need this.
+check "no resolve chain gives the plugin root a default" "! grep -rlF '\${CLAUDE_PLUGIN_ROOT:-' '$IDSTACK_DIR/templates' $IDSTACK_DIR/skills/*/SKILL.md.tmpl $IDSTACK_DIR/skills/*/SKILL.md"
 
 # Pipeline orchestrator must produce index.html under the course folder.
 # Use -E (extended regex) so the `|` alternation works under BSD grep too;
@@ -338,6 +383,16 @@ for skill in $SKILLS; do
   got=$(grep -cF '"$_IDSTACK/bin/idstack-ste-check"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
   check "$skill SKILL.md.tmpl runs the ste checker at all $want check steps" "[ '$got' -eq $want ]"
 done
+# A check step must tell an install with no checker apart from a missing
+# python3. Under --plugin-dir the chain once found a 3.5.1.0 install with no
+# checker, and the step printed the python3 token. The skill then said only
+# "the check did not run", and nothing told the user that the install was old.
+STE_NOCHK=$(mktemp -d)
+for skill in $SKILLS; do
+  check "$skill check steps name an install that has no checker" \
+    "grep -F '\"\$_IDSTACK/bin/idstack-ste-check\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | while IFS= read -r l; do _IDSTACK='$STE_NOCHK' bash -c \"\$l\" | grep -qxF 'STE_CHECK_MISSING: $STE_NOCHK' || exit 1; done"
+done
+rm -rf "$STE_NOCHK"
 # Every report and the course dashboard copy the fixed labels in these two
 # templates, so one bad label puts a problem in every report.
 if command -v python3 &>/dev/null; then
@@ -362,6 +417,16 @@ if command -v node &>/dev/null; then
   # targets, column counts) rather than the CSS text. Skips loudly without a browser; the
   # text suite above still runs. See test/test-rendered-landing.js for why both exist.
   check "rendered landing page tests pass" "node '$IDSTACK_DIR/test/test-rendered-landing.js'"
+  # A Chrome that stops at startup must fail the test at once and give its exit code and last
+  # output. Before, the test waited 12s and said only that no debugging port opened, so two CI
+  # failures left no clue. Needs no real browser: CHROME_PATH points at a stub that stops.
+  FAKE_CHROME_DIR=$(mktemp -d)
+  printf '#!/bin/sh\necho "fake-chrome-startup-failure" >&2\nexit 3\n' > "$FAKE_CHROME_DIR/chrome"
+  chmod +x "$FAKE_CHROME_DIR/chrome"
+  check "rendered landing test reports why Chrome stopped at startup" \
+    "CHROME_PATH='$FAKE_CHROME_DIR/chrome' node '$IDSTACK_DIR/test/test-rendered-landing.js'" \
+    1 "exit code 3.*fake-chrome-startup-failure"
+  rm -rf "$FAKE_CHROME_DIR"
   # The fixed text that the extension shows must obey ASD-STE100: the demo audits,
   # the Markdown export, the rendered findings, the error messages and the side-panel
   # page. pipefail: a printer that crashes must fail here, not send empty text.
@@ -376,6 +441,7 @@ else
   echo "  SKIP: chrome extension tests (node not installed)"
   echo "  SKIP: responsive landing page tests (node not installed)"
   echo "  SKIP: rendered landing page tests (node not installed)"
+  echo "  SKIP: rendered landing startup report (node not installed)"
   echo "  SKIP: extension STE checks (node not installed)"
 fi
 

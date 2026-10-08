@@ -28,7 +28,7 @@ bin/package-extension.sh                   # Package Chrome extension into build
 Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 
 ```bash
-./test/smoke-test.sh              # 384 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 401 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 51 behavioral tests across the bin/ scripts; also proves the suite
@@ -47,6 +47,7 @@ Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # bin/idstack-ste-check unit tests (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
+python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
 python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails
 ```
@@ -120,7 +121,7 @@ Every skill template follows this pattern:
 2. **`{{PREAMBLE}}`** placeholder (replaced by `templates/preamble.md` during generation)
 3. **Workflow** (Markdown defining the conversational flow, decision trees, outputs)
 4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`)
-5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`CLAUDE_PLUGIN_ROOT`, `IDSTACK_HOME`, then the Claude Code marketplace cache). `templates/manifest-schema.md` is spliced verbatim and so writes the resolution out longhand — smoke-test keeps the two in lockstep.
+5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`${CLAUDE_PLUGIN_ROOT}`, `IDSTACK_HOME`, then the Claude Code marketplace cache). Claude Code writes the plugin path into skill text only where it finds the exact token `${CLAUDE_PLUGIN_ROOT}`, and the Bash tool's shell never has the variable, so never give it a `:-` default. `templates/manifest-schema.md` is spliced verbatim and so writes the resolution out longhand — smoke-test keeps the two in lockstep and fails on any `${CLAUDE_PLUGIN_ROOT:-` in templates or skills.
 6. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
 7. **Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/bin/idstack-ste-check"` on that file. smoke-test fails if a skill template has fewer check steps than it must have. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.
 

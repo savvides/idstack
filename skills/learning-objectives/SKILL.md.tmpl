@@ -211,7 +211,7 @@ in context."
 
 - **Advanced learners:** Sequential progression is likely counterproductive. Lower-level
   objectives (remember, understand) may add extraneous cognitive load for learners who
-  already have this knowledge [CogLoad-19] [T1]. Recommend starting at apply or higher.
+  already have this knowledge [CogLoad-19] [T5]. Recommend starting at apply or higher.
 
 - **Mixed audience:** Flag that one sequence does not serve all learners. Recommend that
   lower-level objectives become optional, or that a pre-assessment covers them.
@@ -345,7 +345,7 @@ Every finding in the HTML must correspond to an entry in `learning_objectives.al
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.

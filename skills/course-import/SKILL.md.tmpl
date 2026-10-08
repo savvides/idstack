@@ -710,11 +710,18 @@ to check the Bloom's levels and the alignment with activities and assessments.
 
 Before writing the manifest, generate an HTML report so the designer has a single document about what came in and where the quality flags are. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
 
+In this command, replace `<project name>` with the course title from the import. Then run the command.
+
 ```bash
 {{IDSTACK_RESOLVE}}
-# Compute the course slug from project_name and prepare the export folder.
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
+# Compute the course slug from this session's course title and prepare the export folder.
+# Do not read project_name from the manifest here. Step 6 writes it, so on a first import
+# the manifest has no name yet and the report lands in exports/untitled-course/.
+IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
+<project name>
+IDSTACK_PROJECT_NAME
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+[ "$_SLUG" = "project-name" ] && echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-import.html"
 mkdir -p "$_EXPORT_DIR/assets"
@@ -742,7 +749,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-ste-check" "<path>"; else echo "STE_CHECK_UNAVAILABLE"; fi
+if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
@@ -768,7 +775,7 @@ Create or update the project manifest.
 
 **Fields populated by /idstack:course-import:**
 
-- `project_name` — from course title
+- `project_name` — from course title. Use the text that you put in place of `<project name>` in Step 5.
 - `context.modality` — inferred from course structure (async=online, sync sessions=hybrid)
 - `context.timeline` — from term/date info if available
 - `context.available_tech` — from detected resource types (LMS, video, discussions, etc.)
