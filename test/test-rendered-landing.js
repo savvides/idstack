@@ -113,9 +113,18 @@ async function main() {
 
   let id = 0;
   const pending = new Map();
+  const waiters = [];
   ws.addEventListener('message', e => {
     const msg = JSON.parse(e.data);
     if (msg.id && pending.has(msg.id)) { pending.get(msg.id)(msg); pending.delete(msg.id); }
+    for (let i = waiters.length - 1; i >= 0; i--) {
+      if (waiters[i].method === msg.method && waiters[i].sessionId === msg.sessionId) waiters.splice(i, 1)[0].res();
+    }
+  });
+  // Resolve on the next CDP event of this name, or fail after `seconds`.
+  const nextEvent = (method, sessionId, seconds) => new Promise((res, rej) => {
+    const timer = setTimeout(() => rej(new Error(`no ${method} within ${seconds}s`)), seconds * 1000);
+    waiters.push({ method, sessionId, res: () => { clearTimeout(timer); res(); } });
   });
   const send = (method, params = {}, sessionId) => new Promise(res => {
     const msg = { id: ++id, method, params };
@@ -134,7 +143,12 @@ async function main() {
   for (const width of WIDTHS) {
     await send('Emulation.setDeviceMetricsOverride',
       { width, height: 900, deviceScaleFactor: 1, mobile: width <= 640 }, sessionId);
+    // Measure only after the page is parsed. A fixed wait alone measured a half-built page on a
+    // busy CI runner: "w=320: .footer-signup button is missing from the page". The CSS is inline,
+    // so a parsed page has its styles. The load event would also wait for web fonts.
+    const parsed = nextEvent('Page.domContentEventFired', sessionId, 15);
     await send('Page.navigate', { url: fileUrl }, sessionId);
+    await parsed;
     await sleep(320);
 
     const expression = `(() => {
