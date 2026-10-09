@@ -147,6 +147,7 @@ Every suite below runs in CI (`.github/workflows/test.yml`) on every push and pu
 | `test/test-responsive-landing.js` | Responsive and mobile-ergonomics invariants for `docs/index.html` — fluid tokens, notch-safe gutters, breakpoint-scoped rules, touch targets. Runs on node, via `smoke-test.sh` |
 | `python3 test/check-evidence-cards.py .` | Verifies landing page evidence card study counts and tier ranges against `evidence/references.md` |
 | `python3 test/check-citation-tiers.py .` | Verifies that each `[Code-N] [Tn]` citation in the skill templates, `templates/`, README and landing page states the tier that `evidence/references.md` gives that code. `test/smoke-test.sh` runs it |
+| `python3 test/test-citation-tiers.py` | `test/check-citation-tiers.py` on small test repos: codes with commas between them, a citation that a line break splits, and a blank line that ends a citation. `test/smoke-test.sh` runs it |
 | `python3 test/test-ste-check.py` | `bin/idstack-ste-check`: each rule that it examines, the text that it does not examine, and the clean fixtures in `test/fixtures/ste/`. `test/smoke-test.sh` runs it |
 | `python3 test/check-doc-accuracy.py .` | Validates version agreement, manifest schema version, binary/flag references, link targets, and surface accuracy across docs |
 | `test/mutation-test.sh` | Reintroduces each known defect into a throwaway copy and asserts the guarding test fails. Add a mutation here whenever you fix a bug — it is what proves your new test would have caught it |

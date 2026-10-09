@@ -1993,6 +1993,67 @@ PY
 regen
 expect_fail "course-builder gives two codes two tiers in one group" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 54a-54d. Small defects that the review of the follow-up fixes found.
+# 54a. needs-analysis only warns about an unreplaced course title again -> smoke-test
+# must fail. A warning alone left an empty exports/project-name/ folder.
+fresh
+python3 - "$WORK/r/skills/needs-analysis/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ('[ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> '
+       'with the course title and run this command again."; exit 1; }\n')
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '[ "$_SLUG" = "project-name" ] && echo "PROJECT_NAME_NOT_SET: replace <project name> '
+                   'with the course title and run this command again."\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "needs-analysis makes a folder for an unreplaced course title" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 54b. course-import only warns about an unreplaced course title again -> smoke-test
+# must fail. Each skill has its own case, as in 52a-52b.
+fresh
+python3 - "$WORK/r/skills/course-import/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ('[ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> '
+       'with the course title and run this command again."; exit 1; }\n')
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '[ "$_SLUG" = "project-name" ] && echo "PROJECT_NAME_NOT_SET: replace <project name> '
+                   'with the course title and run this command again."\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-import makes a folder for an unreplaced course title" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 54c. The citation-tier checker matches only codes in one line with spaces between
+# them again -> test-citation-tiers must fail. Then a code before a comma, or a
+# citation that a line break splits, gets no check.
+fresh
+python3 - "$WORK/r/test/check-citation-tiers.py" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'SEP = r"[^\\S\\n]*(?:,[^\\S\\n]*)?(?:\\n[^\\S\\n]*)?"\n'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, 'SEP = r"[^\\S\\n]*"\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the citation-tier checker misses commas and line breaks" python3 "$WORK/r/test/test-citation-tiers.py"
+
+# 54d. The rendered landing test reports a stopped Chrome before stderr closes again ->
+# smoke-test must fail. Then output that Chrome's helpers write after the main
+# process exits is lost from the message.
+fresh
+python3 - "$WORK/r/test/test-rendered-landing.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "      if (chrome.stderr.readableEnded) return fail();\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "      return fail();\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the rendered landing test loses output that Chrome writes after it exits" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

@@ -28,7 +28,7 @@ bin/package-extension.sh                   # Package Chrome extension into build
 Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 
 ```bash
-./test/smoke-test.sh              # 401 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 405 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 51 behavioral tests across the bin/ scripts; also proves the suite
@@ -48,6 +48,7 @@ Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 python3 test/test-ste-check.py          # bin/idstack-ste-check unit tests (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
+python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
 python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails
 ```
