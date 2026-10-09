@@ -4,6 +4,12 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### ASD-STE100 writing standard & a fix for finding idstack's scripts (v3.7.0.0)
+- **idstack writes the English text that it shows to a person in ASD-STE100.** This includes skill chat, reports, the course dashboard, CLI messages and the Chrome extension. `bin/idstack-ste-check` finds some of the problems, and each skill runs it on each report, dashboard or course file that it writes for a person. ASD does not endorse idstack.
+- **Skills find the plugin that Claude Code loaded.** Before, a skill could run the scripts of an old copy of idstack. If an install has no checker, the check step now says so and gives the path.
+- **The first report of `/idstack:needs-analysis` or `/idstack:course-import` goes in the right folder.** `/idstack:needs-analysis` and `/idstack:course-import` took the folder name from a manifest that did not exist yet.
+- **The Chrome extension is version 1.2.0.** Its fixed text is in ASD-STE100, and five buttons have new names, for example **Audit Full Course** and **Remove All from Dossier**.
+
 ### Consensus evidence checks & Chrome extension hardening (v3.6.0.0)
 - **An optional Consensus evidence engine, on your own API key.** `bin/idstack-consensus` looks up and caches claims. `/idstack:course-quality-review`, `/idstack:assessment-design`, and `/idstack:red-team` check their findings with it before writing them, and correct four known neuromyths with or without a key.
 - **The Chrome extension (1.1.0) reads only the tab you point it at.** It no longer asks for access to every website, refuses Canvas pages that show student records, and reads every page of a course's assignments.

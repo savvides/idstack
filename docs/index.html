@@ -42,7 +42,7 @@
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
-    "softwareVersion": "3.6.0.0",
+    "softwareVersion": "3.7.0.0",
     "datePublished": "2026-04-20",
     "offers": {
       "@type": "Offer",
@@ -1030,7 +1030,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v3.6.0.0 · Claude Code &amp; Chrome Extension</span>
+          <span>v3.7.0.0 · Claude Code &amp; Chrome Extension</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design with peer-reviewed citations.</h1>
         <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation includes its evidence tier: <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code and as a native Chrome Extension.</p>
@@ -1317,6 +1317,13 @@
         <p class="eyebrow">What's new</p>
         <h2 id="whatsnew-title">Recent Updates &amp; Release Notes</h2>
       </header>
+
+      <article class="release-card">
+        <p class="release-meta">October 9, 2026 · v3.7.0.0</p>
+        <h3>Simplified Technical English output &amp; a fix for finding idstack's scripts.</h3>
+        <p>idstack now writes the English text that it shows to a person in the ASD-STE100 Simplified Technical English rules. This includes skill chat, reports, the course dashboard and the Chrome extension. A new script, <code>bin/idstack-ste-check</code>, finds some of the rule problems. Each skill runs it on each report, dashboard or course file that it writes for a person. ASD does not endorse idstack.</p>
+        <p>This release also fixes how skills find idstack's own scripts. Before, a skill could run the scripts of an old copy of idstack. The first report of <code>/idstack:needs-analysis</code> or <code>/idstack:course-import</code> now goes in the right folder. The Chrome extension is now version 1.2.0, and five buttons have new names, for example <strong>Audit Full Course</strong> and <strong>Remove All from Dossier</strong>.</p>
+      </article>
 
       <article class="release-card">
         <p class="release-meta">September 24, 2026 · v3.6.0.0</p>
