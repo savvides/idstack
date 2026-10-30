@@ -311,45 +311,63 @@ Any skill works independently. Run `/idstack:pipeline` to chain them all, or inv
 ## Architecture
 
 ```
-+-------------------------------------------------------+
-|                     Claude Code                        |
-|                                                        |
-|  +-----------------------------------------------+    |
-|  |                 11 Skills (plugin)              |    |
-|  |   Each: SKILL.md.tmpl -> SKILL.md              |    |
-|  |   (YAML frontmatter + shared preamble +        |    |
-|  |    evidence-based conversational workflow)      |    |
-|  +------+----------------+----------------+------+    |
-|         |                |                |           |
-|   reads/writes      reads on start     cites          |
-|         |                |                |           |
-|  +------v------+  +-----v---------+  +---v--------+  |
-|  | .idstack/   |  | .idstack/     |  | evidence/  |  |
-|  | project.json|  | timeline.jsonl|  | references |  |
-|  | (manifest)  |  | learnings.jsonl  | (T1-T5)    |  |
-|  +-------------+  +---------------+  +------------+  |
-|                                                        |
-|  +-------------------------------------------+        |
-|  | .idstack/exports/<course-slug>/           |        |
-|  |   index.html              (dashboard)     |        |
-|  |   <skill>.html            (per-skill)     |        |
-|  |   assets/idstack.css      (brand)         |        |
-|  |   course-export.imscc     (LMS package)   |        |
-|  |   scorm-export.zip        (LMS package)   |        |
-|  | Visual contract: templates/report.html.tmpl       |
-|  | Content contract: templates/report-format.md      |
-|  +-------------------------------------------+        |
-|                                                        |
-|  templates/preamble.md  templates/report-format.md    |
-|  templates/report.html.tmpl  templates/index.html.tmpl|
-|  templates/assets/idstack.css                          |
-|  bin/idstack-gen-skills  bin/idstack-manifest-merge   |
-|  bin/idstack-migrate  bin/idstack-timeline-log        |
-|  bin/idstack-learnings-log  bin/idstack-status        |
-|  bin/idstack-slugify  bin/idstack-update-check        |
-|  bin/idstack-doctor  bin/lib/version-classify.sh      |
-|  bin/lib/plugin-status.sh                             |
-+-------------------------------------------------------+
+BUILD (contributors only; installs ship the generated SKILL.md files)
+
+  skills/<name>/SKILL.md.tmpl ──────────┐
+  templates/preamble.md ────────────────┤
+  templates/manifest-schema.md ─────────┼──▶ bin/idstack-gen-skills
+  templates/snippets/idstack-resolve.sh ┘              │
+                                                       ▼
+                                             skills/<name>/SKILL.md
+
+INSTALL
+
+  ./setup ──▶ registers .claude-plugin/plugin.json with Claude Code
+                └─▶ 11 skills, invoked as /idstack:<skill>
+  bin/idstack-doctor   diagnoses the install
+                       (bin/lib/version-classify.sh, bin/lib/plugin-status.sh)
+
+RUN (Claude Code, inside your course project folder)
+
+  /idstack:<skill>
+     │
+     ├─ preamble: update check (bin/idstack-update-check) · manifest check
+     │            (bin/idstack-migrate) · preferences · designer profile
+     │            (~/.idstack/profile.yaml) · context recovery (reads the
+     │            timeline and learnings below)
+     ▼
+  workflow: one AskUserQuestion at a time
+     │  cites evidence/references.md as [Domain-N] [T1–T5]
+     │  review skills: bin/idstack-consensus verify ──▶ Consensus API
+     │                 (live only when CONSENSUS_API_KEY is set)
+     │
+     ├──▶ .idstack/project.json        manifest: the system view (JSON)
+     │      written via bin/idstack-manifest-merge (atomic, one section);
+     │      needs-analysis and course-import write several sections directly
+     │      └─▶ read by later skills, /idstack:pipeline, bin/idstack-status
+     │
+     ├──▶ .idstack/exports/<course-slug>/      (bin/idstack-slugify)
+     │      <skill>.html          per-skill report: the human view
+     │      index.html            course dashboard (/idstack:pipeline)
+     │      assets/idstack.css    copied from templates/assets/
+     │      course-export.imscc, scorm-export.zip   (/idstack:course-export)
+     │      visual contract: templates/report.html.tmpl, index.html.tmpl
+     │      content contract: templates/report-format.md
+     │
+     └──▶ .idstack/timeline.jsonl   runs, scores (bin/idstack-timeline-log)
+          .idstack/learnings.jsonl  discoveries (bin/idstack-learnings-log)
+            └─ /idstack:learn promote ─▶ ~/.idstack/global/learnings.jsonl
+
+CHROME EXTENSION (separate runtime: no Claude Code, no .idstack/ folder)
+
+  sidepanel ── injects content/extractor.js into the tab, reads page text
+     │
+     └─ RUN_AUDIT ──▶ background/service-worker
+                        ├─ canvas-crawler (whole-course audits)
+                        ├─ shared/prompts ──▶ Google AI API (your key;
+                        │                     demo findings without one)
+                        └─ shared/consensus-client ──▶ Consensus API
+     ◀── findings, saved to chrome.storage; dossier export as Markdown
 ```
 
 Skills are plain Markdown files generated from templates. No build step for users, no dependencies. `./setup` registers the repo as a Claude Code plugin marketplace and installs it, which is what gives the namespaced `/idstack:<skill>` commands. Users invoke skills via `/idstack:<skill>`. Each skill reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
