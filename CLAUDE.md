@@ -22,6 +22,7 @@ bin/idstack-migrate --init                 # Also create a canonical manifest wh
 bin/idstack-manifest-merge --section <s> --payload <f>   # Canonical manifest write path (atomic, section-scoped)
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
 bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
+bin/idstack-consensus status               # Consensus API key + cache status (also: configure, query, verify, sync)
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 ```
 
@@ -139,6 +140,16 @@ Logic used by more than one script — or that deserves a unit test — lives in
 
 Test the shipped file, never a copy. The version classifier drifted across three PRs while a mirrored copy in its test passed green.
 
+### Chrome extension
+
+`extension/` is a Manifest V3 side-panel extension for Canvas LMS and Google Docs audits. `background/` holds the service worker and the Canvas crawler, `content/` the page extractor, `sidepanel/` the UI, and `shared/` the prompts, evidence tiers, Consensus client and `ste-rules.js`. It has no `package.json` and no build step. The files are native ES modules that Chrome loads as they are and the tests import directly. `bin/package-extension.sh` runs the extension tests and zips the folder into `build/`.
+
+### Releasing
+
+The version has four parts (`3.7.0.0`). A release bumps it in `VERSION`, `.claude-plugin/plugin.json`, a `## vX.Y.Z.W` heading in `CHANGELOG.md`, and the `vX.Y.Z.W` text in `README.md` and `docs/index.html`. smoke-test and `check-doc-accuracy.py` fail if any of these disagree. Pushing a `vX.Y.Z.W` tag runs `.github/workflows/release.yml`: it checks the tag against `VERSION`, `plugin.json` and `CHANGELOG.md`, runs smoke-test, and creates the GitHub release.
+
+Two versions move on their own schedule. The Chrome extension has its own version in `extension/manifest.json`, and `bin/package-extension.sh` names the zip from it. The manifest schema version (`1.4`) is hard-coded in `templates/manifest-schema.md` and in `check-doc-accuracy.py`, so a schema bump also needs a `bin/idstack-migrate` step.
+
 ### Writing standard (ASD-STE100)
 
 All text that idstack shows to a person follows the ASD-STE100 Simplified Technical English rules. This includes skill chat, reports, the dashboard, learner content, CLI messages and the Chrome extension.
@@ -164,7 +175,13 @@ Every recommendation in a skill must cite its evidence tier using domain codes f
 | T4 | Observational, no comparison group |
 | T5 | Expert opinion, theoretical frameworks |
 
+`test/test-evidence-labels.mjs` parses this table and asserts the extension's `TIER_METADATA` labels match the Meaning column. Change the two together, and keep the `| Tn | text |` row format.
+
 Format: `[DomainCode-Number] [Tier]` (e.g., `[Alignment-14] [T1]`). Stronger evidence takes precedence when tiers conflict.
+
+### Evidence verification (Consensus API)
+
+assessment-design, course-quality-review and red-team stage findings in `.idstack/.staged-findings.json`. They run `bin/idstack-consensus verify --findings … --output …` before they write the report. The key comes from `CONSENSUS_API_KEY`, then `consensus_api_key` in `~/.idstack/profile.yaml`, then `preferences.consensus_api_key` in the manifest. Responses are cached in `~/.idstack/cache/consensus/`. `IDSTACK_CONSENSUS_CACHE_DIR` overrides the cache path, and `test/test-consensus-cli.py` uses it. `sync` never edits `evidence/references.md`; you add candidate citations by hand so the evidence cards stay in agreement.
 
 ### Interaction pattern
 
