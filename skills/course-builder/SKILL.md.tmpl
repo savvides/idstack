@@ -599,7 +599,7 @@ Save the `course_content` section to `.idstack/project.json` via `bin/idstack-ma
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-manifest-merge" --section course_content --payload - <<'PAYLOAD'
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section course_content --payload - <<'PAYLOAD'
 {
   "report_path": "<set to $_REPORT_PATH from the bash block above — e.g. .idstack/exports/<course-slug>/course-builder.html>",
   "mode": "build-new",
@@ -633,7 +633,7 @@ Save the `course_content` section to `.idstack/project.json` via `bin/idstack-ma
 PAYLOAD
 ```
 
-The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. If `.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json` first to create a fresh canonical manifest.
+The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. `--create` makes a canonical manifest first if `.idstack/project.json` does not exist yet (the standalone case). It never replaces a manifest that exists.
 
 **Mode field.** Set `mode` to `"build-new"` for a from-scratch generation or `"gap-fill"` when this run was triggered by upstream skills flagging missing artifacts. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
 
@@ -705,9 +705,8 @@ If you or the agent changed course files in this step, do the writing standard c
 **If the agent fails or returns nothing:** Skip this step. Add a note to the output:
 "Note: For a full alignment audit, run `/idstack:course-quality-review` next."
 
----
-
-{{MANIFEST_SCHEMA}}
+For the full manifest schema (other sections you may need to read), Read
+`${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
 ## Feedback
 

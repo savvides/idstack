@@ -993,15 +993,12 @@ top-level `updated` timestamp, and writes atomically:
 ```bash
 {{IDSTACK_RESOLVE}}
 # payload file holds ONLY the export_metadata section object (shape below)
-"$_IDSTACK/bin/idstack-manifest-merge" --section export_metadata --payload .idstack/.export_metadata-payload.json && rm -f .idstack/.export_metadata-payload.json
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section export_metadata --payload .idstack/.export_metadata-payload.json && rm -f .idstack/.export_metadata-payload.json
 ```
 
 Write the payload object to `.idstack/.export_metadata-payload.json` with the
-Write tool first, then run the merge. **If no manifest exists yet** (unlikely
-for export, but possible), the merge tool exits with code 4 (`manifest not
-found`) — in that case fall back to creating `.idstack/project.json` with the
-Write tool, initializing ALL sections from the schema with empty/default values
-and placing your `export_metadata` data inside it.
+Write tool first, then run the merge. `--create` makes a canonical manifest first if `.idstack/project.json` does not
+exist yet (the standalone case). It never replaces a manifest that exists.
 
 **CRITICAL -- Manifest Integrity Rules:**
 1. The payload must be valid JSON: matching braces, proper commas, quoted
@@ -1079,9 +1076,8 @@ all of the content correctly. Look carefully at:
 - Discussion prompts (make sure that the instructions are clear)
 - Module sequence (make sure that the module sequence is correct)"
 
----
-
-{{MANIFEST_SCHEMA}}
+For the full manifest schema (other sections you may need to read), Read
+`${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
 ## Feedback
 

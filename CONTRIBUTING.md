@@ -97,8 +97,8 @@ Write report text in ASD-STE100 (see the "Writing Standard (ASD-STE100)" section
 - **Own your section only.** Read the full manifest, modify only the section your skill owns, preserve everything else.
 - **Update the `updated` timestamp** on every write.
 - **Use `bin/idstack-manifest-merge`** for the write path. It's section-scoped, atomic (tempfile + rename), preserves foreign sections, and validates against the canonical schema in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback.
-- **One documented exception.** `needs-analysis` and `course-import` keep the Read-modify-Write path because each writes several co-owned sections in one pass, which whole-section merge cannot express. Both say so inline. Don't convert them, and don't copy the pattern into a skill that owns a single section.
-- **Standalone runs need `bin/idstack-migrate --init` first.** On a missing manifest, plain `idstack-migrate` is a no-op, so the merge that follows exits 4 and the skill's results are silently never persisted. `--init` creates a canonical manifest with every section at its default.
+- **Pass `--create` on every merge.** Skills run standalone, and on a missing manifest the merge exits 4 and the results are never saved. `--create` seeds a canonical manifest (through `bin/idstack-migrate --init`) and never replaces one that exists.
+- **Several sections, one call.** A skill that writes more than one section repeats the `--section`/`--payload` pair in a single call, so the write is atomic. `--set project_name=<v>` writes the top-level name. For a section another skill also writes, read it, add your fields, and pass the whole merged section.
 
 ## Evidence standards
 

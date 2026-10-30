@@ -19,7 +19,7 @@ bin/idstack-status                         # Course health dashboard (run in a p
 bin/idstack-status --readiness             # Pre-export readiness check only
 bin/idstack-migrate                        # Migrate an existing .idstack/project.json to the latest schema
 bin/idstack-migrate --init                 # Also create a canonical manifest when none exists (standalone skill runs)
-bin/idstack-manifest-merge --section <s> --payload <f>   # Canonical manifest write path (atomic, section-scoped)
+bin/idstack-manifest-merge --create --section <s> --payload <f>   # Canonical manifest write path (atomic, section-scoped; repeat the pair for several sections)
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
 bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
 bin/idstack-consensus {status,configure,query,verify,sync}  # Cache-first Consensus API evidence client (cache: ~/.idstack/cache/consensus)
@@ -112,8 +112,8 @@ Rules for writing the manifest:
 - Own your section only. Read full manifest, modify only your skill's section, preserve everything else.
 - Update the `updated` timestamp on every write.
 - Use `bin/idstack-manifest-merge` for the write path: it's section-scoped, atomic (tempfile + rename), preserves foreign sections, and validates against the canonical schema in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback only.
-- **The one documented exception:** `needs-analysis` and `course-import` keep the Read-modify-Write path because each writes several co-owned sections in one pass, which whole-section merge cannot express. Both state why inline. Don't "fix" them to use the merge tool, and don't copy their pattern into a single-section writer.
-- Running standalone, call `bin/idstack-migrate --init` before merging. On a missing manifest plain `idstack-migrate` is a no-op, so the merge that follows exits 4 and the results are silently never persisted.
+- Pass `--create` on every merge. A skill can run standalone, and without a manifest the merge exits 4 and the results are never saved. `--create` seeds a canonical manifest through `bin/idstack-migrate --init` first; it never replaces one that exists.
+- A skill that writes several sections (`needs-analysis`, `course-import`, `assessment-design`) passes one `--section`/`--payload` pair per section in a single call, so the write is atomic: if any payload is malformed, nothing is written. `--set project_name=<v>` writes the one top-level field a skill owns. For a section that another skill also writes, read it, add your fields, and pass the whole merged section.
 
 Rules for writing the report:
 

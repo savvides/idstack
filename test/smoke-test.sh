@@ -187,14 +187,20 @@ for skill in $REPORT_PRODUCING_SKILLS; do
   check "$skill SKILL.md.tmpl includes Top recommendations" "grep -qi 'Top recommendations' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
-# Manifest write-path contract: single-section owners go through the merge
-# tool; multi-section/first-run writers document the Write-tool fallback the
-# way course-import models it.
-for skill in learning-objectives course-quality-review course-export; do
-  check "$skill SKILL.md.tmpl uses idstack-manifest-merge" "grep -q 'idstack-manifest-merge' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+# Manifest write-path contract: every manifest writer goes through the merge
+# tool, and every merge call passes --create. Skills run standalone; a merge
+# without it exits 4 on a missing manifest and the results are never saved
+# (course-builder once ran a bare migrate that made nothing). Multi-section
+# writers use one call so the write is atomic.
+MANIFEST_WRITERS="needs-analysis course-import learning-objectives assessment-design course-builder course-quality-review accessibility-review red-team course-export"
+for skill in $MANIFEST_WRITERS; do
+  check "$skill SKILL.md.tmpl uses idstack-manifest-merge" "grep -q 'idstack-manifest-merge\" --create' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl has no merge call without --create" "! grep 'bin/idstack-manifest-merge\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | grep -vq -- '--create'"
+  check "$skill SKILL.md.tmpl does not seed the manifest with idstack-migrate" "! grep -q 'idstack-migrate' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 for skill in needs-analysis course-import; do
-  check "$skill SKILL.md.tmpl justifies its Write-tool fallback" "grep -q 'Write-tool fallback' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl writes its sections in one merge call" "grep -q -- '--section context --payload' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl sets project_name through the merge tool" "grep -q -- '--set project_name=' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
 # The learning_preferences_note text has two copies: the schema default and the
@@ -312,11 +318,16 @@ check "no resolve chain gives the plugin root a default" "! grep -rlF '\${CLAUDE
 check "pipeline SKILL.md.tmpl produces index.html in exports/<slug>/" "grep -qE 'exports/.*index.html|\$_EXPORT_DIR/index.html' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 
 # Schema-drift regression: skills that share the canonical schema must use the
-# {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy.
-SCHEMA_HOST_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review"
+# {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy. Only
+# the skills that build several sections inline it; the single-section writers
+# Read the file from the plugin root when they need another section's shape.
+SCHEMA_HOST_SKILLS="needs-analysis course-import"
 for skill in $SCHEMA_HOST_SKILLS; do
   check "$skill SKILL.md.tmpl uses {{MANIFEST_SCHEMA}}" "grep -q '{{MANIFEST_SCHEMA}}' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill generated SKILL.md inlines canonical schema (version 1.4)" "grep -q '\"version\": \"1.4\"' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+done
+for skill in learning-objectives assessment-design course-builder course-quality-review course-export accessibility-review red-team; do
+  check "$skill SKILL.md.tmpl reads the schema from the plugin root" "grep -qF '\${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
 # Schema-drift regression: drifted field names must NOT appear in any SKILL.md.tmpl

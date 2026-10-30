@@ -780,22 +780,40 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 ### Step 7: Write Manifest
 
-Create or update the project manifest. Use the Write tool to write `.idstack/project.json`.
+Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
+This skill owns the `context` and `needs_analysis` sections and the top-level `project_name`.
 
-**Why this skill uses the Write-tool fallback (not `bin/idstack-manifest-merge`):** needs-analysis writes top-level fields (`project_name`, `created`), the `context` section, AND the `needs_analysis` section — and on a first run it initializes ALL sections so downstream skills find the expected structure. The merge tool replaces exactly one section per call, so this skill uses the Read-modify-Write path described in `templates/manifest-schema.md`. When a manifest already exists, preserve every other section unchanged.
+Write each payload with the Write tool first: `.idstack/.context-payload.json` holds the
+`context` section and `.idstack/.needs_analysis-payload.json` holds the `needs_analysis`
+section. Each payload is the flat section contents, with no enclosing section key. Then:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="<project name>" \
+  --section context --payload .idstack/.context-payload.json \
+  --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
+  && rm -f .idstack/.context-payload.json .idstack/.needs_analysis-payload.json
+```
+
+`--create` makes a canonical manifest first if `.idstack/project.json` does not
+exist yet (the standalone case). It never replaces a manifest that exists. The tool keeps every other section and
+`created`, and sets `updated`. If either payload is malformed, it writes nothing.
 
 **CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first, then modify only the sections this
-   skill owns (context, needs_analysis). Preserve all other sections unchanged.
-2. Include the COMPLETE schema structure. Do not omit fields.
-3. Before writing, mentally verify the JSON is valid: matching braces, proper commas,
+1. Include the COMPLETE section structure from the schema below. Do not omit fields.
+2. Before writing, verify each payload is valid JSON: matching braces, proper commas,
    quoted strings, no trailing commas.
-4. The `updated` timestamp must reflect the current time.
-5. Set `needs_analysis.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/needs-analysis.html`.
-6. If this is a new manifest, initialize ALL sections (including learning_objectives
-   and quality_review) with empty/default values so downstream skills find the
-   expected structure.
-7. Set `project_name` to the text that you put in place of `<project name>` in
+3. Set `needs_analysis.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/needs-analysis.html`.
+4. Set `project_name` to the text that you put in place of `<project name>` in
    Step 6. The next skills use `project_name` to find the report folder.
 
 Write the manifest, then confirm to the user:
@@ -835,12 +853,12 @@ The HTML report follows the visual contract in `templates/report.html.tmpl` and 
 
 ### Two ways to write to the manifest
 
-**1. Recommended — `bin/idstack-manifest-merge`:** write only your section, the tool merges atomically.
+**1. Recommended — `bin/idstack-manifest-merge`:** write only your sections, the tool merges atomically.
 
 ```bash
 # Run this in a block that starts with your skill's own idstack resolve lines,
 # so $_IDSTACK is set. Pass your skill's section on stdin (a heredoc), not a /tmp file:
-"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section red_team_audit --payload - <<'PAYLOAD'
 { ...your section's JSON... }
 PAYLOAD
 ```
@@ -848,7 +866,7 @@ PAYLOAD
 (Skills also read this file raw, so it carries no `IDSTACK_RESOLVE` placeholder
 and no copy of the resolve lines.)
 
-The merge tool replaces only the named top-level section, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. Use this in preference to inlining the full manifest in `Edit` operations.
+The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. `--create` makes a canonical manifest first when there is none. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
 
 **2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
 

@@ -876,7 +876,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section red_team_audit --payload - <<'PAYLOAD'
 {
   "updated": "<ISO-8601 timestamp>",
   "confidence_score": 0,
@@ -905,28 +905,13 @@ Each finding object: `{"id": "alignment-1", "description": "...", "module": "Mod
 `fixes_deferred[]` — each item: `{"id": "alignment-3", "reason": "One-line reason — for example, the fix needs a new run of /idstack:assessment-design"}`.
 
 The merge tool exits non-zero (and prints a diagnostic on stderr) if the payload is malformed,
-the manifest is corrupt, or the section name is misspelled — never silently overwriting. If
-`.idstack/project.json` doesn't exist yet (standalone mode), create it first with `--init`,
-which writes a canonical manifest with every section at its default — without one the merge
-tool exits 4:
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-"$_IDSTACK/bin/idstack-migrate" --init .idstack/project.json >/dev/null
-```
+the manifest is corrupt, or the section name is misspelled — never silently overwriting.
+`--create` makes a canonical manifest first if `.idstack/project.json` does not
+exist yet (the standalone case). It never replaces a manifest that exists.
 
 **Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify
 only the `red_team_audit` section, Write back. Preserve all other sections verbatim. The
-canonical schema for reference is in `templates/manifest-schema.md`.
+canonical schema for reference is in `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
 ### Step 7: Final summary to user
 

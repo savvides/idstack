@@ -2093,6 +2093,50 @@ shell_mutation "a skill description names a bare /skill again" \
 shell_mutation "a skill description loses its Use-when trigger" \
   skills/red-team/SKILL.md.tmpl 'Use when asked to' 'It works when asked to'
 
+# 55a-55c. The manifest write path. A standalone skill run has no manifest, and
+# a merge without one exits 4, so the run's results are never saved.
+# 55a. course-builder's merge call loses --create again, as when it ran a bare
+# migrate that made nothing -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'idstack-manifest-merge" --create --section course_content'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, 'idstack-manifest-merge" --section course_content', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "a skill merges without --create again" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 55b. The merge tool ignores --create -> test-manifest-merge must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-manifest-merge" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '    if args.create and not os.path.isfile(args.manifest):\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '    if False:\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the merge tool ignores --create" "$WORK/r/test/test-manifest-merge.sh"
+
+# 55c. The merge tool makes the manifest before it checks the payloads -> the
+# test-manifest-merge suite must fail. A bad payload then leaves a seeded
+# manifest behind.
+fresh
+python3 - "$WORK/r/bin/idstack-manifest-merge" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '    payloads = [load_payload(path) for path in args.payload]\n\n'
+new_pos = '    manifest = load_manifest(args.manifest)\n'
+assert s.count(old) == 1 and s.count(new_pos) == 1, 'anchor count'
+s = s.replace(old, '', 1)
+s = s.replace(new_pos, '    payloads = [load_payload(path) for path in args.payload]\n' + new_pos, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the merge tool makes the manifest before it checks the payloads" "$WORK/r/test/test-manifest-merge.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

@@ -367,22 +367,31 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 ### Step 7: Write Manifest
 
-Create or update the project manifest. Use the Write tool to write `.idstack/project.json`.
+Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
+This skill owns the `context` and `needs_analysis` sections and the top-level `project_name`.
 
-**Why this skill uses the Write-tool fallback (not `bin/idstack-manifest-merge`):** needs-analysis writes top-level fields (`project_name`, `created`), the `context` section, AND the `needs_analysis` section — and on a first run it initializes ALL sections so downstream skills find the expected structure. The merge tool replaces exactly one section per call, so this skill uses the Read-modify-Write path described in `templates/manifest-schema.md`. When a manifest already exists, preserve every other section unchanged.
+Write each payload with the Write tool first: `.idstack/.context-payload.json` holds the
+`context` section and `.idstack/.needs_analysis-payload.json` holds the `needs_analysis`
+section. Each payload is the flat section contents, with no enclosing section key. Then:
+
+```bash
+{{IDSTACK_RESOLVE}}
+"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="<project name>" \
+  --section context --payload .idstack/.context-payload.json \
+  --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
+  && rm -f .idstack/.context-payload.json .idstack/.needs_analysis-payload.json
+```
+
+`--create` makes a canonical manifest first if `.idstack/project.json` does not
+exist yet (the standalone case). It never replaces a manifest that exists. The tool keeps every other section and
+`created`, and sets `updated`. If either payload is malformed, it writes nothing.
 
 **CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first, then modify only the sections this
-   skill owns (context, needs_analysis). Preserve all other sections unchanged.
-2. Include the COMPLETE schema structure. Do not omit fields.
-3. Before writing, mentally verify the JSON is valid: matching braces, proper commas,
+1. Include the COMPLETE section structure from the schema below. Do not omit fields.
+2. Before writing, verify each payload is valid JSON: matching braces, proper commas,
    quoted strings, no trailing commas.
-4. The `updated` timestamp must reflect the current time.
-5. Set `needs_analysis.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/needs-analysis.html`.
-6. If this is a new manifest, initialize ALL sections (including learning_objectives
-   and quality_review) with empty/default values so downstream skills find the
-   expected structure.
-7. Set `project_name` to the text that you put in place of `<project name>` in
+3. Set `needs_analysis.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/needs-analysis.html`.
+4. Set `project_name` to the text that you put in place of `<project name>` in
    Step 6. The next skills use `project_name` to find the report folder.
 
 Write the manifest, then confirm to the user:

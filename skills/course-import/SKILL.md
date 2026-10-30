@@ -1264,20 +1264,49 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 ## Step 6: Write Manifest
 
-Create or update the project manifest.
+Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
+course-import adds fields to sections that other skills also write (`context`,
+`needs_analysis`, `learning_objectives`), and it owns `import_metadata`. The merge tool
+replaces whole sections, so for each co-owned section: read the existing section from the
+manifest (if any), add the imported fields to it, and pass the full merged section.
 
-**Why this skill uses the Write-tool fallback (not `bin/idstack-manifest-merge`):** course-import writes a top-level field (`project_name`), partial fields inside `context` (`modality`, `timeline`, `available_tech`), nested entries under `needs_analysis.task_analysis.job_tasks`, additions inside `learning_objectives.ilos` and `learning_objectives.alignment_matrix`, AND the `import_metadata` section. The merge tool only does whole-section replacement, which would clobber co-owned sections. So this skill goes through the Read-modify-Write fallback path described in `templates/manifest-schema.md`.
+Write each payload with the Write tool first, as the flat section contents with no
+enclosing section key: `.idstack/.context-payload.json`, `.idstack/.needs_analysis-payload.json`,
+`.idstack/.learning_objectives-payload.json` and `.idstack/.import_metadata-payload.json`. Then:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="<project name>" \
+  --section context --payload .idstack/.context-payload.json \
+  --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
+  --section learning_objectives --payload .idstack/.learning_objectives-payload.json \
+  --section import_metadata --payload .idstack/.import_metadata-payload.json \
+  && rm -f .idstack/.context-payload.json .idstack/.needs_analysis-payload.json \
+           .idstack/.learning_objectives-payload.json .idstack/.import_metadata-payload.json
+```
+
+`--create` makes a canonical manifest first if `.idstack/project.json` does not
+exist yet (the standalone case). It never replaces a manifest that exists. If any payload is malformed, the tool
+writes nothing.
 
 **CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first.
-2. PRESERVE sections populated by other skills (especially needs_analysis from
-   /idstack:needs-analysis). Import ADDS to these sections, does not replace.
-3. If learning_objectives already has data and the user chose "merge," combine
+1. PRESERVE what other skills wrote in the co-owned sections (especially
+   needs_analysis from /idstack:needs-analysis). Import ADDS to these sections, does not
+   replace them.
+2. If learning_objectives already has data and the user chose "merge," combine
    imported ILOs with existing ones (use new ILO IDs that don't conflict).
-4. Include the COMPLETE schema structure. Do not omit fields.
-5. Before writing, verify the JSON is valid.
-6. Update the `updated` timestamp.
-7. **NEVER write the Canvas API token to the manifest, the report, or any file other than `.idstack/canvas.env`.**
+3. Include the COMPLETE section structure from the schema below. Do not omit fields.
+4. Before writing, verify each payload is valid JSON.
+5. **NEVER write the Canvas API token to the manifest, the report, or any file other than `.idstack/canvas.env`.**
 
 **Fields populated by /idstack:course-import:**
 
@@ -1289,24 +1318,22 @@ Create or update the project manifest.
 - `learning_objectives.ilos` — from Bloom's inference (Step 4)
 - `learning_objectives.alignment_matrix` — partial, from detected objective-assessment links
 
-**Import metadata:** Set the top-level `import_metadata` section. Shown here in the context of the full manifest the Write tool will produce (the outer `import_metadata` key is the section's slot in the manifest, not a wrapper to nest inside the section itself):
+**Import metadata:** The `import_metadata` payload (flat, with no enclosing `import_metadata` key):
 
 ```json
 {
-  "import_metadata": {
-    "source": "cartridge|paste|canvas-api",
-    "report_path": "<set to $_REPORT_PATH from the Step 5 bash block — e.g. .idstack/exports/<course-slug>/course-import.html>",
-    "imported_at": "ISO-8601",
-    "source_lms": "canvas|blackboard|moodle|d2l|unknown",
-    "items_imported": {
-      "modules": 0,
-      "objectives": 0,
-      "assessments": 0,
-      "activities": 0,
-      "pages": 0
-    },
-    "quality_flags": 0
-  }
+  "source": "cartridge|paste|canvas-api",
+  "report_path": "<set to $_REPORT_PATH from the Step 5 bash block — e.g. .idstack/exports/<course-slug>/course-import.html>",
+  "imported_at": "ISO-8601",
+  "source_lms": "canvas|blackboard|moodle|d2l|unknown",
+  "items_imported": {
+    "modules": 0,
+    "objectives": 0,
+    "assessments": 0,
+    "activities": 0,
+    "pages": 0
+  },
+  "quality_flags": 0
 }
 ```
 
@@ -1365,12 +1392,12 @@ The HTML report follows the visual contract in `templates/report.html.tmpl` and 
 
 ### Two ways to write to the manifest
 
-**1. Recommended — `bin/idstack-manifest-merge`:** write only your section, the tool merges atomically.
+**1. Recommended — `bin/idstack-manifest-merge`:** write only your sections, the tool merges atomically.
 
 ```bash
 # Run this in a block that starts with your skill's own idstack resolve lines,
 # so $_IDSTACK is set. Pass your skill's section on stdin (a heredoc), not a /tmp file:
-"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section red_team_audit --payload - <<'PAYLOAD'
 { ...your section's JSON... }
 PAYLOAD
 ```
@@ -1378,7 +1405,7 @@ PAYLOAD
 (Skills also read this file raw, so it carries no `IDSTACK_RESOLVE` placeholder
 and no copy of the resolve lines.)
 
-The merge tool replaces only the named top-level section, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. Use this in preference to inlining the full manifest in `Edit` operations.
+The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. `--create` makes a canonical manifest first when there is none. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
 
 **2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
 

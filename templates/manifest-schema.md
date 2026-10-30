@@ -19,12 +19,12 @@ The HTML report follows the visual contract in `templates/report.html.tmpl` and 
 
 ### Two ways to write to the manifest
 
-**1. Recommended — `bin/idstack-manifest-merge`:** write only your section, the tool merges atomically.
+**1. Recommended — `bin/idstack-manifest-merge`:** write only your sections, the tool merges atomically.
 
 ```bash
 # Run this in a block that starts with your skill's own idstack resolve lines,
 # so $_IDSTACK is set. Pass your skill's section on stdin (a heredoc), not a /tmp file:
-"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section red_team_audit --payload - <<'PAYLOAD'
 { ...your section's JSON... }
 PAYLOAD
 ```
@@ -32,7 +32,7 @@ PAYLOAD
 (Skills also read this file raw, so it carries no `IDSTACK_RESOLVE` placeholder
 and no copy of the resolve lines.)
 
-The merge tool replaces only the named top-level section, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. Use this in preference to inlining the full manifest in `Edit` operations.
+The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. `--create` makes a canonical manifest first when there is none. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
 
 **2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
 
