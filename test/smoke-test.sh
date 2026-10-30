@@ -280,7 +280,11 @@ check "pipeline invokes children with the idstack: namespace" "grep -qF 'skill: 
 RESOLVE_LINE="$(grep -m1 '^for _p in' "$IDSTACK_DIR/templates/snippets/idstack-resolve.sh" 2>/dev/null || true)"
 check "resolve snippet has the canonical for-chain" "[ -n \"\$RESOLVE_LINE\" ]"
 check "resolve snippet includes the marketplace cache path" "grep -q 'plugins/cache/idstack' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
-check "preamble embeds the snippet's resolve chain verbatim (x3)" "[ \"\$(grep -cF \"\$RESOLVE_LINE\" '$IDSTACK_DIR/templates/preamble.md')\" -eq 3 ]"
+# The preamble once kept hand copies of the chain, and one drifted unseen. Now
+# gen-skills expands the placeholder there too, and no hand-written chain is left.
+check "preamble uses {{IDSTACK_RESOLVE}}" "grep -q '{{IDSTACK_RESOLVE}}' '$IDSTACK_DIR/templates/preamble.md'"
+check "no hand-written resolve chain in the preamble or schema" "! grep -qE '^for _[a-z]+ in ' '$IDSTACK_DIR/templates/preamble.md' '$IDSTACK_DIR/templates/manifest-schema.md'"
+check "every generated resolve chain is the snippet's" "! grep -h '^for _[a-z]* in ' $IDSTACK_DIR/skills/*/SKILL.md | grep -vqxF \"\$RESOLVE_LINE\""
 for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl uses {{IDSTACK_RESOLVE}}" "grep -q '{{IDSTACK_RESOLVE}}' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl does not hand-roll _IDSTACK" "! grep -Eq '_IDSTACK:?=' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
@@ -300,8 +304,6 @@ RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$ID
   | env -u CLAUDE_PLUGIN_ROOT -u IDSTACK_HOME HOME="$RESOLVE_SIM/home" bash)
 check "the substituted plugin root wins over a stale cache install" "[ '$RESOLVE_SIM_GOT' = '$RESOLVE_SIM/plugin' ]"
 rm -rf "$RESOLVE_SIM"
-# The x3 count above pins only the preamble's "for _p in" copies. The consensus
-# block ("for _dir in") and the longhand copy in manifest-schema.md need this.
 check "no resolve chain gives the plugin root a default" "! grep -rlF '\${CLAUDE_PLUGIN_ROOT:-' '$IDSTACK_DIR/templates' $IDSTACK_DIR/skills/*/SKILL.md.tmpl $IDSTACK_DIR/skills/*/SKILL.md"
 
 # Pipeline orchestrator must produce index.html under the course folder.
@@ -496,8 +498,9 @@ for skill in $TIMELINE_SKILLS; do
   check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
-# Check preamble uses CLAUDE_PLUGIN_ROOT
-check "preamble supports CLAUDE_PLUGIN_ROOT" "grep -q 'CLAUDE_PLUGIN_ROOT' '$IDSTACK_DIR/templates/preamble.md'"
+# Check every generated skill resolves through CLAUDE_PLUGIN_ROOT (the preamble
+# gets it from the {{IDSTACK_RESOLVE}} expansion)
+check "every generated SKILL.md supports CLAUDE_PLUGIN_ROOT" "! grep -L 'CLAUDE_PLUGIN_ROOT' $IDSTACK_DIR/skills/*/SKILL.md | grep -q ."
 
 # The preamble's embedded python must run on the oldest supported interpreter
 # (macOS system python3 is 3.9) — a SyntaxError there dies silently behind

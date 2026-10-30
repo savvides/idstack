@@ -133,7 +133,7 @@ Every suite below runs in CI (`.github/workflows/test.yml`) on every push and pu
 
 | Suite | Covers |
 |-------|--------|
-| `test/smoke-test.sh` | Install, `SKILL.md` freshness, YAML frontmatter, version agreement across `VERSION` / `plugin.json` / `CHANGELOG.md`, canonical manifest section names, `/idstack:` namespacing, resolve-snippet lockstep, schema migrations, `bash -n` on every script, and the ASD-STE100 checks on the report templates and the extension output |
+| `test/smoke-test.sh` | Install, `SKILL.md` freshness, YAML frontmatter, version agreement across `VERSION` / `plugin.json` / `CHANGELOG.md`, canonical manifest section names, `/idstack:` namespacing, resolve-snippet single source, schema migrations, `bash -n` on every script, and the ASD-STE100 checks on the report templates and the extension output |
 | `test/integration-test.sh` | Behavioral tests across the `bin/` scripts; also asserts the suite leaves your working tree untouched |
 | `test/test-setup.sh` | `./setup` behavior — flag parsing, scope selection, all three legacy-cleanup shapes, failure handling. Runs against a repo copy with a fake `$HOME` and a stub `claude` |
 | `test/test-doctor.sh` | `bin/idstack-doctor` — every PROBLEM/WARNING branch and the exit contract. Runs against a repo copy with a pinned `PATH`, so "claude not found" means genuinely not found |

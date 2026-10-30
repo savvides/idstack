@@ -26,10 +26,14 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 # Extract the Context Recovery bash fence from the preamble source. Generated
-# SKILL.md files embed this block byte-for-byte (gen-skills splices it), so
-# testing the source covers all 22 outputs.
-awk '/^## Preamble: Context Recovery/{s=1} s && /^```bash$/{f=1; next} f && /^```$/{exit} f' \
-  "$IDSTACK_DIR/templates/preamble.md" > "$WORK/block.sh"
+# SKILL.md files embed this block (gen-skills splices it), so testing the source
+# covers all 22 outputs. Expand {{IDSTACK_RESOLVE}} the way gen-skills does.
+awk -v snippet="$IDSTACK_DIR/templates/snippets/idstack-resolve.sh" '
+  /^## Preamble: Context Recovery/{s=1}
+  s && /^```bash$/{f=1; next}
+  f && /^```$/{exit}
+  f && /\{\{IDSTACK_RESOLVE\}\}/{while ((getline l < snippet) > 0) print l; close(snippet); next}
+  f' "$IDSTACK_DIR/templates/preamble.md" > "$WORK/block.sh"
 
 check "extracted a non-empty context-recovery block" "[ -s '$WORK/block.sh' ]"
 check "block reads the timeline" "grep -q 'timeline.jsonl' '$WORK/block.sh'"

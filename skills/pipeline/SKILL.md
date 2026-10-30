@@ -187,18 +187,7 @@ use them.
 ## Preamble: Update Check
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache
-# (highest version). Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
-# Canonical copy: templates/snippets/idstack-resolve.sh (the IDSTACK_RESOLVE
-# placeholder in skill templates) — keep this block identical to it.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
@@ -219,11 +208,7 @@ If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idsta
 Before starting, check for an existing project manifest.
 
 ```bash
-# (fresh shell — re-derive the install dir; see Preamble: Update Check)
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
@@ -302,7 +287,6 @@ Check whether a Consensus API key is configured for live literature grounding.
 
 ```bash
 # Consensus key detection
-# (fresh shell — re-derive the install dir; see Preamble: Update Check)
 _IDSTACK=""
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
@@ -310,8 +294,8 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _dir in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_dir" ] && [ -d "$_dir" ]; then _IDSTACK="${_dir%/}"; break; fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q '"api_key_configured": true' && echo "CONFIGURED" || echo "UNCONFIGURED")
 [ -n "$_CONSENSUS_KEY" ] && echo "CONSENSUS:$_CONSENSUS_KEY"
@@ -329,11 +313,7 @@ Check for session history and learnings from prior runs.
 
 ```bash
 # Context recovery: timeline + learnings
-# (fresh shell — re-derive the install dir; see Preamble: Update Check)
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
@@ -567,23 +547,13 @@ After each skill completes (or after the orchestrator finishes the run, includin
 **Prep.** Compute the course slug and prepare the export folder:
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
@@ -629,23 +599,13 @@ The dashboard is overwritten on every pipeline run — historical dashboards are
 **Writing standard check.** In this command, replace `<path>` with the path from the "Dashboard:" line. Then run the command.
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
@@ -664,23 +624,13 @@ When all remaining skills have been executed:
 - Log the pipeline run so "the pipeline was run" is recoverable from the timeline:
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done

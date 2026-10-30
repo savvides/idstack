@@ -30,7 +30,7 @@ Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 
 ```bash
 ./test/smoke-test.sh              # 434 assertions: install, SKILL.md freshness, frontmatter, version agreement,
-                                  # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n,
+                                  # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 51 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
@@ -130,7 +130,7 @@ Every skill template follows this pattern:
 2. **`{{PREAMBLE}}`** placeholder (replaced by `templates/preamble.md` during generation)
 3. **Workflow** (Markdown defining the conversational flow, decision trees, outputs)
 4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`)
-5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`${CLAUDE_PLUGIN_ROOT}`, `IDSTACK_HOME`, then the Claude Code marketplace cache). Claude Code writes the plugin path into skill text only where it finds the exact token `${CLAUDE_PLUGIN_ROOT}`, and the Bash tool's shell never has the variable, so never give it a `:-` default. `templates/manifest-schema.md` is spliced verbatim and so writes the resolution out longhand — smoke-test keeps the two in lockstep and fails on any `${CLAUDE_PLUGIN_ROOT:-` in templates or skills.
+5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`${CLAUDE_PLUGIN_ROOT}`, `IDSTACK_HOME`, then the Claude Code marketplace cache). Claude Code writes the plugin path into skill text only where it finds the exact token `${CLAUDE_PLUGIN_ROOT}`, and the Bash tool's shell never has the variable, so never give it a `:-` default. The generator expands the placeholder in `templates/preamble.md` too and leaves the snippet's comment lines out, so the snippet is the only copy. `templates/manifest-schema.md` is also read raw, so it has no placeholder and no resolve lines. smoke-test fails on a hand-written chain in either file and on any `${CLAUDE_PLUGIN_ROOT:-` in templates or skills.
 6. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
 7. **Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/bin/idstack-ste-check"` on that file. smoke-test fails if a skill template has fewer check steps than it must have. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.
 

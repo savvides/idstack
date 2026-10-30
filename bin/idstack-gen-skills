@@ -11,7 +11,8 @@
 # {{MANIFEST_SCHEMA}} and {{IDSTACK_RESOLVE}} placeholders. {{IDSTACK_RESOLVE}}
 # puts the canonical $_IDSTACK resolution (templates/snippets/idstack-resolve.sh)
 # into each bash block that uses it. Each block runs in a different shell.
-# Thus each block must contain all of its code.
+# Thus each block must contain all of its code. The placeholder is expanded in
+# the preamble too, and the snippet's comment lines are left out of the output.
 
 set -e
 
@@ -91,6 +92,19 @@ render_template() {
   result=$(awk -v header="$HEADER" -v header2="$HEADER2" \
                -v preamble_file="$PREAMBLE" -v schema_file="$MANIFEST_SCHEMA" \
                -v resolve_file="$RESOLVE_SNIPPET" '
+    # The snippet keeps its comments as documentation; the skills get only the
+    # code. /^#/ and not a [[:space:]] class: mawk on the CI runners has none.
+    function splice_resolve(  line) {
+      while ((getline line < resolve_file) > 0) if (line !~ /^#/) print line
+      close(resolve_file)
+    }
+    function splice_file(f,  line) {
+      while ((getline line < f) > 0) {
+        if (line ~ /\{\{IDSTACK_RESOLVE\}\}/) splice_resolve()
+        else print line
+      }
+      close(f)
+    }
     BEGIN {
       frontmatter_count = 0
     }
@@ -105,21 +119,18 @@ render_template() {
       next
     }
     /\{\{PREAMBLE\}\}/ {
-      while ((getline line < preamble_file) > 0) print line
-      close(preamble_file)
+      splice_file(preamble_file)
       next
     }
     /\{\{MANIFEST_SCHEMA\}\}/ {
-      while ((getline line < schema_file) > 0) print line
-      close(schema_file)
+      splice_file(schema_file)
       next
     }
     # {{IDSTACK_RESOLVE}} appears many times per template (once per bash block
     # that calls $_IDSTACK/bin/...); close() resets the read so each occurrence
     # splices the full snippet.
     /\{\{IDSTACK_RESOLVE\}\}/ {
-      while ((getline line < resolve_file) > 0) print line
-      close(resolve_file)
+      splice_resolve()
       next
     }
     { print }
