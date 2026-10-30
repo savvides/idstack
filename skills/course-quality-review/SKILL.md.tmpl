@@ -142,7 +142,8 @@ me to a syllabus file."
 Also look for course files in the working directory:
 
 ```bash
-ls -la *.md *.docx *.pdf *.txt syllabus* outline* course* 2>/dev/null || echo "NO_COURSE_FILES"
+_FILES=$(find . -maxdepth 1 -type f \( -name '*.md' -o -name '*.docx' -o -name '*.pdf' -o -name '*.txt' -o -name 'syllabus*' -o -name 'outline*' -o -name 'course*' \) | sort)
+if [ -n "$_FILES" ]; then echo "$_FILES"; else echo "NO_COURSE_FILES"; fi
 ```
 
 If you find a syllabus or course outline, read it and use it as the basis for review.
@@ -806,10 +807,12 @@ _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-quality-review.html"
 mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
 ```
 
-Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-quality-review.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-quality-review.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
 - **`{{skill_title}}`:** "Course Quality Review"
 - **`{{skill_name}}`:** `course-quality-review`

@@ -1,5 +1,35 @@
 # Changelog
 
+## v3.7.0.1 (2026-10-30)
+
+This release fixes skill steps that did not work in Claude Code. Claude Code runs each bash block in your own shell, which is zsh on macOS. Each block also runs in a new shell. The test suites ran only bash, so they did not find these problems.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`. For a marketplace install, run `claude plugin update idstack@idstack`.
+
+### Fixed — exports and imports that failed
+
+- **`/idstack:course-export` deleted the package that it made.** The package step used a folder name from an earlier block, so `mv` failed. The step then deleted the staging folder and said that the export was complete. Now the staging folder is in the course export folder, and the step stops with `PACKAGE_FAILED` if the package is missing or empty. The SCORM path had the same problem and has the same fix.
+- **The Canvas push and the Canvas import failed on macOS.** They used `head -n -1`, which only GNU `head` accepts. The module ID was then empty, and each module item went to the wrong address. They now use `sed '$d'`.
+- **`/idstack:course-quality-review` did not find course files in zsh.** In zsh, `ls *.md *.docx` stops when one pattern finds no file. The step now uses `find`.
+- **`/idstack:course-import` read only one SCO from a SCORM package in zsh.** zsh does not split `for x in $VAR` into words. The loop now reads one launch file on each line.
+- **`/idstack:course-import` said that it reads Word files, but it did not.** The Read tool cannot read `.docx`. A new step uses python3 to extract the text and the headings into `.idstack/import/`.
+- **The report steps referred to `templates/report.html.tmpl` as a relative path.** That file is not in a course project. Each report step now prints the path in the idstack plugin folder, and the skill reads the template from there.
+- **The update check in the preamble ended with exit code 1 when no update was available.** Claude Code showed this as an error at the start of each skill. It now ends with exit code 0.
+
+### Changed — the Canvas token
+
+- **The Canvas token is now in `.idstack/canvas.env`, not in the chat.** A variable from one block is not available in the next block, so the token had to go into each command. The skill writes the Canvas URL and the course ID to the file. You paste the token into the file yourself. The file has mode 600, and `.idstack/.gitignore` stops git from adding it. Each API block reads the file again.
+- **The skills do not ask for the token in the chat.** If you paste a token in the chat, the skill tells you to revoke it in Canvas.
+
+### Changed — questions
+
+- **AskUserQuestion takes 2 to 4 options.** `/idstack:pipeline`, `/idstack:course-import` and `/idstack:red-team` gave it 5 or more. `/idstack:course-import` now has 4 import choices, and a package file goes to the cartridge or the SCORM path from its file extension. `/idstack:pipeline` shows the full skill list as a numbered list in chat. The preamble now gives the limit, and it tells the skills to ask free-text questions in plain chat.
+
+### Tests
+
+- **A new suite, `test/test-skill-shell-zsh.sh`, runs real skill blocks in bash and in zsh.** It runs the export steps, the Canvas steps with a fake `curl`, the `.docx` step, the SCO loop and the file search. It also runs each preamble block. smoke-test runs it, and CI installs zsh on Linux.
+- **smoke-test finds the patterns that caused these problems.** These are `head -n -N`, `for x in $VAR`, a bare `ls *.ext` and a `/tmp` merge payload. They also include a Canvas block without `canvas.env` and a report step without the template path. A mutation case puts back each pattern and makes sure that smoke-test fails.
+
 ## v3.7.0.0 (2026-10-09)
 
 idstack now writes the English text that it shows to a person in the ASD-STE100 Simplified Technical English rules. This includes skill chat, reports, the course dashboard, CLI messages and the Chrome extension. A new script, `bin/idstack-ste-check`, finds some of the rule problems, and each skill runs it on the files that it writes for a person. This release also fixes how skills find idstack's own scripts. Before, a skill could run the scripts of an old copy of idstack. The Chrome extension is now version 1.2.0.

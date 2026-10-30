@@ -234,7 +234,7 @@ Wait for user confirmation before proceeding.
 
 "Some information is not in the manifest. Give me this information:"
 
-Ask using AskUserQuestion:
+Ask in plain chat, not with AskUserQuestion, because the answers are free text:
 - Instructor name and title
 - Contact information (email, office hours — or "TBD" if not ready)
 - Any course policies specific to your institution (grading scale, late work,
@@ -566,10 +566,12 @@ _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-builder.html"
 mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
 ```
 
-Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-builder.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-builder.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
 - **`{{skill_title}}`:** "Course Builder Report"
 - **`{{skill_name}}`:** `course-builder`

@@ -40,8 +40,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-# Write a payload for your skill's section, then:
-"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload /tmp/payload.json
+# Pass your skill's section on stdin (a heredoc), not a /tmp file:
+"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
+{ ...your section's JSON... }
+PAYLOAD
 ```
 
 (This file is spliced into skills verbatim, so the resolution above is written

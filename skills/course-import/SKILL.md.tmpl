@@ -77,20 +77,25 @@ Ask the user how they want to import their course. Use AskUserQuestion:
 
 "How do you want to import your course?"
 
-Options:
-- A) **IMS Common Cartridge file (.imscc)** — Universal format. Export from Canvas,
-     Blackboard, Moodle, or D2L. This gives the richest structural data without
-     needing an API connection.
-- B) **Paste course documents** — Copy and paste your syllabus, module outline,
-     or assignment descriptions. Zero friction, works with any course.
-- C) **Canvas API** — Connect directly to Canvas with an access token. Pulls the
-     live course structure including rubrics and outcomes.
-- D) **PDF or document file** — Upload a PDF exported from Articulate Rise,
-     Storyline, or any authoring tool. Also works with Word docs, course packets,
-     and syllabus PDFs. Provide the file path and the AI reads it directly.
-- E) **SCORM package (.zip)** — Import a SCORM 1.2 or 2004 package exported from
-     Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, or any
-     SCORM-compliant authoring tool. Extracts course structure from imsmanifest.xml.
+Options (AskUserQuestion takes a maximum of 4):
+- **LMS or SCORM package file** — An IMS Common Cartridge (.imscc) export from
+  Canvas, Blackboard, Moodle, or D2L, or a SCORM 1.2 / 2004 package (.zip) from
+  Articulate Rise, Storyline, Adobe Captivate, Lectora, iSpring, or a different
+  SCORM authoring tool. This gives the most structural data without an API connection.
+- **PDF or Word file** — A PDF from an authoring tool, a Word document (.docx),
+  a course packet, or a syllabus. Give the file path and idstack reads it.
+- **Paste course documents** — Copy and paste your syllabus, module outline,
+  or assignment descriptions. Works with any course.
+- **Canvas API** — Connect directly to Canvas with an access token. Gets the
+  live course structure, including rubrics and outcomes.
+
+Routing:
+- **LMS or SCORM package file** → ask for the file path. A `.imscc` file goes to
+  Path A. A `.zip` file goes to Path E. Step E3 stops with a clear message if
+  the `.zip` is not a SCORM package.
+- **PDF or Word file** → Path D.
+- **Paste course documents** → Path B.
+- **Canvas API** → Path C.
 
 ---
 
@@ -104,6 +109,7 @@ into this window."
 ### A2. Validate and extract
 
 ```bash
+CARTRIDGE_PATH="<file path from the user>"
 # Check file exists
 if [ ! -f "$CARTRIDGE_PATH" ]; then
   echo "FILE_NOT_FOUND"
@@ -123,6 +129,7 @@ path like `/var/folders/.../idstack-import.XXXXXX.suffix`. The bare `mktemp -d` 
 portable across macOS and Linux:
 
 ```bash
+CARTRIDGE_PATH="<file path from the user>"
 IMPORT_DIR=$(mktemp -d)
 unzip -q "$CARTRIDGE_PATH" -d "$IMPORT_DIR" 2>&1
 echo "IMPORT_DIR=$IMPORT_DIR"
@@ -132,6 +139,7 @@ ls "$IMPORT_DIR/"
 ### A3. Find and read the manifest
 
 ```bash
+IMPORT_DIR=<IMPORT_DIR printed above>
 if [ -f "$IMPORT_DIR/imsmanifest.xml" ]; then
   echo "MANIFEST_FOUND"
 else
@@ -146,6 +154,7 @@ a Common Cartridge export? Export the course from your LMS again."
 Read the manifest XML:
 
 ```bash
+IMPORT_DIR=<IMPORT_DIR printed above>
 cat "$IMPORT_DIR/imsmanifest.xml"
 ```
 
@@ -179,8 +188,9 @@ Extract from the XML:
 Read resource files for additional detail when the manifest references them:
 
 ```bash
+IMPORT_DIR=<IMPORT_DIR printed above>
 # Read assignment details, quiz content, etc.
-ls "$IMPORT_DIR"/*.xml "$IMPORT_DIR"/**/*.xml 2>/dev/null | head -20
+find "$IMPORT_DIR" -name '*.xml' | sort | head -20
 ```
 
 Read up to 10 resource files to extract assessment details, rubrics, and content
@@ -198,6 +208,7 @@ descriptions. Prioritize assignments and quizzes over static content.
 After extracting all needed data:
 
 ```bash
+IMPORT_DIR=<IMPORT_DIR printed above>
 rm -rf "$IMPORT_DIR"
 ```
 
@@ -272,6 +283,39 @@ or a different authoring tool. It also works with Word documents, course packets
 Use the Read tool to read the file at the provided path. The Read tool can read
 PDFs directly (multimodal).
 
+The Read tool cannot read Word files (`.docx`). For a `.docx` file, first
+extract the text. Replace `<file path from the user>`, then run the command:
+
+```bash
+DOCX_PATH="<file path from the user>"
+mkdir -p .idstack/import
+_OUT=".idstack/import/$(basename "$DOCX_PATH" .docx).txt"
+python3 - "$DOCX_PATH" "$_OUT" <<'PYEOF'
+import re, sys, zipfile
+from xml.etree import ElementTree as ET
+W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+try:
+    xml = zipfile.ZipFile(sys.argv[1]).read("word/document.xml")
+except (OSError, KeyError, zipfile.BadZipFile) as e:
+    print("DOCX_READ_FAILED: %s" % e)
+    sys.exit(1)
+lines = []
+for p in ET.fromstring(xml).iter(W + "p"):
+    text = "".join(t.text or "" for t in p.iter(W + "t"))
+    style = p.find("./%spPr/%spStyle" % (W, W))
+    if style is not None and re.match(r"Heading(\d)", style.get(W + "val", "")):
+        text = "#" * int(re.match(r"Heading(\d)", style.get(W + "val")).group(1)) + " " + text
+    lines.append(text)
+open(sys.argv[2], "w", encoding="utf-8").write("\n".join(lines).strip() + "\n")
+print("DOCX_TEXT: %s" % sys.argv[2])
+PYEOF
+```
+
+Then use the Read tool on the `DOCX_TEXT` file. The text keeps the headings
+as Markdown `#` lines. It does not keep images or tables as tables. If the output
+is `DOCX_READ_FAILED`, ask the user to save the file as PDF and give the PDF path.
+For an old `.doc` file, ask the user to save it as `.docx` or PDF.
+
 If the file does not exist, ask the user to check the path.
 
 If the PDF is large (more than 10 pages), read in chunks using the `pages` parameter:
@@ -312,27 +356,55 @@ Continue to Step 2 (Quality Flags).
 
 ### C1. Get credentials
 
-Ask: "idstack must have three things to connect to Canvas:
+idstack keeps your Canvas details in `.idstack/canvas.env`. Each Bash call
+runs in a new shell, so each API command reads this file again. Your token
+does not go into the chat.
+
+Ask the user in plain chat (not AskUserQuestion, because the answers are free
+text) for two items:
 
 1. **Canvas URL** — Your institution's Canvas address
    (for example, `https://canvas.university.edu`)
-
-2. **Access token** — Generate one in Canvas:
-   Account → Settings → scroll to 'Approved Integrations' → New Access Token
-
-3. **Course ID** — The number in the URL when you open the course
+2. **Course ID** — The number in the URL when you open the course
    (for example, `https://canvas.university.edu/courses/12345` → course ID is `12345`)
 
-idstack uses your token for this session only. It does NOT save the token to a file."
+Do NOT ask for the access token in the chat. If the user pastes a token in the
+chat, tell them to revoke it in Canvas and make a new one.
+
+Replace `<canvas url>` and `<course id>`, then run the command. It keeps a
+token that is already in the file:
+
+```bash
+umask 077
+mkdir -p .idstack
+_TOKEN_LINE=$(grep '^CANVAS_TOKEN=' .idstack/canvas.env 2>/dev/null || echo "CANVAS_TOKEN=''")
+printf "CANVAS_BASE_URL='%s'\nCANVAS_COURSE_ID='%s'\n%s\n" '<canvas url>' '<course id>' "$_TOKEN_LINE" > .idstack/canvas.env
+chmod 600 .idstack/canvas.env
+grep -qx 'canvas.env' .idstack/.gitignore 2>/dev/null || echo 'canvas.env' >> .idstack/.gitignore
+echo "Canvas settings file: $PWD/.idstack/canvas.env"
+```
+
+Then tell the user:
+
+"Open `.idstack/canvas.env` in a text editor. Paste your Canvas access token
+between the two quotes after `CANVAS_TOKEN=`. Save the file, then tell me
+when it is done.
+
+To make a token in Canvas: Account → Settings → Approved Integrations → New
+Access Token. Only you can read this file, and `.idstack/.gitignore` stops git
+from adding it. When you are done with idstack, you can delete the file or
+revoke the token in Canvas."
 
 ### C2. Validate connection
 
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+[ -n "$CANVAS_TOKEN" ] || { echo "CANVAS_TOKEN_EMPTY: add the token to .idstack/canvas.env"; exit 1; }
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-  -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/users/self" 2>&1)
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/users/self" 2>&1)
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | head -n -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
 echo "HTTP: $HTTP_CODE"
 echo "$BODY" | head -5
 ```
@@ -345,52 +417,61 @@ Handle errors:
 
 ### C3. Fetch course data
 
-**SECURITY RULE: The token variable is used ONLY in curl commands within this
-section. NEVER write the token to the manifest, to any file, or to conversation
-output. After all API calls are complete, the token is discarded.**
+**SECURITY RULE: The token is only in `.idstack/canvas.env`. Use
+`$CANVAS_TOKEN` ONLY in the curl `Authorization` header. NEVER show the file
+with `cat`, NEVER echo the token, and NEVER write it to the manifest, the
+report, or a different file.**
 
 Fetch in this order (each is a separate curl call):
 
 **Course info:**
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID" | head -200
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID" | head -200
 ```
 
 **Modules with items:**
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/modules?include[]=items&per_page=50"
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules?include[]=items&per_page=50"
 ```
 
 **Assignments:**
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/assignments?per_page=50"
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/assignments?per_page=50"
 ```
 
 **Pages (first page only for structure):**
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/pages?per_page=50"
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/pages?per_page=50"
 ```
 
 **Discussion topics:**
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/discussion_topics?per_page=50"
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/discussion_topics?per_page=50"
 ```
 
 **Outcomes (if available):**
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/outcome_groups?per_page=50"
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/outcome_groups?per_page=50"
 ```
 
 For each outcome group found, fetch individual outcomes:
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/outcome_groups/$GROUP_ID/outcomes?per_page=50"
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+GROUP_ID=<outcome group id from the response above>
+curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/outcome_groups/$GROUP_ID/outcomes?per_page=50"
 ```
 
 **Pagination:** If a response includes a `Link` header with `rel="next"`, follow
@@ -431,6 +512,7 @@ Adobe Captivate, Lectora, iSpring, or any SCORM-compliant authoring tool."
 ### E2. Validate and extract
 
 ```bash
+SCORM_PATH="<file path from the user>"
 # Check file exists
 if [ ! -f "$SCORM_PATH" ]; then
   echo "FILE_NOT_FOUND"
@@ -446,6 +528,7 @@ that your authoring tool exports."
 Extract the package:
 
 ```bash
+SCORM_PATH="<file path from the user>"
 IMPORT_DIR=$(mktemp -d)
 unzip -q "$SCORM_PATH" -d "$IMPORT_DIR" 2>&1
 echo "IMPORT_DIR=$IMPORT_DIR"
@@ -455,6 +538,7 @@ ls "$IMPORT_DIR/"
 ### E3. Find and read the manifest
 
 ```bash
+IMPORT_DIR=<IMPORT_DIR printed above>
 if [ -f "$IMPORT_DIR/imsmanifest.xml" ]; then
   echo "SCORM_MANIFEST_FOUND"
   cat "$IMPORT_DIR/imsmanifest.xml"
@@ -492,8 +576,13 @@ From `imsmanifest.xml`, extract:
 - Read the HTML content of SCO launch files to extract learning content:
 
 ```bash
-# For each SCO resource, read its launch file
-for sco_href in $SCO_HREFS; do
+IMPORT_DIR=<IMPORT_DIR printed above>
+# For each SCO resource, read its launch file.
+# Put one SCO launch href on each line of SCO_HREFS.
+SCO_HREFS='<href of SCO 1>
+<href of SCO 2>'
+printf '%s\n' "$SCO_HREFS" | while IFS= read -r sco_href; do
+  [ -n "$sco_href" ] || continue
   if [ -f "$IMPORT_DIR/$sco_href" ]; then
     echo "=== SCO: $sco_href ==="
     cat "$IMPORT_DIR/$sco_href"
@@ -553,6 +642,7 @@ If the user corrects something, incorporate the corrections.
 ### E8. Cleanup
 
 ```bash
+IMPORT_DIR=<IMPORT_DIR printed above>
 rm -rf "$IMPORT_DIR"
 ```
 
@@ -726,10 +816,12 @@ _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-import.html"
 mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
 ```
 
-Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-import.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-import.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
 - **`{{skill_title}}`:** "Course Import Report"
 - **`{{skill_name}}`:** `course-import`
@@ -739,7 +831,7 @@ Write the HTML report at the path printed above (`.idstack/exports/<course-slug>
   - `<section class="imported">` with `<h2>Imported</h2>` and an HTML `<table>` (Item, Count). Rows: Modules, Objectives, Assessments, Activities/discussions, Pages, Rubrics.
 - **Finding ids:** `import-1`, `quality-1`, `bloom-1`, etc. Findings come from import quality flags, missing rubrics, missing objectives, alignment-already-broken-on-arrival, and Bloom's-inference low-confidence classifications.
 - **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="blooms-classification">` with `<h2>Bloom's classification</h2>` and an HTML `<table>` (ILO ID, Statement (truncated), Bloom's level, Confidence). Note any low-confidence classifications the designer should verify.
-- **Limitations:** The import reads structural metadata only. Interactive elements (Storyline, flashcards) do not show in a PDF. The import does not write Canvas API auth tokens to disk. The import can miss data in SCORM packages that have non-standard manifest extensions.
+- **Limitations:** The import reads structural metadata only. Interactive elements (Storyline, flashcards) do not show in a PDF. The Canvas token stays in `.idstack/canvas.env` on the user's computer. idstack does not write it to the manifest or the report. The import can miss data in SCORM packages that have non-standard manifest extensions.
 - **Next steps** (use an `<ol>`):
   1. Run `/idstack:course-quality-review` for the full evidence-based audit.
   2. Run `/idstack:learning-objectives` to check the Bloom's inference and the bidirectional alignment.
@@ -771,7 +863,7 @@ Create or update the project manifest.
 4. Include the COMPLETE schema structure. Do not omit fields.
 5. Before writing, verify the JSON is valid.
 6. Update the `updated` timestamp.
-7. **NEVER write the Canvas API token to the manifest or any file.**
+7. **NEVER write the Canvas API token to the manifest, the report, or any file other than `.idstack/canvas.env`.**
 
 **Fields populated by /idstack:course-import:**
 

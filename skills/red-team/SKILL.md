@@ -29,7 +29,11 @@ lean on:
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   it means: present a single multiple-choice question (e.g., "Which of these best describes X?")
   and stop, waiting for the user's answer before proceeding. Ask **one** question at a time,
-  never batch. This maps to the `AskUserQuestion` tool.
+  never batch. This maps to the `AskUserQuestion` tool. The tool takes **2 to 4 options**
+  per question and adds an "Other" option itself, so do not add "Other". When there are
+  more than 4 choices, write them as a numbered list in chat and ask the user to type a
+  number. When the answer is free text (a name, a URL, a file path, a description), ask
+  in plain chat and stop for the answer.
 - **Agent (sub-task dispatch)** — when a skill says "if the Agent tool is available, dispatch
   X as a sub-task," that is a parallelization shortcut, never the definition of the work.
   The inline written-out steps that follow are; run them sequentially whenever dispatch is
@@ -208,7 +212,7 @@ for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-[ -n "$_UPD" ] && echo "$_UPD"
+if [ -n "$_UPD" ]; then echo "$_UPD"; fi
 ```
 
 If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
@@ -489,7 +493,10 @@ Options:
 - **Assessment gaming** — bias depth toward Dimension 1 (alignment)
 - **Cognitive overload** — bias depth toward Dimension 3 (cognitive load)
 - **Persona accessibility** — bias depth toward Dimension 4 (personas)
-- **Evidence accuracy** — bias depth toward Dimension 2 (evidence)
+
+AskUserQuestion takes a maximum of 4 options. Put this in the question text: "For
+evidence accuracy, select Other and type `evidence`." If the user types `evidence`,
+bias depth toward Dimension 2 (evidence).
 
 Save the user's choice as `FOCUS` for the orchestrator brief.
 
@@ -791,10 +798,12 @@ _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/red-team.html"
 mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
 ```
 
-Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/red-team.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/red-team.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
 - **`{{skill_title}}`:** "Red Team Audit"
 - **`{{skill_name}}`:** `red-team`
