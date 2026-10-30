@@ -12,8 +12,9 @@ jobs:
         include:
           # 3.9 is the oldest interpreter in the field (macOS system python3);
           # it is the leg that catches modern-only Python syntax creeping into
-          # the preamble's embedded scripts.
-          - os: ubuntu-latest
+          # the preamble's embedded scripts. Pinned to ubuntu-24.04: setup-python
+          # has no 3.9 build for Ubuntu 26.04, which ubuntu-latest now resolves to.
+          - os: ubuntu-24.04
             python-version: '3.9'
           - os: ubuntu-latest
             python-version: '3.12'
@@ -62,9 +63,10 @@ jobs:
   # Pinned to 3.9, the oldest supported interpreter: some defects only exist
   # below a given version. PEP 701 (3.12) legalized reusing a quote inside an
   # f-string replacement field, so mutating the preamble f-string bug is a
-  # no-op on 3.12 and the suite would skip that case.
+  # no-op on 3.12 and the suite would skip that case. ubuntu-24.04 for the
+  # same reason as the 3.9 test leg: no 3.9 build for Ubuntu 26.04.
   mutation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
