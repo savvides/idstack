@@ -121,6 +121,8 @@ _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-export.html"
 mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Course export folder: $_EXPORT_DIR"
 ```
 
@@ -412,37 +414,57 @@ it is visible to both instructors and students after import.
 
 ### A5. Package as ZIP
 
-Assemble all generated files into the Common Cartridge package:
+Each Bash call runs in a new shell. Thus each block below sets its own paths.
+The staging folder is in the course export folder, so the Write tool writes
+inside the project.
+
+First, make the staging folder. Replace `<export folder>` with the folder from
+the "Course export folder:" line, then run the command:
 
 ```bash
-EXPORT_DIR=$(mktemp -d)
-mkdir -p "$EXPORT_DIR/modules"
-mkdir -p "$EXPORT_DIR/assignments"
-mkdir -p "$EXPORT_DIR/quizzes"
-mkdir -p "$EXPORT_DIR/discussions"
+_EXPORT_DIR="<export folder>"
+_STAGE="$_EXPORT_DIR/.imscc-staging"
+rm -rf "$_STAGE"
+mkdir -p "$_STAGE/modules" "$_STAGE/assignments" "$_STAGE/quizzes" "$_STAGE/discussions"
+echo "Staging folder: $_STAGE"
+```
 
-# Write imsmanifest.xml to $EXPORT_DIR/imsmanifest.xml
-# Write module HTML files to $EXPORT_DIR/modules/
-# Write assignment XML files to $EXPORT_DIR/assignments/
-# Write quiz QTI XML files to $EXPORT_DIR/quizzes/
-# Write discussion XML files to $EXPORT_DIR/discussions/
-# Write syllabus HTML to $EXPORT_DIR/syllabus.html
+Then write each file into the staging folder with the Write tool:
 
-# Package. $EXPORT_DIR here is the mktemp staging dir; $_EXPORT_DIR is the
-# course-named folder under .idstack/exports/<slug>/ from the prep step above.
-cd "$EXPORT_DIR"
-zip -r course-export.imscc .
-mv "$EXPORT_DIR/course-export.imscc" "$_EXPORT_DIR/course-export.imscc"
-rm -rf "$EXPORT_DIR"
+- `imsmanifest.xml` at the root of the staging folder
+- module HTML files in `modules/`
+- assignment XML files in `assignments/`
+- quiz QTI XML files in `quizzes/`
+- discussion XML files in `discussions/`
+- `syllabus.html` at the root of the staging folder
+
+Write each file individually. Make sure that each file is correctly formed
+before you make the package.
+
+Then make the package. Replace `<export folder>` again, then run the command:
+
+```bash
+_EXPORT_DIR="<export folder>"
+_STAGE="$_EXPORT_DIR/.imscc-staging"
+_OUT="$(cd "$_EXPORT_DIR" && pwd)/course-export.imscc"
+[ -f "$_STAGE/imsmanifest.xml" ] || { echo "PACKAGE_FAILED: $_STAGE/imsmanifest.xml is missing"; exit 1; }
+rm -f "$_OUT"
+( cd "$_STAGE" && zip -qr "$_OUT" . ) || { echo "PACKAGE_FAILED: zip error. The staging folder is still at $_STAGE"; exit 1; }
+[ -s "$_OUT" ] || { echo "PACKAGE_FAILED: $_OUT is empty"; exit 1; }
+rm -rf "$_STAGE"
 echo "Export saved to $_EXPORT_DIR/course-export.imscc"
 ```
 
-Write each file individually using the Write tool, then package with Bash.
-This ensures every file is correctly formed before zipping.
+If the output starts with `PACKAGE_FAILED`, tell the user the error. Do not say
+that the export is complete.
 
 ### A6. Verify the Package
 
+Replace `<export folder>` with the folder from the "Course export folder:" line,
+then run the command:
+
 ```bash
+_EXPORT_DIR="<export folder>"
 # Verify it's a valid zip
 file "$_EXPORT_DIR/course-export.imscc"
 # List contents
@@ -486,30 +508,56 @@ To import into your LMS:
 
 ### B1. Get Credentials
 
-Ask the user for Canvas connection details. Use AskUserQuestion:
+idstack keeps your Canvas details in `.idstack/canvas.env`. Each Bash call
+runs in a new shell, so each API command reads this file again. Your token
+does not go into the chat.
 
-"idstack must have three things to push your course to Canvas:
+Ask the user in plain chat (not AskUserQuestion, because the answers are free
+text) for two items:
 
 1. **Canvas URL** — Your institution's Canvas address
    (for example, `https://canvas.university.edu`)
-
-2. **Access token** — Generate one in Canvas:
-   Account > Settings > scroll to 'Approved Integrations' > New Access Token
-
-3. **Course ID** — The number in the URL when you open the course
-   (for example, `https://canvas.university.edu/courses/12345` > course ID is `12345`)
+2. **Course ID** — The number in the URL when you open the course
+   (for example, `https://canvas.university.edu/courses/12345` → course ID is `12345`)
    Use an existing empty course shell, or create a new course first in Canvas.
 
-idstack uses your token for this session only. It does NOT save the token to a file."
+Do NOT ask for the access token in the chat. If the user pastes a token in the
+chat, tell them to revoke it in Canvas and make a new one.
+
+Replace `<canvas url>` and `<course id>`, then run the command. It keeps a
+token that is already in the file:
+
+```bash
+umask 077
+mkdir -p .idstack
+_TOKEN_LINE=$(grep '^CANVAS_TOKEN=' .idstack/canvas.env 2>/dev/null || echo "CANVAS_TOKEN=''")
+printf "CANVAS_BASE_URL='%s'\nCANVAS_COURSE_ID='%s'\n%s\n" '<canvas url>' '<course id>' "$_TOKEN_LINE" > .idstack/canvas.env
+chmod 600 .idstack/canvas.env
+grep -qx 'canvas.env' .idstack/.gitignore 2>/dev/null || echo 'canvas.env' >> .idstack/.gitignore
+echo "Canvas settings file: $PWD/.idstack/canvas.env"
+```
+
+Then tell the user:
+
+"Open `.idstack/canvas.env` in a text editor. Paste your Canvas access token
+between the two quotes after `CANVAS_TOKEN=`. Save the file, then tell me
+when it is done.
+
+To make a token in Canvas: Account → Settings → Approved Integrations → New
+Access Token. Only you can read this file, and `.idstack/.gitignore` stops git
+from adding it. When you are done with idstack, you can delete the file or
+revoke the token in Canvas."
 
 ### B2. Validate Connection
 
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+[ -n "$CANVAS_TOKEN" ] || { echo "CANVAS_TOKEN_EMPTY: add the token to .idstack/canvas.env"; exit 1; }
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-  -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/users/self" 2>&1)
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/users/self" 2>&1)
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | head -n -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
 echo "HTTP: $HTTP_CODE"
 echo "$BODY" | head -5
 ```
@@ -524,9 +572,10 @@ Handle errors:
 
 Verify course access:
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 curl -s -w "\n%{http_code}" \
-  -H "Authorization: Bearer $TOKEN" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID" 2>&1
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID" 2>&1
 ```
 
 - HTTP 404: "Course not found. Check the course ID. You can find it in the URL
@@ -534,9 +583,10 @@ curl -s -w "\n%{http_code}" \
 - HTTP 403: "You do not have access to this course. Get the Teacher or Designer
   role from your Canvas admin."
 
-**SECURITY RULE: The token variable is used ONLY in curl commands within this
-section. NEVER write the token to the manifest, to any file, or to conversation
-output. After all API calls are complete, the token is discarded.**
+**SECURITY RULE: The token is only in `.idstack/canvas.env`. Use
+`$CANVAS_TOKEN` ONLY in the curl `Authorization` header. NEVER show the file
+with `cat`, NEVER echo the token, and NEVER write it to the manifest, the
+report, or a different file.**
 
 ### B3. Read Course Content
 
@@ -549,12 +599,13 @@ accept HTML in their body fields).
 For each module in the course content:
 
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
   -d "module[name]={module title}&module[position]={position}" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/modules" 2>&1)
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules" 2>&1)
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | head -n -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
 echo "HTTP: $HTTP_CODE"
 MODULE_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 echo "MODULE_ID=$MODULE_ID"
@@ -562,10 +613,12 @@ echo "MODULE_ID=$MODULE_ID"
 
 Publish the module:
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+MODULE_ID=<module id printed in B4>
 curl -s -X PUT \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
   -d "module[published]=true" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/modules/$MODULE_ID"
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID"
 ```
 
 Store the returned module ID for adding items in subsequent steps.
@@ -575,15 +628,16 @@ Store the returned module ID for adding items in subsequent steps.
 For each module page (content, syllabus):
 
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 # Create the page
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
   --data-urlencode "wiki_page[title]={page title}" \
   --data-urlencode "wiki_page[body]={html content}" \
   -d "wiki_page[published]=true" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/pages" 2>&1)
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/pages" 2>&1)
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | head -n -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
 PAGE_URL=$(echo "$BODY" | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
 echo "HTTP: $HTTP_CODE"
 echo "PAGE_URL=$PAGE_URL"
@@ -591,10 +645,13 @@ echo "PAGE_URL=$PAGE_URL"
 
 Then add the page to its module:
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+MODULE_ID=<module id printed in B4>
+PAGE_URL=<PAGE_URL printed above>
 curl -s -X POST \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
   -d "module_item[title]={page title}&module_item[type]=Page&module_item[page_url]=$PAGE_URL&module_item[published]=true" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/modules/$MODULE_ID/items"
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
 ```
 
 ### B6. Create Assignments
@@ -602,17 +659,18 @@ curl -s -X POST \
 For each assessment (essay, project, upload type):
 
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
   --data-urlencode "assignment[name]={title}" \
   --data-urlencode "assignment[description]={html description with rubric}" \
   -d "assignment[points_possible]={points}" \
   -d "assignment[submission_types][]=online_text_entry" \
   -d "assignment[submission_types][]=online_upload" \
   -d "assignment[published]=false" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/assignments" 2>&1)
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/assignments" 2>&1)
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | head -n -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
 ASSIGN_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 echo "HTTP: $HTTP_CODE"
 echo "ASSIGN_ID=$ASSIGN_ID"
@@ -620,10 +678,13 @@ echo "ASSIGN_ID=$ASSIGN_ID"
 
 Add the assignment to its module:
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+MODULE_ID=<module id printed in B4>
+ASSIGN_ID=<ASSIGN_ID printed above>
 curl -s -X POST \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
   -d "module_item[title]={title}&module_item[type]=Assignment&module_item[content_id]=$ASSIGN_ID&module_item[published]=true" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/modules/$MODULE_ID/items"
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
 ```
 
 Note: Assignments are created unpublished by default. The instructional designer
@@ -634,14 +695,15 @@ should review descriptions, rubrics, and due dates in Canvas before publishing.
 For each discussion activity:
 
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
   --data-urlencode "title={title}" \
   --data-urlencode "message={html discussion prompt}" \
   -d "published=false" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/discussion_topics" 2>&1)
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/discussion_topics" 2>&1)
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | head -n -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
 TOPIC_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 echo "HTTP: $HTTP_CODE"
 echo "TOPIC_ID=$TOPIC_ID"
@@ -649,17 +711,21 @@ echo "TOPIC_ID=$TOPIC_ID"
 
 Add to its module:
 ```bash
+. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+MODULE_ID=<module id printed in B4>
+TOPIC_ID=<TOPIC_ID printed above>
 curl -s -X POST \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $CANVAS_TOKEN" \
   -d "module_item[title]={title}&module_item[type]=Discussion&module_item[content_id]=$TOPIC_ID&module_item[published]=true" \
-  "$BASE_URL/api/v1/courses/$COURSE_ID/modules/$MODULE_ID/items"
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
 ```
 
 ### B8. Error Handling
 
 Each API call is wrapped in error checking. Handle these cases:
 
-- **HTTP 401:** Token expired or invalid. Stop and ask for a new token.
+- **HTTP 401:** Token expired or invalid. Stop. Tell the user to put a new token in
+  `.idstack/canvas.env`. Do not ask for the token in the chat.
 - **HTTP 403:** Insufficient permissions. Report which item failed and why.
 - **HTTP 404:** Course or resource not found. Report the specific endpoint.
 - **HTTP 422:** Validation error. Report the error message from Canvas.
@@ -724,10 +790,15 @@ If no course content files exist, tell the user: "No course content found in
 
 ### C2. Create SCORM package structure
 
+Replace `<export folder>` with the folder from the "Course export folder:" line,
+then run the command:
+
 ```bash
-EXPORT_DIR=$(mktemp -d)
-mkdir -p "$EXPORT_DIR/content"
-echo "EXPORT_DIR=$EXPORT_DIR"
+_EXPORT_DIR="<export folder>"
+_STAGE="$_EXPORT_DIR/.scorm-staging"
+rm -rf "$_STAGE"
+mkdir -p "$_STAGE/content"
+echo "Staging folder: $_STAGE"
 ```
 
 ### C3. Generate HTML content pages
@@ -735,7 +806,7 @@ echo "EXPORT_DIR=$EXPORT_DIR"
 For each module page in `.idstack/course-content/`, convert the Markdown content
 to a self-contained HTML page. Each page becomes a SCO (Shareable Content Object).
 
-Write each HTML file to `$EXPORT_DIR/content/`:
+Write each HTML file to the `content/` folder in the staging folder:
 
 ```html
 <!DOCTYPE html>
@@ -762,7 +833,7 @@ Name files as `module-01.html`, `module-02.html`, etc. matching module order.
 
 ### C4. Generate imsmanifest.xml
 
-Write `$EXPORT_DIR/imsmanifest.xml` following the SCORM 1.2 specification:
+Write `imsmanifest.xml` at the root of the staging folder. Follow the SCORM 1.2 specification:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -811,18 +882,29 @@ Rules for generating the manifest:
 
 ### C5. Package as ZIP
 
+Replace `<export folder>` with the folder from the "Course export folder:" line,
+then run the command:
+
 ```bash
-# Package. $EXPORT_DIR here is the mktemp staging dir; $_EXPORT_DIR is the
-# course-named folder under .idstack/exports/<slug>/ from the prep step above.
-cd "$EXPORT_DIR"
-zip -r scorm-export.zip imsmanifest.xml content/
-mv "$EXPORT_DIR/scorm-export.zip" "$_EXPORT_DIR/scorm-export.zip"
+_EXPORT_DIR="<export folder>"
+_STAGE="$_EXPORT_DIR/.scorm-staging"
+_OUT="$(cd "$_EXPORT_DIR" && pwd)/scorm-export.zip"
+[ -f "$_STAGE/imsmanifest.xml" ] || { echo "PACKAGE_FAILED: $_STAGE/imsmanifest.xml is missing"; exit 1; }
+rm -f "$_OUT"
+( cd "$_STAGE" && zip -qr "$_OUT" imsmanifest.xml content ) || { echo "PACKAGE_FAILED: zip error. The staging folder is still at $_STAGE"; exit 1; }
+[ -s "$_OUT" ] || { echo "PACKAGE_FAILED: $_OUT is empty"; exit 1; }
 echo "SCORM package saved to $_EXPORT_DIR/scorm-export.zip"
 ```
 
+If the output starts with `PACKAGE_FAILED`, tell the user the error. Do not say
+that the export is complete.
+
 ### C6. Verify package
 
+Replace `<export folder>` again, then run the command:
+
 ```bash
+_EXPORT_DIR="<export folder>"
 file "$_EXPORT_DIR/scorm-export.zip"
 unzip -l "$_EXPORT_DIR/scorm-export.zip" | head -20
 echo "Total files: $(unzip -l "$_EXPORT_DIR/scorm-export.zip" | tail -1)"
@@ -865,15 +947,17 @@ Total files: [count]
 
 ### C8. Cleanup
 
+Replace `<export folder>` again, then run the command:
+
 ```bash
-rm -rf "$EXPORT_DIR"
+rm -rf "<export folder>/.scorm-staging"
 ```
 
 ---
 
 ## Generate Export Report
 
-After the export completes (any path), write the HTML report at `$_REPORT_PATH` (from the Prepare Course Export Folder step) — i.e., `.idstack/exports/<course-slug>/course-export.html`. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`. Use the standard CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. After the export completes (any path), write the HTML report at `$_REPORT_PATH` (from the Prepare Course Export Folder step) — i.e., `.idstack/exports/<course-slug>/course-export.html`. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`. Use the standard CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
 - **`{{skill_title}}`:** "Course Export Report"
 - **`{{skill_name}}`:** `course-export`
@@ -882,7 +966,7 @@ After the export completes (any path), write the HTML report at `$_REPORT_PATH` 
 - **Skill-specific section before Findings** — add a `<section class="export-manifest">` with `<h2>Export contents</h2>` and an HTML `<table>` (Item type, Count, Notes). For Canvas API: include Created / Failed / Skipped columns instead.
 - **Finding ids:** `export-1`, `readiness-1`, `qti-1`, etc. Findings come from auto-generated content the designer should review before publishing (quiz questions, rubric formatting, missing placeholders), readiness-check items at time of export, and items the API call failed on. If everything is clean, the Findings section can simply contain an `info` finding noting the clean state.
 - **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="failed-items">` with `<h2>Failed items</h2>` only when the Canvas API path produced failed items.
-- **Limitations:** SCORM and IMSCC packages contain static HTML only. They do not include interactive elements. The quiz questions come from the assessment specs, and the designer must review them. The export does not write tokens to disk.
+- **Limitations:** SCORM and IMSCC packages contain static HTML only. They do not include interactive elements. The quiz questions come from the assessment specs, and the designer must review them. The Canvas token stays in `.idstack/canvas.env` on the user's computer. idstack does not write it to the manifest or the report.
 - **Next steps:** Make sure that the LMS import kept all of the content correctly. Look carefully at quiz questions, assignment rubrics, discussion prompts, and the module sequence. If the readiness verdict was NOT-READY, correct the flagged findings before you publish the course.
 
 **Writing standard check.** In this command, replace `<path>` with the path of `course-export.html` in the folder from the "Course export folder:" line. Then run the command.

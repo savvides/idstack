@@ -111,7 +111,9 @@ Ask: "Ready to continue the pipeline from /idstack:assessment-design?" (using As
 with options: "Yes, continue" / "Start from a different skill" / "Re-run a completed skill")
 
 If the user picks "Start from a different skill" or "Re-run a completed skill",
-ask which one using AskUserQuestion with the skill list as options.
+write the skill list in chat as a numbered list (1 = `/idstack:needs-analysis` …
+8 = `/idstack:course-export`) and ask the user to type a number. Do not use
+AskUserQuestion for this, because it takes a maximum of 4 options.
 
 ### Step 3: Execute Skills in Sequence
 
@@ -154,6 +156,7 @@ _SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "un
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Dashboard template: $_IDSTACK/templates/index.html.tmpl"
 echo "Dashboard: $_EXPORT_DIR/index.html"
 ```
 
@@ -171,7 +174,7 @@ echo "Dashboard: $_EXPORT_DIR/index.html"
 
 Also read `.idstack/project.json` for project_name, scores (`quality_review.overall_score`, `accessibility_review.score.overall`, `red_team_audit.confidence_score`), and each section's `report_path`.
 
-**Output.** Write `$_EXPORT_DIR/index.html`, following the structure of `templates/index.html.tmpl`. Customize:
+**Output.** Before you write the dashboard, use the Read tool on the file from the "Dashboard template:" line. That file is in the idstack plugin folder, not in the course project. Write `$_EXPORT_DIR/index.html`, following the structure of `templates/index.html.tmpl`. Customize:
 
 - **`{{project_name}}`:** from the manifest top-level.
 - **`{{pipeline_run_status}}`:** e.g., "complete · 8 of 8 skills" or "partial · 4 of 8 skills".

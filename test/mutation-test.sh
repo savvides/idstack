@@ -2054,6 +2054,37 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the rendered landing test loses output that Chrome writes after it exits" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+
+# 55a-55f. Skill shell that breaks only in Claude Code's Bash tool (zsh, BSD
+# tools, a new shell for each call) comes back -> smoke-test must fail. Each
+# case puts back one form that the v3.7.0.1 fixes removed.
+shell_mutation() { # <name> <file> <old> <new>
+  fresh
+  python3 - "$WORK/r/$2" "$3" "$4" <<'PY'
+import sys
+p, old, new = sys.argv[1:4]
+s = open(p, encoding='utf-8').read()
+assert s.count(old) >= 1, 'anchor missing: %r' % old
+open(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))
+PY
+  regen
+  expect_fail "$1" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+}
+shell_mutation "GNU-only head -n -1 returns to the Canvas push" \
+  skills/course-export/SKILL.md.tmpl "BODY=\$(echo \"\$RESPONSE\" | sed '\$d')" 'BODY=$(echo "$RESPONSE" | head -n -1)'
+shell_mutation "the SCO loop word-splits an unquoted variable again" \
+  skills/course-import/SKILL.md.tmpl "printf '%s\\n' \"\$SCO_HREFS\" | while IFS= read -r sco_href; do" 'for sco_href in $SCO_HREFS; do'
+shell_mutation "course-quality-review lists files with bare globs again" \
+  skills/course-quality-review/SKILL.md.tmpl "_FILES=\$(find . -maxdepth 1" 'ls -la *.md *.docx 2>/dev/null; _FILES=$(find . -maxdepth 1'
+shell_mutation "the manifest-merge example writes a /tmp payload again" \
+  templates/manifest-schema.md "--payload - <<'PAYLOAD'" "--payload /tmp/payload.json <<'PAYLOAD'"
+shell_mutation "a Canvas block forgets to load canvas.env" \
+  skills/course-import/SKILL.md.tmpl ". ./.idstack/canvas.env || { echo \"CANVAS_ENV_MISSING\"; exit 1; }
+curl -s" 'curl -s'
+shell_mutation "a report block stops printing the plugin template path" \
+  skills/needs-analysis/SKILL.md.tmpl 'echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+' ''
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
