@@ -250,7 +250,9 @@ done
 
 # User-facing skill references must be namespaced /idstack:<skill>. A bare
 # /skill is not a command Claude Code resolves — plugin skills are addressed
-# as plugin:skill. (Frontmatter descriptions are exempt.)
+# as plugin:skill. This includes the frontmatter description: Claude Code
+# shows it in the skill list and the model reads it to route requests, so a
+# bare name there gets copied into chat as a command that does nothing.
 #
 # This matched only the backticked form until v3.3.0.1, which let three
 # unbackticked examples sit in the preamble's context-recovery section — the
@@ -261,13 +263,10 @@ done
 # stays legal, and it can't match `/idstack:<skill>` because the skill name
 # there does not follow the slash.
 BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn)\b'
-# Frontmatter stays exempt: `description:` is prose the CLI shows in a skill
-# picker, not a command anyone types. STRIP_FM drops everything through the
-# closing `---` so only the body is scanned. Later `---` horizontal rules in
-# the body keep incrementing c, which is harmless once c>=2.
-STRIP_FM='awk "/^---\$/{c++; next} c>=2"'
 for skill in $SKILLS; do
-  check "$skill SKILL.md.tmpl body free of bare /skill refs" "! $STRIP_FM '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | grep -qE '$BARE_SLASH_RE'"
+  check "$skill SKILL.md.tmpl (frontmatter and body) free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill description says when to use it" \
+    "awk '/^description:/{f=1; next} f && /^[a-z-]+:/{exit} f' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | tr -s ' \n' '  ' | grep -q 'Use when'"
 done
 # The preamble has no frontmatter — scan the whole file.
 check "preamble free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK_DIR/templates/preamble.md'"
@@ -594,7 +593,7 @@ check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_
 #      string: an earlier draft dropped every line containing the bot's name
 #      repo-wide, which would have let an untagged capability claim through
 #      anywhere it appeared.
-CLI_LEAK_RE='codex|gemini'            # IDSTACK_CLI_LEAK_ALLOW
+CLI_LEAK_RE='codex|gemini|antigravity' # IDSTACK_CLI_LEAK_ALLOW
 CLI_LEAK="$(grep -rIiE "$CLI_LEAK_RE" "$IDSTACK_DIR" \
   --exclude-dir=.git --exclude-dir=.gstack --exclude-dir=.idstack \
   --exclude-dir=.claude --exclude-dir=.superpowers \

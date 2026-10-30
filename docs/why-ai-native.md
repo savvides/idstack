@@ -1,6 +1,6 @@
 # Why idstack is AI-native
 
-Most education tools add conversational chat interfaces to existing software. idstack is designed as an agentic workflow where skills, context management, and CLI pipelines require an LLM runtime to execute.
+Most education tools add conversational chat interfaces to existing software. idstack is designed as an agentic workflow where skills, context management, and CLI pipelines run in Claude Code.
 
 ## Architectural Distinctions
 
@@ -19,7 +19,7 @@ idstack operates on all four criteria.
 
 ## idstack Implementation
 
-**Agentic workflows require an LLM runtime.** idstack skills are structured markdown specifications executed by Claude Code. Without an agentic environment, the files function as passive documentation. The runtime executes the analytical steps, evaluates alignment, and generates structured deliverables.
+**Agentic workflows require Claude Code.** idstack skills are structured markdown specifications executed by Claude Code. Without Claude Code, the files function as passive documentation. Claude Code executes the analytical steps, evaluates alignment, and generates structured deliverables.
 
 **Model capabilities enhance skill output.** As foundation models improve in instruction following, pedagogical reasoning, and domain analysis, idstack skill execution improves without code changes.
 
@@ -41,7 +41,7 @@ This lifecycle is essential for idstack because skill instructions range from 40
 
 ## Contributor Guidelines
 
-Building an idstack skill means defining an agentic workflow that leverages the LLM runtime:
+Building an idstack skill means defining a Claude Code workflow:
 
 - Target complex analytical tasks that require domain synthesis, rubric alignment, and pedagogical evaluation rather than simple text transformations.
 - Reference empirical citations for every analytical recommendation so users can verify underlying research.

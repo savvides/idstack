@@ -1,10 +1,11 @@
 ---
 name: course-export
 description: |
-  Export course content to any LMS. Generates IMS Common Cartridge files (.imscc)
-  compatible with Canvas, Blackboard, Moodle, and D2L, or pushes directly to
-  Canvas through the REST API. Reads from /course-builder output and the idstack manifest.
-  The output IS the course. (idstack)
+  Export course content to an LMS. Generates IMS Common Cartridge files (.imscc) for
+  Canvas, Blackboard, Moodle, and D2L, a SCORM 1.2 package, or pushes directly to Canvas
+  through the REST API. Reads the /idstack:course-builder output and the idstack
+  manifest. Use when asked to export, package, upload, or publish a course to an LMS or
+  to Canvas. (idstack)
 allowed-tools:
   - Bash
   - Read

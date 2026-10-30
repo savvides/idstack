@@ -1,10 +1,11 @@
 ---
 name: accessibility-review
 description: |
-  WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0)
-  enhancement review for course designs. Two-tier output: "Necessary changes" for
-  accessibility violations and "Recommended changes" for UDL recommendations.
-  Works standalone or reads from the idstack project manifest. (idstack)
+  WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) review for
+  course designs. Two-tier output: "Necessary changes" for accessibility violations and
+  "Recommended changes" for UDL recommendations. Works standalone or reads the idstack
+  project manifest. Use when asked to check a course for accessibility, WCAG, UDL,
+  captions, alt text or screen-reader problems. (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -86,10 +87,10 @@ because the answers are free text. Ask questions 4 and 5 with AskUserQuestion (o
 
 Skip any question already answered by the manifest or the user's initial prompt.
 
-### Step 1b: Parallel Dispatch (Claude Code only)
+### Step 1b: Parallel Dispatch
 
-If you have access to the **Agent tool**, dispatch the WCAG audit and UDL review as
-2 parallel subagents instead of running Steps 2-3 sequentially.
+Use the **Agent tool** to dispatch the WCAG audit and UDL review as 2 parallel
+subagents instead of running Steps 2-3 sequentially.
 
 **Launch 2 agents in a single message:**
 
@@ -101,7 +102,7 @@ Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in eac
 
 **After both agents return:** Merge results into the unified report format (Step 4), with WCAG violations as "Necessary changes" and UDL gaps as "Recommended changes".
 
-**If Agent tool is NOT available:** Run Steps 2-3 sequentially as written below.
+**If an agent fails or returns nothing:** Run its step (Step 2 or Step 3) yourself as written below.
 
 ---
 

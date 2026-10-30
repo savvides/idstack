@@ -1,10 +1,11 @@
 ---
 name: needs-analysis
 description: |
-  Evidence-based three-level needs assessment for instructional design.
-  Guides you through the organizational, task, and learner analysis before
-  you design a course. Creates a shared project manifest that downstream
-  skills (/learning-objectives, /course-quality-review) read and extend. (idstack)
+  Evidence-based three-level needs assessment for instructional design: organizational,
+  task, and learner analysis before you design a course. Creates the shared project
+  manifest that /idstack:learning-objectives, /idstack:course-quality-review, and the
+  other skills read and extend. Use when starting a new course design, or when asked for
+  a needs analysis or a learner analysis. (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -20,30 +21,28 @@ allowed-tools:
 
 ## Preamble: Interaction Conventions
 
-idstack runs in Claude Code. Skill bodies use a few **concept names** for the tools they
-lean on:
+idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
-  it means: present a single multiple-choice question (e.g., "Which of these best describes X?")
+  present a single multiple-choice question (e.g., "Which of these best describes X?")
   and stop, waiting for the user's answer before proceeding. Ask **one** question at a time,
   never batch. This maps to the `AskUserQuestion` tool. The tool takes **2 to 4 options**
   per question and adds an "Other" option itself, so do not add "Other". When there are
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-task dispatch)** — when a skill says "if the Agent tool is available, dispatch
-  X as a sub-task," that is a parallelization shortcut, never the definition of the work.
-  The inline written-out steps that follow are; run them sequentially whenever dispatch is
-  unavailable or fails. Four skills use it: accessibility-review, course-builder,
-  course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
+  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+  The written-out steps after each dispatch define the work. If a sub-agent fails or
+  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
+  cannot dispatch them.
 - **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
   child skill in-process via the `Skill` tool.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as
   `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
   command. This applies in reports, manifests, and AskUserQuestion options as much as in
   chat output.
-
-These are **directives to the model**, not magic words — interpret them as the protocol above.
 
 ## Preamble: Writing Standard (ASD-STE100)
 

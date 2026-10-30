@@ -1,6 +1,6 @@
 # idstack
 
-> **Status: beta (v3.7.0.1).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
+> **Status: beta (v3.8.0.0).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 
@@ -95,6 +95,8 @@ You had a course in Canvas. Now you have an evidence-based audit with specific r
 ## Install (30 seconds)
 
 **Requirement:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI.
+
+**Not using Claude Code?** idstack supports Claude Code only. Without Claude Code, use the [Chrome extension](#chrome-extension-no-terminal-mode). The skills are plain Markdown, so you can fork this repo and adapt it for a different agent, for example Codex or Antigravity. idstack does not support or test those forks. <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
 
 Paste this into your terminal:
 
@@ -243,7 +245,7 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 | `/idstack:course-import` | **LMS Bridge** | Imports your course from any LMS or authoring tool. Five input methods: IMS Common Cartridge, pasted documents, Canvas API, PDF upload (Articulate Rise, Storyline), or SCORM package. Quick-scan quality flags, auto-maps modules to task analysis, pre-classifies objectives with Bloom's. Writes `.idstack/exports/<course-slug>/course-import.html`. |
 | `/idstack:course-builder` | **Content Generator** | Generates complete course content from the manifest: syllabus, module pages, assignment descriptions, and rubric documents. Content follows cognitive load principles. Includes adversarial spec review (auto-validates alignment). For imported courses, switches to gap-fill mode: generates only the artifacts upstream skills flagged as missing, instead of regenerating what already exists in the cartridge. Writes `.idstack/exports/<course-slug>/course-builder.html`. |
 | `/idstack:course-export` | **LMS Publisher** | Exports to any LMS. Generates IMS Common Cartridge (.imscc), SCORM 1.2 packages, or pushes directly to Canvas via API. Shows readiness dashboard before export. The output IS the course. |
-| `/idstack:course-quality-review` | **Quality Auditor** | Full QM-aligned audit plus Community of Inquiry presence layer. 8 structural standards, 3 presence dimensions (teaching, social, cognitive), constructive alignment audit. Parallel sub-agents on Claude Code for speed. Writes `.idstack/exports/<course-slug>/course-quality-review.html`. |
+| `/idstack:course-quality-review` | **Quality Auditor** | Full QM-aligned audit plus Community of Inquiry presence layer. 8 structural standards, 3 presence dimensions (teaching, social, cognitive), constructive alignment audit. Parallel sub-agents for speed. Writes `.idstack/exports/<course-slug>/course-quality-review.html`. |
 | `/idstack:accessibility-review` | **Accessibility Reviewer** | WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) enhancement review. Two-tier output: "Necessary changes" for accessibility violations, "Recommended changes" for UDL recommendations. Parallel sub-agents for WCAG and UDL. Writes `.idstack/exports/<course-slug>/accessibility-review.html`. |
 | `/idstack:red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Runs in a clean-context sub-agent so the audit can't inherit build-bias from the parent. Five dimensions in parallel: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Writes `.idstack/exports/<course-slug>/red-team.html` and returns to the parent for a triage-and-fix loop (Critical / Critical+High / All / Skip). Produces a confidence score. |
 | `/idstack:pipeline` | **Orchestrator** | Chains the 8-skill linear pipeline automatically. Auto-skips completed skills. Shows pipeline status. Pause anytime, resume later. Produces `.idstack/exports/<course-slug>/index.html`, a branded course dashboard linking to every per-skill report, with readiness scores, top recurring issues, evidence themes, and where to start. Open in any browser. |

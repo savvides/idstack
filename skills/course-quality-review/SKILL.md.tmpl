@@ -1,10 +1,11 @@
 ---
 name: course-quality-review
 description: |
-  Evidence-based course quality audit aligned with Quality Matters standards
-  and Community of Inquiry framework. Reviews structural quality, teaching/social/cognitive
-  presence, and constructive alignment. Works standalone or reads from the
-  idstack project manifest for richer analysis. (idstack)
+  Evidence-based course quality audit aligned with Quality Matters standards and the
+  Community of Inquiry framework. Reviews structural quality, teaching/social/cognitive
+  presence, and constructive alignment. Works standalone or reads the idstack project
+  manifest for richer analysis. Use when asked to review, audit, or score the quality of
+  a course design. (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -151,10 +152,10 @@ If nothing is available, use AskUserQuestion to gather information iteratively.
 
 ---
 
-## Parallel Dispatch (Claude Code only)
+## Parallel Dispatch
 
-If you have access to the **Agent tool**, dispatch the three major review frameworks
-as parallel subagents after gathering course information (Mode 1/2/3 above).
+Use the **Agent tool** to dispatch the three major review frameworks as parallel
+subagents after gathering course information (Mode 1/2/3 above).
 
 **Launch 3 agents in a single message:**
 
@@ -168,7 +169,7 @@ Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in eac
 
 **After all 3 agents return:** Merge results, then proceed to Cross-Domain Checks and Quick Wins ranking (run these sequentially since they synthesize across all three frameworks).
 
-**If Agent tool is NOT available:** Run the three frameworks sequentially as written below.
+**If an agent fails or returns nothing:** Run its framework yourself, as written below.
 
 ---
 
