@@ -1,10 +1,11 @@
 ---
 name: accessibility-review
 description: |
-  WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0)
-  enhancement review for course designs. Two-tier output: "Necessary changes" for
-  accessibility violations and "Recommended changes" for UDL recommendations.
-  Works standalone or reads from the idstack project manifest. (idstack)
+  WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) review for
+  course designs. Two-tier output: "Necessary changes" for accessibility violations and
+  "Recommended changes" for UDL recommendations. Works standalone or reads the idstack
+  project manifest. Use when asked to check a course for accessibility, WCAG, UDL,
+  captions, alt text or screen-reader problems. (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -21,30 +22,28 @@ allowed-tools:
 
 ## Preamble: Interaction Conventions
 
-idstack runs in Claude Code. Skill bodies use a few **concept names** for the tools they
-lean on:
+idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
-  it means: present a single multiple-choice question (e.g., "Which of these best describes X?")
+  present a single multiple-choice question (e.g., "Which of these best describes X?")
   and stop, waiting for the user's answer before proceeding. Ask **one** question at a time,
   never batch. This maps to the `AskUserQuestion` tool. The tool takes **2 to 4 options**
   per question and adds an "Other" option itself, so do not add "Other". When there are
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-task dispatch)** — when a skill says "if the Agent tool is available, dispatch
-  X as a sub-task," that is a parallelization shortcut, never the definition of the work.
-  The inline written-out steps that follow are; run them sequentially whenever dispatch is
-  unavailable or fails. Four skills use it: accessibility-review, course-builder,
-  course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
+  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+  The written-out steps after each dispatch define the work. If a sub-agent fails or
+  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
+  cannot dispatch them.
 - **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
   child skill in-process via the `Skill` tool.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as
   `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
   command. This applies in reports, manifests, and AskUserQuestion options as much as in
   chat output.
-
-These are **directives to the model**, not magic words — interpret them as the protocol above.
 
 ## Preamble: Writing Standard (ASD-STE100)
 
@@ -503,10 +502,10 @@ because the answers are free text. Ask questions 4 and 5 with AskUserQuestion (o
 
 Skip any question already answered by the manifest or the user's initial prompt.
 
-### Step 1b: Parallel Dispatch (Claude Code only)
+### Step 1b: Parallel Dispatch
 
-If you have access to the **Agent tool**, dispatch the WCAG audit and UDL review as
-2 parallel subagents instead of running Steps 2-3 sequentially.
+Use the **Agent tool** to dispatch the WCAG audit and UDL review as 2 parallel
+subagents instead of running Steps 2-3 sequentially.
 
 **Launch 2 agents in a single message:**
 
@@ -518,7 +517,7 @@ Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in eac
 
 **After both agents return:** Merge results into the unified report format (Step 4), with WCAG violations as "Necessary changes" and UDL gaps as "Recommended changes".
 
-**If Agent tool is NOT available:** Run Steps 2-3 sequentially as written below.
+**If an agent fails or returns nothing:** Run its step (Step 2 or Step 3) yourself as written below.
 
 ---
 

@@ -64,7 +64,7 @@ cat > .idstack/timeline.jsonl <<'JSON'
 JSON
 
 # Namespaced forms — v3.3.0.0 banned the bare /skill spelling because it
-# resolves in neither CLI. A test asserting the bare form would re-admit it.
+# does not resolve in Claude Code. A test asserting the bare form would re-admit it.
 check "completed skills render as namespaced checkboxes" \
   "$STATUS | grep -q '\[x\] /idstack:needs-analysis'"
 

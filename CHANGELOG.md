@@ -1,5 +1,30 @@
 # Changelog
 
+## v3.8.0.0 (2026-10-30)
+
+idstack supports Claude Code only. This release says so in the README and on the landing page, and it removes the text that described other hosts. Without Claude Code, you can use the Chrome extension. You can also fork the repo and adapt the skills for a different agent, but idstack does not support or test those forks.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`.
+
+### Changed — Claude Code only
+
+- **The README and the landing page have a "Not using Claude Code?" note.** It points to the Chrome extension, and it tells you that a fork for a different agent is not supported.
+- **The landing page badge "CLI / Multi-Agent Pipeline" is now "Full 11-Skill Pipeline".**
+- **Text that described other hosts is gone.** `ROADMAP.md`, `docs/why-ai-native.md`, the README skill table and two test comments now name Claude Code.
+- **The preamble no longer tells the skills what to do when the Agent tool is not available.** The Agent tool is always available in the main conversation of Claude Code. `/idstack:accessibility-review`, `/idstack:course-builder` and `/idstack:course-quality-review` now run a step themselves only when a sub-agent fails. `/idstack:red-team` keeps its sequential fallback, because a sub-agent cannot start its own sub-agents.
+
+### Changed — skill descriptions
+
+- **Each skill description now says when to use the skill.** Claude Code uses the description to select a skill. Each description has a "Use when ..." sentence.
+- **The descriptions use the full skill names.** Five descriptions had a bare name, for example `/learning-objectives`. They now have `/idstack:learning-objectives`.
+- **The `/idstack:learn` description names idstack.** A different plugin has a skill with the name `learn`, and the two descriptions were almost the same.
+
+### Tests
+
+- **smoke-test now looks for "antigravity" in addition to "codex" and "gemini".** A line that names one of these must have the `IDSTACK_CLI_LEAK_ALLOW` tag, and the tag is only for a dated mention or an unsupported-fork note.
+- **smoke-test now examines the skill descriptions for bare skill names.** It also makes sure that each description has a "Use when" sentence.
+- **Three new mutation cases** put back an untagged support claim, a bare name in a description and a description without "Use when". smoke-test fails for each.
+
 ## v3.7.0.1 (2026-10-30)
 
 This release fixes skill steps that did not work in Claude Code. Claude Code runs each bash block in your own shell, which is zsh on macOS. Each block also runs in a new shell. The test suites ran only bash, so they did not find these problems.

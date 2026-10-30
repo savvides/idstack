@@ -197,7 +197,7 @@ check "course-import alone suggests learning-objectives" \
 
 # Everything idstack-status prints is text a user may type back. It must carry
 # the /idstack: prefix for the same reason skill templates do — a bare /skill
-# is not a valid command in either CLI.
+# is not a valid command in Claude Code.
 check "idstack-status never prints a bare /skill command" \
   "! '$IDSTACK_DIR/bin/idstack-status' | grep -Eq '(^|[^:])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline)\b'"
 

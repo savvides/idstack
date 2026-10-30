@@ -1,9 +1,11 @@
 ---
 name: pipeline
 description: |
-  Pipeline orchestrator for idstack. Runs the skills from /needs-analysis to
-  /course-export in the evidence-based sequence. It skips the skills that are complete.
-  Handles fresh starts (no manifest) and resumption (partial pipeline). (idstack)
+  Pipeline orchestrator for idstack. Runs the skills from /idstack:needs-analysis to
+  /idstack:course-export in the evidence-based sequence, and skips the skills that are
+  complete. Handles fresh starts (no manifest) and resumption (partial pipeline). Use
+  when asked to design a full course from start to finish, run the idstack pipeline, or
+  continue an idstack course from where it stopped. (idstack)
 allowed-tools:
   - Bash
   - Read
