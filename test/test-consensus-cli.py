@@ -378,21 +378,17 @@ class TestConsensusCLI(unittest.TestCase):
     def test_sync_dry_run_all_domains(self):
         proc = self.run_sync(["--dry-run"])
         self.assertEqual(proc.returncode, 0)
-        self.assertIn("- [Assessment-", proc.stdout)
-        self.assertIn("- [ID-", proc.stdout)
-        self.assertIn("- [Alignment-", proc.stdout)
-        self.assertIn("- [CogLoad-", proc.stdout)
-        self.assertIn("- [Access-", proc.stdout)
+        for short_name in ("Assessment", "Models", "Alignment", "Cognitive Load", "Accessibility"):
+            self.assertIn("(%s)" % short_name, proc.stdout)
         self.assertIn("Dry run", proc.stdout)
         self.assertIn("check-evidence-cards", proc.stdout)
 
     def test_sync_domain_specific(self):
         proc = self.run_sync(["--domain", "Assessment", "--dry-run"])
         self.assertEqual(proc.returncode, 0)
-        self.assertIn("- [Assessment-", proc.stdout)
-        self.assertIn("Assessment", proc.stdout)
-        self.assertNotIn("- [CogLoad-", proc.stdout)
-        self.assertNotIn("- [Access-", proc.stdout)
+        self.assertIn("(Assessment)", proc.stdout)
+        self.assertNotIn("(Cognitive Load)", proc.stdout)
+        self.assertNotIn("(Accessibility)", proc.stdout)
 
     def test_sync_invalid_domain_fails(self):
         proc = self.run_sync(["--domain", "InvalidDomain", "--dry-run"])
@@ -402,8 +398,17 @@ class TestConsensusCLI(unittest.TestCase):
     def test_sync_default_is_dry_run(self):
         proc = self.run_sync(["--domain", "Models"])
         self.assertEqual(proc.returncode, 0)
-        self.assertIn("- [ID-", proc.stdout)
+        self.assertIn("(Models)", proc.stdout)
         self.assertIn("Dry run", proc.stdout)
+
+    # Without a key or a cache there is no real paper, so sync must print no
+    # citation line. It used to print a built-in one that nobody had checked,
+    # ready to paste into references.md.
+    def test_sync_without_data_prints_no_citation(self):
+        proc = self.run_sync(["--dry-run"])
+        self.assertEqual(proc.returncode, 0)
+        self.assertNotRegex(proc.stdout, r"(?m)^- \[")
+        self.assertIn("No candidate citations", proc.stdout)
 
     def test_sync_evidence_cards_compatibility(self):
         proc = self.run_sync(["--dry-run"])
@@ -435,6 +440,7 @@ class TestConsensusCLI(unittest.TestCase):
 
         proc = self.run_sync(["--domain", "Assessment", "--dry-run"])
         self.assertEqual(proc.returncode, 0)
+        self.assertIn("- [Assessment-", proc.stdout)
         self.assertIn("Custom Cached Formative Feedback Review", proc.stdout)
         self.assertIn("CachedAuthor", proc.stdout)
 

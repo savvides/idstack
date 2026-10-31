@@ -25,6 +25,7 @@
 ### Changed — `idstack-consensus sync` is now `scripts/consensus-sync`
 
 - **The literature sync is a maintainer tool, not a runtime command.** No skill calls it, and it runs `test/check-evidence-cards.py`, so it must run from a clone. Its flags and output are the same. `bin/idstack-consensus` keeps `status`, `configure`, `query` and `verify`.
+- **`scripts/consensus-sync` does not print built-in citations.** With no Consensus key and no cached answer, it printed a built-in citation for each domain. Nobody had examined those citations against the literature, and some of them were not real papers. Now the script tells you that it has no candidate for that domain.
 
 ### Removed — the audit history of the Chrome extension
 

@@ -2176,6 +2176,20 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "an update keeps the old audit history" "$WORK/r/test/test-extension.sh"
 
+# 60. consensus-sync prints a built-in citation again when it has no key and no
+# cache -> test-consensus-cli must fail. Nobody checked those citations, and the
+# output is ready to paste into references.md.
+fresh
+python3 - "$WORK/r/scripts/consensus-sync" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    # No real data: print no citation rather than one that nobody checked.\n    return []\n"
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '    return [{"authors": "Li, X. & Wang, Y.", "year": 2025, "title": "A Meta-Analysis", "journal": "Computers & Education", "tier": "T1", "source": "default"}]\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "sync prints a built-in citation again" python3 "$WORK/r/test/test-consensus-cli.py"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

@@ -4,8 +4,9 @@
 Usage: scripts/consensus-sync [--domain <name>] [--dry-run | --no-dry-run | --apply]
 
 It prints candidate evidence/references.md lines for each domain, from the
-Consensus cache, the Consensus API (with your key), or the domain's
-default_candidate. It never changes references.md: add the citations by hand.
+Consensus cache or the Consensus API (with your key). Without either, it prints
+no citation for that domain. It never changes references.md: add the citations
+by hand.
 Then it runs test/check-evidence-cards.py, so run it from a clone.
 
 This was `idstack-consensus sync`. It is not part of the runtime CLI that the
@@ -44,13 +45,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "ID",
         "aliases": ["models", "id", "instructional design models & frameworks", "instructional design models"],
         "query": "instructional design models frameworks meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Li, X. & Wang, Y.",
-            "year": 2025,
-            "title": "Contemporary Instructional Design Frameworks in Digital Higher Education: A Meta-Analysis",
-            "journal": "Computers & Education",
-            "tier": "T1",
-        },
     },
     {
         "id": 2,
@@ -59,13 +53,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "Alignment",
         "aliases": ["alignment", "constructive alignment", "constructive alignment & learning objectives"],
         "query": "constructive alignment learning objectives meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Al-Husseini, S. et al.",
-            "year": 2024,
-            "title": "Constructive Alignment and Student Learning Outcomes: A Systematic Review and Meta-Analysis",
-            "journal": "Higher Education Research & Development",
-            "tier": "T1",
-        },
     },
     {
         "id": 3,
@@ -74,13 +61,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "Needs",
         "aliases": ["needs", "needs analysis"],
         "query": "training learning needs analysis assessment systematic review meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Martinez, C. & Patel, R.",
-            "year": 2025,
-            "title": "Evidence-Based Needs Assessment in Technical Training: A Systematic Review",
-            "journal": "Human Resource Development Review",
-            "tier": "T3",
-        },
     },
     {
         "id": 4,
@@ -89,13 +69,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "CogLoad",
         "aliases": ["cognitive load", "cogload", "cognitive load theory", "cognitive load theory & instructional sequencing"],
         "query": "cognitive load theory instructional sequencing meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Zhao, K. & Sweller, J.",
-            "year": 2024,
-            "title": "Cognitive Load Theory and Instructional Sequencing Effects: A Meta-Analysis of Recent Evidence",
-            "journal": "Educational Psychology Review",
-            "tier": "T1",
-        },
     },
     {
         "id": 5,
@@ -104,13 +77,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "Assessment",
         "aliases": ["assessment", "formative assessment", "formative assessment & feedback"],
         "query": "formative assessment feedback higher education meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Wisniewski, B. & Zierer, K.",
-            "year": 2024,
-            "title": "The Impact of Automated Formative Feedback on Academic Achievement: A Meta-Analysis",
-            "journal": "Educational Research Review",
-            "tier": "T1",
-        },
     },
     {
         "id": 6,
@@ -119,13 +85,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "Multimedia",
         "aliases": ["multimedia", "multimedia learning", "multimedia learning principles"],
         "query": "multimedia learning cognitive theory multimedia principles meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Mayer, R.E. & Fiorella, L.",
-            "year": 2024,
-            "title": "Generative Learning and Multimedia Principles in Digital Environments: A Systematic Review",
-            "journal": "Contemporary Educational Psychology",
-            "tier": "T1",
-        },
     },
     {
         "id": 7,
@@ -134,13 +93,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "Learner",
         "aliases": ["learner", "learner analysis", "learner analysis & differentiation", "differentiation"],
         "query": "learner analysis differentiation personalized learning meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Schneider, M. & Preckel, F.",
-            "year": 2025,
-            "title": "Differentiated Instruction and Learner Analysis in Inclusive Classrooms: A Meta-Analysis",
-            "journal": "Review of Educational Research",
-            "tier": "T1",
-        },
     },
     {
         "id": 8,
@@ -149,13 +101,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "Evaluation",
         "aliases": ["evaluation", "evaluation models"],
         "query": "instructional evaluation models kirkpatrick ciro meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Kirkpatrick, W. & Chen, T.",
-            "year": 2025,
-            "title": "Evaluating Instructional Impact Across Multilevel Training Frameworks: A Systematic Review",
-            "journal": "Studies in Educational Evaluation",
-            "tier": "T3",
-        },
     },
     {
         "id": 9,
@@ -164,13 +109,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "Prototype",
         "aliases": ["prototype", "prototyping", "rapid prototyping", "rapid prototyping & design-based research", "design-based research"],
         "query": "rapid prototyping design-based research education meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Bakker, A. & van den Akker, J.",
-            "year": 2024,
-            "title": "Design-Based Research and Rapid Prototyping in Curriculum Interventions: A Meta-Synthesis",
-            "journal": "Journal of the Learning Sciences",
-            "tier": "T2",
-        },
     },
     {
         "id": 10,
@@ -179,13 +117,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "Online",
         "aliases": ["online", "online course quality", "online course quality frameworks"],
         "query": "online course quality standards community of inquiry meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Garrison, D.R. & Cleveland-Innes, M.",
-            "year": 2025,
-            "title": "Community of Inquiry and Online Course Quality Standards: A 20-Year Meta-Analysis",
-            "journal": "The Internet and Higher Education",
-            "tier": "T1",
-        },
     },
     {
         "id": 11,
@@ -194,13 +125,6 @@ RESEARCH_DOMAINS = [
         "tag_prefix": "Access",
         "aliases": ["accessibility", "access", "udl", "universal design for learning", "accessibility & universal design for learning"],
         "query": "universal design for learning accessibility higher education meta-analysis 2024..2026",
-        "default_candidate": {
-            "authors": "Rao, K. & Meyer, A.",
-            "year": 2024,
-            "title": "Universal Design for Learning in Higher Education: A Systematic Review and Meta-Analysis",
-            "journal": "Exceptional Children",
-            "tier": "T1",
-        },
     },
 ]
 
@@ -251,7 +175,7 @@ def format_citation_line(tag, authors, year, title, journal, tier):
 
 
 def get_domain_candidate_papers(domain, api_key=None):
-    """Retrieve candidate papers for domain from cache, Consensus API, or default candidates."""
+    """Retrieve candidate papers for domain from cache or the Consensus API ([] if neither has any)."""
     query = domain["query"]
     norm = normalize_claim(query)
     q_hash = hashlib.sha256(norm.encode("utf-8")).hexdigest()
@@ -311,16 +235,8 @@ def get_domain_candidate_papers(domain, api_key=None):
         except Exception:
             pass
 
-    # Fallback to curated default candidate for the domain
-    cand = domain["default_candidate"]
-    return [{
-        "authors": cand["authors"],
-        "year": cand["year"],
-        "title": cand["title"],
-        "journal": cand["journal"],
-        "tier": cand["tier"],
-        "source": "default",
-    }]
+    # No real data: print no citation rather than one that nobody checked.
+    return []
 
 
 def check_evidence_cards_compatibility():
@@ -387,6 +303,8 @@ def cmd_sync(args):
         candidates = get_domain_candidate_papers(domain, api_key=api_key)
         if len(domains_to_sync) > 1:
             print("## Domain %d: %s (%s)" % (domain["id"], domain["name"], domain["short_name"]))
+        if not candidates:
+            print("No candidate citations. Set a Consensus API key with bin/idstack-consensus configure, then run this script again.")
         for p in candidates:
             tag = "%s-%d" % (domain["tag_prefix"], curr_num)
             curr_num += 1
