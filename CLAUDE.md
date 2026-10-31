@@ -26,6 +26,7 @@ bin/idstack-slugify --from-manifest        # Same, from the manifest's project_n
 bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
 bin/idstack-consensus {status,configure,query,verify,sync}  # Cache-first Consensus API evidence client (cache: ~/.idstack/cache/consensus)
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
+scripts/consensus-sync [--domain <name>]   # Maintainer tool: candidate references.md lines per research domain (never edits it)
 ```
 
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash and node suites):

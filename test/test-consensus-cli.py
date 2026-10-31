@@ -12,6 +12,7 @@ import unittest
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CLI_PATH = os.path.join(REPO_ROOT, "bin", "idstack-consensus")
+SYNC_PATH = os.path.join(REPO_ROOT, "scripts", "consensus-sync")
 STE_CHECK_PATH = os.path.join(REPO_ROOT, "bin", "idstack-ste-check")
 MYTH_TYPES = ["learning_styles", "hemisphere_learning", "ten_percent_brain", "dales_cone_percentages"]
 
@@ -30,8 +31,8 @@ class TestConsensusCLI(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
-    def run_cli(self, args, env=None, cwd=None, input_data=None):
-        cmd = [sys.executable, CLI_PATH] + args
+    def run_cli(self, args, env=None, cwd=None, input_data=None, path=CLI_PATH):
+        cmd = [sys.executable, path] + args
         proc = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
@@ -365,8 +366,17 @@ class TestConsensusCLI(unittest.TestCase):
         ])
         self.assertEqual(proc.returncode, 1)
 
-    def test_sync_dry_run_all_domains(self):
+    # sync is a maintainer tool in scripts/, not a subcommand of the runtime CLI.
+    def run_sync(self, args):
+        return self.run_cli(args, path=SYNC_PATH)
+
+    def test_cli_has_no_sync_subcommand(self):
         proc = self.run_cli(["sync", "--dry-run"])
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("invalid choice", proc.stderr)
+
+    def test_sync_dry_run_all_domains(self):
+        proc = self.run_sync(["--dry-run"])
         self.assertEqual(proc.returncode, 0)
         self.assertIn("- [Assessment-", proc.stdout)
         self.assertIn("- [ID-", proc.stdout)
@@ -377,7 +387,7 @@ class TestConsensusCLI(unittest.TestCase):
         self.assertIn("check-evidence-cards", proc.stdout)
 
     def test_sync_domain_specific(self):
-        proc = self.run_cli(["sync", "--domain", "Assessment", "--dry-run"])
+        proc = self.run_sync(["--domain", "Assessment", "--dry-run"])
         self.assertEqual(proc.returncode, 0)
         self.assertIn("- [Assessment-", proc.stdout)
         self.assertIn("Assessment", proc.stdout)
@@ -385,18 +395,18 @@ class TestConsensusCLI(unittest.TestCase):
         self.assertNotIn("- [Access-", proc.stdout)
 
     def test_sync_invalid_domain_fails(self):
-        proc = self.run_cli(["sync", "--domain", "InvalidDomain", "--dry-run"])
+        proc = self.run_sync(["--domain", "InvalidDomain", "--dry-run"])
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("Unknown domain", proc.stderr + proc.stdout)
 
     def test_sync_default_is_dry_run(self):
-        proc = self.run_cli(["sync", "--domain", "Models"])
+        proc = self.run_sync(["--domain", "Models"])
         self.assertEqual(proc.returncode, 0)
         self.assertIn("- [ID-", proc.stdout)
         self.assertIn("Dry run", proc.stdout)
 
     def test_sync_evidence_cards_compatibility(self):
-        proc = self.run_cli(["sync", "--dry-run"])
+        proc = self.run_sync(["--dry-run"])
         self.assertEqual(proc.returncode, 0)
         self.assertIn("check-evidence-cards.py found 0 mismatches", proc.stdout)
 
@@ -423,7 +433,7 @@ class TestConsensusCLI(unittest.TestCase):
         with open(os.path.join(self.cache_dir, q_hash + ".json"), "w") as f:
             json.dump(cached_record, f)
 
-        proc = self.run_cli(["sync", "--domain", "Assessment", "--dry-run"])
+        proc = self.run_sync(["--domain", "Assessment", "--dry-run"])
         self.assertEqual(proc.returncode, 0)
         self.assertIn("Custom Cached Formative Feedback Review", proc.stdout)
         self.assertIn("CachedAuthor", proc.stdout)

@@ -22,6 +22,10 @@
   [ -L ~/.claude/plugins/idstack ] && rm ~/.claude/plugins/idstack
   ```
 
+### Changed — `idstack-consensus sync` is now `scripts/consensus-sync`
+
+- **The literature sync is a maintainer tool, not a runtime command.** No skill calls it, and it runs `test/check-evidence-cards.py`, so it must run from a clone. Its flags and output are the same. `bin/idstack-consensus` keeps `status`, `configure`, `query` and `verify`.
+
 ## v3.8.0.0 (2026-10-30)
 
 idstack supports Claude Code only. This release says so in the README and on the landing page, and it removes the text that described other hosts. Without Claude Code, you can use the Chrome extension. You can also fork the repo and adapt the skills for a different agent, but idstack does not support or test those forks.

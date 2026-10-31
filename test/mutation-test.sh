@@ -54,7 +54,7 @@ PY_LT_312=$(python3 -c 'import sys; print(1 if sys.version_info < (3,12) else 0)
 # against, so all three agree by construction even if $SRC is edited mid-run.
 # Copy only what the suites need; skip .git and any nested worktrees.
 mkdir -p "$WORK/base"
-for item in bin skills templates test evidence docs extension .claude-plugin \
+for item in bin scripts skills templates test evidence docs extension .claude-plugin \
             VERSION CHANGELOG.md README.md PRIVACY.md TODOS.md CONTRIBUTING.md \
             DESIGN.md ROADMAP.md CLAUDE.md setup; do
   [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/base/"
