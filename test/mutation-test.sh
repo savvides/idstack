@@ -315,8 +315,8 @@ fresh
 python3 - "$WORK/r/README.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace("**Requirement:** [Claude Code](https://claude.ai/code)",
-              "**Requirement:** [Claude Code](https://claude.ai/code) or OpenAI Codex CLI", 1)  # IDSTACK_CLI_LEAK_ALLOW
+s = s.replace("**Requirements:** [Claude Code](https://claude.ai/code)",
+              "**Requirements:** [Claude Code](https://claude.ai/code) or OpenAI Codex CLI", 1)  # IDSTACK_CLI_LEAK_ALLOW
 open(p,'w').write(s)
 PY
 expect_fail "retired-CLI reference back in README" "$WORK/r/test/smoke-test.sh" "$WORK/r"
@@ -2184,6 +2184,22 @@ s = s.replace(old, 'python3 - "$@" <<PY', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "learnings promote splices \$HOME into its python source" "$WORK/r/test/integration-test.sh"
+
+# 58. migrate falls back to cat without python3 again: it prints the manifest
+# unmigrated and exits 0 -> integration-test must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-migrate" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'command -v python3 &>/dev/null || { echo "idstack-migrate: python3 is necessary" >&2; exit 3; }\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '', 1)
+old = '[ -f "$MANIFEST" ] || exit 0\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, old + 'command -v python3 &>/dev/null || { cat "$MANIFEST"; exit 0; }\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "migrate prints the unmigrated manifest without python3" "$WORK/r/test/integration-test.sh"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

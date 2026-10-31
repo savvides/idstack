@@ -8,10 +8,11 @@
 #
 # log      Appends one learning and adds a "ts" field. Creates .idstack/ if needed.
 #          Exit 0 always, so it never blocks the calling skill.
-# search   Prints matching JSONL lines (default limit 3). Exit 0 always.
+# search   Prints matching JSONL lines (default limit 3).
 # delete   Removes the most recent entry with the key, atomically. Exit 1 on error.
 # promote  Copies the most recent entry with the key to the global store and
 #          tags it with the source project. Exit 1 on error.
+# Every subcommand needs python3 3.9 or later; without it they exit 2, except log.
 
 LOCAL=".idstack/learnings.jsonl"
 GLOBAL_DIR="$HOME/.idstack/global"
@@ -21,8 +22,6 @@ usage() {
   echo "Usage: idstack-learnings log '<json>' | search [--limit N] [--type T] [--keyword K] [--cross-project] | delete <key> | promote <key>" >&2
   exit 1
 }
-
-have_python() { command -v python3 &>/dev/null; }
 
 # The paths go in through the environment, not spliced into the source, so a
 # $HOME with a quote in it cannot break the program.
@@ -145,16 +144,17 @@ PY
 CMD="${1:-}"
 [ $# -gt 0 ] && shift
 
+if ! command -v python3 &>/dev/null; then
+  echo "idstack-learnings: python3 is necessary" >&2
+  [ "$CMD" = log ] && exit 0
+  exit 2
+fi
+
 case "$CMD" in
   log)
     [ -z "${1:-}" ] && exit 0
     mkdir -p "$(dirname "$LOCAL")" 2>/dev/null || exit 0
-    if have_python; then
-      learnings_py log "$1" 2>/dev/null
-    else
-      TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-      echo "$1" | sed "s/}$/,\"ts\":\"$TS\"}/" >> "$LOCAL" 2>/dev/null
-    fi
+    learnings_py log "$1" 2>/dev/null
     exit 0
     ;;
 
@@ -181,41 +181,13 @@ case "$CMD" in
     [ "$CROSS_PROJECT" -eq 1 ] && [ -f "$GLOBAL" ] && SOURCES+=("$GLOBAL")
     [ -f "$LOCAL" ] && SOURCES+=("$LOCAL")
     [ ${#SOURCES[@]} -eq 0 ] && exit 0
-
-    # Fallback search, used when python3 is absent and when the python block
-    # fails. Line-oriented and filter-poor by design: it can match --keyword or
-    # --type but not both, and it cannot set _source. Callers get approximate
-    # results rather than none.
-    #
-    # `--` stops a keyword beginning with `-` being read as a grep option;
-    # `tail -n` is the portable spelling of the obsolescent `tail -"$N"`.
-    #
-    # The --type pattern tolerates whitespace around the colon: log writes via
-    # json.dumps, whose default separators emit `"type": "x"` with a space.
-    # $TYPE is a short identifier from --type, treated as an ERE fragment here.
-    search_fallback() {
-      if [ -n "$KEYWORD" ]; then
-        cat "${SOURCES[@]}" 2>/dev/null | grep -i -- "$KEYWORD" | tail -n "$LIMIT"
-      elif [ -n "$TYPE" ]; then
-        cat "${SOURCES[@]}" 2>/dev/null | grep -E -- "\"type\"[[:space:]]*:[[:space:]]*\"$TYPE\"" | tail -n "$LIMIT"
-      else
-        cat "${SOURCES[@]}" 2>/dev/null | tail -n "$LIMIT"
-      fi
-    }
-
-    if have_python; then
-      learnings_py search "$TYPE" "$KEYWORD" "$LIMIT" "${SOURCES[@]}" 2>/dev/null || search_fallback
-    else
-      search_fallback
-    fi
-    exit 0
+    learnings_py search "$TYPE" "$KEYWORD" "$LIMIT" "${SOURCES[@]}"
     ;;
 
   delete|promote)
     KEY="${1:-}"
     [ -z "$KEY" ] && usage
     [ -f "$LOCAL" ] || { echo "There are no local learnings." >&2; exit 1; }
-    have_python || { echo "python3 is necessary for this command." >&2; exit 1; }
     learnings_py "$CMD" "$KEY"
     ;;
 

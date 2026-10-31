@@ -170,6 +170,21 @@ mkdir -p "$HOME/.claude/skills/idstack"
 echo "someone else's thing" > "$HOME/.claude/skills/idstack/README.md"
 check "unrecognized dir warns rather than claiming ownership" "'$DOCTOR_CMD'" 0 "WARNING: directory at"
 
+# --- python3 ---
+# Every skill saves its results through python3, so its absence is a PROBLEM.
+setup_happy_path
+mock_claude_output "idstack@idstack
+status: enabled"
+rm "$MOCK_BIN/python3"
+check "missing python3 is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack needs python3 3.9"
+"$DOCTOR_CMD" > "$TEST_ROOT/no-python.txt" 2>&1 || true
+ln -sf "$PYTHON" "$MOCK_BIN/python3"
+
+setup_happy_path
+mock_claude_output "idstack@idstack
+status: enabled"
+check "python3 3.9 or later is found" "'$DOCTOR_CMD'" 0 "found python3 3\\.(9|[1-9][0-9])"
+
 # --- writing standard (ASD-STE100) ---
 # A person reads every line that doctor prints. Send a healthy run and three
 # problem runs, which print all of the explanation lines, through the checker.
@@ -202,6 +217,7 @@ echo "2.0.0" > "$HOME/.claude/skills/idstack/VERSION"
 ln -s "$TEST_ROOT/dummy-idstack/some-skill" "$HOME/.claude/skills/needs-analysis"
 ln -s "$TEST_ROOT/dummy" "$HOME/.claude/plugins/idstack"
 "$DOCTOR_CMD" > "$STE_OUT/legacy.txt" 2>&1 || true
+cp "$TEST_ROOT/no-python.txt" "$STE_OUT/no-python.txt"
 
 check "doctor output obeys the writing standard (healthy and problem runs)" \
   "'$PYTHON' '$REPO_DIR/bin/idstack-ste-check' --format text '$STE_OUT'/*.txt"

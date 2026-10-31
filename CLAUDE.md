@@ -35,10 +35,10 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/smoke-test.sh              # 434 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
-./test/integration-test.sh        # 53 behavioral tests across the bin/ scripts; also proves the suite
+./test/integration-test.sh        # 52 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 19 behavioral tests for ./setup (flags, scope, legacy cleanup, failure handling)
-./test/test-doctor.sh             # 14 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
+./test/test-doctor.sh             # 16 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
 ./test/test-status.sh             # 24 tests for bin/idstack-status, incl. the --readiness export gate
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
 ./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
@@ -64,7 +64,7 @@ python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across 
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9. The test, mutation and release jobs pin Node 22 for the extension and rendered-landing tests.
 
-No build step for users. No dependencies beyond bash (python3 recommended for full features). Skills are plain Markdown files.
+No build step for users. No dependencies beyond bash and python3 3.9 or later; `bin/idstack-doctor` reports a missing or older python3. Skills are plain Markdown files.
 
 ### Releasing
 

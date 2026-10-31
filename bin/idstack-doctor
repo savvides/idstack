@@ -43,6 +43,18 @@ echo "idstack doctor ($SCOPE)"
 echo "  repo: $IDSTACK_DIR"
 echo ""
 
+# 0. python3 3.9 or later. The manifest merge, slugify, status, migrate and the
+#    learnings and timeline logs all need it. The checks below fall back to
+#    grep where they can, so that doctor itself still runs without it.
+echo "Requirements:"
+if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; then
+  echo "  found python3 $(python3 -c 'import platform; print(platform.python_version())')"
+else
+  echo "  PROBLEM: idstack needs python3 3.9 or a later version. Install it, then run idstack-doctor again."
+  note_problem
+fi
+echo ""
+
 # 1. Plugin + marketplace manifests in the repo
 echo "Plugin manifests:"
 plugin_manifest="$IDSTACK_DIR/.claude-plugin/plugin.json"

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed — python3 3.9 or later is a requirement
+
+- **idstack needs python3 3.9 or a later version.** Every skill saves its results with `bin/idstack-manifest-merge`, which is a Python script, so python3 was already necessary. The bash fallbacks in `bin/idstack-learnings`, `bin/idstack-timeline-log`, `bin/idstack-status` and `bin/idstack-migrate` gave wrong results and no message. For example, `bin/idstack-migrate` wrote the manifest to stdout without a migration and exited 0. Now each script tells you that python3 is necessary. The two log scripts still exit 0, so they do not stop a skill. `bin/idstack-doctor` reports a missing or older python3 as a PROBLEM.
+
 ## v3.8.0.0 (2026-10-30)
 
 idstack supports Claude Code only. This release says so in the README and on the landing page, and it removes the text that described other hosts. Without Claude Code, you can use the Chrome extension. You can also fork the repo and adapt the skills for a different agent, but idstack does not support or test those forks.

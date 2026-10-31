@@ -25,13 +25,15 @@ CONTEXT_ONLY=0
 [ "$1" = "--readiness" ] && READINESS_ONLY=1
 [ "$1" = "--context" ] && CONTEXT_ONLY=1
 
+command -v python3 &>/dev/null || { echo "idstack-status: python3 is necessary" >&2; exit 2; }
+
 TIMELINE=".idstack/timeline.jsonl"
 LEARNINGS=".idstack/learnings.jsonl"
 MANIFEST=".idstack/project.json"
 
 # Project name
 PROJECT_NAME="unknown"
-if [ -f "$MANIFEST" ] && command -v python3 &>/dev/null; then
+if [ -f "$MANIFEST" ]; then
   PROJECT_NAME=$(python3 -c "
 import json
 try:
@@ -149,12 +151,7 @@ PY
 # nothing to recover.
 if [ "$CONTEXT_ONLY" -eq 1 ]; then
   if [ -f "$TIMELINE" ]; then
-    if command -v python3 &>/dev/null; then
-      timeline_summary context 2>/dev/null || true
-    else
-      # No python3: show last 3 skill names only
-      tail -3 "$TIMELINE" 2>/dev/null | grep -o '"skill":"[^"]*"' | sed 's/"skill":"//;s/"//' | while read s; do echo "RECENT_SKILL: $s"; done
-    fi
+    timeline_summary context 2>/dev/null || true
   fi
   if [ -f "$LEARNINGS" ]; then
     LEARN_COUNT=$(wc -l < "$LEARNINGS" 2>/dev/null | tr -d ' ')
@@ -181,15 +178,6 @@ if [ ! -f "$TIMELINE" ]; then
     echo "To start a new course, run /idstack:needs-analysis."
     echo "To import a course that you have, run /idstack:course-import."
   fi
-  exit 0
-fi
-
-if ! command -v python3 &>/dev/null; then
-  echo "Project: $PROJECT_NAME"
-  echo ""
-  TOTAL=$(wc -l < "$TIMELINE" 2>/dev/null | tr -d ' ')
-  echo "Timeline: $TOTAL entries"
-  echo "(To see score trends and dimension analysis, install python3.)"
   exit 0
 fi
 

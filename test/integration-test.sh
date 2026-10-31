@@ -35,9 +35,6 @@ check "preserves caller-supplied ts field" \
 check "handles invalid JSON gracefully" \
   "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"bad\",}' && grep -q '\"raw\": \"{\\\\\\\"skill\\\\\\\":\\\\\\\"bad\\\\\\\",}\"' .idstack/timeline.jsonl"
 
-check "fallback to bash works when python3 is missing" \
-  "mkdir -p mockbin && for cmd in bash sed date mkdir env tr wc grep echo cat ls rm pwd dirname chmod; do ln -s \$(which \$cmd) mockbin/\$cmd 2>/dev/null || true; done && PATH=\"\$PWD/mockbin\" $IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"no_py\"}' && grep -q '\"skill\":\"no_py\",\"ts\":' .idstack/timeline.jsonl"
-
 check "handles empty arg without error" \
   "$IDSTACK_DIR/bin/idstack-timeline-log ''"
 
@@ -45,10 +42,10 @@ check "handles no arg without error" \
   "$IDSTACK_DIR/bin/idstack-timeline-log"
 
 # Exact count, not `-gt 1`. Every preceding write in this section contributes a
-# line (5 by here); a loose comparison still passes when four of the five are
+# line (4 by here); a loose comparison still passes when three of the four are
 # lost, which is the regression this assertion exists to catch.
 check "multiple appends create exactly one line each" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 5 ]"
+  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 4 ]"
 
 echo ""
 
@@ -121,36 +118,31 @@ keys = [json.loads(line)['key'] for line in out.strip().splitlines() if line.str
 assert keys == ['l1', 'l2'], f'Expected local keys [l1, l2], got {keys}'
 \""
 
-# --- grep fallback (python3 absent) ---
-# Both call sites share one search_fallback function. Nothing exercised this
-# path before, so the dedupe that created the function was unverifiable. Drive
-# it by putting a PATH in front that has no python3.
+# --- python3 absent ---
+# python3 3.9 or later is a requirement. The scripts used to fall back to
+# grep, sed and cat, which gave wrong results without a message: migrate
+# printed the manifest unmigrated and exited 0. Now each one says python3 is
+# necessary. The two loggers still exit 0, so they never block a skill.
 mkdir -p "$TEST_DIR/nopy"
 for _c in bash sh cat grep tail sed tr wc mkdir date env dirname ls rm pwd chmod; do
   ln -sf "$(command -v $_c)" "$TEST_DIR/nopy/$_c" 2>/dev/null || true
 done
+NOPY="PATH=\"$TEST_DIR/nopy\""
 
-check "cross-project: local learnings take precedence in fallback mode" \
-  "python3 -c \"
-import subprocess, json
-out = subprocess.check_output(['$IDSTACK_DIR/bin/idstack-learnings', 'search', '--cross-project', '--keyword', 'prec_test', '--limit', '2'], env={'HOME': '$TEST_DIR/fake_home', 'PATH': '$TEST_DIR/nopy'}).decode()
-keys = [json.loads(line)['key'] for line in out.strip().splitlines() if line.strip()]
-assert keys == ['l1', 'l2'], f'Expected fallback local keys [l1, l2], got {keys}'
-\""
+check "no python3: learnings search exits 2 and says why" \
+  "out=\$($NOPY $IDSTACK_DIR/bin/idstack-learnings search --keyword canvas 2>&1); [ \$? -eq 2 ] && echo \"\$out\" | grep -q 'python3 is necessary' && ! echo \"\$out\" | grep -q canvas_export"
 
-check "fallback: --keyword matches when python3 is absent" \
-  "PATH=\"$TEST_DIR/nopy\" $IDSTACK_DIR/bin/idstack-learnings search --keyword canvas | grep -q 'canvas_export'"
+check "no python3: learnings log exits 0 and writes nothing" \
+  "n=\$(wc -l < .idstack/learnings.jsonl) && $NOPY $IDSTACK_DIR/bin/idstack-learnings log '{\"key\":\"nopy\"}' 2>/dev/null && [ \$(wc -l < .idstack/learnings.jsonl) -eq \$n ]"
 
-check "fallback: --type matches when python3 is absent" \
-  "PATH=\"$TEST_DIR/nopy\" $IDSTACK_DIR/bin/idstack-learnings search --type technical | grep -q 'canvas_export'"
+check "no python3: timeline-log exits 0 and writes nothing" \
+  "touch .idstack/timeline.jsonl && n=\$(wc -l < .idstack/timeline.jsonl) && $NOPY $IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"nopy\"}' 2>/dev/null && [ \$(wc -l < .idstack/timeline.jsonl) -eq \$n ]"
 
-check "fallback: bare search respects --limit when python3 is absent" \
-  "[ \$(PATH=\"$TEST_DIR/nopy\" $IDSTACK_DIR/bin/idstack-learnings search --limit 2 | wc -l | tr -d ' ') -eq 2 ]"
+check "no python3: migrate exits 3 and does not print the unmigrated manifest" \
+  "mkdir -p '$TEST_DIR/nopy-mig/.idstack' && echo '{\"version\":\"1.0\",\"marker\":\"unmigrated\"}' > '$TEST_DIR/nopy-mig/.idstack/project.json' && out=\$(cd '$TEST_DIR/nopy-mig' && $NOPY $IDSTACK_DIR/bin/idstack-migrate 2>&1); [ \$? -eq 3 ] && echo \"\$out\" | grep -q 'python3 is necessary' && ! echo \"\$out\" | grep -q unmigrated"
 
-# A keyword starting with '-' is why the fallback greps use `--`. Without it
-# grep reads the keyword as an option bundle and errors instead of matching.
-check "fallback: leading-dash keyword is not read as a grep option" \
-  "! PATH=\"$TEST_DIR/nopy\" $IDSTACK_DIR/bin/idstack-learnings search --keyword -canvas 2>&1 | grep -qiE 'illegal option|invalid option|unrecognized option'"
+check "no python3: status exits 2 and says why" \
+  "out=\$($NOPY $IDSTACK_DIR/bin/idstack-status 2>&1); [ \$? -eq 2 ] && echo \"\$out\" | grep -q 'python3 is necessary'"
 
 check "no file returns empty" \
   "rm -f .idstack/learnings.jsonl && [ -z \"\$($IDSTACK_DIR/bin/idstack-learnings search --limit 3)\" ]"

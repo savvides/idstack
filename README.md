@@ -94,7 +94,7 @@ You had a course in Canvas. Now you have an evidence-based audit with specific r
 
 ## Install (30 seconds)
 
-**Requirement:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI.
+**Requirements:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI — and python3 3.9 or later.
 
 **Not using Claude Code?** idstack supports Claude Code only. Without Claude Code, use the [Chrome extension](#chrome-extension-no-terminal-mode). The skills are plain Markdown, so you can fork this repo and adapt it for a different agent, for example Codex or Antigravity. idstack does not support or test those forks. <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
 
@@ -373,7 +373,7 @@ CHROME EXTENSION (separate runtime: no Claude Code, no .idstack/ folder)
      ◀── findings, saved to chrome.storage; dossier export as Markdown
 ```
 
-Skills are plain Markdown files generated from templates. No build step for users, no dependencies. `./setup` registers the repo as a Claude Code plugin marketplace and installs it, which is what gives the namespaced `/idstack:<skill>` commands. Users invoke skills via `/idstack:<skill>`. Each skill reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
+Skills are plain Markdown files generated from templates. No build step for users, and no dependencies beyond bash and python3. `./setup` registers the repo as a Claude Code plugin marketplace and installs it, which is what gives the namespaced `/idstack:<skill>` commands. Users invoke skills via `/idstack:<skill>`. Each skill reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
 
 ## How it works
 
@@ -455,7 +455,7 @@ That works. `/idstack:course-quality-review` asks you about your course directly
 Run `bin/idstack-status` from your project directory for the dashboard (quality score trends, dimensions, what skills have run, paths to every report under `.idstack/exports/<course-slug>/`). Add `--readiness` to get the pre-export readiness gate only (quality ≥ 70, accessibility ≥ 80, zero critical red-team findings, zero WCAG Level-A violations).
 
 **Do I need python3?**
-python3 is recommended but not required. With python3, you get quality score trends, dimension analysis, search filtering, and safe JSON serialization. Without it, basic timeline logging and learnings still work via bash fallback, but score trends and search filtering are unavailable. Most systems have python3 pre-installed.
+Yes, python3 3.9 or later. Every skill saves its results to the project manifest with it, and the status dashboard, learnings and timeline use it too. macOS and most Linux systems already have it. Run `bin/idstack-doctor` to check; it reports a missing or older python3 as a problem.
 
 **Is my data safe?**
 idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Session history (`.idstack/timeline.jsonl`) and learnings (`.idstack/learnings.jsonl`) are also local. In the Claude Code plugin, course data reaches external servers only when you explicitly invoke integration skills (such as Canvas API calls via `/idstack:course-import` or `/idstack:course-export`) or perform hourly update checks via `git fetch`, and findings are sent to Consensus only if you set up your own Consensus key. The Chrome extension sends page text to Google's API when you run an audit with your own API key saved, and finding text to Consensus when you also save a Consensus key; see [PRIVACY.md](PRIVACY.md). Claude Code's own privacy policy applies to the AI conversation.
