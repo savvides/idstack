@@ -160,7 +160,7 @@ if [ "$CONTEXT_ONLY" -eq 1 ]; then
     LEARN_COUNT=$(wc -l < "$LEARNINGS" 2>/dev/null | tr -d ' ')
     echo "LEARNINGS: $LEARN_COUNT"
     if [ "$LEARN_COUNT" -gt 0 ] 2>/dev/null; then
-      "$(dirname "$0")/idstack-learnings-search" --limit 3 2>/dev/null || true
+      "$(dirname "$0")/idstack-learnings" search --limit 3 2>/dev/null || true
     fi
   fi
   exit 0

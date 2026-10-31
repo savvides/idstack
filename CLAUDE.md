@@ -35,7 +35,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/smoke-test.sh              # 434 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
-./test/integration-test.sh        # 51 behavioral tests across the bin/ scripts; also proves the suite
+./test/integration-test.sh        # 53 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 19 behavioral tests for ./setup (flags, scope, legacy cleanup, failure handling)
 ./test/test-doctor.sh             # 14 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches

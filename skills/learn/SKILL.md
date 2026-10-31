@@ -364,7 +364,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings-search" --limit 10
+"$_IDSTACK/bin/idstack-learnings" search --limit 10
 ```
 
 Format the output as a readable table:
@@ -391,7 +391,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --limit 10
+"$_IDSTACK/bin/idstack-learnings" search --keyword KEYWORD --limit 10
 ```
 
 For cross-project search:
@@ -406,7 +406,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --cross-project --limit 10
+"$_IDSTACK/bin/idstack-learnings" search --keyword KEYWORD --cross-project --limit 10
 ```
 
 If results include global learnings (tagged with `_source`), show their source project.
@@ -426,7 +426,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings-delete" KEY
+"$_IDSTACK/bin/idstack-learnings" delete KEY
 ```
 
 ### promote <key>
@@ -444,7 +444,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings-promote" KEY
+"$_IDSTACK/bin/idstack-learnings" promote KEY
 ```
 
 ### export
@@ -462,7 +462,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings-search" --limit 1000
+"$_IDSTACK/bin/idstack-learnings" search --limit 1000
 ```
 
 Format as markdown with sections grouped by type (operational, pedagogical, etc.)
@@ -496,6 +496,6 @@ If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do
 
 ## Important Rules
 
-- **Never modify learnings.jsonl directly.** Always use the bin scripts.
+- **Never modify learnings.jsonl directly.** Always use `bin/idstack-learnings`.
 - **Confirm deletes.** Always ask before deleting.
 - **Show source for global learnings.** When cross-project results appear, show which project they came from.

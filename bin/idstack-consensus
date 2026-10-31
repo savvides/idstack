@@ -101,6 +101,37 @@ def fetch_from_consensus_api(query, api_key):
         return json.loads(response.read().decode("utf-8"))
 
 
+def fetch_and_cache(query, query_hash, api_key):
+    """Query the Consensus API, map the top 3 papers, and cache the record under query_hash."""
+    raw_res = fetch_from_consensus_api(query, api_key)
+    papers = []
+    for p in raw_res.get("papers", raw_res.get("results", []))[:3]:
+        study_design = p.get("study_type", "Observational")
+        tier = "T1" if "meta" in str(study_design).lower() else "T2"
+        papers.append({
+            "title": p.get("title", ""),
+            "authors": p.get("authors", []),
+            "year": p.get("year", 2024),
+            "study_design": study_design,
+            "tier": tier,
+            "doi_url": p.get("doi_url", p.get("url", "")),
+            "key_finding": p.get("abstract", p.get("summary", "")),
+        })
+    meter = raw_res.get(
+        "consensus_meter",
+        {"yes_pct": 80, "possibly_pct": 15, "no_pct": 5, "total_papers": len(papers)},
+    )
+    record = {
+        "query": query,
+        "query_hash": query_hash,
+        "cached_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "consensus_meter": meter,
+        "top_papers": papers,
+    }
+    save_cached_record(query_hash, record)
+    return record
+
+
 def cmd_status(args):
     """Report cache statistics and API key configuration status."""
     key = resolve_api_key()
@@ -194,32 +225,7 @@ def cmd_query(args):
         return 0
 
     try:
-        raw_res = fetch_from_consensus_api(claim, api_key)
-        papers = []
-        for p in raw_res.get("papers", raw_res.get("results", []))[:3]:
-            study_design = p.get("study_type", "Observational")
-            tier = "T1" if "meta" in str(study_design).lower() else "T2"
-            papers.append({
-                "title": p.get("title", ""),
-                "authors": p.get("authors", []),
-                "year": p.get("year", 2024),
-                "study_design": study_design,
-                "tier": tier,
-                "doi_url": p.get("doi_url", p.get("url", "")),
-                "key_finding": p.get("abstract", p.get("summary", "")),
-            })
-        meter = raw_res.get(
-            "consensus_meter",
-            {"yes_pct": 80, "possibly_pct": 15, "no_pct": 5, "total_papers": len(papers)},
-        )
-        record = {
-            "query": claim,
-            "query_hash": q_hash,
-            "cached_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "consensus_meter": meter,
-            "top_papers": papers,
-        }
-        save_cached_record(q_hash, record)
+        record = fetch_and_cache(claim, q_hash, api_key)
         record["from_cache"] = False
         print(json.dumps(record, indent=2))
         return 0
@@ -493,34 +499,12 @@ def cmd_verify(args):
                 top_study_design = top.get("study_design", "")
         elif api_key:
             try:
-                raw_res = fetch_from_consensus_api(claim_stripped or claim_text, api_key)
-                papers = []
-                for p in raw_res.get("papers", raw_res.get("results", []))[:3]:
-                    study_design = p.get("study_type", "Observational")
-                    tier = "T1" if "meta" in str(study_design).lower() else "T2"
-                    papers.append({
-                        "title": p.get("title", ""),
-                        "authors": p.get("authors", []),
-                        "year": p.get("year", 2024),
-                        "study_design": study_design,
-                        "tier": tier,
-                        "doi_url": p.get("doi_url", p.get("url", "")),
-                        "key_finding": p.get("abstract", p.get("summary", "")),
-                    })
-                meter = raw_res.get(
-                    "consensus_meter",
-                    {"yes_pct": 80, "possibly_pct": 15, "no_pct": 5, "total_papers": len(papers)},
-                )
-                record = {
-                    "query": claim_stripped or claim_text,
-                    "query_hash": h2,
-                    "cached_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "consensus_meter": meter,
-                    "top_papers": papers,
-                }
-                save_cached_record(h2, record)
+                # The query and the hash can come from different strings when
+                # claim_stripped is empty; pass both as they are.
+                record = fetch_and_cache(claim_stripped or claim_text, h2, api_key)
+                papers = record["top_papers"]
                 finding["qa_verified"] = True
-                finding["consensus"] = meter
+                finding["consensus"] = record["consensus_meter"]
                 if papers:
                     if papers[0].get("doi_url"):
                         finding["doi_url"] = papers[0]["doi_url"]

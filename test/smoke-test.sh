@@ -50,13 +50,13 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus idstack-ste-check; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus idstack-ste-check; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
 
 # Bash syntax gate for the shell entry points (idstack-manifest-merge is python).
-for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/version-classify.sh bin/lib/plugin-status.sh test/test-helper.sh; do
+for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-learnings bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/version-classify.sh bin/lib/plugin-status.sh test/test-helper.sh; do
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
 

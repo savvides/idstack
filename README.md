@@ -358,7 +358,7 @@ RUN (Claude Code, inside your course project folder)
      │      content contract: templates/report-format.md
      │
      └──▶ .idstack/timeline.jsonl   runs, scores (bin/idstack-timeline-log)
-          .idstack/learnings.jsonl  discoveries (bin/idstack-learnings-log)
+          .idstack/learnings.jsonl  discoveries (bin/idstack-learnings log)
             └─ /idstack:learn promote ─▶ ~/.idstack/global/learnings.jsonl
 
 CHROME EXTENSION (separate runtime: no Claude Code, no .idstack/ folder)

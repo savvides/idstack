@@ -2169,6 +2169,22 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "slugify --from-manifest drops the needs_analysis fallback" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 57. learnings promote splices the global path into its python source again,
+# so a quote in $HOME is a syntax error -> integration-test must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-learnings" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'GLOBAL = os.environ["GLOBAL"]'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, "GLOBAL = '$GLOBAL'", 1)
+old = "python3 - \"$@\" <<'PY'"
+assert s.count(old) == 1, 'heredoc anchor count %d' % s.count(old)
+s = s.replace(old, 'python3 - "$@" <<PY', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "learnings promote splices \$HOME into its python source" "$WORK/r/test/integration-test.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
