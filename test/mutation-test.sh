@@ -1274,17 +1274,18 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "never-accesses-PII claim back in the privacy policy" "$WORK/r/test/test-extension.sh"
 
-# 31f. audit-history retention goes undisclosed -> test-extension must fail.
+# 31f. PRIVACY.md promises an audit history again, which the extension no
+# longer keeps -> test-extension must fail.
 fresh
 python3 - "$WORK/r/PRIVACY.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "The last 20 audit results (page address, title, page type, and the full audit result) are kept in `chrome.storage.local`, as is the Course Dossier you build."
+old = "The extension keeps no audit history."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "The Course Dossier you build is kept in `chrome.storage.local`.", 1)
+s = s.replace(old, "The last 20 audit results are kept in `chrome.storage.local` too.", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "audit-history retention undisclosed" "$WORK/r/test/test-extension.sh"
+expect_fail "audit history promised again" "$WORK/r/test/test-extension.sh"
 
 # 31g. the README crawler bullet overclaims again -> test-extension must fail.
 fresh
@@ -2160,6 +2161,20 @@ s = s.replace(old, old + 'command -v python3 &>/dev/null || { cat "$MANIFEST"; e
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "migrate prints the unmigrated manifest without python3" "$WORK/r/test/integration-test.sh"
+
+# 59. the service worker stops deleting the audit history that extension 1.2.0
+# and earlier kept -> test-extension must fail. Without it, PRIVACY.md's "keeps
+# no audit history" is false for every upgraded install.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    chrome.storage.local.remove('auditHistory').catch((err) => console.error(err));\n"
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "an update keeps the old audit history" "$WORK/r/test/test-extension.sh"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

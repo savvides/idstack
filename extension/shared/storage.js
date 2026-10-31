@@ -18,28 +18,6 @@ export async function saveSettings(settings) {
   });
 }
 
-export async function getAuditHistory() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['auditHistory'], (result) => {
-      resolve(result.auditHistory || []);
-    });
-  });
-}
-
-export async function saveAuditResult(entry) {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['auditHistory'], (result) => {
-      const history = result.auditHistory || [];
-      history.unshift({
-        ...entry,
-        timestamp: new Date().toISOString()
-      });
-      // Keep last 20 audits
-      chrome.storage.local.set({ auditHistory: history.slice(0, 20) }, () => resolve(true));
-    });
-  });
-}
-
 export async function getDossier() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['activeDossier'], (result) => {

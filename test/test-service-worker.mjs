@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { installChrome, installFetch, jsonResponse, importFresh, resetGlobals, EXTENSION_ID } from './extension-harness.mjs';
-import { saveSettings, getAuditHistory } from '../extension/shared/storage.js';
+import { saveSettings } from '../extension/shared/storage.js';
 
 // A real but short Canvas prompt (13 words): the worker must still audit it.
 const TEXT = 'Post a reflection on chapter four and reply to two peers by Friday.';
@@ -34,14 +34,24 @@ async function loadWorker({ apiKey, fetchHandler } = {}) {
   return h;
 }
 
-// RUN_AUDIT with no API key: demo result, saved to history, no network.
+// RUN_AUDIT with no API key: demo result, no network, nothing stored.
 let h = await loadWorker();
 let res = await h.dispatch({ action: 'RUN_AUDIT', payload });
 assert.ok(res, 'RUN_AUDIT replies (the listener must return true to keep the channel open)');
 assert.strictEqual(res.success, true);
 assert.ok(res.data.summary && Array.isArray(res.data.findings), 'demo audit has the result shape');
 assert.strictEqual(h.fetchCalls.length, 0, 'demo mode makes no network calls');
-assert.strictEqual((await getAuditHistory())[0].title, 'Enzymes Lab');
+assert.deepStrictEqual(h.storage.local, {}, 'an audit writes nothing to chrome.storage.local');
+
+// Extension 1.2.0 and earlier kept the last 20 audits in chrome.storage.local,
+// and nothing read them. An update deletes them and keeps the dossier.
+h = installChrome({ local: { auditHistory: [{ url: 'u', result: {} }], activeDossier: [{ url: 'd', result: {} }] } });
+installFetch(async (url) => { throw new Error('unexpected fetch ' + url); });
+await importFresh('background/service-worker.js');
+assert.strictEqual(h.listeners.installed.length, 1, 'worker registers one runtime.onInstalled listener');
+await Promise.all(h.listeners.installed.map((fn) => fn({ reason: 'update' })));
+assert.ok(!('auditHistory' in h.storage.local), 'an update deletes the audit history that older versions kept');
+assert.deepStrictEqual(h.storage.local.activeDossier, [{ url: 'd', result: {} }], 'an update keeps the dossier');
 
 // RUN_AUDIT with a key: one model call, parsed JSON returned.
 h = await loadWorker({ apiKey: 'k', fetchHandler: async () => llmReply({ summary: { bloomsLevel: 'Apply' }, findings: [] }) });
@@ -58,7 +68,7 @@ res = await h.dispatch({ action: 'RUN_AUDIT', payload });
 assert.strictEqual(res.success, false);
 assert.match(res.error, /429/);
 
-// CRAWL_AND_AUDIT_COURSE: crawls the Canvas API, audits, records the course URL.
+// CRAWL_AND_AUDIT_COURSE: crawls the Canvas API and audits the course.
 // The course has syllabus text, so it is not an empty course.
 h = await loadWorker({ fetchHandler: async (url) => url.includes('include[]=syllabus_body')
   ? jsonResponse({ name: 'Biology 101', syllabus_body: '<p>Objectives</p>' })
@@ -67,16 +77,14 @@ res = await h.dispatch({ action: 'CRAWL_AND_AUDIT_COURSE', payload: { origin: 'h
 assert.ok(res, 'CRAWL_AND_AUDIT_COURSE replies (the listener must return true)');
 assert.strictEqual(res.success, true);
 assert.strictEqual(res.courseData.title, 'Biology 101');
-assert.strictEqual((await getAuditHistory())[0].url, 'https://canvas.instructure.com/courses/12');
 
 // Unknown actions get no reply and do not hold the channel open.
 assert.strictEqual(await h.dispatch({ action: 'NOT_A_REAL_ACTION' }), undefined);
 
-// A refused audit replies with an error and is never saved to history.
+// A refused audit replies with an error.
 async function assertRejected(res, pattern) {
   assert.strictEqual(res?.success, false, `expected an error, got ${String(JSON.stringify(res)).slice(0, 120)}`);
   assert.match(res.error, pattern);
-  assert.deepStrictEqual(await getAuditHistory(), [], 'a refused audit must not be saved to history');
 }
 const modelCalls = (h) => h.fetchCalls.filter((c) => new URL(c.url).host === 'generativelanguage.googleapis.com');
 
@@ -110,7 +118,6 @@ h = await loadWorker({ apiKey: 'k', fetchHandler: async () => llmReply(VALID) })
 res = await h.dispatch({ action: 'RUN_AUDIT', payload });
 assert.strictEqual(res.success, true, JSON.stringify(res));
 assert.deepStrictEqual(res.data, VALID);
-assert.deepStrictEqual((await getAuditHistory())[0].result, VALID);
 assert.strictEqual(h.fetchCalls.length, 1);
 const [call] = h.fetchCalls;
 assert.ok(call.url.startsWith('https://generativelanguage.googleapis.com/'));
@@ -129,7 +136,7 @@ await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload }), /did no
 h = await loadWorker({ apiKey: 'k', fetchHandler: async () => { throw new TypeError('Failed to fetch'); } });
 await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload }), /^Failed to fetch$/);
 
-// F9: model output the renderer or dossier compiler cannot handle is refused before it is saved.
+// F9: model output the renderer or dossier compiler cannot handle is refused before it reaches them.
 for (const bad of [{ findings: { 0: {} } }, { findings: [null] }, { findings: [{ tier: 1 }] }, { findings: [{ severity: 2 }] }, 'not an object']) {
   h = await loadWorker({ apiKey: 'k', fetchHandler: async () => llmReply(bad) });
   await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload }), /audit format/);
@@ -137,7 +144,7 @@ for (const bad of [{ findings: { 0: {} } }, { findings: [null] }, { findings: [{
 
 // F3: only the side panel may start audits. A content script shares sender.id
 // with the panel, so a sender.id check would let any page's injected world
-// trigger credentialed Canvas fetches and write audit history.
+// trigger credentialed Canvas fetches and model calls.
 const fakeCanvas = async (url) => url.includes('include[]=syllabus_body')
   ? jsonResponse({ name: 'Biology 101', syllabus_body: '<p>Course outcomes and weekly schedule</p>' })
   : jsonResponse([]);
@@ -148,7 +155,6 @@ assert.strictEqual(res, undefined, 'a content-script sender gets no reply');
 res = await h.dispatch({ action: 'RUN_AUDIT', payload }, contentScript);
 assert.strictEqual(res, undefined, 'a content-script sender gets no RUN_AUDIT reply');
 assert.strictEqual(h.fetchCalls.length, 0, 'no credentialed Canvas fetch for a content-script sender');
-assert.deepStrictEqual(await getAuditHistory(), [], 'a content-script sender must not write audit history');
 
 // F3: origin and courseId are spliced into a credentialed fetch URL, so only a
 // bare https origin and a numeric course id are accepted.

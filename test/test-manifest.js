@@ -32,8 +32,6 @@ assert.ok(fs.existsSync(storagePath), 'storage.js must exist');
 const storageContent = fs.readFileSync(storagePath, 'utf8');
 assert.ok(storageContent.includes('export async function getSettings()'), 'getSettings export required');
 assert.ok(storageContent.includes('export async function saveSettings('), 'saveSettings export required');
-assert.ok(storageContent.includes('export async function getAuditHistory()'), 'getAuditHistory export required');
-assert.ok(storageContent.includes('export async function saveAuditResult('), 'saveAuditResult export required');
 
 // Icons check
 assert.ok(fs.existsSync(path.join(__dirname, '../extension/icons/icon-16.png')), 'icon-16.png must exist');

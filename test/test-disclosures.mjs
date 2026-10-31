@@ -9,7 +9,7 @@
 import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { installChrome, loadContentScript, resetGlobals } from './extension-harness.mjs';
-import { saveSettings, saveAuditResult, addToDossier } from '../extension/shared/storage.js';
+import { saveSettings, addToDossier } from '../extension/shared/storage.js';
 import { getDemoAuditResult, getDemoCourseAuditResult } from '../extension/background/parser-helper.js';
 import { crawlCanvasCourse } from '../extension/background/canvas-crawler.js';
 
@@ -24,21 +24,20 @@ const DOCS = [['index.html', html], ['PRIVACY.md', privacy], ['README.md', readm
 const problems = new Set();
 const check = (ok, msg) => { if (!ok) problems.add(msg); };
 
-// 1. Storage: record which chrome.storage area each key really lands in, and
-//    how many audits the history keeps.
+// 1. Storage: record which chrome.storage area each key really lands in.
 const h = installChrome();
 await saveSettings({ apiKey: 'k' });
-for (let i = 0; i < 25; i++) await saveAuditResult({ url: `u${i}`, result: {} });
 await addToDossier({ url: 'u', result: {} });
 resetGlobals();
 const areaOf = (key) => Object.keys(h.storage).find((a) => key in h.storage[a]);
-for (const [key, label] of [['apiKey', /API key/i], ['auditHistory', /audit history/i], ['activeDossier', /dossier/i]]) {
+for (const [key, label] of [['apiKey', /API key/i], ['activeDossier', /dossier/i]]) {
   const lines = privacy.split('\n').filter((l) => label.test(l) && l.includes('chrome.storage.'));
   check(lines.length, `PRIVACY.md must say where ${key} is stored (code: chrome.storage.${areaOf(key)})`);
   for (const l of lines) check(l.includes(`chrome.storage.${areaOf(key)}`), `PRIVACY.md misstates where ${key} is stored (code: chrome.storage.${areaOf(key)}): ${l}`);
 }
-const kept = h.storage[areaOf('auditHistory')].auditHistory.length;
-check(privacy.includes(`last ${kept} audit results`), `PRIVACY.md must disclose that the last ${kept} audit results are kept`);
+// The extension keeps no audit history. Nothing read it, so the docs must not
+// promise one, and an update deletes what older versions kept.
+check(!/last \d+ audit results/.test(privacy), 'PRIVACY.md says audit results are kept, but the extension keeps no audit history');
 
 // 2. Demo mode ignores the page. The docs must say so, and stop saying so if that changes.
 const same = (f, a, b) => JSON.stringify(f(a)) === JSON.stringify(f(b));

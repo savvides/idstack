@@ -374,7 +374,6 @@ if (auditCourseBtn) {
             return;
           }
           if (response && response.success) {
-            // Same label as the worker's auditHistory entry for this course.
             renderResults(response.data, {
               url: `${origin}/courses/${courseId}`,
               title: response.courseData?.title || 'Canvas Course',
