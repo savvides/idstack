@@ -1,7 +1,10 @@
 name: Test
 
+# A push to a PR branch already runs the pull_request event; running push on
+# every branch too doubled the matrix and the mutation job for each PR.
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
@@ -41,26 +44,13 @@ jobs:
       - name: Install zsh
         if: runner.os == 'Linux'
         run: sudo apt-get update -q && sudo apt-get install -y -q zsh
+      # smoke-test runs every unit and behavioral suite itself (manifest-merge,
+      # version-classifier, plugin-status, doctor, status, preamble-python,
+      # setup, extension), so they are not separate steps here.
       - name: Smoke test
         run: ./test/smoke-test.sh
       - name: Integration test
         run: ./test/integration-test.sh
-      - name: Manifest-merge unit tests
-        run: ./test/test-manifest-merge.sh
-      - name: Version-classifier unit tests
-        run: ./test/test-version-classifier.sh
-      - name: Plugin-status unit tests
-        run: ./test/test-plugin-status.sh
-      - name: Doctor behavioral tests
-        run: ./test/test-doctor.sh
-      - name: Status / readiness behavioral tests
-        run: ./test/test-status.sh
-      - name: Preamble embedded-python tests
-        run: ./test/test-preamble-python.sh
-      - name: Setup behavioral tests
-        run: ./test/test-setup.sh
-      - name: Chrome extension unit tests
-        run: ./test/test-extension.sh
 
   # Confirms the guards above actually fail when their bugs return. Slower
   # (copies the repo per mutation), so it runs once rather than per matrix leg.

@@ -129,7 +129,7 @@ bin/idstack-gen-skills --dry-run  # Generated files up to date? Run this first.
 ./test/smoke-test.sh              # Verify the install
 ```
 
-Every suite below runs in CI (`.github/workflows/test.yml`) on every push and pull request. Run whichever ones your change touches locally; CI runs them all:
+Every suite below runs in CI (`.github/workflows/test.yml`) on every pull request and every push to `main`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other suites. Run whichever ones your change touches locally; CI runs them all:
 
 | Suite | Covers |
 |-------|--------|

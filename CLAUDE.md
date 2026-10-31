@@ -28,7 +28,7 @@ bin/idstack-consensus {status,configure,query,verify,sync}  # Cache-first Consen
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 ```
 
-Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
+Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash and node suites):
 
 ```bash
 ./test/smoke-test.sh              # 434 assertions: install, SKILL.md freshness, frontmatter, version agreement,
