@@ -65,6 +65,19 @@ async function callLlmApi(apiKey, prompt) {
   return result;
 }
 
+// One pipeline for both audits: the model (or the demo result when there is no
+// key), then the Consensus pass, then the saved history entry.
+async function runAudit(input, buildPrompt, buildDemo, entry) {
+  const settings = await getSettings();
+  const apiKey = settings?.apiKey?.trim();
+  const auditResult = apiKey ? await callLlmApi(apiKey, buildPrompt(input)) : buildDemo(input);
+  if (auditResult && auditResult.findings) {
+    auditResult.findings = await verifyFindingsWithConsensus(auditResult.findings, settings?.consensusApiKey);
+  }
+  await saveAuditResult({ ...entry, result: auditResult });
+  return auditResult;
+}
+
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Only the extension's own pages (the side panel) may start audits. A content-script
@@ -78,26 +91,10 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
             // The extractor and side panel explain pages they could not or would not read.
             throw new Error(request.payload?.emptyReason || `This page does not have sufficient text to audit. It has ${wordCount} words, and an audit must have ${MIN_AUDIT_WORDS} words or more. Browser pages, PDF viewers and image-only pages do not give text to idstack.`);
           }
-          const settings = await getSettings();
-          
-          let auditResult;
-          if (settings && settings.apiKey && settings.apiKey.trim()) {
-            const prompt = buildAuditPrompt(request.payload);
-            auditResult = await callLlmApi(settings.apiKey.trim(), prompt);
-          } else {
-            // Graceful demo fallback when no API key is provided
-            auditResult = getDemoAuditResult(request.payload);
-          }
-
-          if (auditResult && auditResult.findings) {
-            auditResult.findings = await verifyFindingsWithConsensus(auditResult.findings, settings?.consensusApiKey);
-          }
-
-          await saveAuditResult({
+          const auditResult = await runAudit(request.payload, buildAuditPrompt, getDemoAuditResult, {
             url: request.payload?.url || '',
             title: request.payload?.title || 'Current Tab',
-            pageType: request.payload?.pageType || 'Web Page',
-            result: auditResult
+            pageType: request.payload?.pageType || 'Web Page'
           });
 
           sendResponse({ success: true, data: auditResult });
@@ -123,26 +120,10 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
           if (!courseData.syllabus.trim() && courseData.assignments.length === 0) {
             throw new Error('This course has no syllabus text and no assignments for idstack to audit.');
           }
-          const settings = await getSettings();
-
-          let auditResult;
-          if (settings && settings.apiKey && settings.apiKey.trim()) {
-            const prompt = buildCourseAuditPrompt(courseData);
-            auditResult = await callLlmApi(settings.apiKey.trim(), prompt);
-          } else {
-            // Graceful demo fallback for course audit
-            auditResult = getDemoCourseAuditResult(courseData);
-          }
-
-          if (auditResult && auditResult.findings) {
-            auditResult.findings = await verifyFindingsWithConsensus(auditResult.findings, settings?.consensusApiKey);
-          }
-
-          await saveAuditResult({
+          const auditResult = await runAudit(courseData, buildCourseAuditPrompt, getDemoCourseAuditResult, {
             url: `${origin}/courses/${courseId}`,
             title: courseData.title || 'Canvas Course',
-            pageType: 'Canvas Course (Full Audit)',
-            result: auditResult
+            pageType: 'Canvas Course (Full Audit)'
           });
 
           sendResponse({ success: true, data: auditResult, courseData });
@@ -155,6 +136,5 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
   });
 }
 
-export { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult, crawlCanvasCourse, callLlmApi, verifyFindingsWithConsensus };
 
 

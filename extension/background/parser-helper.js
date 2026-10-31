@@ -9,10 +9,6 @@ export function cleanJsonResponse(rawText) {
   return JSON.parse(cleaned.trim());
 }
 
-export function parseAuditResponse(rawText) {
-  return cleanJsonResponse(rawText);
-}
-
 export function getDemoAuditResult(payload = {}) {
   const title = (payload && payload.title) ? payload.title : 'Course Material';
   const pageType = (payload && payload.pageType) ? payload.pageType : 'Assignment / Syllabus';

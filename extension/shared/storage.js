@@ -3,11 +3,9 @@
  */
 export async function getSettings() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(['apiKey', 'apiEndpoint', 'autoAudit', 'consensusApiKey'], (result) => {
+    chrome.storage.sync.get(['apiKey', 'consensusApiKey'], (result) => {
       resolve({
         apiKey: result.apiKey || '',
-        apiEndpoint: result.apiEndpoint || 'https://api.idstack.org/v1/audit',
-        autoAudit: result.autoAudit ?? false,
         consensusApiKey: result.consensusApiKey || ''
       });
     });

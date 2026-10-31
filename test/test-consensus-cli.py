@@ -2,8 +2,6 @@
 """Tests for bin/idstack-consensus client and caching engine."""
 
 import hashlib
-import importlib.machinery
-import importlib.util
 import json
 import os
 import shutil
@@ -11,12 +9,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from pathlib import Path
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CLI_PATH = os.path.join(REPO_ROOT, "bin", "idstack-consensus")
 STE_CHECK_PATH = os.path.join(REPO_ROOT, "bin", "idstack-ste-check")
-JS_CLIENT_PATH = os.path.join(REPO_ROOT, "extension", "shared", "consensus-client.js")
 MYTH_TYPES = ["learning_styles", "hemisphere_learning", "ten_percent_brain", "dales_cone_percentages"]
 
 
@@ -495,37 +491,6 @@ class TestConsensusCLI(unittest.TestCase):
         for finding in result:
             self.assertIn("[Tier calibrated:", finding["evidence"])
         self.assert_ste_clean("\n\n".join(f["evidence"] for f in result) + "\n")
-
-    # The extension has a copy of the neuromyth text. The two copies must stay
-    # the same, word for word.
-    @unittest.skipUnless(shutil.which("node"), "node is not installed")
-    def test_neuromyth_text_matches_extension_copy(self):
-        script = (
-            "import { autoCorrectNeuromyth } from %s;\n"
-            "const out = {};\n"
-            "for (const t of %s) {\n"
-            "  out[t] = autoCorrectNeuromyth({ observation: '', evidence: '', recommendation: '' }, t);\n"
-            "}\n"
-            "console.log(JSON.stringify(out));\n"
-        ) % (json.dumps(Path(JS_CLIENT_PATH).as_uri()), json.dumps(MYTH_TYPES))
-        proc = subprocess.run(
-            ["node", "--input-type=module", "-e", script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        js = json.loads(proc.stdout)
-
-        loader = importlib.machinery.SourceFileLoader("idstack_consensus", CLI_PATH)
-        spec = importlib.util.spec_from_loader(loader.name, loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        for myth_type in MYTH_TYPES:
-            finding = {"observation": "", "evidence": "", "recommendation": ""}
-            module.auto_correct_neuromyth(finding, myth_type)
-            for key in ("recommendation", "evidence", "observation"):
-                self.assertEqual(js[myth_type][key], finding[key], "%s %s" % (myth_type, key))
 
 
 if __name__ == "__main__":

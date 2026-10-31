@@ -12,7 +12,8 @@ An open source set of skills for evidence-based instructional design. Runs in Cl
 ./setup              # Install idstack — registers the plugin with Claude Code
 ./setup --local      # Install at project scope (./.claude/) instead of user scope
 ./setup --keep-legacy # Leave pre-v2.0.1.0 installs in place instead of removing them
-bin/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.md from the .tmpl sources
+bin/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.md from the .tmpl sources, and the extension's
+                                           # ste-rules.js and neuromyths.js (from the preamble and evidence/neuromyths.json)
 bin/idstack-gen-skills --dry-run           # Check if generated files are up to date
 bin/idstack-doctor                         # Diagnose plugin install (presence, manifest version, legacy-install conflicts)
 bin/idstack-status                         # Course health dashboard (run in a project dir)
@@ -157,7 +158,7 @@ Test the shipped file, never a copy. The version classifier drifted across three
 
 All text that idstack shows to a person follows the ASD-STE100 Simplified Technical English rules. This includes skill chat, reports, the dashboard, learner content, CLI messages and the Chrome extension.
 
-- The text between `<!-- ste-core:begin -->` and `<!-- ste-core:end -->` in `templates/preamble.md` is the only source of the rules and the word list. `extension/shared/ste-rules.js` has a copy. `test/test-ste-rules.mjs` fails when the two are different.
+- The text between `<!-- ste-core:begin -->` and `<!-- ste-core:end -->` in `templates/preamble.md` is the only source of the rules and the word list. `bin/idstack-gen-skills` writes `extension/shared/ste-rules.js` from that block, and smoke-test fails on a stale copy. Do not edit the JS file by hand.
 - `bin/idstack-ste-check` finds the problems that a script can find. Each skill runs it on each file that the skill writes. The CLI suites, `test/smoke-test.sh` and `test/test-consensus-cli.py` run it on fixed output.
 - Do not add the ASD-STE100 dictionary, or a list that comes from it, to the repo. The idstack word list has a maximum of 50 words. ASD does not endorse idstack, so do not write "STE-compliant" or "certified".
 - The terms of instructional design and software are technical nouns and technical verbs. Do not add them to the word list.

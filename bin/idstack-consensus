@@ -234,29 +234,19 @@ def cmd_query(args):
         return 1
 
 
-NEUROMYTH_PATTERNS = [
-    (
-        re.compile(
-            r"\b(learning\s+styles?|visual\s+(?:vs\.?|and|or)\s+auditory\s+learn|"
-            r"visual\s+learners?|auditory\s+learners?|kinesthetic\s+learners?|meshing\s+hypothesis|"
-            r"cater(?:ing)?\s+to\s+(?:individual\s+)?learning\s+styles?)\b",
-            re.IGNORECASE,
-        ),
-        "learning_styles",
-    ),
-    (
-        re.compile(r"\b(left[-\s]brain|right[-\s]brain|hemisphere\s+learn)\b", re.IGNORECASE),
-        "hemisphere_learning",
-    ),
-    (
-        re.compile(r"\b(10%\s+of\s+(?:the|their)?\s*brain)\b", re.IGNORECASE),
-        "ten_percent_brain",
-    ),
-    (
-        re.compile(r"\b(?:remember|retain)\s+\d+%\s+of\s+what\s+(?:they|we)\s+(?:read|hear|see)\b", re.IGNORECASE),
-        "dales_cone_percentages",
-    ),
-]
+# The neuromyth patterns and correction texts live in evidence/neuromyths.json.
+# bin/idstack-gen-skills writes the same data into the Chrome extension, so the
+# two corrections cannot drift apart.
+def load_neuromyths():
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "evidence", "neuromyths.json")
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+NEUROMYTHS = load_neuromyths()
+NEUROMYTH_PATTERNS = [(re.compile(m["pattern"], re.IGNORECASE), m["type"]) for m in NEUROMYTHS]
+NEUROMYTH_BY_TYPE = {m["type"]: m for m in NEUROMYTHS}
 
 
 def load_known_references(refs_path=None):
@@ -364,72 +354,15 @@ def auto_correct_neuromyth(finding, myth_type):
     finding["auto_corrected"] = True
     finding["qa_verified"] = True
 
-    if myth_type == "learning_styles":
-        finding["recommendation"] = (
-            "idstack recommends that you use multimodal presentation and dual coding for all learners, "
-            "not different materials for each learning style. Dual coding shows related visuals and "
-            "verbal or text explanations together."
-        )
-        corr_ev = (
-            "[Auto-Corrected Neuromyth] Research evidence does not show that 'learning styles' (the meshing "
-            "hypothesis) help learners (Pashler et al., 2008; Rogowsky et al., 2015). Research evidence shows "
-            "that multimodal presentation and dual coding help all learners (Mayer, 2021; Paivio, 1986)."
-        )
-        if finding.get("evidence"):
-            finding["evidence"] = finding["evidence"] + " " + corr_ev
-        else:
-            finding["evidence"] = corr_ev
-        obs_note = " [Note: Sensory learning styles are a known neuromyth. idstack recommends that you use multimodal presentation for all learners.]"
-        finding["observation"] = (finding.get("observation", "") + obs_note).strip()
-    elif myth_type == "hemisphere_learning":
-        finding["recommendation"] = (
-            "idstack recommends that you use multimodal presentation and integrated cognitive tasks for all "
-            "learners, not different tasks for left-brain or right-brain learners."
-        )
-        corr_ev = (
-            "[Auto-Corrected Neuromyth] Hemispheric specialization for learning is a neuromyth with no "
-            "research evidence. Cognitive architecture operates through integrated networks. "
-            "Multimodal dual coding helps all learners."
-        )
-        if finding.get("evidence"):
-            finding["evidence"] = finding["evidence"] + " " + corr_ev
-        else:
-            finding["evidence"] = corr_ev
-        obs_note = " [Note: Left-brain and right-brain learner types are a neuromyth. idstack recommends that you use integrated multimodal tasks.]"
-        finding["observation"] = (finding.get("observation", "") + obs_note).strip()
-    elif myth_type == "ten_percent_brain":
-        finding["recommendation"] = (
-            "idstack recommends that you design learning tasks for working memory capacity and cognitive "
-            "load, not for claims about 10% brain capacity."
-        )
-        corr_ev = (
-            "[Auto-Corrected Neuromyth] The 10% brain claim is a neuromyth. Research shows that the claim "
-            "is incorrect. Instructional design must agree with Cognitive Load Theory (Sweller, 1994) and "
-            "working memory limits."
-        )
-        if finding.get("evidence"):
-            finding["evidence"] = finding["evidence"] + " " + corr_ev
-        else:
-            finding["evidence"] = corr_ev
-        obs_note = " [Note: The 10% brain claim is a known neuromyth. idstack recommends that you use Cognitive Load Theory for the design.]"
-        finding["observation"] = (finding.get("observation", "") + obs_note).strip()
-    elif myth_type == "dales_cone_percentages":
-        finding["recommendation"] = (
-            "idstack recommends that you design learning tasks with active retrieval and generative "
-            "processing, not with incorrect retention percentage hierarchies."
-        )
-        corr_ev = (
-            "[Auto-Corrected Neuromyth] Retention percentage claims ('we remember 10% of what we read') "
-            "use numbers that have no research source. Some texts incorrectly connect these numbers to "
-            "Dale's Cone of Experience. Retention changes with retrieval practice and the depth of "
-            "cognitive processing (Agarwal, 2019)."
-        )
-        if finding.get("evidence"):
-            finding["evidence"] = finding["evidence"] + " " + corr_ev
-        else:
-            finding["evidence"] = corr_ev
-        obs_note = " [Note: Retention percentage pyramids are incorrect. idstack recommends that you use active retrieval.]"
-        finding["observation"] = (finding.get("observation", "") + obs_note).strip()
+    myth = NEUROMYTH_BY_TYPE.get(myth_type)
+    if not myth:
+        return
+    finding["recommendation"] = myth["recommendation"]
+    if finding.get("evidence"):
+        finding["evidence"] = finding["evidence"] + " " + myth["evidence"]
+    else:
+        finding["evidence"] = myth["evidence"]
+    finding["observation"] = (finding.get("observation", "") + " " + myth["observation_note"]).strip()
 
 
 def calibrate_tier(finding, study_design=None):

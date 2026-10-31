@@ -96,6 +96,7 @@ export function installChrome({ sync = {}, local = {}, tabs = [], onRuntimeMessa
     runtime: {
       id: EXTENSION_ID,
       getURL: (p = '') => `chrome-extension://${EXTENSION_ID}/${p}`,
+      getManifest: () => JSON.parse(readFileSync(new URL('manifest.json', EXT), 'utf8')),
       lastError: undefined,
       onMessage: { addListener: (fn) => listeners.message.push(fn) },
       sendMessage(message, callback) {

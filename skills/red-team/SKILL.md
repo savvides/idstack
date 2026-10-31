@@ -51,9 +51,8 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 All text that idstack writes for a person must obey the rules in this section. This
 includes chat text, AskUserQuestion questions and options, HTML reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
-reads the word list between the two `ste-core` markers. `extension/shared/ste-rules.js`
-has a copy of the text between the markers. If you change this text, change the copy at
-the same time.
+reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
+`extension/shared/ste-rules.js` from the text between the markers.
 
 The rules also apply to the text that idstack writes in `.idstack/project.json` and in
 learnings, for example finding text and recommendations. Other skills use this text in

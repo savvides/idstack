@@ -43,7 +43,7 @@ async function copyWithFeedback(btn, text, idleLabel) {
   }, 2000);
 }
 
-export async function updateDossierBadge() {
+async function updateDossierBadge() {
   const countEl = document.getElementById('dossier-count');
   if (!countEl) return;
   try {
@@ -54,7 +54,7 @@ export async function updateDossierBadge() {
   }
 }
 
-export async function updateDossierUI() {
+async function updateDossierUI() {
   await updateDossierBadge();
   const listEl = document.getElementById('dossier-list');
   if (!listEl) return;
@@ -77,7 +77,7 @@ export async function updateDossierUI() {
   }
 }
 
-export async function refreshActiveTab() {
+async function refreshActiveTab() {
   if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.tabs.query) return;
   // Tab events can fire back to back; only the newest refresh may write state.
   const seq = ++refreshSeq;
@@ -136,7 +136,7 @@ export async function refreshActiveTab() {
   }
 }
 
-export function showState(stateName) {
+function showState(stateName) {
   document.querySelectorAll('.state-panel').forEach(el => el.classList.remove('active'));
   const target = document.getElementById(`${stateName}-state`);
   if (target) target.classList.add('active');
@@ -144,7 +144,7 @@ export function showState(stateName) {
 
 // source: the page (or course) the request was sent for. The active tab may
 // have changed while the audit ran.
-export function renderResults(data, source) {
+function renderResults(data, source) {
   activeAuditResult = data;
   activeAuditItem = {
     id: source?.url || `item-${Date.now()}`,
@@ -198,7 +198,7 @@ export function renderResults(data, source) {
   showState('results');
 }
 
-export function renderError(errorMessage) {
+function renderError(errorMessage) {
   // Clear the last result so Add to Dossier / Export .md cannot act on it.
   activeAuditItem = null;
   const actionsBar = document.querySelector('.result-actions-bar');
@@ -480,6 +480,14 @@ if (saveSettingsBtn) {
       if (settingsDrawer) settingsDrawer.classList.remove('open');
     }, 1200);
   });
+}
+
+// The version badge shows v<major>.<minor> of the manifest version, so a
+// manifest bump is the only change a release needs.
+const versionBadge = document.querySelector('.badge-version');
+if (versionBadge && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) {
+  const [major, minor] = chrome.runtime.getManifest().version.split('.');
+  versionBadge.textContent = `v${major}.${minor}`;
 }
 
 // Load initial settings & dossier count

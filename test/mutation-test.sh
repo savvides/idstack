@@ -1379,15 +1379,15 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "privacy policy omits a host the manifest can reach" "$WORK/r/test/test-extension.sh"
 
-# 32. the side panel's version badge drifts from the manifest -> test-extension must fail.
-# The badge is hand-written, so a manifest bump alone would leave the panel showing the old version.
+# 32. the side panel stops filling its version badge from the manifest -> test-extension
+# must fail. A hand-written badge once kept the old version after a manifest bump.
 fresh
-python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = '<span class="badge-version">v1.2</span>'
+old = '  versionBadge.textContent = `v${major}.${minor}`;\n'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, '<span class="badge-version">v1.0</span>', 1)
+s = s.replace(old, '', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "side panel version badge drifts from the manifest" "$WORK/r/test/test-extension.sh"
@@ -1722,20 +1722,20 @@ PY
 expect_fail "a contraction in the setup closing text" "$WORK/r/test/test-setup.sh" "$WORK/r"
 
 # 45a-45c. The text that `idstack-consensus verify` writes into findings. Skills copy
-# it into HTML reports and the manifest, so it must obey the writing standard, and
-# the extension's copy of the neuromyth text must stay the same as the CLI's copy.
+# it into HTML reports and the manifest, so it must obey the writing standard. The
+# neuromyth text lives in evidence/neuromyths.json, and gen-skills writes the
+# extension's copy from it.
 # 45a. A semicolon returns to a neuromyth note -> test-consensus-cli must fail.
-# The mutation changes both copies the same way, so only the STE guard can fail.
 fresh
-python3 - "$WORK/r/bin/idstack-consensus" "$WORK/r/extension/shared/consensus-client.js" <<'PY'
+python3 - "$WORK/r/evidence/neuromyths.json" <<'PY'
 import sys
-for p in sys.argv[1:]:
-    s = open(p, encoding='utf-8').read()
-    old = "Sensory learning styles are a known neuromyth. idstack recommends"
-    assert s.count(old) == 1, 'anchor not unique in %s: %d' % (p, s.count(old))
-    s = s.replace(old, "Sensory learning styles are a known neuromyth; idstack recommends", 1)
-    open(p, 'w', encoding='utf-8').write(s)
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Sensory learning styles are a known neuromyth. idstack recommends"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Sensory learning styles are a known neuromyth; idstack recommends", 1)
+open(p, 'w', encoding='utf-8').write(s)
 PY
+regen
 expect_fail "a neuromyth note has a semicolon again" python3 "$WORK/r/test/test-consensus-cli.py"
 
 # 45b. "should" returns to a tier-calibration note -> test-consensus-cli must fail.
@@ -1751,23 +1751,24 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "a tier-calibration note says should again" python3 "$WORK/r/test/test-consensus-cli.py"
 
-# 45c. The extension's neuromyth text drifts from the CLI's -> test-consensus-cli must fail.
-# Before this guard, nothing kept the two copies the same.
+# 45c. A hand edit makes the extension's generated neuromyth text drift from
+# evidence/neuromyths.json -> smoke-test must fail on the stale file.
 fresh
-python3 - "$WORK/r/extension/shared/consensus-client.js" <<'PY'
+python3 - "$WORK/r/extension/shared/neuromyths.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "'Multimodal dual coding helps all learners.';"
+old = "Multimodal dual coding helps all learners."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "'Multimodal dual coding helps every learner.';", 1)
+s = s.replace(old, "Multimodal dual coding helps every learner.", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "the extension neuromyth text drifts from the CLI text" python3 "$WORK/r/test/test-consensus-cli.py"
+expect_fail "the extension neuromyth text drifts from the CLI text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 47a-47b. The extension's model prompts carry a copy of the preamble's
-# ASD-STE100 rules. test-ste-rules.mjs compares the copy with the ste-core block
-# and checks that both prompts carry it.
-# 47a. The extension copy drifts by one word -> test-extension must fail.
+# 47a-47b. The extension's model prompts carry the preamble's ASD-STE100 rules.
+# gen-skills writes extension/shared/ste-rules.js from the ste-core block, and
+# test-ste-rules.mjs checks that both prompts carry it.
+# 47a. A hand edit makes the generated copy drift by one word -> smoke-test must
+# fail on the stale file.
 fresh
 python3 - "$WORK/r/extension/shared/ste-rules.js" <<'PY'
 import sys
@@ -1777,7 +1778,7 @@ assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '| "utilize" | "employ" | |', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "the extension copy of the STE rules drifts" "$WORK/r/test/test-extension.sh"
+expect_fail "the extension copy of the STE rules drifts" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 47b. The course prompt drops the STE rules -> test-extension must fail.
 fresh
