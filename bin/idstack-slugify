@@ -18,6 +18,11 @@
 #   idstack-slugify "Géographie I"                  # geographie-i
 #   idstack-slugify ""                              # untitled-course
 #   echo "Some Course" | idstack-slugify -          # some-course
+#   idstack-slugify --from-manifest [path]          # slug of the manifest's course
+#
+# --from-manifest reads the course name from the manifest (default
+# .idstack/project.json): project_name, then needs_analysis.project_name. A
+# missing or unreadable manifest gives an empty name, so 'untitled-course'.
 #
 # Exit codes:
 #   0  success (slug printed on stdout)
@@ -31,8 +36,18 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 2
 fi
 
-# Read input: argv[1] if present and not "-", else stdin.
-if [ $# -gt 0 ] && [ "$1" != "-" ]; then
+# Read input: the manifest's course name, argv[1] if present and not "-", else stdin.
+if [ "$1" = "--from-manifest" ]; then
+  INPUT=$(python3 - "${2:-.idstack/project.json}" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1], encoding="utf-8"))
+    print(d.get("project_name") or (d.get("needs_analysis") or {}).get("project_name") or "")
+except Exception:
+    print("")
+PY
+)
+elif [ $# -gt 0 ] && [ "$1" != "-" ]; then
   INPUT="$1"
 else
   if [ -t 0 ]; then

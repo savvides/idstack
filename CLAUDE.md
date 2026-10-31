@@ -17,10 +17,12 @@ bin/idstack-gen-skills --dry-run           # Check if generated files are up to 
 bin/idstack-doctor                         # Diagnose plugin install (presence, manifest version, legacy-install conflicts)
 bin/idstack-status                         # Course health dashboard (run in a project dir)
 bin/idstack-status --readiness             # Pre-export readiness check only
+bin/idstack-status --context               # Context-recovery lines the preamble reads
 bin/idstack-migrate                        # Migrate an existing .idstack/project.json to the latest schema
 bin/idstack-migrate --init                 # Also create a canonical manifest when none exists (standalone skill runs)
 bin/idstack-manifest-merge --create --section <s> --payload <f>   # Canonical manifest write path (atomic, section-scoped; repeat the pair for several sections)
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
+bin/idstack-slugify --from-manifest        # Same, from the manifest's project_name (what skills call)
 bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
 bin/idstack-consensus {status,configure,query,verify,sync}  # Cache-first Consensus API evidence client (cache: ~/.idstack/cache/consensus)
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
@@ -40,7 +42,7 @@ Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
 ./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
-./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
+./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on 3.9 and 3.12
 ./test/test-skill-shell-zsh.sh    # 47 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules via
@@ -136,7 +138,7 @@ Every skill template follows this pattern:
 
 The shared preamble includes: interaction conventions (defines how skills use `AskUserQuestion`, `Agent`, and `Skill`), writing standard (the ASD-STE100 rules and word list), update check, manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
 
-Python embedded in the preamble must parse on Python 3.9 — the version macOS ships. `test/test-preamble-python.sh` runs every embedded block on 3.9 and 3.12; a syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases.
+Python that the preamble runs must parse on Python 3.9 — the version macOS ships. Context Recovery calls `bin/idstack-status --context`, which reads the timeline with the same code as the dashboard; `test/test-preamble-python.sh` runs the preamble block against it on 3.9 and 3.12. A syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases. Skills get the course slug from `bin/idstack-slugify --from-manifest`, never from inline Python.
 
 ### Shared shell libraries
 

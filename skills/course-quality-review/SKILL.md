@@ -323,79 +323,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-_HAS_TIMELINE=0
-_HAS_LEARNINGS=0
-if [ -f ".idstack/timeline.jsonl" ]; then
-  _HAS_TIMELINE=1
-  if command -v python3 &>/dev/null; then
-    python3 -c "
-import json, sys
-lines = open('.idstack/timeline.jsonl').readlines()[-200:]
-events = []
-for line in lines:
-    try: events.append(json.loads(line))
-    except: pass
-if not events:
-    sys.exit(0)
-
-# Quality score trend
-scores = [e for e in events if e.get('skill') == 'course-quality-review' and 'score' in e]
-if scores:
-    trend = ' -> '.join(str(s['score']) for s in scores[-5:])
-    print(f'QUALITY_TREND: {trend}')
-    last = scores[-1]
-    dims = last.get('dimensions', {})
-    if dims:
-        tp = dims.get('teaching_presence', '?')
-        sp = dims.get('social_presence', '?')
-        cp = dims.get('cognitive_presence', '?')
-        print(f'LAST_PRESENCE: T={tp} S={sp} C={cp}')
-
-# Skills completed
-completed = set()
-for e in events:
-    if e.get('event') == 'completed':
-        completed.add(e.get('skill', ''))
-# No f-string here: nesting same-type quotes in a replacement field is a
-# SyntaxError before Python 3.12, and macOS system python3 is 3.9.
-print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))
-
-# Last skill run
-last_completed = [e for e in events if e.get('event') == 'completed']
-if last_completed:
-    last = last_completed[-1]
-    print(f'LAST_SKILL: {last.get(\"skill\",\"?\")} at {last.get(\"ts\",\"?\")}')
-
-# Pipeline progression. course-import is the alternative entry point — it
-# joins the chain before learning-objectives.
-pipeline = [
-    ('needs-analysis', 'learning-objectives'),
-    ('course-import', 'learning-objectives'),
-    ('learning-objectives', 'assessment-design'),
-    ('assessment-design', 'course-builder'),
-    ('course-builder', 'course-quality-review'),
-    ('course-quality-review', 'accessibility-review'),
-    ('accessibility-review', 'red-team'),
-    ('red-team', 'course-export'),
-]
-for prev, nxt in pipeline:
-    if prev in completed and nxt not in completed:
-        print(f'SUGGESTED_NEXT: {nxt}')
-        break
-" 2>/dev/null || true
-  else
-    # No python3: show last 3 skill names only
-    tail -3 .idstack/timeline.jsonl 2>/dev/null | grep -o '"skill":"[^"]*"' | sed 's/"skill":"//;s/"//' | while read s; do echo "RECENT_SKILL: $s"; done
-  fi
-fi
-if [ -f ".idstack/learnings.jsonl" ]; then
-  _HAS_LEARNINGS=1
-  _LEARN_COUNT=$(wc -l < .idstack/learnings.jsonl 2>/dev/null | tr -d ' ')
-  echo "LEARNINGS: $_LEARN_COUNT"
-  if [ "$_LEARN_COUNT" -gt 0 ] 2>/dev/null; then
-    "$_IDSTACK/bin/idstack-learnings-search" --limit 3 2>/dev/null || true
-  fi
-fi
+"$_IDSTACK/bin/idstack-status" --context 2>/dev/null || true
 ```
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
@@ -1220,8 +1148,7 @@ for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 # Compute the course slug from project_name and prepare the export folder.
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-quality-review.html"
 mkdir -p "$_EXPORT_DIR/assets"

@@ -100,18 +100,19 @@ if ( expect_fail "no-op mutation" false ) >/dev/null 2>&1; then
   exit 1
 fi
 
-# 1. f-string bug in the preamble -> test-preamble-python must fail.
-# Only meaningful on Python < 3.12; see PY_LT_312 above.
+# 1. f-string bug in the context-recovery Python (bin/idstack-status --context)
+# -> test-preamble-python must fail. Only meaningful on Python < 3.12; see
+# PY_LT_312 above.
 if [ "$PY_LT_312" = "1" ]; then
   fresh
-  python3 - "$WORK/r/templates/preamble.md" <<'PY'
+  python3 - "$WORK/r/bin/idstack-status" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace("print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))",
-              "print(f'SKILLS_COMPLETED: {','.join(sorted(completed))}')")
+old = "print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))"
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, "print(f'SKILLS_COMPLETED: {','.join(sorted(completed))}')")
 open(p,'w').write(s)
 PY
-  regen
   expect_fail "preamble f-string regression" "$WORK/r/test/test-preamble-python.sh"
 else
   skip_case "preamble f-string regression" \
@@ -120,13 +121,14 @@ fi
 
 # 2. course-import dropped from SUGGESTED_NEXT -> test-preamble-python must fail
 fresh
-python3 - "$WORK/r/templates/preamble.md" <<'PY'
+python3 - "$WORK/r/bin/idstack-status" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace("    ('course-import', 'learning-objectives'),\n", "")
+old = "    ('course-import', 'learning-objectives'),\n"
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, "")
 open(p,'w').write(s)
 PY
-regen
 expect_fail "course-import suggestion regression" "$WORK/r/test/test-preamble-python.sh"
 
 # 3. non-canonical manifest section name returns -> smoke-test must fail
@@ -2136,6 +2138,35 @@ s = s.replace(new_pos, '    payloads = [load_payload(path) for path in args.payl
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the merge tool makes the manifest before it checks the payloads" "$WORK/r/test/test-manifest-merge.sh"
+
+# 56a-56b. The course slug. Skills and the dashboard each read project_name
+# with their own code once, and the copies disagreed on the fallback.
+# 56a. A skill reads project_name with inline Python again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/red-team/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '_PROJECT_NAME=$(python3 -c "import json; print(json.load(open(\'.idstack/project.json\')).get(\'project_name\',\'\'))")\n'
+  '_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "a skill reads project_name with inline Python again" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 56b. slugify --from-manifest drops the needs_analysis.project_name fallback,
+# so skills and the dashboard disagree again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-slugify" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ' or (d.get("needs_analysis") or {}).get("project_name")'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "slugify --from-manifest drops the needs_analysis fallback" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

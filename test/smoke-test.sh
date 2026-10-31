@@ -169,6 +169,21 @@ check "idstack-slugify: '!!!' → untitled-course" \
   "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' '!!!')\" = 'untitled-course' ]"
 check "idstack-slugify: unicode ASCII-folds — 'Géographie I' → geographie-i" \
   "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Géographie I')\" = 'geographie-i' ]"
+# --from-manifest owns the project_name -> slug rule for the skills and the
+# dashboard; each once read the name with its own inline Python, and the copies
+# disagreed on the needs_analysis.project_name fallback.
+SLUG_TMP=$(mktemp -d)
+printf '%s' '{"project_name": "Intro Bio"}' > "$SLUG_TMP/a.json"
+printf '%s' '{"needs_analysis": {"project_name": "Old Name"}}' > "$SLUG_TMP/b.json"
+check "idstack-slugify --from-manifest reads project_name" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' --from-manifest '$SLUG_TMP/a.json')\" = 'intro-bio' ]"
+check "idstack-slugify --from-manifest falls back to needs_analysis.project_name" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' --from-manifest '$SLUG_TMP/b.json')\" = 'old-name' ]"
+check "idstack-slugify --from-manifest on a missing manifest → untitled-course" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' --from-manifest '$SLUG_TMP/none.json')\" = 'untitled-course' ]"
+rm -rf "$SLUG_TMP"
+check "no skill template reads project_name with inline Python" \
+  "! grep -l \"get('project_name'\" $IDSTACK_DIR/skills/*/SKILL.md.tmpl | grep -q ."
 check "idstack-slugify: implicit stdin pipeline" \
   "[ \"\$(echo 'Course via Implicit Stdin' | '$IDSTACK_DIR/bin/idstack-slugify')\" = 'course-via-implicit-stdin' ]"
 check "idstack-slugify: explicit dash stdin pipeline" \

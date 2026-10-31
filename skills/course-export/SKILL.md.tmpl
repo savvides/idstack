@@ -116,8 +116,7 @@ now, then reuse `$_EXPORT_DIR` throughout the workflow:
 ```bash
 {{IDSTACK_RESOLVE}}
 # Course-slug-based export folder. Required before any artifact write.
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-export.html"
 mkdir -p "$_EXPORT_DIR/assets"

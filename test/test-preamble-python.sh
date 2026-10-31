@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Executes the Context Recovery bash block from templates/preamble.md against a
-# fixture timeline, on THIS machine's python3. The block swallows errors with
-# `2>/dev/null || true`, so an embedded-Python SyntaxError surfaces as empty
+# fixture timeline, on THIS machine's python3. The block runs
+# bin/idstack-status --context, which holds the Python. The block swallows
+# errors with `2>/dev/null || true`, so a SyntaxError there surfaces as empty
 # output rather than a crash — the positive assertions below are what catch it.
 # (A same-type-quote f-string once broke the whole block on every Python < 3.12
 # and no test noticed; this suite exists so that class of failure can't ship.)
@@ -27,16 +28,17 @@ trap 'rm -rf "$WORK"' EXIT
 
 # Extract the Context Recovery bash fence from the preamble source. Generated
 # SKILL.md files embed this block (gen-skills splices it), so testing the source
-# covers all 22 outputs. Expand {{IDSTACK_RESOLVE}} the way gen-skills does.
+# covers all 22 outputs. Expand {{IDSTACK_RESOLVE}} the way gen-skills does, and
+# write this repo in place of ${CLAUDE_PLUGIN_ROOT} the way Claude Code does.
 awk -v snippet="$IDSTACK_DIR/templates/snippets/idstack-resolve.sh" '
   /^## Preamble: Context Recovery/{s=1}
   s && /^```bash$/{f=1; next}
   f && /^```$/{exit}
   f && /\{\{IDSTACK_RESOLVE\}\}/{while ((getline l < snippet) > 0) print l; close(snippet); next}
-  f' "$IDSTACK_DIR/templates/preamble.md" > "$WORK/block.sh"
+  f' "$IDSTACK_DIR/templates/preamble.md" | sed "s|\${CLAUDE_PLUGIN_ROOT}|$IDSTACK_DIR|g" > "$WORK/block.sh"
 
 check "extracted a non-empty context-recovery block" "[ -s '$WORK/block.sh' ]"
-check "block reads the timeline" "grep -q 'timeline.jsonl' '$WORK/block.sh'"
+check "block runs idstack-status --context" "grep -q 'idstack-status\" --context' '$WORK/block.sh'"
 
 mkdir -p "$WORK/proj/.idstack"
 cat > "$WORK/proj/.idstack/timeline.jsonl" <<'EOF'

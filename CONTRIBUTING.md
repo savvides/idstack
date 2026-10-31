@@ -71,7 +71,7 @@ Commit the regenerated files in the same commit as the template change. The smok
 
 ### Embedded Python must run on 3.9
 
-Any Python embedded in `templates/preamble.md` or a skill body has to parse on Python 3.9 — that is what macOS ships, and it is the interpreter most designers will hit. An f-string reusing a quote inside its replacement field is legal from 3.12 (PEP 701) and a SyntaxError before it, which is exactly how context recovery stayed silently broken for several releases. `test/test-preamble-python.sh` runs every embedded block on both 3.9 and 3.12.
+Any Python embedded in `templates/preamble.md` or a skill body has to parse on Python 3.9 — that is what macOS ships, and it is the interpreter most designers will hit. An f-string reusing a quote inside its replacement field is legal from 3.12 (PEP 701) and a SyntaxError before it, which is exactly how context recovery stayed silently broken for several releases. The preamble's Context Recovery calls `bin/idstack-status --context`, and `test/test-preamble-python.sh` runs that block on both 3.9 and 3.12.
 
 ### Shared shell libraries
 
@@ -141,7 +141,7 @@ Every suite below runs in CI (`.github/workflows/test.yml`) on every push and pu
 | `test/test-manifest-merge.sh` | `bin/idstack-manifest-merge` |
 | `test/test-version-classifier.sh` | `bin/lib/version-classify.sh` |
 | `test/test-plugin-status.sh` | `bin/lib/plugin-status.sh` |
-| `test/test-preamble-python.sh` | The preamble's embedded Python, on 3.9 and 3.12 |
+| `test/test-preamble-python.sh` | The preamble's Context Recovery block (`idstack-status --context`), on 3.9 and 3.12 |
 | `test/test-extension.sh` | The Chrome extension. Imports the shipped `extension/` modules through `test/extension-harness.mjs` (Node 20.19+ or 22.7+) and fails if a hand-copied `.cjs` twin comes back |
 | `test/test-rendered-landing.js` | Renders `docs/index.html` in headless Chrome across 11 widths and asserts the rendered outcome: no horizontal scroll, 44px touch targets, breakpoint column counts, sticky nav. Catches regressions the text suite cannot see (selector lists, `@container`, nested or print-only media queries, a `<style>` inside an HTML comment). Skips loudly with no browser |
 | `test/test-responsive-landing.js` | Responsive and mobile-ergonomics invariants for `docs/index.html` — fluid tokens, notch-safe gutters, breakpoint-scoped rules, touch targets. Runs on node, via `smoke-test.sh` |

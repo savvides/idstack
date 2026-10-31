@@ -49,29 +49,15 @@ timeline), the pipeline starts at `/idstack:learning-objectives` (skipping
 Read `.idstack/timeline.jsonl` to find skills with `"event": "completed"` entries.
 
 ```bash
-if [ -f ".idstack/timeline.jsonl" ]; then
-  python3 -c "
-import json
-events = []
-for line in open('.idstack/timeline.jsonl'):
-    try: events.append(json.loads(line))
-    except: pass
-completed = set()
-for e in events:
-    if e.get('event') == 'completed':
-        completed.add(e.get('skill', ''))
-print('COMPLETED:' + ','.join(sorted(completed)))
-" 2>/dev/null || echo "COMPLETED:"
-else
-  echo "COMPLETED:"
-fi
+{{IDSTACK_RESOLVE}}
+"$_IDSTACK/bin/idstack-status" --context 2>/dev/null | grep '^SKILLS_COMPLETED:' || echo "SKILLS_COMPLETED:"
 ```
 
 ## Workflow
 
 ### Step 1: Determine Starting Point
 
-Parse the COMPLETED output. The pipeline skills in order are:
+Parse the SKILLS_COMPLETED output. The pipeline skills in order are:
 - `needs-analysis`
 - `learning-objectives`
 - `assessment-design`
@@ -153,8 +139,7 @@ After each skill completes (or after the orchestrator finishes the run, includin
 
 ```bash
 {{IDSTACK_RESOLVE}}
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
