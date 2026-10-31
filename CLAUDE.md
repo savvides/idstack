@@ -11,11 +11,10 @@ An open source set of skills for evidence-based instructional design. Runs in Cl
 ```bash
 ./setup              # Install idstack — registers the plugin with Claude Code
 ./setup --local      # Install at project scope (./.claude/) instead of user scope
-./setup --keep-legacy # Leave pre-v2.0.1.0 installs in place instead of removing them
 bin/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.md from the .tmpl sources, and the extension's
                                            # ste-rules.js and neuromyths.js (from the preamble and evidence/neuromyths.json)
 bin/idstack-gen-skills --dry-run           # Check if generated files are up to date
-bin/idstack-doctor                         # Diagnose plugin install (presence, manifest version, legacy-install conflicts)
+bin/idstack-doctor                         # Diagnose plugin install (python3, presence, manifest version)
 bin/idstack-status                         # Course health dashboard (run in a project dir)
 bin/idstack-status --readiness             # Pre-export readiness check only
 bin/idstack-status --context               # Context-recovery lines the preamble reads
@@ -37,11 +36,10 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 52 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
-./test/test-setup.sh              # 19 behavioral tests for ./setup (flags, scope, legacy cleanup, failure handling)
-./test/test-doctor.sh             # 16 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
+./test/test-setup.sh              # 10 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
+./test/test-doctor.sh             # 12 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
 ./test/test-status.sh             # 24 tests for bin/idstack-status, incl. the --readiness export gate
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
-./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on 3.9 and 3.12
 ./test/test-skill-shell-zsh.sh    # 47 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
@@ -145,7 +143,6 @@ Python that the preamble runs must parse on Python 3.9 — the version macOS shi
 
 Logic used by more than one script — or that deserves a unit test — lives in `bin/lib/` and is sourced by its callers rather than inlined:
 
-- `bin/lib/version-classify.sh` — version comparison, shared by `setup` and `bin/idstack-doctor`
 - `bin/lib/plugin-status.sh` — parses `claude plugin list` output into idstack's own entry
 
 Test the shipped file, never a copy. The version classifier drifted across three PRs while a mirrored copy in its test passed green.

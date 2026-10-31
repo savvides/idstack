@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# idstack install doctor — diagnose plugin install + legacy conflicts.
+# idstack install doctor — diagnose the plugin install.
 #
 # Answers: "is /idstack:<skill> going to work, and if not, exactly what
 # do I run?" without the user having to know about smoke-test.
 #
 # Usage:
-#   idstack-doctor               # check user-scope install
-#   idstack-doctor --local       # also check project-scope legacy paths
+#   idstack-doctor
 #
 # Exit code: 0 if all green, 1 if any problem is detected.
 
@@ -16,21 +15,8 @@ set -u
 # its own location so the diagnosis works regardless of where the repo sits.
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 
-# Shared legacy-VERSION classifier (also sourced by setup; pinned by
-# test/test-version-classifier.sh).
-. "$IDSTACK_DIR/bin/lib/version-classify.sh"
 # `claude plugin list` parsing (pinned by test/test-plugin-status.sh).
 . "$IDSTACK_DIR/bin/lib/plugin-status.sh"
-
-SCOPE="global"
-LEGACY_BASE="$HOME/.claude"
-# Match --local in any position, not just $1. Robust if other flags get added.
-if [[ " ${*:-} " == *" --local "* ]]; then
-  SCOPE="local"
-  LEGACY_BASE="$(pwd)/.claude"
-fi
-LEGACY_SKILLS_DIR="$LEGACY_BASE/skills"
-LEGACY_DIR="$LEGACY_SKILLS_DIR/idstack"
 
 PROBLEMS=0
 note_problem() { PROBLEMS=$((PROBLEMS + 1)); }
@@ -39,7 +25,7 @@ SKILLS="needs-analysis learning-objectives course-quality-review course-import \
 assessment-design course-builder course-export accessibility-review red-team \
 pipeline learn"
 
-echo "idstack doctor ($SCOPE)"
+echo "idstack doctor"
 echo "  repo: $IDSTACK_DIR"
 echo ""
 
@@ -134,71 +120,7 @@ else
 fi
 echo ""
 
-# 4. Legacy / vestigial install conflicts.
-echo "Legacy installs:"
-legacy_problem=0
-
-# Vestigial bare symlink from the pre-marketplace setup method. Harmless on
-# current Claude Code (ignored), but worth removing so it stops confusing
-# diagnostics. Informational, not counted as a problem. Scope-aware: --local
-# checks only ./.claude/plugins, the default checks only $HOME/.claude/plugins.
-vestigial="$LEGACY_BASE/plugins/idstack"
-if [ -L "$vestigial" ]; then
-  echo "  NOTE: legacy plugin symlink at $vestigial (pre-marketplace install method)."
-  echo "        This symlink is safe. ./setup removes it. You can also run: rm \"$vestigial\""
-fi
-
-# Pre-v2.0.1.0 dispatcher install — the failure mode that surfaced as
-# "Unknown skill: idstack:course-import" / "Unknown skill: course-import".
-if [ -L "$LEGACY_DIR" ]; then
-  target=$(readlink "$LEGACY_DIR")
-  echo "  PROBLEM: legacy symlink at $LEGACY_DIR -> $target"
-  echo "  Fix: rm \"$LEGACY_DIR\""
-  legacy_problem=1
-elif [ -d "$LEGACY_DIR" ]; then
-  signature=""
-  if [ -f "$LEGACY_DIR/SKILL.md" ] && grep -q '^name: idstack' "$LEGACY_DIR/SKILL.md" 2>/dev/null; then
-    signature="dispatcher SKILL.md"
-  fi
-  if [ -f "$LEGACY_DIR/VERSION" ]; then
-    v=$(tr -d '[:space:]' < "$LEGACY_DIR/VERSION")
-    # Classified by the shared classifier in bin/lib/version-classify.sh
-    # (pinned by test/test-version-classifier.sh).
-    if [ "$(classify_version "$v")" = "legacy" ]; then
-      signature="${signature:+$signature, }VERSION=$v"
-    fi
-  fi
-  if [ -n "$signature" ]; then
-    echo "  PROBLEM: pre-v2.0.1.0 install at $LEGACY_DIR ($signature)"
-    echo "           This install overrides the /idstack:<skill> namespace."
-    echo "           Slash commands go to a defective dispatcher."
-    echo "  Fix: rm -rf \"$LEGACY_DIR\"   (then start Claude Code again)"
-    legacy_problem=1
-  else
-    echo "  WARNING: directory at $LEGACY_DIR is not a known idstack install."
-    echo "           ./setup does not remove it. Examine it. If you do not want it, remove it manually."
-  fi
-fi
-# Pre-v2 individual skill symlinks pointing into idstack.
-for skill in $SKILLS; do
-  link="$LEGACY_SKILLS_DIR/$skill"
-  if [ -L "$link" ]; then
-    t=$(readlink "$link" 2>/dev/null || true)
-    if [[ "$t" == *"idstack"* ]]; then
-      echo "  PROBLEM: pre-v2 skill symlink $link -> $t"
-      echo "  Fix: rm \"$link\""
-      legacy_problem=1
-    fi
-  fi
-done
-if [ "$legacy_problem" = "0" ]; then
-  echo "  no problems found"
-else
-  note_problem
-fi
-echo ""
-
-# 5. Consensus evidence engine
+# 4. Consensus evidence engine
 echo "Consensus evidence engine:"
 if [ ! -f "$IDSTACK_DIR/bin/idstack-consensus" ]; then
   echo "  PROBLEM: missing bin/idstack-consensus"
@@ -237,7 +159,7 @@ except Exception:
 fi
 echo ""
 
-# 6. Final verdict
+# 5. Final verdict
 if [ "$PROBLEMS" = "0" ]; then
   echo "OK"
   exit 0

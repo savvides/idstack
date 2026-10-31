@@ -6,6 +6,22 @@
 
 - **idstack needs python3 3.9 or a later version.** Every skill saves its results with `bin/idstack-manifest-merge`, which is a Python script, so python3 was already necessary. The bash fallbacks in `bin/idstack-learnings`, `bin/idstack-timeline-log`, `bin/idstack-status` and `bin/idstack-migrate` gave wrong results and no message. For example, `bin/idstack-migrate` wrote the manifest to stdout without a migration and exited 0. Now each script tells you that python3 is necessary. The two log scripts still exit 0, so they do not stop a skill. `bin/idstack-doctor` reports a missing or older python3 as a PROBLEM.
 
+### Removed — the cleanup of old installs
+
+- **`./setup` does not remove old installs, and `bin/idstack-doctor` does not look for them.** These installs are from before v2.0.1.0 (2026-05-02) and before v3.2.0.0 (2026-05-14). The `--keep-legacy` flag of `./setup`, the `--local` flag of `bin/idstack-doctor` and `bin/lib/version-classify.sh` are removed. If you used idstack before v3.2.0.0 and `/idstack:<skill>` gives "Unknown skill", remove the old install manually. For a `--local` install, use `./.claude` in place of `~/.claude`:
+
+  ```bash
+  # The pre-v2.0.1.0 clone or the v2.0 symlink. Examine it first: remove it only if it is idstack.
+  rm -rf ~/.claude/skills/idstack
+  # The pre-v2 per-skill symlinks. The loop removes only symlinks that point into idstack.
+  for s in needs-analysis learning-objectives course-quality-review course-import assessment-design \
+           course-builder course-export accessibility-review red-team pipeline learn; do
+    l="$HOME/.claude/skills/$s"; [ -L "$l" ] && readlink "$l" | grep -q idstack && rm "$l"
+  done
+  # The plugin symlink from before the marketplace install.
+  [ -L ~/.claude/plugins/idstack ] && rm ~/.claude/plugins/idstack
+  ```
+
 ## v3.8.0.0 (2026-10-30)
 
 idstack supports Claude Code only. This release says so in the README and on the landing page, and it removes the text that described other hosts. Without Claude Code, you can use the Chrome extension. You can also fork the repo and adapt the skills for a different agent, but idstack does not support or test those forks.

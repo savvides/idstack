@@ -253,46 +253,6 @@ sed -i.bak '/\*\*Top recommendations:\*\*/d' "$WORK/r/skills/learning-objectives
 regen
 expect_fail "missing Top recommendations" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 11. --keep-legacy ignored by the per-skill symlink loop -> test-setup must fail
-fresh
-python3 - "$WORK/r/setup" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p).read()
-s = s.replace('''      if [ "$KEEP_LEGACY" = "1" ]; then
-        echo "  KEPT legacy symlink: $legacy (--keep-legacy)"
-      else
-        rm "$legacy"
-        echo "  removed legacy symlink: $legacy"
-      fi''', '''      rm "$legacy"
-      echo "  removed legacy symlink: $legacy"''')
-open(p,'w').write(s)
-PY
-expect_fail "--keep-legacy ignored by per-skill loop" "$WORK/r/test/test-setup.sh" "$WORK/r"
-
-# 12. --local scope leaking into $HOME -> test-setup must fail
-fresh
-python3 - "$WORK/r/setup" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p).read()
-s = s.replace('''if [ "$SCOPE" = "local" ]; then
-  vestigial="$(pwd)/.claude/plugins/idstack"
-else
-  vestigial="$HOME/.claude/plugins/idstack"
-fi
-if [ -L "$vestigial" ]; then
-  rm "$vestigial"
-  echo "  removed legacy plugin symlink: $vestigial (pre-marketplace install method)"
-fi''', '''for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
-  vestigial="$plugins_base/idstack"
-  if [ -L "$vestigial" ]; then
-    rm "$vestigial"
-    echo "  removed legacy plugin symlink: $vestigial"
-  fi
-done''')
-open(p,'w').write(s)
-PY
-expect_fail "--local leaking into \$HOME" "$WORK/r/test/test-setup.sh" "$WORK/r"
-
 # 13. silent failure when `claude` exits nonzero -> test-setup must fail
 fresh
 python3 - "$WORK/r/setup" <<'PY'

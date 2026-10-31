@@ -56,7 +56,7 @@ for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-sta
 done
 
 # Bash syntax gate for the shell entry points (idstack-manifest-merge is python).
-for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-learnings bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/version-classify.sh bin/lib/plugin-status.sh test/test-helper.sh; do
+for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-learnings bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/plugin-status.sh test/test-helper.sh; do
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
 
@@ -65,7 +65,7 @@ done
 # helper `assert`, and one swallowed failure output entirely, so CI reported a
 # bare FAIL with no diagnostics. A local `PASS=0` is how that regrows.
 check "test-helper.sh exists" "[ -f '$IDSTACK_DIR/test/test-helper.sh' ]"
-for suite in smoke-test integration-test test-manifest-merge test-version-classifier \
+for suite in smoke-test integration-test test-manifest-merge \
              test-plugin-status test-preamble-python test-setup test-doctor test-status \
              test-skill-shell-zsh; do
   check "test/$suite.sh sources the shared helper" \
@@ -359,40 +359,11 @@ for skill in $MODE_AWARE_SKILLS; do
   check "$skill branches on import_metadata.source" "grep -q 'import_metadata.source' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
-# Legacy-install conflict regression: a pre-v2.0.1.0 dispatcher install at
-# ~/.claude/skills/idstack/ shadows the plugin namespace and breaks
-# /idstack:<skill> resolution. We only check this when run without a $1 override
-# — CI fixtures point $1 at their own checkout and don't share state with the
-# user's home directory.
-if [ -z "${1:-}" ]; then
-  LEGACY_CHECK_DIR="$HOME/.claude/skills/idstack"
-  check "no legacy idstack dispatcher at ~/.claude/skills/idstack/SKILL.md (run: rm -rf $LEGACY_CHECK_DIR)" \
-    "[ ! -f '$LEGACY_CHECK_DIR/SKILL.md' ] || ! grep -q '^name: idstack' '$LEGACY_CHECK_DIR/SKILL.md'"
-  for skill in $SKILLS; do
-    legacy_link="$HOME/.claude/skills/$skill"
-    check "no pre-v2 skill symlink at ~/.claude/skills/$skill pointing into idstack" \
-      "[ ! -L '$legacy_link' ] || ! readlink '$legacy_link' 2>/dev/null | grep -q idstack"
-  done
-fi
-
 # Manifest-merge tool must exist and be executable, and its unit tests must pass.
 check "bin/idstack-manifest-merge exists" "[ -f '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
 check "bin/idstack-manifest-merge is executable" "[ -x '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
 if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
   check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
-fi
-
-# Version classifier (shared by setup + bin/idstack-doctor) must classify
-# multi-digit versions correctly. Pinned to catch the pattern-fragility
-# regression Gemini Code Assist flagged twice. The classifier itself lives in  # IDSTACK_CLI_LEAK_ALLOW
-# bin/lib/version-classify.sh — one definition sourced by setup, doctor, and
-# the unit test, so the test exercises the shipped code, never a copy.
-check "bin/lib/version-classify.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/version-classify.sh' ]"
-check "setup sources the shared version classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/setup'"
-check "idstack-doctor sources the shared version classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/bin/idstack-doctor'"
-check "version-classifier test sources the shared classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/test/test-version-classifier.sh'"
-if [ -x "$IDSTACK_DIR/test/test-version-classifier.sh" ]; then
-  check "version-classifier unit tests pass" "'$IDSTACK_DIR/test/test-version-classifier.sh'"
 fi
 
 # `claude plugin list` parsing, also extracted to bin/lib/ so it is testable.

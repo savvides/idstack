@@ -77,7 +77,6 @@ Any Python embedded in `templates/preamble.md` or a skill body has to parse on P
 
 Logic used by more than one script — or worth a unit test — belongs in `bin/lib/`, sourced by its callers rather than copy-pasted:
 
-- `bin/lib/version-classify.sh` — version comparison, shared by `setup` and `bin/idstack-doctor`
 - `bin/lib/plugin-status.sh` — parses `claude plugin list` down to idstack's own entry
 
 Point the test at the shipped file, never at a copy of the logic. The version classifier drifted across three PRs while a mirrored copy inside its own test kept passing green.
@@ -135,11 +134,10 @@ Every suite below runs in CI (`.github/workflows/test.yml`) on every pull reques
 |-------|--------|
 | `test/smoke-test.sh` | Install, `SKILL.md` freshness, YAML frontmatter, version agreement across `VERSION` / `plugin.json` / `CHANGELOG.md`, canonical manifest section names, `/idstack:` namespacing, resolve-snippet single source, schema migrations, `bash -n` on every script, and the ASD-STE100 checks on the report templates and the extension output |
 | `test/integration-test.sh` | Behavioral tests across the `bin/` scripts; also asserts the suite leaves your working tree untouched |
-| `test/test-setup.sh` | `./setup` behavior — flag parsing, scope selection, all three legacy-cleanup shapes, failure handling. Runs against a repo copy with a fake `$HOME` and a stub `claude` |
+| `test/test-setup.sh` | `./setup` behavior — flag parsing, scope selection, failure handling, regeneration. Runs against a repo copy with a fake `$HOME` and a stub `claude` |
 | `test/test-doctor.sh` | `bin/idstack-doctor` — every PROBLEM/WARNING branch and the exit contract. Runs against a repo copy with a pinned `PATH`, so "claude not found" means genuinely not found |
 | `test/test-status.sh` | `bin/idstack-status`, including the `--readiness` export gate. Each threshold is probed at its own boundary with the other two held passing |
 | `test/test-manifest-merge.sh` | `bin/idstack-manifest-merge` |
-| `test/test-version-classifier.sh` | `bin/lib/version-classify.sh` |
 | `test/test-plugin-status.sh` | `bin/lib/plugin-status.sh` |
 | `test/test-preamble-python.sh` | The preamble's Context Recovery block (`idstack-status --context`), on 3.9 and 3.12 |
 | `test/test-extension.sh` | The Chrome extension. Imports the shipped `extension/` modules through `test/extension-harness.mjs` (Node 20.19+ or 22.7+) and fails if a hand-copied `.cjs` twin comes back |

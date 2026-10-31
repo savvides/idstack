@@ -145,7 +145,6 @@ Claude clones the repo, runs setup, and confirms the skills are registered.
 ```bash
 ./setup                # Register the plugin with Claude Code at user scope
 ./setup --local        # Install at project scope (./.claude/) instead of user scope
-./setup --keep-legacy  # Leave pre-v2.0.1.0 installs in place instead of removing them
 ```
 
 Setup is idempotent — re-run it any time.
@@ -328,7 +327,7 @@ INSTALL
   ./setup ──▶ registers .claude-plugin/plugin.json with Claude Code
                 └─▶ 11 skills, invoked as /idstack:<skill>
   bin/idstack-doctor   diagnoses the install
-                       (bin/lib/version-classify.sh, bin/lib/plugin-status.sh)
+                       (bin/lib/plugin-status.sh)
 
 RUN (Claude Code, inside your course project folder)
 
@@ -486,9 +485,9 @@ cd <your idstack clone> && ./setup
 
 **Claude says it can't find idstack skills?** Make sure you've run `./setup` after cloning. Setup registers the repo as a plugin marketplace and installs it so Claude Code discovers the namespaced `/idstack:<skill>` commands. Restart Claude Code after install — plugins load at session start.
 
-**Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Clone fresh and run setup: `git clone https://github.com/savvides/idstack.git && cd idstack && ./setup`. Setup now detects and removes any pre-v2.0.1.0 install at `~/.claude/skills/idstack` (symlink *or* real directory). If you ran an older setup that only warned, run `./setup` once more — or remove it manually with `rm -rf ~/.claude/skills/idstack`.
+**Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Remove the old install, then clone fresh and run setup: `rm -rf ~/.claude/skills/idstack && git clone https://github.com/savvides/idstack.git && cd idstack && ./setup`. Setup no longer removes old installs for you; the CHANGELOG lists every path an older install can leave behind.
 
-**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `bin/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 11 SKILL.md files, and detects legacy-install conflicts — printing the exact remediation command for whatever it finds.
+**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `bin/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 11 SKILL.md files, and python3 — printing the exact remediation command for whatever it finds.
 
 ## Contributing
 
