@@ -1295,6 +1295,20 @@
 
         <div class="install-track-card">
           <div class="install-track-header">
+            <h3>Claude Desktop App</h3>
+            <span class="track-badge">No Terminal</span>
+          </div>
+          <p class="install-prose">In the Code tab of the Claude desktop app, select a folder for your course. Then paste this line in the message box:</p>
+          <div class="install-block" role="group" aria-label="Desktop install command">
+            <span class="prompt" aria-hidden="true">›</span>
+            <code id="install-cmd-3">/plugin marketplace add savvides/idstack</code>
+            <button class="copy-btn" type="button" data-copy-target="install-cmd-3" aria-label="Copy desktop install command">Copy</button>
+          </div>
+          <p class="install-prose">Click <strong>+</strong>, then <strong>Add plugins</strong>, and install idstack. Then type <code>/idstack:start</code>. Each skill gives you a link to open its report in the app.</p>
+        </div>
+
+        <div class="install-track-card">
+          <div class="install-track-header">
             <h3>Claude Code Plugin</h3>
             <span class="track-badge">Full 12-Skill Pipeline</span>
           </div>
@@ -1310,7 +1324,7 @@
 
           <p class="install-prose">To verify an installation, run <code>bin/idstack-doctor</code> to diagnose plugin registration or <code>bin/idstack-status</code> to view course health.</p>
 
-          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:pipeline</code>.</p>
+          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:start</code>.</p>
 
           <p class="install-prose">Not using Claude Code? idstack supports Claude Code only. Use the Chrome extension, or fork the repo and adapt the skills for a different agent, for example Codex or Antigravity. idstack does not support or test those forks.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
         </div>

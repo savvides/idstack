@@ -12,9 +12,9 @@ Free, MIT licensed, open source. Available as a [Claude Code plugin](#install-30
 
 ## Quick start
 
-1. Install idstack (30 seconds, see below)
-2. Run `/idstack:course-import` on your Canvas/Blackboard/Moodle course
-3. Run `/idstack:course-quality-review` to see what the evidence says
+1. Install idstack (30 seconds, see below). No terminal? Use the [Claude desktop app](#claude-desktop-app-no-terminal).
+2. Run `/idstack:start` in a folder for your course. It checks your setup and starts the correct skill.
+3. If you imported a course, run `/idstack:course-quality-review` to see what the evidence says.
 4. Stop there. You'll know if this is for you.
 
 ## See it work
@@ -181,6 +181,23 @@ Setup installed idstack in Claude Code (scope: user).
 
   More information: https://idstack.org
 ```
+
+### Claude desktop app (no terminal)
+
+You can use idstack in the Code tab of the [Claude desktop app](https://claude.ai/download) on a Mac. You do not need a terminal.
+
+1. Open the Claude desktop app and select the **Code** tab.
+2. Make a folder for your course, for example `Documents/BIO-101`. Start a new session and select that folder with the folder button below the message box.
+3. Paste this line in the message box and press Return:
+   ```
+   /plugin marketplace add savvides/idstack
+   ```
+4. Click **+** next to the message box, then **Add plugins**. Select **idstack** and install it.
+5. Type `/idstack:start` and press Return. idstack checks your setup, then asks how you want to start.
+
+Each skill gives you a link to its report. Click the link to open the report in the app.
+
+**macOS asks you to install developer tools?** idstack needs python3. Click **Install** in the macOS window. When the installation is complete, type `/idstack:start` again.
 
 ### Chrome Extension (No-Terminal Mode)
 
@@ -437,7 +454,7 @@ idstack encodes findings from a literature synthesis spanning 11 domains of inst
 ## FAQ
 
 **Do I need to know how to code?**
-No. You interact with idstack through conversation in Claude Code. It's a chat interface.
+No. You interact with idstack through conversation in Claude Code. It is a chat interface. In the [Claude desktop app](#claude-desktop-app-no-terminal) you do not need a terminal at all.
 
 **What is Claude Code?**
 Claude Code is Anthropic's coding tool. It's available as a [desktop app, web app, and CLI](https://claude.ai/code). You type `/idstack:needs-analysis` and have a conversation. No programming required.
