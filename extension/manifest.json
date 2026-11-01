@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "idstack — Evidence-Based Course Design",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "minimum_chrome_version": "116",
   "description": "idstack audits course pages in Canvas LMS, Google Docs and on the web against instructional design evidence.",
   "homepage_url": "https://idstack.org",
@@ -28,8 +28,7 @@
   ],
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*",
-    "*://*.instructure.com/*",
-    "https://api.consensus.app/*"
+    "*://*.instructure.com/*"
   ],
   "optional_host_permissions": [
     "https://*/*"

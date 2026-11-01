@@ -3,10 +3,9 @@
  */
 export async function getSettings() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(['apiKey', 'consensusApiKey'], (result) => {
+    chrome.storage.sync.get(['apiKey'], (result) => {
       resolve({
-        apiKey: result.apiKey || '',
-        consensusApiKey: result.consensusApiKey || ''
+        apiKey: result.apiKey || ''
       });
     });
   });

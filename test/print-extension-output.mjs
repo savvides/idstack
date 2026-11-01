@@ -2,7 +2,6 @@
 // send it through bin/idstack-ste-check. Usage: node test/print-extension-output.mjs markdown|html
 // The name does not start with "test-", so test/test-extension.sh does not run it as a test.
 import { getDemoAuditResult, getDemoCourseAuditResult } from '../extension/background/parser-helper.js';
-import { autoCorrectNeuromyth } from '../extension/shared/consensus-client.js';
 import { compileSingleAuditToMarkdown, compileDossierToMarkdown } from '../extension/shared/dossier-compiler.js';
 import { renderAuditHTML, renderDossierListHTML } from '../extension/sidepanel/renderer-helper.js';
 import { crawlCanvasCourse } from '../extension/background/canvas-crawler.js';
@@ -10,20 +9,11 @@ import { saveSettings } from '../extension/shared/storage.js';
 import fs from 'node:fs';
 import { installChrome, installDocument, installFetch, jsonResponse, importFresh, loadContentScript, createDocument, flush, resetGlobals } from './extension-harness.mjs';
 
-const MYTHS = ['learning_styles', 'hemisphere_learning', 'ten_percent_brain', 'dales_cone_percentages'];
-
 const page = getDemoAuditResult({ title: 'Lab 1', pageType: 'Canvas Assignment' });
 const course = getDemoCourseAuditResult({ title: 'Biology 101' });
-const corrected = {
-  summary: { bloomsLevel: 'Apply (Level 3)', alignmentScore: 'Moderate (70%)', keyTakeaway: 'The page has a neuromyth.' },
-  findings: MYTHS.map((type) => autoCorrectNeuromyth({
-    severity: 'warning', tier: 'T1', citation: '[Learner-1] Learning styles',
-    observation: 'The page has a neuromyth.', evidence: '', recommendation: '',
-  }, type)),
-};
 // A partial model reply: every fallback label shows.
 const sparse = { summary: {}, findings: [{}] };
-const items = [page, course, corrected].map((result, i) => ({
+const items = [page, course].map((result, i) => ({
   id: `item-${i}`, title: `Item ${i + 1}`, pageType: 'Canvas Assignment',
   url: 'https://canvas.example.edu/courses/1', timestamp: '2026-01-01T00:00:00Z', result,
 })).concat([{ id: 'item-sparse', timestamp: '2026-01-01T00:00:00Z', result: sparse }]);
@@ -107,7 +97,7 @@ if (mode === 'markdown') {
   console.log(unquote(compileDossierToMarkdown(items, 'Biology 101')));
   console.log(unquote(compileDossierToMarkdown([], 'Biology 101')));
 } else if (mode === 'html') {
-  console.log([page, course, corrected, sparse].map(renderAuditHTML).join('\n'));
+  console.log([page, course, sparse].map(renderAuditHTML).join('\n'));
   console.log(renderDossierListHTML(items));
   console.log(renderDossierListHTML([]));
   for (const message of await errorMessages()) console.log(`<p class="error-msg">${message}</p>`);

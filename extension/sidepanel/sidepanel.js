@@ -453,7 +453,6 @@ const closeSettings = document.getElementById('close-settings');
 const settingsDrawer = document.getElementById('settings-drawer');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
 const apiKeyInput = document.getElementById('api-key-input');
-const consensusApiKeyInput = document.getElementById('consensus-api-key-input');
 
 if (settingsToggle && settingsDrawer) {
   settingsToggle.addEventListener('click', () => {
@@ -471,8 +470,7 @@ if (closeSettings && settingsDrawer) {
 if (saveSettingsBtn) {
   saveSettingsBtn.addEventListener('click', async () => {
     const key = apiKeyInput ? apiKeyInput.value.trim() : '';
-    const consensusKey = consensusApiKeyInput ? consensusApiKeyInput.value.trim() : '';
-    await saveSettings({ apiKey: key, consensusApiKey: consensusKey });
+    await saveSettings({ apiKey: key });
     saveSettingsBtn.textContent = 'Saved!';
     setTimeout(() => {
       saveSettingsBtn.textContent = 'Save Settings';
@@ -496,9 +494,6 @@ if (versionBadge && typeof chrome !== 'undefined' && chrome.runtime && chrome.ru
     if (settings) {
       if (apiKeyInput && settings.apiKey) {
         apiKeyInput.value = settings.apiKey;
-      }
-      if (consensusApiKeyInput && settings.consensusApiKey) {
-        consensusApiKeyInput.value = settings.consensusApiKey;
       }
     }
   } catch (e) {

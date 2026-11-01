@@ -6,8 +6,7 @@ needs-analysis, course-builder, course-quality-review and learning-objectives
 cited the two Sweller papers ([CogLoad-4], [CogLoad-19]) as T1, but
 references.md files both as T5. A citation that claims stronger evidence than
 the repo holds is the error idstack can least afford, so the tier is read from
-references.md here instead of trusted. bin/idstack-consensus applies the same
-rule at run time: a code in references.md always gets its references.md tier.
+references.md here instead of trusted.
 
 Forms checked, after HTML tags are removed:
   [A-1] [T1]             the code must be T1 in references.md

@@ -50,7 +50,7 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus idstack-ste-check; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-ste-check; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
@@ -386,11 +386,6 @@ fi
 # --readiness is the pre-export gate; same reasoning as doctor above.
 if [ -x "$IDSTACK_DIR/test/test-status.sh" ]; then
   check "idstack-status behavioral tests pass" "'$IDSTACK_DIR/test/test-status.sh'"
-fi
-
-# Consensus CLI unit tests
-if command -v python3 &>/dev/null; then
-  check "consensus cli unit tests pass" "python3 '$IDSTACK_DIR/test/test-consensus-cli.py'"
 fi
 
 # The ASD-STE100 checker. Skills run it on each file they write, so a false
