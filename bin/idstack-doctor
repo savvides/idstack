@@ -5,9 +5,12 @@
 # do I run?" without the user having to know about smoke-test.
 #
 # Usage:
-#   idstack-doctor
+#   idstack-doctor           full diagnosis
+#   idstack-doctor --quick   one code for /idstack:start: OK, PYTHON_MISSING,
+#                            PYTHON_OLD or PYTHON_STUB
 #
-# Exit code: 0 if all green, 1 if any problem is detected.
+# Exit code: 0 if all green (--quick: OK), 1 if any problem is detected,
+# 2 for an unknown argument.
 
 set -u
 
@@ -24,6 +27,33 @@ note_problem() { PROBLEMS=$((PROBLEMS + 1)); }
 SKILLS="needs-analysis learning-objectives course-quality-review course-import \
 assessment-design course-builder course-export accessibility-review red-team \
 pipeline learn"
+
+QUICK=0
+for arg in "$@"; do
+  case "$arg" in
+    --quick) QUICK=1 ;;
+    *) echo "ERROR: unknown argument: $arg" >&2; echo "Command: idstack-doctor [--quick]" >&2; exit 2 ;;
+  esac
+done
+
+# --quick: the one python3 code that /idstack:start reads. A working python3
+# comes first: a python.org install on a Mac has no Command Line Tools, and
+# that is not a problem. Running the macOS stub here is also what opens the
+# "install developer tools" window that /idstack:start tells the user about.
+if [ "$QUICK" = "1" ]; then
+  if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; then
+    echo "OK"
+    exit 0
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "PYTHON_MISSING"
+  elif [ "$(uname -s 2>/dev/null)" = "Darwin" ] && ! xcode-select -p >/dev/null 2>&1; then
+    echo "PYTHON_STUB"
+  else
+    echo "PYTHON_OLD"
+  fi
+  exit 1
+fi
 
 echo "idstack doctor"
 echo "  repo: $IDSTACK_DIR"

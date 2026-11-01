@@ -2148,6 +2148,33 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "learnings delete drops the file mode" "$WORK/r/test/integration-test.sh"
 
+# 61a. doctor --quick checks for the macOS stub before the python3 version ->
+# test-doctor must fail. A python.org python3 on a Mac with no Command Line
+# Tools would then be told to install the developer tools every time.
+fresh
+python3 - "$WORK/r/bin/idstack-doctor" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '  if command -v python3 >/dev/null 2>&1 && python3 -c'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '  if [ "$(uname -s 2>/dev/null)" = "Darwin" ] && ! xcode-select -p >/dev/null 2>&1; then echo "PYTHON_STUB"; exit 1; fi\n' + old, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "doctor --quick reports the stub before it tries python3" "$WORK/r/test/test-doctor.sh"
+
+# 61b. doctor --quick stops telling the stub apart from an old python3 ->
+# test-doctor must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-doctor" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '    echo "PYTHON_STUB"\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '    echo "PYTHON_OLD"\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "doctor --quick no longer reports the macOS stub" "$WORK/r/test/test-doctor.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
