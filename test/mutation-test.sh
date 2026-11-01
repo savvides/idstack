@@ -400,6 +400,7 @@ expect_fail "dateModified reintroduced into docs/index.html" "$WORK/r/test/smoke
 # extension's design docs; grep matches that name at any depth, so it exempted
 # every committed spec and plan under docs/superpowers/ and superpowers/.
 fresh
+mkdir -p "$WORK/r/docs/superpowers"
 printf 'idstack also runs in OpenAI Codex CLI.\n' > "$WORK/r/docs/superpowers/leak.md"  # IDSTACK_CLI_LEAK_ALLOW
 expect_fail "committed docs/superpowers is not sweep-exempt" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
