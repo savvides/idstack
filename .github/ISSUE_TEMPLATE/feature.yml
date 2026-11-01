@@ -1,0 +1,19 @@
+name: Feature or backlog item
+description: New work for idstack, or deferred work to track.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: The problem it solves, and the evidence for it if there is any.
+  - type: textarea
+    id: depends
+    attributes:
+      label: Depends on
