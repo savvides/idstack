@@ -76,7 +76,10 @@ Options:
 - **Assessment gaming** — bias depth toward Dimension 1 (alignment)
 - **Cognitive overload** — bias depth toward Dimension 3 (cognitive load)
 - **Persona accessibility** — bias depth toward Dimension 4 (personas)
-- **Evidence accuracy** — bias depth toward Dimension 2 (evidence)
+
+AskUserQuestion takes a maximum of 4 options. Put this in the question text: "For
+evidence accuracy, select Other and type `evidence`." If the user types `evidence`,
+bias depth toward Dimension 2 (evidence).
 
 Save the user's choice as `FOCUS` for the orchestrator brief.
 
@@ -340,10 +343,12 @@ _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/red-team.html"
 mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
 ```
 
-Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/red-team.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/red-team.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
 - **`{{skill_title}}`:** "Red Team Audit"
 - **`{{skill_name}}`:** `red-team`

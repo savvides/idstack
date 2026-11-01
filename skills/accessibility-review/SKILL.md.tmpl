@@ -72,7 +72,8 @@ The shared preamble above already ran the manifest existence check
 
 **With manifest:** Read the available sections and summarize what you know about the course.
 
-**Without manifest:** Ask the user via AskUserQuestion (one question at a time):
+**Without manifest:** Ask the user one question at a time. Ask questions 1–3 in plain chat,
+because the answers are free text. Ask questions 4 and 5 with AskUserQuestion (options: Yes / No / Some).
 
 1. "Describe your course at a high level. What is the subject, how many modules does it have, and what is the
    target audience?"
@@ -302,10 +303,12 @@ _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/accessibility-review.html"
 mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
+echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
 ```
 
-Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/accessibility-review.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/accessibility-review.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
 
 - **`{{skill_title}}`:** "Accessibility Review"
 - **`{{skill_name}}`:** `accessibility-review`

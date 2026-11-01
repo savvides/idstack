@@ -66,7 +66,8 @@ done
 # bare FAIL with no diagnostics. A local `PASS=0` is how that regrows.
 check "test-helper.sh exists" "[ -f '$IDSTACK_DIR/test/test-helper.sh' ]"
 for suite in smoke-test integration-test test-manifest-merge test-version-classifier \
-             test-plugin-status test-preamble-python test-setup test-doctor test-status; do
+             test-plugin-status test-preamble-python test-setup test-doctor test-status \
+             test-skill-shell-zsh; do
   check "test/$suite.sh sources the shared helper" \
     "grep -q 'test-helper.sh' '$IDSTACK_DIR/test/$suite.sh'"
   check "test/$suite.sh defines no local counters" \
@@ -380,6 +381,10 @@ fi
 if [ -x "$IDSTACK_DIR/test/test-doctor.sh" ]; then
   check "doctor behavioral tests pass" "'$IDSTACK_DIR/test/test-doctor.sh'"
 fi
+# Skill blocks run in zsh for most macOS users; same reasoning as doctor above.
+if [ -x "$IDSTACK_DIR/test/test-skill-shell-zsh.sh" ]; then
+  check "skill bash blocks work in bash and zsh" "'$IDSTACK_DIR/test/test-skill-shell-zsh.sh'"
+fi
 # --readiness is the pre-export gate; same reasoning as doctor above.
 if [ -x "$IDSTACK_DIR/test/test-status.sh" ]; then
   check "idstack-status behavioral tests pass" "'$IDSTACK_DIR/test/test-status.sh'"
@@ -599,6 +604,51 @@ CLI_LEAK="$(printf '%s' "$CLI_LEAK" | grep -vF 'IDSTACK_CLI_LEAK_ALLOW' || true)
 # the offending lines instead of just saying the string was non-empty.
 check "retired-CLI references confined to CHANGELOG.md" \
   "if [ -n \"\$CLI_LEAK\" ]; then printf '%s\n' \"\$CLI_LEAK\"; false; fi"
+
+
+# Skill bash blocks run in Claude Code's Bash tool: in the user's shell (zsh on
+# macOS), with BSD tools, and in a new shell for each call. CI runs only bash,
+# so these patterns pass every other suite and fail for real users:
+#   - `head -n -1` is GNU-only. BSD head rejects it, so the Canvas push read an
+#     empty body and posted every item to /modules//items.
+#   - `for x in $VAR` does not word-split in zsh, so it loops once.
+#   - `ls *.md *.docx` aborts in zsh when one glob matches nothing (NOMATCH),
+#     even with 2>/dev/null.
+#   - A Canvas block that does not source .idstack/canvas.env has no token,
+#     because the variable from an earlier call is gone.
+#   - A relative `templates/report.html.tmpl` does not exist in a course
+#     project. The report block must print the plugin path for the Read tool.
+SHELL_SRC=$(ls "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl "$IDSTACK_DIR"/templates/*.md "$IDSTACK_DIR"/templates/snippets/*.sh)
+check "no GNU-only 'head -n -N' in skill shell" \
+  "! grep -nE 'head -n -[0-9]' $(echo $SHELL_SRC)"
+check "no unquoted 'for x in \$VAR' word-split loop in skill shell" \
+  "! grep -nE 'for [A-Za-z_]+ in \\\$[A-Za-z_{]' $(echo $SHELL_SRC)"
+check "no bare 'ls *.ext' glob in skill shell" \
+  "! grep -nE '^[[:space:]]*ls [^#]*[[:space:]][^[:space:]\"]*\\*\\.[A-Za-z]' $(echo $SHELL_SRC)"
+check "no /tmp merge payloads in skill shell" \
+  "! grep -nE -- '--payload /tmp/' $(echo $SHELL_SRC)"
+check "every Canvas API block loads .idstack/canvas.env" "python3 - $(echo $SHELL_SRC) <<'PY'
+import re, sys
+bad = []
+for f in sys.argv[1:]:
+    for m in re.finditer(r'\`\`\`bash\n(.*?)\`\`\`', open(f, encoding='utf-8').read(), re.S):
+        b = m.group(1)
+        if ('Bearer \$TOKEN' in b) or ('CANVAS_TOKEN' in b and 'curl' in b and '. ./.idstack/canvas.env' not in b):
+            bad.append('%s: %s' % (f, b.strip().splitlines()[0]))
+print('\n'.join(bad))
+sys.exit(1 if bad else 0)
+PY"
+for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
+  name=$(basename "$(dirname "$tmpl")")
+  grep -q 'templates/assets/idstack.css' "$tmpl" || continue
+  if [ "$name" = "pipeline" ]; then
+    check "$name prints the plugin path of its dashboard template" \
+      "grep -qF 'echo \"Dashboard template: \$_IDSTACK/templates/index.html.tmpl\"' '$tmpl'"
+  else
+    check "$name prints the plugin path of its report template" \
+      "grep -qF 'echo \"Report template: \$_IDSTACK/templates/report.html.tmpl\"' '$tmpl'"
+  fi
+done
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

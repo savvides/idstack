@@ -6,7 +6,11 @@ lean on:
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   it means: present a single multiple-choice question (e.g., "Which of these best describes X?")
   and stop, waiting for the user's answer before proceeding. Ask **one** question at a time,
-  never batch. This maps to the `AskUserQuestion` tool.
+  never batch. This maps to the `AskUserQuestion` tool. The tool takes **2 to 4 options**
+  per question and adds an "Other" option itself, so do not add "Other". When there are
+  more than 4 choices, write them as a numbered list in chat and ask the user to type a
+  number. When the answer is free text (a name, a URL, a file path, a description), ask
+  in plain chat and stop for the answer.
 - **Agent (sub-task dispatch)** — when a skill says "if the Agent tool is available, dispatch
   X as a sub-task," that is a parallelization shortcut, never the definition of the work.
   The inline written-out steps that follow are; run them sequentially whenever dispatch is
@@ -185,7 +189,7 @@ for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-[ -n "$_UPD" ] && echo "$_UPD"
+if [ -n "$_UPD" ]; then echo "$_UPD"; fi
 ```
 
 If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.

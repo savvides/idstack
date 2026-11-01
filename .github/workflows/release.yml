@@ -33,6 +33,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      # Skill bash blocks run in the user's shell, which is zsh on macOS.
+      # test/test-skill-shell-zsh.sh (run by smoke-test) needs zsh on Linux too.
+      - name: Install zsh
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q zsh
       - name: Run test suite
         run: ./test/smoke-test.sh
       - name: Create GitHub Release

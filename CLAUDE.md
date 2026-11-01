@@ -28,7 +28,7 @@ bin/package-extension.sh                   # Package Chrome extension into build
 Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 
 ```bash
-./test/smoke-test.sh              # 405 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 423 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 51 behavioral tests across the bin/ scripts; also proves the suite
@@ -40,6 +40,8 @@ Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
 ./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
+./test/test-skill-shell-zsh.sh    # 47 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
+                                  # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules via
                                   # test/extension-harness.mjs (Node >= 20.19 or 22.7; never add .cjs twins)
 ./test/test-responsive-landing.js # Responsive/mobile invariants for docs/index.html, as CSS text (node; via smoke-test)
