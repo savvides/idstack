@@ -36,7 +36,7 @@ not give the update command.
 
 When Step 4 starts a different skill with the Skill tool, the limits of this
 skill stop. Do all of the steps of that skill, including the files that it
-writes and its timeline entry. Two rules of this skill stay in effect after the
+writes and its timeline entry. Three rules of this skill stay in effect after the
 handoff. Do not give the update command, and do not give the NO_PROFILE note.
 Do not give the welcome-back message again.
 
@@ -67,6 +67,8 @@ if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/bin/idstac
   again." STOP.
 - **IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
   idstack again. Then type `/idstack:start` again." STOP.
+- **Any other output:** Tell the user: "idstack cannot check its setup. Install
+  idstack again. Then type `/idstack:start` again." STOP.
 
 ## Step 2: Folder check
 
@@ -83,8 +85,8 @@ esac
 
 - **COURSE_FOLDER:** Go to Step 3.
 - **NOT_A_COURSE_FOLDER:** Tell the user: "idstack keeps the files for one
-  course in one folder. This session is in your home folder or in a shared
-  folder, for example Documents. Make a new folder for the course, for example
+  course in one folder. This session is in your home folder, or in Documents,
+  Desktop or Downloads. Make a new folder for the course, for example
   in Documents. Start a new session, and use the folder button below the
   message box to select the new folder. Then type `/idstack:start` again." STOP.
 
@@ -161,11 +163,11 @@ fi
 
 - **Dashboard link:** give the path as the "Report Links" section of the
   preamble tells you. If the output also shows DASHBOARD_OLD, tell the user:
-  "This dashboard is older than some of the reports. To update it, type
-  `/idstack:pipeline`." Then STOP.
-- **NO_DASHBOARD:** Tell the user: "This course has no dashboard. idstack makes
-  the dashboard when a stage of the course design is complete. To start the
-  next stage, type `/idstack:pipeline`." Then give each `Report link:` path as
+  "This dashboard is older than some of the reports.
+  `/idstack:pipeline` updates the dashboard after it runs the next stage." Then STOP.
+- **NO_DASHBOARD:** Tell the user: "This course has no dashboard.
+  `/idstack:pipeline` makes the dashboard. To make it, type
+  `/idstack:pipeline`." Then give each `Report link:` path as
   the "Report Links" section of the preamble tells you. Then STOP.
 
 ## Step 6: Run one skill

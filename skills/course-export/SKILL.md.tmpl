@@ -124,6 +124,7 @@ cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Course export folder: $_EXPORT_DIR"
+echo "Report path: $_REPORT_PATH"
 echo "Report link: $(pwd -P)/$_REPORT_PATH"
 ```
 
@@ -1031,7 +1032,7 @@ in its manifest key for context — the payload file contains only the inner obj
 ```json
 {
   "export_metadata": {
-    "report_path": "<set to $_REPORT_PATH from the Prepare Course Export Folder block — e.g. .idstack/exports/<course-slug>/course-export.html>",
+    "report_path": "<set to the relative path from the "Report path:" line of the Prepare Course Export Folder block, not the Report link — e.g. .idstack/exports/<course-slug>/course-export.html>",
     "exported_at": "ISO-8601 timestamp",
     "format": "imscc|canvas-api|scorm",
     "destination": "file path (.idstack/exports/<course-slug>/course-export.imscc) or Canvas URL",

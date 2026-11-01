@@ -8,7 +8,7 @@ To update: `cd` into your idstack clone, then `git pull && ./setup`. For a marke
 
 ### Added — `/idstack:start`
 
-- **`/idstack:start` is the first skill to run in a course folder.** It makes sure that python3 3.9 or a later version is available. It stops if the session is in your home folder or a shared folder. Then it asks if you want to import a course or design a new one.
+- **`/idstack:start` is the first skill to run in a course folder.** It makes sure that python3 3.9 or a later version is available. It stops if the session is in your home folder, Documents, Desktop or Downloads. Then it asks if you want to import a course or design a new one.
 - **`bin/idstack-doctor --quick` prints one python3 code.** The codes are `OK`, `PYTHON_MISSING`, `PYTHON_OLD` and `PYTHON_STUB`. `PYTHON_STUB` tells the macOS python3 stub apart from a python3 that is too old.
 
 ### Added — report links

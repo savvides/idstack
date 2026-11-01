@@ -193,7 +193,8 @@ You can use idstack in the Code tab of the [Claude desktop app](https://claude.a
    /plugin marketplace add savvides/idstack
    ```
 4. Click **+** next to the message box, then **Add plugins**. Select **idstack** and install it.
-5. Type `/idstack:start` and press Return. idstack checks your setup, then asks how you want to start.
+5. Start a new session. Select the course folder again with the folder button. Claude Code loads a plugin only when a session starts.
+6. Type `/idstack:start` and press Return. idstack checks your setup, then asks how you want to start.
 
 Each skill gives you a link to its report. Click the link to open the report in the app.
 
