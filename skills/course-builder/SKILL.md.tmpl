@@ -1,10 +1,11 @@
 ---
 name: course-builder
 description: |
-  Generate complete course content from the idstack manifest. Produces syllabus,
-  module pages, assignment descriptions, and rubric documents. Content follows
-  cognitive load principles and adapts to learner expertise level. Reads from
-  the full pipeline (needs, objectives, assessments) for the best output. (idstack)
+  Generate complete course content from the idstack manifest: syllabus, module pages,
+  assignment descriptions, and rubric documents. Content follows cognitive load
+  principles and adapts to learner expertise level. Reads the full pipeline (needs,
+  objectives, assessments) for the best output. Use when asked to write or generate
+  course content, a syllabus, module pages, or assignments. (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -683,10 +684,10 @@ under a "Not generated" section with the reason and what would be needed.
 
 ---
 
-## Spec Review Loop (Claude Code only)
+## Spec Review Loop
 
 After all content files are generated but BEFORE presenting the final summary to the
-user, run an adversarial self-review if the **Agent tool** is available.
+user, run an adversarial self-review with the **Agent tool**.
 
 **Dispatch 1 agent:**
 
@@ -701,7 +702,7 @@ Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in the
 
 If you or the agent changed course files in this step, do the writing standard check at the end of Step 6 again. Show the user each sentence that you changed, before and after the change.
 
-**If Agent tool is NOT available:** Skip this step. Add a note to the output:
+**If the agent fails or returns nothing:** Skip this step. Add a note to the output:
 "Note: For a full alignment audit, run `/idstack:course-quality-review` next."
 
 ---

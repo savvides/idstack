@@ -39,7 +39,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **`$_IDSTACK` resolution cleaned.** In-skill path resolution dropped legacy `.agents/` fallbacks.
 
 ### Follow-up fixes to the v3.3.0.0 audit (v3.3.0.1–v3.3.0.4)
-- **Skills stopped suggesting commands that don't exist.** Welcome-back and next-step messages named things like `/assessment-design`, which resolves in neither CLI. It landed inside the context-recovery message v3.3.0.0 had just repaired, so it was the first thing you saw once those messages started working again (v3.3.0.1).
+- **Skills stopped suggesting commands that don't exist.** Welcome-back and next-step messages named things like `/assessment-design`, which does not resolve in Claude Code. It landed inside the context-recovery message v3.3.0.0 had just repaired, so it was the first thing you saw once those messages started working again (v3.3.0.1).
 - **Searching your learnings for a word with an apostrophe returned the wrong answer.** `Bloom's` or `learner's` made the search code a syntax error, which was swallowed, and the fallback that took over ignores the `--type` filter — so it answered with a record of the wrong type instead of failing. Those are ordinary search terms in this tool (v3.3.0.2).
 - Smaller: a malformed payload can no longer corrupt the manifest, and on machines without python3 the search fallback's `--type` filter works at all (it had never matched anything idstack wrote).
 
@@ -95,9 +95,9 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **Course readiness dashboard** — pre-export gate showing quality/red-team/accessibility status. Integrated into `/idstack:course-export`.
 - **Designer profile** — `~/.idstack/profile.yaml` with experience level. Skills adapt explanation depth (novice/intermediate/expert).
 - **Manifest preferences** — schema v1.3 adds verbosity, export format, preferred LMS settings.
-- **Sub-agent architecture** — `/idstack:red-team` (5 parallel agents), `/idstack:accessibility-review` (2 parallel), `/idstack:course-quality-review` (3 parallel). Claude Code only, graceful degradation elsewhere.
+- **Sub-agent architecture** — `/idstack:red-team` (5 parallel agents), `/idstack:accessibility-review` (2 parallel), `/idstack:course-quality-review` (3 parallel). Sequential fallback when a sub-agent cannot start.
 - **Spec review loop** — `/idstack:course-builder` validates alignment via adversarial subagent after generating content.
-- **IDSTACK_HOME** — all paths portable via env var. Foundation for multi-platform support.
+- **IDSTACK_HOME** — all paths portable via env var. Lets a development checkout override the installed plugin.
 
 ### Bidirectional pipeline + evidence depth (v1.5.1)
 - All 9 skills now write back to the manifest. Downstream skills get richer input from upstream analysis.

@@ -2085,6 +2085,15 @@ shell_mutation "a report block stops printing the plugin template path" \
   skills/needs-analysis/SKILL.md.tmpl 'echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 ' ''
 
+
+# 56a-56c. Claude-Code-only guards (v3.8.0.0) -> smoke-test must fail.
+shell_mutation "an untagged support claim for another agent enters the README" \
+  README.md '**Requirement:** [Claude Code](https://claude.ai/code)' '**Requirement:** [Claude Code](https://claude.ai/code) or Antigravity'  # IDSTACK_CLI_LEAK_ALLOW
+shell_mutation "a skill description names a bare /skill again" \
+  skills/needs-analysis/SKILL.md.tmpl '/idstack:learning-objectives, /idstack:course-quality-review' '/learning-objectives, /idstack:course-quality-review'
+shell_mutation "a skill description loses its Use-when trigger" \
+  skills/red-team/SKILL.md.tmpl 'Use when asked to' 'It works when asked to'
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
