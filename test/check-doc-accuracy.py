@@ -83,8 +83,6 @@ def check_no_stale_dates(root, problems):
     the defect (a PR left open a week, a merge dated after the docs edit), and
     a check that cries wolf is one people learn to bypass. Absence is the only
     assertion here that cannot false-positive.
-
-    See superpowers/specs/2026-08-14-github-page-accuracy-design.md, D2 and D3.
     """
     index_html = os.path.join(root, "docs", "index.html")
     if os.path.isfile(index_html):
