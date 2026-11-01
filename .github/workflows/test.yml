@@ -45,8 +45,8 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update -q && sudo apt-get install -y -q zsh
       # smoke-test runs every unit and behavioral suite itself (manifest-merge,
-      # version-classifier, plugin-status, doctor, status, preamble-python,
-      # setup, extension), so they are not separate steps here.
+      # plugin-status, doctor, status, preamble-python, setup, extension,
+      # skill-shell-zsh), so they are not separate steps here.
       - name: Smoke test
         run: ./test/smoke-test.sh
       - name: Integration test

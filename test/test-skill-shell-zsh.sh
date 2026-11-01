@@ -165,7 +165,12 @@ PY
   # Every preamble block exits 0 and prints the same output in both shells.
   mkdir -p "$P/pre/.idstack"
   printf '%s\n' '{"ts":"2026-08-04T00:00:00Z","skill":"needs-analysis","event":"completed"}' > "$P/pre/.idstack/timeline.jsonl"
-  awk '/^```bash$/{f=1; n++; next} f && /^```$/{f=0} f{print > ("'"$P"'/pre/block" n ".sh")}' "$IDSTACK_DIR/templates/preamble.md"
+  # The preamble carries {{IDSTACK_RESOLVE}} placeholders; splice the snippet in
+  # as bin/idstack-gen-skills does, so each block runs as a skill sees it.
+  awk -v snip="$IDSTACK_DIR/templates/snippets/idstack-resolve.sh" '
+    /^```bash$/{f=1; n++; next} f && /^```$/{f=0}
+    f && /\{\{IDSTACK_RESOLVE\}\}/{while ((getline l < snip) > 0) print l > ("'"$P"'/pre/block" n ".sh"); close(snip); next}
+    f{print > ("'"$P"'/pre/block" n ".sh")}' "$IDSTACK_DIR/templates/preamble.md"
   for f in "$P"/pre/block*.sh; do
     out=$(run "$P/pre" "$(cat "$f")"); rc=$?
     printf '%s' "$out" > "$f.$sh.out"

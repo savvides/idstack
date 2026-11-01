@@ -24,7 +24,7 @@ bin/idstack-manifest-merge --create --section <s> --payload <f>   # Canonical ma
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
 bin/idstack-slugify --from-manifest        # Same, from the manifest's project_name (what skills call)
 bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
-bin/idstack-consensus {status,configure,query,verify,sync}  # Cache-first Consensus API evidence client (cache: ~/.idstack/cache/consensus)
+bin/idstack-consensus {status,configure,query,verify}  # Cache-first Consensus API evidence client (cache: ~/.idstack/cache/consensus)
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 scripts/consensus-sync [--domain <name>]   # Maintainer tool: candidate references.md lines per research domain (never edits it)
 ```
@@ -32,7 +32,7 @@ scripts/consensus-sync [--domain <name>]   # Maintainer tool: candidate referenc
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash and node suites):
 
 ```bash
-./test/smoke-test.sh              # 434 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 436 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 52 behavioral tests across the bin/ scripts; also proves the suite
@@ -68,6 +68,8 @@ No build step for users. No dependencies beyond bash and python3 3.9 or later; `
 ### Releasing
 
 `VERSION` is the source of truth. A bump must also update `.claude-plugin/plugin.json`, a `## vX.Y.Z.W` entry in `CHANGELOG.md`, `README.md`, and `docs/index.html` (`vX.Y.Z.W` plus a 3-part `softwareVersion`). smoke-test and `check-doc-accuracy.py` fail on any mismatch. Pushing a `v*` tag runs `release.yml`, which checks the tag against these files and then creates the GitHub release.
+
+Two versions move on their own schedule. The Chrome extension has its own version in `extension/manifest.json`, and `bin/package-extension.sh` names the zip from it. The manifest schema version (`1.4`) is hard-coded in `templates/manifest-schema.md` and in `check-doc-accuracy.py`, so a schema bump also needs a `bin/idstack-migrate` step.
 
 ## Architecture
 
@@ -176,6 +178,8 @@ Every recommendation in a skill must cite its evidence tier using domain codes f
 | T3 | Systematic reviews of mixed evidence |
 | T4 | Observational, no comparison group |
 | T5 | Expert opinion, theoretical frameworks |
+
+`test/test-evidence-labels.mjs` parses this table and asserts the extension's `TIER_METADATA` labels match the Meaning column. Change the two together, and keep the `| Tn | text |` row format.
 
 Format: `[DomainCode-Number] [Tier]` (e.g., `[Alignment-14] [T1]`). Stronger evidence takes precedence when tiers conflict.
 
