@@ -1,5 +1,28 @@
 # Changelog
 
+## v3.10.0.0 (2026-11-01)
+
+This release lets you use idstack in the Claude desktop app with no terminal. A new skill, `/idstack:start`, checks your setup and starts the correct skill. Each skill gives you a link that opens its report in the app.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`. For a marketplace install, run `claude plugin update idstack@idstack`.
+
+### Added — `/idstack:start`
+
+- **`/idstack:start` is the first skill to run in a course folder.** It makes sure that python3 3.9 or a later version is available. It stops if the session is in your home folder or a shared folder. Then it asks if you want to import a course or design a new one.
+- **`bin/idstack-doctor --quick` prints one python3 code.** The codes are `OK`, `PYTHON_MISSING`, `PYTHON_OLD` and `PYTHON_STUB`. `PYTHON_STUB` tells the macOS python3 stub apart from a python3 that is too old.
+
+### Added — report links
+
+- **Each skill gives the full path of its report.** In the Claude desktop app, you click the link to open the report. The pipeline gives a link to the course dashboard.
+
+### Added — Claude desktop app guide
+
+- **README and idstack.org show how to install idstack in the Claude desktop app.**
+
+### Tests
+
+- `test/test-doctor.sh` tests each `--quick` code with fake `python3`, `uname` and `xcode-select` commands. `test/test-skill-shell-zsh.sh` runs the new `/idstack:start` blocks and a report-link block in bash and zsh. `test/mutation-test.sh` has cases 61a–61f.
+
 ## v3.9.0.0 (2026-11-01)
 
 This release makes idstack smaller. Each skill saves its results through one tool, idstack needs python3 3.9 or a later version, and the Consensus integration is removed. You update `evidence/references.md` manually. The Chrome extension is now version 1.2.1.
