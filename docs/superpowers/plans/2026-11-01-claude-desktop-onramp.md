@@ -219,10 +219,17 @@ PY
 expect_fail "doctor --quick no longer reports the macOS stub" "$WORK/r/test/test-doctor.sh"
 ```
 
-- [ ] **Step 6: Run the mutation suite** (slow: about 2.5 hours; run it in the background)
+- [ ] **Step 6: Run the new mutation cases only.** The full suite takes about 2.5 hours and runs once, in Task 6. This harness is the real header (baseline and no-op control), the `shell_mutation` helper, and every case from 61a on:
 
-Run: `./test/mutation-test.sh`
-Expected: `GUARDED: doctor --quick reports the stub before it tries python3`, `GUARDED: doctor --quick no longer reports the macOS stub`, and a footer with `NOT guarded: 0`. Any `ERROR:` line means an anchor did not match; fix the case.
+```bash
+_mut="$(mktemp -d)/mutation-new-cases.sh"
+{ sed -n '1,101p' test/mutation-test.sh
+  awk '/^shell_mutation\(\) \{/,/^}/' test/mutation-test.sh
+  sed -n '/^# 61a\./,$p' test/mutation-test.sh; } > "$_mut"
+bash "$_mut" "$(pwd -P)"
+```
+
+Expected: `GUARDED: doctor --quick reports the stub before it tries python3`, `GUARDED: doctor --quick no longer reports the macOS stub`, footer `guarded: 2   NOT guarded: 0   skipped: 0`. Any `ERROR:` line means an anchor did not match; fix the case.
 
 - [ ] **Step 7: Run smoke-test** — `./test/smoke-test.sh` → `434/434 passed, 0 failed` (smoke-test counts test-doctor as one check).
 
@@ -314,34 +321,34 @@ echo "Dashboard link: $(pwd -P)/$_EXPORT_DIR/index.html"
 
 Do not add a dashboard line to the report blocks: only the pipeline rewrites the dashboard, so a link from another skill could point at an old one.
 
-- [ ] **Step 5: Point each closing message at the link.** Make these exact replacements (each old text occurs once in its file):
+- [ ] **Step 5: Point each closing message at the link.** The confirmations are text that the model says to the user, so the link goes in as a `<...>` placeholder, as `<course-slug>` does today. Plain text such as "the path from the line" would be said word for word, and the user would get no link. Make these exact replacements (each old text occurs once in its file):
 
 | File:line | Old text | New text |
 |---|---|---|
-| `needs-analysis.tmpl:401` | ``- **Read this:** `.idstack/exports/<course-slug>/needs-analysis.html` — the branded HTML`` | ``- **Read this:** the path from the "Report link:" line — the branded HTML`` |
-| `needs-analysis.tmpl:403` | `Open it in a web browser.` | `Click the path to open it.` |
-| `learning-objectives.tmpl:412` | ``- **Read this:** `.idstack/exports/<course-slug>/learning-objectives.html` — the alignment`` | ``- **Read this:** the path from the "Report link:" line — the alignment`` |
-| `learning-objectives.tmpl:414` | `Open it in a web browser.` | `Click the path to open it.` |
-| `assessment-design.tmpl:588` | ``- **Read this:** `.idstack/exports/<course-slug>/assessment-design.html` — the assessment`` | ``- **Read this:** the path from the "Report link:" line — the assessment`` |
-| `assessment-design.tmpl:590` | `Open it in a web browser.` | `Click the path to open it.` |
-| `course-builder.tmpl:647` | ``- **Read this:** `.idstack/exports/<course-slug>/course-builder.html` — the build report`` | ``- **Read this:** the path from the "Report link:" line — the build report`` |
-| `course-builder.tmpl:649` | `Open it in a web browser.` | `Click the path to open it.` |
-| `course-import.tmpl:936` | ``- **Read this:** `.idstack/exports/<course-slug>/course-import.html` — the import report`` | ``- **Read this:** the path from the "Report link:" line — the import report`` |
-| `course-import.tmpl:938` | `Open it in a web browser.` | `Click the path to open it.` |
-| `accessibility-review.tmpl:388` | ``- **Read this:** `.idstack/exports/<course-slug>/accessibility-review.html` — the report`` | ``- **Read this:** the path from the "Report link:" line — the report`` |
-| `accessibility-review.tmpl:390` | `Open it in a web browser.` | `Click the path to open it.` |
-| `course-quality-review.tmpl:802` | ``report to `.idstack/exports/<course-slug>/course-quality-review.html`. The`` | ``report. Its path is on the "Report link:" line. The`` |
-| `course-quality-review.tmpl:804` | `Open it in a web browser.` | `Click the path to open it.` |
-| `pipeline.tmpl:193` | ``The course dashboard is at `.idstack/exports/<course-slug>/index.html`. Open it in a web browser to see the cross-cutting view.`` | ``The course dashboard is at the path from the "Dashboard link:" line. Click the path to see the cross-cutting view.`` |
-| `course-export.tmpl` (`Run the merge, then confirm:`, near 1067) | `Run the merge, then confirm:` | `Run the merge, then confirm. Give the path from the "Report link:" line first:` |
+| `needs-analysis.tmpl:401` | ``- **Read this:** `.idstack/exports/<course-slug>/needs-analysis.html` — the branded HTML`` | ``- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the branded HTML`` |
+| `needs-analysis.tmpl:403` | `Open it in a web browser.` | `Click the link to open it.` |
+| `learning-objectives.tmpl:412` | ``- **Read this:** `.idstack/exports/<course-slug>/learning-objectives.html` — the alignment`` | ``- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the alignment`` |
+| `learning-objectives.tmpl:414` | `Open it in a web browser.` | `Click the link to open it.` |
+| `assessment-design.tmpl:588` | ``- **Read this:** `.idstack/exports/<course-slug>/assessment-design.html` — the assessment`` | ``- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the assessment`` |
+| `assessment-design.tmpl:590` | `Open it in a web browser.` | `Click the link to open it.` |
+| `course-builder.tmpl:647` | ``- **Read this:** `.idstack/exports/<course-slug>/course-builder.html` — the build report`` | ``- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the build report`` |
+| `course-builder.tmpl:649` | `Open it in a web browser.` | `Click the link to open it.` |
+| `course-import.tmpl:936` | ``- **Read this:** `.idstack/exports/<course-slug>/course-import.html` — the import report`` | ``- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the import report`` |
+| `course-import.tmpl:938` | `Open it in a web browser.` | `Click the link to open it.` |
+| `accessibility-review.tmpl:388` | ``- **Read this:** `.idstack/exports/<course-slug>/accessibility-review.html` — the report`` | ``- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the report`` |
+| `accessibility-review.tmpl:390` | `Open it in a web browser.` | `Click the link to open it.` |
+| `course-quality-review.tmpl:802` | ``report to `.idstack/exports/<course-slug>/course-quality-review.html`. The`` | ``report: <the Report link, written as the Report Links section of the preamble tells you>. The`` |
+| `course-quality-review.tmpl:804` | `Open it in a web browser.` | `Click the link to open it.` |
+| `pipeline.tmpl:193` | ``The course dashboard is at `.idstack/exports/<course-slug>/index.html`. Open it in a web browser to see the cross-cutting view.`` | ``The course dashboard is at <the Dashboard link, written as the Report Links section of the preamble tells you>. Click it to see the cross-cutting view.`` |
+| `course-export.tmpl` (`Run the merge, then confirm:`, near 1067) | `Run the merge, then confirm:` | `Run the merge, then confirm. Start the message with <the Report link, written as the Report Links section of the preamble tells you>:` |
 
 In `skills/red-team/SKILL.md.tmpl` (the parent talks to the user; a sub-agent writes the report):
 
 | Line | Old text | New text |
 |---|---|---|
 | 341 | ``- Path: the value of `$_REPORT_PATH` (e.g., `.idstack/exports/<course-slug>/red-team.html`)`` | ``- Path (for the manifest): the value of `$_REPORT_PATH`, a relative path (e.g., `.idstack/exports/<course-slug>/red-team.html`)`` and, on a new line after it, `- Link (for the user): the path from the "Report link:" line` |
-| 351 | `top critical finding, and the report path.` | `top critical finding, and the Link that the orchestrator returned.` |
-| 352 | `3. Mention: "The full HTML report is at the path above. Open it in a web browser to see all of the findings."` | `3. Mention: "Click the path to see all of the findings."` |
+| 351 | `top critical finding, and the report path.` | `top critical finding, and <the Link that the orchestrator returned, written as the Report Links section of the preamble tells you>.` |
+| 352 | `3. Mention: "The full HTML report is at the path above. Open it in a web browser to see all of the findings."` | `3. Mention: "Click the link to see all of the findings."` |
 | 405 | `<set to the orchestrator-returned path — e.g.` | `<set to the Path that the orchestrator returned, not the Link — e.g.` |
 | 440 | ``The report is at `.idstack/exports/<course-slug>/red-team.html`."`` | `The report is at <the Link that the orchestrator returned>."` |
 
@@ -407,10 +414,20 @@ shell_mutation "a report block stops printing its absolute report link" \
 # must fail. That text names a relative path, and the model follows it over
 # the preamble's Report Links rule.
 shell_mutation "a closing message tells the user to open the report in a web browser" \
-  skills/learning-objectives/SKILL.md.tmpl 'Click the path to open it.' 'Open it in a web browser.'
+  skills/learning-objectives/SKILL.md.tmpl 'Click the link to open it.' 'Open it in a web browser.'
 ```
 
-- [ ] **Step 10: Run the mutation suite** (background) — `./test/mutation-test.sh` → both new cases `GUARDED`, `NOT guarded: 0`, no `ERROR:`.
+- [ ] **Step 10: Run the new mutation cases only** — the same harness as Task 1 Step 6:
+
+```bash
+_mut="$(mktemp -d)/mutation-new-cases.sh"
+{ sed -n '1,101p' test/mutation-test.sh
+  awk '/^shell_mutation\(\) \{/,/^}/' test/mutation-test.sh
+  sed -n '/^# 61a\./,$p' test/mutation-test.sh; } > "$_mut"
+bash "$_mut" "$(pwd -P)"
+```
+
+Expected: footer `guarded: 4   NOT guarded: 0   skipped: 0` (61a–61d), no `ERROR:`.
 
 - [ ] **Step 11: Commit**
 
@@ -744,7 +761,17 @@ check "start releases its limits when it hands off" "grep -qF 'the limits of thi
 
 Run `./test/smoke-test.sh` again → `0 failed`.
 
-- [ ] **Step 10: Run the mutation suite** (background) — `./test/mutation-test.sh` → `GUARDED` for 61e and 61f, `NOT guarded: 0`, no `ERROR:`.
+- [ ] **Step 10: Run the new mutation cases only** — the same harness as Task 1 Step 6:
+
+```bash
+_mut="$(mktemp -d)/mutation-new-cases.sh"
+{ sed -n '1,101p' test/mutation-test.sh
+  awk '/^shell_mutation\(\) \{/,/^}/' test/mutation-test.sh
+  sed -n '/^# 61a\./,$p' test/mutation-test.sh; } > "$_mut"
+bash "$_mut" "$(pwd -P)"
+```
+
+Expected: footer `guarded: 6   NOT guarded: 0   skipped: 0` (61a–61f), no `ERROR:`.
 
 - [ ] **Step 11: Commit**
 
@@ -1016,7 +1043,7 @@ python3 test/check-doc-accuracy.py .
 python3 test/check-citation-tiers.py .
 python3 test/check-evidence-cards.py .
 python3 bin/idstack-ste-check --format markdown CHANGELOG.md ROADMAP.md
-./test/mutation-test.sh
+./test/mutation-test.sh   # about 2.5 hours: start it in the background first
 ```
 Expected: all pass; mutation suite `NOT guarded: 0`, no `ERROR:`; no checker problem in the new CHANGELOG and ROADMAP text. Update the hand-kept counts in `CLAUDE.md` (34-45) from these runs. Expected values: smoke-test `473` (was 434), `test-doctor.sh` `18` (was 12), `test-skill-shell-zsh.sh` `58` (was 44). Write the numbers the runs print, not these.
 
@@ -1080,4 +1107,4 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - No automated test proves that the desktop app opens a clicked link, or that the model follows the Report Links rule. Task 0 and Task 7 check it by hand.
 - The handoff from `/idstack:start` to a child skill is checked by text (smoke-test and mutation 61f), not by running a model.
 - If Task 0 shows that `/plugin` is unknown, install text B needs `claude` on the PATH of the desktop app's shell, as `./setup` does today.
-- The full mutation suite takes about 2.5 hours.
+- The full mutation suite takes about 2.5 hours. Tasks 1–3 run only the new cases; Task 6 runs the full suite once.
