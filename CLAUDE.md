@@ -12,7 +12,7 @@ An open source set of skills for evidence-based instructional design. Runs in Cl
 ./setup              # Install idstack — registers the plugin with Claude Code
 ./setup --local      # Install at project scope (./.claude/) instead of user scope
 bin/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.md from the .tmpl sources, and the extension's
-                                           # ste-rules.js and neuromyths.js (from the preamble and evidence/neuromyths.json)
+                                           # ste-rules.js (from the preamble)
 bin/idstack-gen-skills --dry-run           # Check if generated files are up to date
 bin/idstack-doctor                         # Diagnose plugin install (python3, presence, manifest version)
 bin/idstack-status                         # Course health dashboard (run in a project dir)
@@ -30,7 +30,7 @@ bin/package-extension.sh                   # Package Chrome extension into build
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash and node suites):
 
 ```bash
-./test/smoke-test.sh              # 433 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 434 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 52 behavioral tests across the bin/ scripts; also proves the suite
@@ -186,6 +186,14 @@ Format: `[DomainCode-Number] [Tier]` (e.g., `[Alignment-14] [T1]`). Stronger evi
 - Never batch multiple questions
 - Skills must work without a manifest (fallback to asking questions directly)
 - Write next-step text in the namespaced form, `/idstack:foo`. A bare `/foo` does not resolve, and smoke-test fails on one
+
+## Tracking work
+
+GitHub Issues is the only tracker. Do not add TODO lists or backlog files to the repo.
+
+- When you defer a finding (from a review, a test run or a PR), open an issue with `gh issue create` and say so in your summary.
+- Put `Closes #N` in the body of the PR that fixes an issue. GitHub closes an issue only on a closing keyword in a merged PR or commit; `(#N)` in a commit subject or CHANGELOG line does not close it.
+- Labels: `bug`, `enhancement`, `documentation`, `tests`, `extension`, `backlog` (long-lived feature work), `decision-needed` (the owner must choose before anyone fixes it).
 
 ## Skill routing
 

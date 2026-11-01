@@ -181,7 +181,7 @@ Then test it manually in Claude Code: `/idstack:your-skill`.
 
 ## Looking for something to work on?
 
-Two places, on purpose. [TODOS.md](TODOS.md) is the long-lived feature backlog — deferred work with the reasoning and dependencies attached. [Open issues](https://github.com/savvides/idstack/issues) hold work that came out of a specific code review or PR triage, so it stays next to the evidence that produced it; TODOS.md links the current ones. [ROADMAP.md](ROADMAP.md) is the user-facing view.
+All work is tracked in [GitHub Issues](https://github.com/savvides/idstack/issues): bugs, the feature backlog (label `backlog`), and work deferred from a review or PR. [ROADMAP.md](ROADMAP.md) is the user-facing view. Put `Closes #N` in your PR description so the issue closes when the PR merges; a bare `(#N)` in a commit subject does not close anything.
 
 Read [DESIGN.md](DESIGN.md) before changing anything visual; it is the source of truth for the report stylesheet and the landing page.
 

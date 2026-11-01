@@ -137,7 +137,7 @@ def check_public_surfaces(root, problems):
 
 
 def check_developer_surfaces(root, problems):
-    dev_files = ["CLAUDE.md", "DESIGN.md", "CONTRIBUTING.md", "TODOS.md", "ROADMAP.md"]
+    dev_files = ["CLAUDE.md", "DESIGN.md", "CONTRIBUTING.md", "ROADMAP.md"]
     for f in dev_files:
         p = os.path.join(root, f)
         if not os.path.isfile(p):

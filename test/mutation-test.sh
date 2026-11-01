@@ -55,7 +55,7 @@ PY_LT_312=$(python3 -c 'import sys; print(1 if sys.version_info < (3,12) else 0)
 # Copy only what the suites need; skip .git and any nested worktrees.
 mkdir -p "$WORK/base"
 for item in bin scripts skills templates test evidence docs extension .claude-plugin \
-            VERSION CHANGELOG.md README.md PRIVACY.md TODOS.md CONTRIBUTING.md \
+            VERSION CHANGELOG.md README.md PRIVACY.md CONTRIBUTING.md \
             DESIGN.md ROADMAP.md CLAUDE.md setup; do
   [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/base/"
 done
@@ -2133,6 +2133,20 @@ s = s.replace(old, '', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "an update keeps the old audit history" "$WORK/r/test/test-extension.sh"
+
+# 60. learnings delete stops copying the file mode onto the tempfile and widens
+# it instead, so a mode-600 log comes back 644 -> integration-test must fail.
+# PR #35 shipped exactly this.
+fresh
+python3 - "$WORK/r/bin/idstack-learnings" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '        shutil.copymode(LOCAL, tmp_path)\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '        os.chmod(tmp_path, 0o644)\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "learnings delete drops the file mode" "$WORK/r/test/integration-test.sh"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

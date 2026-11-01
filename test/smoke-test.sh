@@ -541,7 +541,7 @@ if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
     check "v1.3-drifted→v1.4: _import_quality_flags moved into import_metadata" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert '_import_quality_flags' not in d; details=d['import_metadata']['quality_flag_details']; assert len(details)==2 and details[0]['key']=='orphan_module_8'\""
   fi
 
-  # Test malformed manifest cat-fallback (bin/idstack-migrate:84)
+  # Test malformed manifest cat-fallback (bin/idstack-migrate, when the version read fails)
   MIG="$MIG_ROOT/malformed"; mkdir -p "$MIG"
   echo "INVALID { JSON" > "$MIG/project.json"
   check "migrate: malformed JSON falls back to raw cat and exits 0" \
@@ -561,6 +561,7 @@ check "no second-CLI distribution bundle" "[ ! -e '$IDSTACK_DIR/dist' ]"
 check "no repo-root AGENTS.md" "[ ! -e '$IDSTACK_DIR/AGENTS.md' ]"
 check "no templates/agent-context.md" "[ ! -e '$IDSTACK_DIR/templates/agent-context.md' ]"
 check "generator takes no --target flag" "! grep -q -- '--target' '$IDSTACK_DIR/bin/idstack-gen-skills'"
+check "generator exits 2 on an unknown argument" "'$IDSTACK_DIR/bin/idstack-gen-skills' --bogus 2>/dev/null; [ \$? -eq 2 ]"
 check "resolve chain drops the ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
 check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/preamble.md'"
 

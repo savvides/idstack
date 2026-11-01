@@ -1,0 +1,21 @@
+name: Bug
+description: Something in idstack does not work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Skill, script or extension page
+      placeholder: /idstack:course-import, bin/idstack-status, Chrome extension side panel
+  - type: input
+    id: version
+    attributes:
+      label: idstack version
+      description: The contents of VERSION, or the plugin version in `claude plugin list`.
