@@ -37,8 +37,9 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
-- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
-  child skill in-process via the `Skill` tool.
+- **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
+  child skill in-process through the `Skill` tool. `/idstack:start` also uses it to start
+  the first skill for the user.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as
   `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
   command. This applies in reports, manifests, and AskUserQuestion options as much as in

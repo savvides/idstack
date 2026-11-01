@@ -170,6 +170,39 @@ PY
   check "[$sh] a report block prints an absolute report link" \
     "printf '%s\n' \"\$out\" | grep -qxF \"\$want\""
 
+  # start: the setup check prints one machine-readable code.
+  mkdir -p "$P/start"
+  b=$(block start 'idstack-doctor" --quick')
+  out=$(run "$P/start" "$b")
+  check "[$sh] start setup check prints OK when python3 3.9 or later is present" \
+    "printf '%s\n' \"\$out\" | grep -qx OK"
+
+  # start: the folder check refuses the home folder, /, and the shared folders
+  # a folder picker offers first; it accepts a course folder.
+  mkdir -p "$HOME/Documents"
+  b=$(block start 'NOT_A_COURSE_FOLDER')
+  out=$(run "$HOME" "$b")
+  check "[$sh] start refuses the home folder" \
+    "printf '%s' \"\$out\" | grep -q '^NOT_A_COURSE_FOLDER: '"
+  out=$(run / "$b")
+  check "[$sh] start refuses /" \
+    "printf '%s' \"\$out\" | grep -q '^NOT_A_COURSE_FOLDER: '"
+  out=$(run "$HOME/Documents" "$b")
+  check "[$sh] start refuses Documents" \
+    "printf '%s' \"\$out\" | grep -q '^NOT_A_COURSE_FOLDER: '"
+  out=$(run "$P/start" "$b")
+  check "[$sh] start accepts a course folder" \
+    "printf '%s' \"\$out\" | grep -q '^COURSE_FOLDER: '"
+
+  # start: with no dashboard, the dashboard step lists each report instead.
+  mkdir -p "$P/startdash/.idstack/exports/untitled-course"
+  touch "$P/startdash/.idstack/exports/untitled-course/course-import.html"
+  b=$(block start 'NO_DASHBOARD')
+  out=$(run "$P/startdash" "$b")
+  want="Report link: $(cd "$P/startdash" && pwd -P)/.idstack/exports/untitled-course/course-import.html"
+  check "[$sh] start lists the report links when there is no dashboard" \
+    "printf '%s\n' \"\$out\" | grep -qx NO_DASHBOARD && printf '%s\n' \"\$out\" | grep -qxF \"\$want\""
+
   # Every preamble block exits 0 and prints the same output in both shells.
   mkdir -p "$P/pre/.idstack"
   printf '%s\n' '{"ts":"2026-08-04T00:00:00Z","skill":"needs-analysis","event":"completed"}' > "$P/pre/.idstack/timeline.jsonl"

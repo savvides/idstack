@@ -34,7 +34,7 @@ check "plugin.json version matches VERSION ($VER)" "grep -qF '\"version\": \"$VE
 check "CHANGELOG.md has an entry for v$VER" "grep -qF '## v$VER' '$IDSTACK_DIR/CHANGELOG.md'"
 
 # Check all skill SKILL.md files are reachable under skills/
-SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
+SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn start"
 for skill in $SKILLS; do
   check "skills/$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md' ]"
 done
@@ -283,7 +283,7 @@ done
 # preceded by a path character, so `.idstack/exports/<slug>/red-team.html`
 # stays legal, and it can't match `/idstack:<skill>` because the skill name
 # there does not follow the slash.
-BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn)\b'
+BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn|start)\b'
 for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl (frontmatter and body) free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill description says when to use it" \
@@ -294,6 +294,11 @@ check "preamble free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK
 check "no '/idstack <skill>' space typos in templates" "! grep -rE '/idstack [a-z]' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
 check "pipeline status table uses /idstack: prefixes" "grep -qF '[done] /idstack:needs-analysis' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 check "pipeline invokes children with the idstack: namespace" "grep -qF 'skill: \"idstack:needs-analysis\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+check "start hands off with the idstack: namespace" "grep -qF 'skill: \"idstack:course-import\"' '$IDSTACK_DIR/skills/start/SKILL.md.tmpl'"
+# start runs before any course work. A timeline event from it would become
+# LAST_SKILL and spoil every welcome-back and next-step line.
+check "start does not log to the timeline" "[ -f '$IDSTACK_DIR/skills/start/SKILL.md.tmpl' ] && ! grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/start/SKILL.md.tmpl'"
+check "start releases its limits when it hands off" "grep -qF 'the limits of this' '$IDSTACK_DIR/skills/start/SKILL.md.tmpl'"
 
 # Canonical $_IDSTACK resolution: templates use the {{IDSTACK_RESOLVE}}
 # placeholder, never a hand-rolled derivation (two skills once drifted to a
@@ -397,7 +402,7 @@ fi
 # the bash call itself, not the prose around it, so a step that loses its
 # command fails here even when the text that names the check stays.
 for skill in $SKILLS; do
-  case "$skill" in course-builder|course-export|red-team) want=2 ;; *) want=1 ;; esac
+  case "$skill" in course-builder|course-export|red-team) want=2 ;; start) want=0 ;; *) want=1 ;; esac
   # grep -c exits 1 on zero matches; without "|| true", set -e ends the run with no FAIL line.
   got=$(grep -cF '"$_IDSTACK/bin/idstack-ste-check"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
   check "$skill SKILL.md.tmpl runs the ste checker at all $want check steps" "[ '$got' -eq $want ]"

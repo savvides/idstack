@@ -26,7 +26,7 @@ note_problem() { PROBLEMS=$((PROBLEMS + 1)); }
 
 SKILLS="needs-analysis learning-objectives course-quality-review course-import \
 assessment-design course-builder course-export accessibility-review red-team \
-pipeline learn"
+pipeline learn start"
 
 QUICK=0
 for arg in "$@"; do
@@ -114,7 +114,7 @@ for skill in $SKILLS; do
   fi
 done
 if [ "$missing_skills" = "0" ]; then
-  echo "  found all 11 SKILL.md files"
+  echo "  found all 12 SKILL.md files"
 else
   echo "  PROBLEM: $missing_skills SKILL.md file(s) missing in skills/"
   note_problem

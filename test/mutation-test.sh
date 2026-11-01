@@ -2187,6 +2187,18 @@ shell_mutation "a report block stops printing its absolute report link" \
 shell_mutation "a closing message tells the user to open the report in a web browser" \
   skills/learning-objectives/SKILL.md.tmpl 'Click the link to open it.' 'Open it in a web browser.'
 
+# 61e. /idstack:start stops refusing the home folder -> smoke-test must fail
+# (through test-skill-shell-zsh). A desktop session starts in the home folder,
+# and the next skill would write .idstack/ there.
+shell_mutation "start no longer refuses the home folder" \
+  skills/start/SKILL.md.tmpl '/|"$_HOME_DIR"|"$_HOME_DIR/Documents"' '/|"$_HOME_DIR/Documents"'
+
+# 61f. /idstack:start's no-write rule outlives the handoff again -> smoke-test
+# must fail. The child skill would then not save its manifest or report.
+shell_mutation "start does not release its limits at the handoff" \
+  skills/start/SKILL.md.tmpl 'When Step 4 starts a different skill with the Skill tool, the limits of this
+skill stop.' ''
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

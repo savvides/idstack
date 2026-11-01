@@ -50,7 +50,7 @@ export PATH="$MOCK_BIN"
 
 SKILLS="needs-analysis learning-objectives course-quality-review course-import \
 assessment-design course-builder course-export accessibility-review red-team \
-pipeline learn"
+pipeline learn start"
 
 setup_happy_path() {
   rm -rf "$MOCK_IDSTACK_DIR/.claude-plugin" "$MOCK_IDSTACK_DIR/skills" "$HOME/.claude"
