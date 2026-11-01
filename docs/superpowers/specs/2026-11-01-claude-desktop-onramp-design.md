@@ -38,10 +38,10 @@ user-only task):
 
 | # | Unit | Responsibility | Location |
 |---|---|---|---|
-| 1 | Distribution | Get idstack into the desktop app with no terminal. Plan A: paste `/plugin marketplace add savvides/idstack` into the prompt box, then **+ → Add plugins**. Plan B, if Plan A fails: paste the existing "Let Claude Code do it for you" request into the chat, and Claude runs the clone and `./setup`. A listing in the official Anthropic plugin directory is tracked as an issue, outside this change. | README, `docs/index.html` |
+| 1 | Distribution | Get idstack into the desktop app with no terminal. Plan A: paste `/plugin marketplace add savvides/idstack` into the prompt box, then **+ → Add plugins**. Plan B, if Plan A fails: paste an install request into the chat that clones into `~/idstack` (not the course folder) and runs `./setup`. A listing in the official Anthropic plugin directory is tracked as an issue, outside this change. | README, `docs/index.html` |
 | 2 | `/idstack:start` | New 12th skill. Front door: setup check, folder check, manifest detection, one `AskUserQuestion`, handoff with the Skill tool. Writes no manifest section, no files and no timeline event. | `skills/start/SKILL.md.tmpl` |
 | 3 | Setup check | New `bin/idstack-doctor --quick` mode. Prints one machine-readable code: `OK`, `PYTHON_MISSING`, `PYTHON_OLD` or `PYTHON_STUB`. Exit 0 for `OK`, 1 for the others, 2 for an unknown argument. | `bin/idstack-doctor` |
-| 4 | Report links | Each report-preparation bash block also prints `Report link: <absolute path>`, and `Dashboard link: <absolute path>` when the dashboard exists. A new preamble section tells the skill to put that path in its final message. | `templates/preamble.md`, the 9 report-writing templates, `skills/pipeline/SKILL.md.tmpl` |
+| 4 | Report links | Each report-preparation bash block also prints `Report link: <absolute path>`; the pipeline and `/idstack:start` print `Dashboard link: <absolute path>`. A new preamble section tells the skill to put that path in its final message, and each skill's closing message points at that line instead of a relative path. | `templates/preamble.md`, the 9 report-writing templates, `skills/pipeline/SKILL.md.tmpl` |
 | 5 | Desktop guide | "Use idstack in the Claude desktop app": install, choose a course folder, run `/idstack:start`, open a report. README gets screenshots; the landing page gets text and a copyable command. | `README.md`, `docs/index.html` |
 
 Not changed: the `.idstack/` layout, the manifest schema (`1.4`), the python3
@@ -69,12 +69,13 @@ Context Recovery blocks run before its own steps.
 1. Setup check: `"$_IDSTACK/bin/idstack-doctor" --quick`.
    - `PYTHON_STUB`: run `xcode-select --install` so that the macOS window
      opens, tell the user to click **Install**, wait, then type
-     `/idstack:start` again. Stop.
+     `/idstack:start` again. If the user cannot install the Apple tool, the
+     python.org installer is the alternative. Stop.
    - `PYTHON_MISSING` or `PYTHON_OLD`: tell the user to install python3 3.9 or
      later from python.org, then type `/idstack:start` again. Stop.
    - `OK`: continue.
-2. Folder check. If the physical working folder (`pwd -P`) is `/` or the
-   physical home folder, tell the user to make a folder for the course and
+2. Folder check. If the physical working folder (`pwd -P`) is `/`, the
+   physical home folder, or its `Documents`, `Desktop` or `Downloads`, tell the user to make a folder for the course and
    choose it with the folder button. Stop.
 3. Manifest, from the preamble's Project Manifest block (`MANIFEST_EXISTS` or
    `NO_MANIFEST`). `bin/idstack-status --context` does not read the manifest, so
@@ -84,13 +85,15 @@ Context Recovery blocks run before its own steps.
      course".
    - `MANIFEST_EXISTS`: give the welcome-back line from Context Recovery, then
      ask "Continue the pipeline", "Open the course dashboard" or "Run one skill".
-   - Malformed manifest: the preamble rule applies (report and stop, never
-     overwrite).
+   - Malformed manifest: give the parse error and ask whether idstack may
+     repair the JSON syntax (keeping all data), as the preamble rule says. That
+     is the only file this skill may change. If the user declines, stop.
 4. Hand off with the Skill tool (`skill: "idstack:<name>"`) to
    `/idstack:course-import`, `/idstack:needs-analysis`, `/idstack:pipeline`, or
    the skill that the user chose. "Open the course dashboard" prints a
-   `Dashboard link:` line when the file exists, and otherwise says that
-   `/idstack:pipeline` makes it. If the Skill tool fails, tell the user the
+   `Dashboard link:` line when the file exists. Otherwise it says that
+   `/idstack:pipeline` makes the dashboard, gives a `Report link:` for each
+   report in the course folder, and stops. If the Skill tool fails, tell the user the
    command to type, as `/idstack:pipeline` does.
 
 Rules:
@@ -100,6 +103,8 @@ Rules:
 - All user-facing text follows ASD-STE100 (`templates/preamble.md`).
 - `/idstack:start` writes no files, so it has zero `idstack-ste-check` steps.
   The smoke-test check-count map gets an explicit `start) want=0 ;;` entry.
+- When the Skill tool starts another skill, `/idstack:start`'s limits stop; that
+  skill writes its files and logs as usual.
 - `/idstack:start` does not log to the timeline. A `completed` event would
   become `LAST_SKILL` and corrupt the welcome-back and next-step lines.
 
@@ -110,8 +115,10 @@ directly after it prints the relative path:
 
 ```bash
 echo "Report link: $(pwd -P)/$_REPORT_PATH"
-if [ -f "$_EXPORT_DIR/index.html" ]; then echo "Dashboard link: $(pwd -P)/$_EXPORT_DIR/index.html"; fi
 ```
+
+Report skills do not print a dashboard link: only the pipeline rewrites the
+dashboard, so a link from another skill could point at an old one.
 
 The pipeline's dashboard block prints
 `echo "Dashboard link: $(pwd -P)/$_EXPORT_DIR/index.html"`.
@@ -119,8 +126,11 @@ The pipeline's dashboard block prints
 The relative `report_path` in the manifest does not change. The link is printed
 in the block that already knows the slug, so needs-analysis and course-import
 (which take the slug from the typed course name) print the right folder on a
-first run. The red-team orchestrator returns the link to the parent. Task 0
-picks the form the final message uses (bare path or Markdown link).
+first run. The red-team orchestrator returns the link to the parent, and the
+manifest keeps the relative path. Each skill's closing message names the
+`Report link:` line instead of a relative path. The final message uses a
+Markdown link with the path in angle brackets, which works for folder names
+with spaces; Task 0 can switch it to a bare path.
 
 ## Error handling summary
 
