@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## v3.9.0.0 (2026-11-01)
+
+This release makes idstack smaller. Each skill saves its results through one tool, idstack needs python3 3.9 or a later version, and the Consensus integration is removed. You update `evidence/references.md` manually. The Chrome extension is now version 1.2.1.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`. For a marketplace install, run `claude plugin update idstack@idstack`.
 
 ### Changed — python3 3.9 or later is a requirement
 
