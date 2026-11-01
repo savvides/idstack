@@ -705,16 +705,12 @@ section verbatim, bumps the top-level `updated` timestamp, and writes atomically
 ```bash
 {{IDSTACK_RESOLVE}}
 # payload file holds ONLY the quality_review section object (shape below)
-"$_IDSTACK/bin/idstack-manifest-merge" --section quality_review --payload .idstack/.quality_review-payload.json && rm -f .idstack/.quality_review-payload.json
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section quality_review --payload .idstack/.quality_review-payload.json && rm -f .idstack/.quality_review-payload.json
 ```
 
 Write the payload object to `.idstack/.quality_review-payload.json` with the
-Write tool first, then run the merge. **If no manifest exists yet**, the merge
-tool exits with an error (exit code 4, `manifest not found`) — in that case fall
-back to creating `.idstack/project.json` with the Write tool, initializing ALL
-sections from the schema (including `context`, `needs_analysis`, and
-`learning_objectives`) with empty/default values and placing your
-`quality_review` data inside it.
+Write tool first, then run the merge. `--create` makes a canonical manifest first if `.idstack/project.json` does not
+exist yet (the standalone case). It never replaces a manifest that exists.
 
 **CRITICAL — Manifest Integrity Rules:**
 1. The payload must be valid JSON: matching braces, proper commas, quoted
@@ -802,8 +798,7 @@ After writing the manifest, generate a shareable HTML report. The report follows
 ```bash
 {{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-quality-review.html"
 mkdir -p "$_EXPORT_DIR/assets"
@@ -855,9 +850,8 @@ other idstack skills where applicable. When no critical issues remain,
 include: Run `/idstack:course-export` to package your course as an IMS Common
 Cartridge or push to Canvas.]"
 
----
-
-{{MANIFEST_SCHEMA}}
+For the full manifest schema (other sections you may need to read), Read
+`${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
 ## Feedback
 
@@ -884,5 +878,5 @@ import format issue, course structure pattern), also log it as a learning:
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"course-quality-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings" log '{"skill":"course-quality-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

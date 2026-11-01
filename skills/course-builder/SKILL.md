@@ -50,9 +50,8 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 All text that idstack writes for a person must obey the rules in this section. This
 includes chat text, AskUserQuestion questions and options, HTML reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
-reads the word list between the two `ste-core` markers. `extension/shared/ste-rules.js`
-has a copy of the text between the markers. If you change this text, change the copy at
-the same time.
+reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
+`extension/shared/ste-rules.js` from the text between the markers.
 
 The rules also apply to the text that idstack writes in `.idstack/project.json` and in
 learnings, for example finding text and recommendations. Other skills use this text in
@@ -187,18 +186,7 @@ use them.
 ## Preamble: Update Check
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache
-# (highest version). Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
-# Canonical copy: templates/snippets/idstack-resolve.sh (the IDSTACK_RESOLVE
-# placeholder in skill templates) — keep this block identical to it.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
@@ -219,11 +207,7 @@ If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idsta
 Before starting, check for an existing project manifest.
 
 ```bash
-# (fresh shell — re-derive the install dir; see Preamble: Update Check)
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
@@ -302,7 +286,6 @@ Check whether a Consensus API key is configured for live literature grounding.
 
 ```bash
 # Consensus key detection
-# (fresh shell — re-derive the install dir; see Preamble: Update Check)
 _IDSTACK=""
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
@@ -310,8 +293,8 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _dir in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_dir" ] && [ -d "$_dir" ]; then _IDSTACK="${_dir%/}"; break; fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q '"api_key_configured": true' && echo "CONFIGURED" || echo "UNCONFIGURED")
 [ -n "$_CONSENSUS_KEY" ] && echo "CONSENSUS:$_CONSENSUS_KEY"
@@ -329,11 +312,7 @@ Check for session history and learnings from prior runs.
 
 ```bash
 # Context recovery: timeline + learnings
-# (fresh shell — re-derive the install dir; see Preamble: Update Check)
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
@@ -343,79 +322,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-_HAS_TIMELINE=0
-_HAS_LEARNINGS=0
-if [ -f ".idstack/timeline.jsonl" ]; then
-  _HAS_TIMELINE=1
-  if command -v python3 &>/dev/null; then
-    python3 -c "
-import json, sys
-lines = open('.idstack/timeline.jsonl').readlines()[-200:]
-events = []
-for line in lines:
-    try: events.append(json.loads(line))
-    except: pass
-if not events:
-    sys.exit(0)
-
-# Quality score trend
-scores = [e for e in events if e.get('skill') == 'course-quality-review' and 'score' in e]
-if scores:
-    trend = ' -> '.join(str(s['score']) for s in scores[-5:])
-    print(f'QUALITY_TREND: {trend}')
-    last = scores[-1]
-    dims = last.get('dimensions', {})
-    if dims:
-        tp = dims.get('teaching_presence', '?')
-        sp = dims.get('social_presence', '?')
-        cp = dims.get('cognitive_presence', '?')
-        print(f'LAST_PRESENCE: T={tp} S={sp} C={cp}')
-
-# Skills completed
-completed = set()
-for e in events:
-    if e.get('event') == 'completed':
-        completed.add(e.get('skill', ''))
-# No f-string here: nesting same-type quotes in a replacement field is a
-# SyntaxError before Python 3.12, and macOS system python3 is 3.9.
-print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))
-
-# Last skill run
-last_completed = [e for e in events if e.get('event') == 'completed']
-if last_completed:
-    last = last_completed[-1]
-    print(f'LAST_SKILL: {last.get(\"skill\",\"?\")} at {last.get(\"ts\",\"?\")}')
-
-# Pipeline progression. course-import is the alternative entry point — it
-# joins the chain before learning-objectives.
-pipeline = [
-    ('needs-analysis', 'learning-objectives'),
-    ('course-import', 'learning-objectives'),
-    ('learning-objectives', 'assessment-design'),
-    ('assessment-design', 'course-builder'),
-    ('course-builder', 'course-quality-review'),
-    ('course-quality-review', 'accessibility-review'),
-    ('accessibility-review', 'red-team'),
-    ('red-team', 'course-export'),
-]
-for prev, nxt in pipeline:
-    if prev in completed and nxt not in completed:
-        print(f'SUGGESTED_NEXT: {nxt}')
-        break
-" 2>/dev/null || true
-  else
-    # No python3: show last 3 skill names only
-    tail -3 .idstack/timeline.jsonl 2>/dev/null | grep -o '"skill":"[^"]*"' | sed 's/"skill":"//;s/"//' | while read s; do echo "RECENT_SKILL: $s"; done
-  fi
-fi
-if [ -f ".idstack/learnings.jsonl" ]; then
-  _HAS_LEARNINGS=1
-  _LEARN_COUNT=$(wc -l < .idstack/learnings.jsonl 2>/dev/null | tr -d ' ')
-  echo "LEARNINGS: $_LEARN_COUNT"
-  if [ "$_LEARN_COUNT" -gt 0 ] 2>/dev/null; then
-    "$_IDSTACK/bin/idstack-learnings-search" --limit 3 2>/dev/null || true
-  fi
-fi
+"$_IDSTACK/bin/idstack-status" --context 2>/dev/null || true
 ```
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
@@ -963,23 +870,13 @@ continue with remaining files.
 **Writing standard check (course content).** Run this command on the course content folder. Do the check only on the files that you wrote in this run. If the folder has other files, replace `".idstack/course-content"` with the paths of the files that you wrote. Put each path in quotation marks.
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
@@ -993,29 +890,18 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 Before updating the manifest, generate an HTML build report so the designer can see what was generated and why each design choice was made (or, in gap-fill mode, what was skipped and why). The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 # Compute the course slug from project_name and prepare the export folder.
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-builder.html"
 mkdir -p "$_EXPORT_DIR/assets"
@@ -1040,23 +926,13 @@ Before you write the report, use the Read tool on the files from the "Report tem
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
@@ -1070,27 +946,17 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 Save the `course_content` section to `.idstack/project.json` via `bin/idstack-manifest-merge`. The merge tool replaces only the named section, preserves every other section verbatim, validates JSON, and atomically updates the top-level `updated` timestamp.
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-manifest-merge" --section course_content --payload - <<'PAYLOAD'
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section course_content --payload - <<'PAYLOAD'
 {
   "report_path": "<set to $_REPORT_PATH from the bash block above — e.g. .idstack/exports/<course-slug>/course-builder.html>",
   "mode": "build-new",
@@ -1124,7 +990,7 @@ done
 PAYLOAD
 ```
 
-The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. If `.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json` first to create a fresh canonical manifest.
+The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. `--create` makes a canonical manifest first if `.idstack/project.json` does not exist yet (the standalone case). It never replaces a manifest that exists.
 
 **Mode field.** Set `mode` to `"build-new"` for a from-scratch generation or `"gap-fill"` when this run was triggered by upstream skills flagging missing artifacts. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
 
@@ -1196,422 +1062,8 @@ If you or the agent changed course files in this step, do the writing standard c
 **If the agent fails or returns nothing:** Skip this step. Add a note to the output:
 "Note: For a full alignment audit, run `/idstack:course-quality-review` next."
 
----
-
-## Manifest Schema Reference
-
-The idstack manifest lives at `.idstack/project.json`. Schema version: **1.4**.
-
-This is the canonical schema. Every skill writes to its own section using the shapes documented here; **all other sections must be preserved verbatim**. There is one source of truth — this file. If the schema ever needs to change, edit `templates/manifest-schema.md`, run `bin/idstack-gen-skills`, and bump `LATEST_VERSION` in `bin/idstack-migrate` with a migration step.
-
-### Two outputs per skill: JSON manifest + HTML report
-
-Every skill that produces findings emits **both**:
-
-- a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
-- an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
-
-The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → recommendation, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
-
-`<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
-
-`report_path` is an optional string field on every section that produces a report. It is a path relative to the project root (typically `.idstack/exports/<course-slug>/<skill>.html`). Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report. Renaming a course's `project_name` changes the slug, which moves future exports to a new folder; older folders are left in place.
-
-### Two ways to write to the manifest
-
-**1. Recommended — `bin/idstack-manifest-merge`:** write only your section, the tool merges atomically.
-
-```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
-_IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-# Pass your skill's section on stdin (a heredoc), not a /tmp file:
-"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
-{ ...your section's JSON... }
-PAYLOAD
-```
-
-(This file is spliced into skills verbatim, so the resolution above is written
-out rather than using the `IDSTACK_RESOLVE` placeholder — that placeholder is
-only expanded in `SKILL.md.tmpl` bodies.)
-
-The merge tool replaces only the named top-level section, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. Use this in preference to inlining the full manifest in `Edit` operations.
-
-**2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
-
-### Top-level fields
-
-| Field | Owner skill(s) | Notes |
-|---|---|---|
-| `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
-| `project_name` | (any) | Set on first manifest creation. Don't overwrite once set. |
-| `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
-| `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
-| `context` | needs-analysis (initial) | Modality, timeline, class size, etc. Edited by skills that learn new context. |
-| `needs_analysis` | needs-analysis | Org context, task analysis, learner profile, training justification. |
-| `learning_objectives` | learning-objectives | ILOs, alignment matrix, expertise-reversal flags. |
-| `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
-| `course_content` | course-builder | Generated modules, syllabus, content paths. |
-| `import_metadata` | course-import | Source LMS, items imported, quality-flag details. |
-| `export_metadata` | course-export | Export destination, items exported, readiness check. |
-| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
-| `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
-| `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
-| `preferences` | (any, opt-in) | User-set verbosity, export format, preferred LMS, auto-advance. |
-
-### Full schema (canonical shape)
-
-```json
-{
-  "version": "1.4",
-  "project_name": "",
-  "created": "",
-  "updated": "",
-  "context": {
-    "modality": "",
-    "timeline": "",
-    "class_size": "",
-    "institution_type": "",
-    "available_tech": []
-  },
-  "needs_analysis": {
-    "mode": "",
-    "report_path": "",
-    "organizational_context": {
-      "problem_statement": "",
-      "stakeholders": [],
-      "current_state": "",
-      "desired_state": "",
-      "performance_gap": ""
-    },
-    "task_analysis": {
-      "job_tasks": [],
-      "prerequisite_knowledge": [],
-      "tools_and_resources": []
-    },
-    "learner_profile": {
-      "prior_knowledge_level": "",
-      "motivation_factors": [],
-      "demographics": "",
-      "access_constraints": [],
-      "learning_preferences_note": "idstack does NOT use learning styles to differentiate instruction because the evidence does not support them. Prior knowledge is the primary differentiator."
-    },
-    "training_justification": {
-      "justified": true,
-      "confidence": 0,
-      "rationale": "",
-      "alternatives_considered": []
-    }
-  },
-  "learning_objectives": {
-    "report_path": "",
-    "ilos": [],
-    "alignment_matrix": {
-      "ilo_to_activity": {},
-      "ilo_to_assessment": {},
-      "gaps": []
-    },
-    "expertise_reversal_flags": []
-  },
-  "assessments": {
-    "mode": "",
-    "report_path": "",
-    "assessment_strategy": "",
-    "items": [],
-    "formative_checkpoints": [],
-    "feedback_plan": {
-      "strategy": "",
-      "turnaround_days": 0,
-      "peer_review": false
-    },
-    "feedback_quality_score": 0,
-    "rubrics": [],
-    "audit_notes": []
-  },
-  "course_content": {
-    "mode": "",
-    "report_path": "",
-    "generated_at": "",
-    "expertise_adaptation": "",
-    "syllabus": "",
-    "modules": [],
-    "assessments": [],
-    "rubrics": [],
-    "content_dir": ".idstack/course-content/",
-    "generated_files": [],
-    "build_timestamp": "",
-    "placeholders_used": [],
-    "recommended_generation_targets": []
-  },
-  "import_metadata": {
-    "source": "",
-    "report_path": "",
-    "imported_at": "",
-    "source_lms": "",
-    "source_cartridge": "",
-    "source_size_bytes": 0,
-    "schema": "",
-    "items_imported": {
-      "modules": 0,
-      "objectives": 0,
-      "module_objectives": 0,
-      "assessments": 0,
-      "activities": 0,
-      "pages": 0,
-      "rubrics": 0,
-      "quizzes": 0,
-      "discussions": 0
-    },
-    "quality_flags": 0,
-    "quality_flag_details": []
-  },
-  "export_metadata": {
-    "report_path": "",
-    "exported_at": "",
-    "format": "",
-    "destination": "",
-    "items_exported": {
-      "modules": 0,
-      "pages": 0,
-      "assignments": 0,
-      "quizzes": 0,
-      "discussions": 0
-    },
-    "failed_items": [],
-    "notes": "",
-    "readiness_check": {
-      "quality_score": 0,
-      "quality_reviewed": false,
-      "red_team_critical": 0,
-      "red_team_reviewed": false,
-      "accessibility_critical": 0,
-      "accessibility_reviewed": false,
-      "verdict": ""
-    }
-  },
-  "quality_review": {
-    "report_path": "",
-    "last_reviewed": "",
-    "qm_standards": {
-      "course_overview":         {"status": "", "findings": []},
-      "learning_objectives":     {"status": "", "findings": []},
-      "assessment":              {"status": "", "findings": []},
-      "instructional_materials": {"status": "", "findings": []},
-      "learning_activities":     {"status": "", "findings": []},
-      "course_technology":       {"status": "", "findings": []},
-      "learner_support":         {"status": "", "findings": []},
-      "accessibility":           {"status": "", "findings": []}
-    },
-    "coi_presence": {
-      "teaching_presence":  {"score": 0, "findings": []},
-      "social_presence":    {"score": 0, "findings": []},
-      "cognitive_presence": {"score": 0, "findings": []}
-    },
-    "alignment_audit": {"findings": []},
-    "cross_domain_checks": {
-      "cognitive_load":        {"score": 0, "flags": []},
-      "multimedia_principles": {"score": 0, "flags": []},
-      "feedback_quality":      {"score": 0, "flags": []},
-      "expertise_reversal":    {"score": 0, "flags": []}
-    },
-    "overall_score": 0,
-    "score_breakdown": {
-      "qm_structural": 0,
-      "coi_presence": 0,
-      "constructive_alignment": 0,
-      "cross_domain_evidence": 0
-    },
-    "quick_wins": [],
-    "recommendations": [],
-    "review_history": []
-  },
-  "red_team_audit": {
-    "updated": "",
-    "confidence_score": 0,
-    "focus": "",
-    "report_path": "",
-    "findings_summary": {"critical": 0, "warning": 0, "info": 0},
-    "dimensions": {
-      "alignment":      {"score": "", "findings": []},
-      "evidence":       {"score": "", "mode": "", "findings": []},
-      "cognitive_load": {"score": "", "findings": []},
-      "personas":       {"score": "", "findings": []},
-      "prerequisites":  {"score": "", "findings": []}
-    },
-    "top_actions": [],
-    "limitations": [],
-    "fixes_applied": [],
-    "fixes_deferred": []
-  },
-  "accessibility_review": {
-    "updated": "",
-    "report_path": "",
-    "score": {"overall": 0, "wcag": 0, "udl": 0},
-    "wcag_violations": [],
-    "udl_recommendations": [],
-    "quick_wins": []
-  },
-  "preferences": {
-    "verbosity": "normal",
-    "export_format": "",
-    "preferred_lms": "",
-    "auto_advance_pipeline": false
-  }
-}
-```
-
-### Per-section item shapes
-
-These document the **shape of array elements and dictionary values** that the canonical schema leaves as `[]` or `{}`. Skills should produce items in these shapes; downstream skills can rely on them.
-
-**`learning_objectives.alignment_matrix.ilo_to_activity`** — keyed by ILO id, values are arrays of activity names:
-```json
-{ "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }
-```
-
-**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape, values are arrays of assessment titles.
-
-**`learning_objectives.alignment_matrix.gaps[]`** — each item:
-```json
-{
-  "ilo": "ILO-1",
-  "type": "untested|orphaned|underspecified|bloom_mismatch",
-  "description": "ILO-1 has no matching assessment in the active modules.",
-  "severity": "critical|warning|info"
-}
-```
-
-**`learning_objectives.ilos[]`** — each item:
-```json
-{
-  "id": "ILO-1",
-  "statement": "Analyze competitive forces in...",
-  "blooms_level": "analyze",
-  "blooms_confidence": "high|medium|low"
-}
-```
-
-**`assessments.items[]`** — each item:
-```json
-{
-  "id": "A-1",
-  "type": "quiz|discussion|rubric|peer_review|gate|...",
-  "title": "Module 1 Quiz",
-  "weight": 5,
-  "ilos_measured": ["ILO-1", "ILO-3"],
-  "rubric_present": true,
-  "elaborated_feedback": false,
-  "alignment_status": "weak|moderate|strong"
-}
-```
-
-**`assessments.rubrics[]`** — each item:
-```json
-{
-  "id": "rubric-1",
-  "title": "SM Project Rubric",
-  "criteria": [{"name": "...", "blooms_level": "...", "weight": 0}],
-  "applies_to": ["A-3"]
-}
-```
-
-**`import_metadata.quality_flag_details[]`** — each item (replaces the legacy `_import_quality_flags` root field that sometimes appeared in the wild):
-```json
-{
-  "key": "orphan_module_8",
-  "description": "Module 8 wiki content exists in the cartridge but is not referenced in <organizations>.",
-  "severity": "warning|critical|info",
-  "evidence": "Optional citation tag, e.g. [Alignment-1] [T5]"
-}
-```
-
-**`red_team_audit.dimensions.<name>.findings[]`** — each item (matches the `<dimension>-<n>` id convention from the red-team orchestrator):
-```json
-{
-  "id": "alignment-1",
-  "description": "ILO-2 (vision/mission) has no matching assessment.",
-  "module": "Module 4",
-  "severity": "critical|warning|info"
-}
-```
-
-**`accessibility_review.wcag_violations[]`** — each item:
-```json
-{
-  "id": "wcag-1",
-  "criterion": "1.3.1 Info and Relationships",
-  "level": "A|AA|AAA",
-  "description": "All cartridge HTML pages lack <h1> elements.",
-  "affected": ["page1.html", "page2.html"],
-  "severity": "critical|warning|info"
-}
-```
-
-**`accessibility_review.udl_recommendations[]`** — each item:
-```json
-{
-  "id": "udl-1",
-  "principle": "engagement|representation|action_expression",
-  "description": "Add transcripts to all videos.",
-  "status": "fully_met|partial|not_met"
-}
-```
-
-**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.alignment_audit.findings[]`**, **`quality_review.cross_domain_checks.<check>.flags[]`**, and other findings arrays — each item:
-```json
-{
-  "id": "<dimension>-<n>",
-  "description": "...",
-  "evidence": "[Domain-N] [TX]",
-  "severity": "critical|warning|info"
-}
-```
-
-### Mode field — design-new vs audit-existing
-
-`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
-
-Allowed values per skill:
-- `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
-- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
-- `course_content.mode`: `"build-new"` or `"gap-fill"`
-
-Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).
-
-**`assessments.audit_notes[]`** — only populated in Mode 3. Records which audit findings the user chose to act on:
-```json
-{
-  "target_id": "A-3",
-  "action": "applied|deferred|declined",
-  "description": "Rubric criterion for ILO-2 added: 'Synthesis depth (1-4 scale)'.",
-  "reason": "Optional — only meaningful for deferred/declined."
-}
-```
-
-**`course_content.recommended_generation_targets[]`** — populated in `gap-fill` mode. Lists artifacts upstream skills flagged as missing, with status:
-```json
-{
-  "description": "Discussion rubric for Module 5",
-  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
-  "status": "generated|deferred|declined",
-  "output_path": "Optional — set when status=generated, points to the generated file."
-}
-```
+For the full manifest schema (other sections you may need to read), Read
+`${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
 ## Feedback
 
@@ -1624,23 +1076,13 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
@@ -1654,25 +1096,15 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"course-builder","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings" log '{"skill":"course-builder","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

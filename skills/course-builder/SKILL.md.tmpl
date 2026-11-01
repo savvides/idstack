@@ -561,8 +561,7 @@ Before updating the manifest, generate an HTML build report so the designer can 
 ```bash
 {{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-builder.html"
 mkdir -p "$_EXPORT_DIR/assets"
@@ -599,7 +598,7 @@ Save the `course_content` section to `.idstack/project.json` via `bin/idstack-ma
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-manifest-merge" --section course_content --payload - <<'PAYLOAD'
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section course_content --payload - <<'PAYLOAD'
 {
   "report_path": "<set to $_REPORT_PATH from the bash block above — e.g. .idstack/exports/<course-slug>/course-builder.html>",
   "mode": "build-new",
@@ -633,7 +632,7 @@ Save the `course_content` section to `.idstack/project.json` via `bin/idstack-ma
 PAYLOAD
 ```
 
-The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. If `.idstack/project.json` doesn't exist yet, run `bin/idstack-migrate .idstack/project.json` first to create a fresh canonical manifest.
+The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. `--create` makes a canonical manifest first if `.idstack/project.json` does not exist yet (the standalone case). It never replaces a manifest that exists.
 
 **Mode field.** Set `mode` to `"build-new"` for a from-scratch generation or `"gap-fill"` when this run was triggered by upstream skills flagging missing artifacts. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
 
@@ -705,9 +704,8 @@ If you or the agent changed course files in this step, do the writing standard c
 **If the agent fails or returns nothing:** Skip this step. Add a note to the output:
 "Note: For a full alignment audit, run `/idstack:course-quality-review` next."
 
----
-
-{{MANIFEST_SCHEMA}}
+For the full manifest schema (other sections you may need to read), Read
+`${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
 ## Feedback
 
@@ -732,5 +730,5 @@ import format issue, course structure pattern), also log it as a learning:
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"course-builder","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings" log '{"skill":"course-builder","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

@@ -65,6 +65,12 @@ function storageArea(data) {
       const done = Promise.resolve();
       if (callback) done.then(() => callback());
       return done;
+    },
+    remove(keys, callback) {
+      for (const k of typeof keys === 'string' ? [keys] : keys) delete data[k];
+      const done = Promise.resolve();
+      if (callback) done.then(() => callback());
+      return done;
     }
   };
 }
@@ -89,15 +95,17 @@ function storageArea(data) {
 // (undefined if no listener keeps the channel open and none responds).
 export function installChrome({ sync = {}, local = {}, tabs = [], onRuntimeMessage, onExecuteScript, onPermissionRequest } = {}) {
   const storage = { sync: structuredClone(sync), local: structuredClone(local) };
-  const listeners = { message: [], tabActivated: [], tabUpdated: [], actionClicked: [] };
+  const listeners = { message: [], installed: [], tabActivated: [], tabUpdated: [], actionClicked: [] };
   const sent = [];
   const calls = { executed: [], permissionRequests: [], opened: [], panelBehavior: undefined };
   const chrome = {
     runtime: {
       id: EXTENSION_ID,
       getURL: (p = '') => `chrome-extension://${EXTENSION_ID}/${p}`,
+      getManifest: () => JSON.parse(readFileSync(new URL('manifest.json', EXT), 'utf8')),
       lastError: undefined,
       onMessage: { addListener: (fn) => listeners.message.push(fn) },
+      onInstalled: { addListener: (fn) => listeners.installed.push(fn) },
       sendMessage(message, callback) {
         sent.push(message);
         const reply = Promise.resolve(onRuntimeMessage ? onRuntimeMessage(message) : undefined);

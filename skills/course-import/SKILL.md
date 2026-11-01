@@ -50,9 +50,8 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 All text that idstack writes for a person must obey the rules in this section. This
 includes chat text, AskUserQuestion questions and options, HTML reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
-reads the word list between the two `ste-core` markers. `extension/shared/ste-rules.js`
-has a copy of the text between the markers. If you change this text, change the copy at
-the same time.
+reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
+`extension/shared/ste-rules.js` from the text between the markers.
 
 The rules also apply to the text that idstack writes in `.idstack/project.json` and in
 learnings, for example finding text and recommendations. Other skills use this text in
@@ -187,18 +186,7 @@ use them.
 ## Preamble: Update Check
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache
-# (highest version). Empty if none found; guard "$_IDSTACK/bin/..." calls
-# accordingly.
-# Canonical copy: templates/snippets/idstack-resolve.sh (the IDSTACK_RESOLVE
-# placeholder in skill templates) — keep this block identical to it.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
@@ -219,11 +207,7 @@ If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idsta
 Before starting, check for an existing project manifest.
 
 ```bash
-# (fresh shell — re-derive the install dir; see Preamble: Update Check)
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
@@ -302,7 +286,6 @@ Check whether a Consensus API key is configured for live literature grounding.
 
 ```bash
 # Consensus key detection
-# (fresh shell — re-derive the install dir; see Preamble: Update Check)
 _IDSTACK=""
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
@@ -310,8 +293,8 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _dir in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_dir" ] && [ -d "$_dir" ]; then _IDSTACK="${_dir%/}"; break; fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 _CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q '"api_key_configured": true' && echo "CONFIGURED" || echo "UNCONFIGURED")
 [ -n "$_CONSENSUS_KEY" ] && echo "CONSENSUS:$_CONSENSUS_KEY"
@@ -329,11 +312,7 @@ Check for session history and learnings from prior runs.
 
 ```bash
 # Context recovery: timeline + learnings
-# (fresh shell — re-derive the install dir; see Preamble: Update Check)
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
@@ -343,79 +322,7 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-_HAS_TIMELINE=0
-_HAS_LEARNINGS=0
-if [ -f ".idstack/timeline.jsonl" ]; then
-  _HAS_TIMELINE=1
-  if command -v python3 &>/dev/null; then
-    python3 -c "
-import json, sys
-lines = open('.idstack/timeline.jsonl').readlines()[-200:]
-events = []
-for line in lines:
-    try: events.append(json.loads(line))
-    except: pass
-if not events:
-    sys.exit(0)
-
-# Quality score trend
-scores = [e for e in events if e.get('skill') == 'course-quality-review' and 'score' in e]
-if scores:
-    trend = ' -> '.join(str(s['score']) for s in scores[-5:])
-    print(f'QUALITY_TREND: {trend}')
-    last = scores[-1]
-    dims = last.get('dimensions', {})
-    if dims:
-        tp = dims.get('teaching_presence', '?')
-        sp = dims.get('social_presence', '?')
-        cp = dims.get('cognitive_presence', '?')
-        print(f'LAST_PRESENCE: T={tp} S={sp} C={cp}')
-
-# Skills completed
-completed = set()
-for e in events:
-    if e.get('event') == 'completed':
-        completed.add(e.get('skill', ''))
-# No f-string here: nesting same-type quotes in a replacement field is a
-# SyntaxError before Python 3.12, and macOS system python3 is 3.9.
-print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))
-
-# Last skill run
-last_completed = [e for e in events if e.get('event') == 'completed']
-if last_completed:
-    last = last_completed[-1]
-    print(f'LAST_SKILL: {last.get(\"skill\",\"?\")} at {last.get(\"ts\",\"?\")}')
-
-# Pipeline progression. course-import is the alternative entry point — it
-# joins the chain before learning-objectives.
-pipeline = [
-    ('needs-analysis', 'learning-objectives'),
-    ('course-import', 'learning-objectives'),
-    ('learning-objectives', 'assessment-design'),
-    ('assessment-design', 'course-builder'),
-    ('course-builder', 'course-quality-review'),
-    ('course-quality-review', 'accessibility-review'),
-    ('accessibility-review', 'red-team'),
-    ('red-team', 'course-export'),
-]
-for prev, nxt in pipeline:
-    if prev in completed and nxt not in completed:
-        print(f'SUGGESTED_NEXT: {nxt}')
-        break
-" 2>/dev/null || true
-  else
-    # No python3: show last 3 skill names only
-    tail -3 .idstack/timeline.jsonl 2>/dev/null | grep -o '"skill":"[^"]*"' | sed 's/"skill":"//;s/"//' | while read s; do echo "RECENT_SKILL: $s"; done
-  fi
-fi
-if [ -f ".idstack/learnings.jsonl" ]; then
-  _HAS_LEARNINGS=1
-  _LEARN_COUNT=$(wc -l < .idstack/learnings.jsonl 2>/dev/null | tr -d ' ')
-  echo "LEARNINGS: $_LEARN_COUNT"
-  if [ "$_LEARN_COUNT" -gt 0 ] 2>/dev/null; then
-    "$_IDSTACK/bin/idstack-learnings-search" --limit 3 2>/dev/null || true
-  fi
-fi
+"$_IDSTACK/bin/idstack-status" --context 2>/dev/null || true
 ```
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
@@ -1219,23 +1126,13 @@ Before writing the manifest, generate an HTML report so the designer has a singl
 In this command, replace `<project name>` with the course title from the import. Then run the command.
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
@@ -1275,23 +1172,13 @@ Before you write the report, use the Read tool on the files from the "Report tem
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
@@ -1304,20 +1191,49 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 ## Step 6: Write Manifest
 
-Create or update the project manifest.
+Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
+course-import adds fields to sections that other skills also write (`context`,
+`needs_analysis`, `learning_objectives`), and it owns `import_metadata`. The merge tool
+replaces whole sections, so for each co-owned section: read the existing section from the
+manifest (if any), add the imported fields to it, and pass the full merged section.
 
-**Why this skill uses the Write-tool fallback (not `bin/idstack-manifest-merge`):** course-import writes a top-level field (`project_name`), partial fields inside `context` (`modality`, `timeline`, `available_tech`), nested entries under `needs_analysis.task_analysis.job_tasks`, additions inside `learning_objectives.ilos` and `learning_objectives.alignment_matrix`, AND the `import_metadata` section. The merge tool only does whole-section replacement, which would clobber co-owned sections. So this skill goes through the Read-modify-Write fallback path described in `templates/manifest-schema.md`.
+Write each payload with the Write tool first, as the flat section contents with no
+enclosing section key: `.idstack/.context-payload.json`, `.idstack/.needs_analysis-payload.json`,
+`.idstack/.learning_objectives-payload.json` and `.idstack/.import_metadata-payload.json`. Then:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="<project name>" \
+  --section context --payload .idstack/.context-payload.json \
+  --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
+  --section learning_objectives --payload .idstack/.learning_objectives-payload.json \
+  --section import_metadata --payload .idstack/.import_metadata-payload.json \
+  && rm -f .idstack/.context-payload.json .idstack/.needs_analysis-payload.json \
+           .idstack/.learning_objectives-payload.json .idstack/.import_metadata-payload.json
+```
+
+`--create` makes a canonical manifest first if `.idstack/project.json` does not
+exist yet (the standalone case). It never replaces a manifest that exists. If any payload is malformed, the tool
+writes nothing.
 
 **CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first.
-2. PRESERVE sections populated by other skills (especially needs_analysis from
-   /idstack:needs-analysis). Import ADDS to these sections, does not replace.
-3. If learning_objectives already has data and the user chose "merge," combine
+1. PRESERVE what other skills wrote in the co-owned sections (especially
+   needs_analysis from /idstack:needs-analysis). Import ADDS to these sections, does not
+   replace them.
+2. If learning_objectives already has data and the user chose "merge," combine
    imported ILOs with existing ones (use new ILO IDs that don't conflict).
-4. Include the COMPLETE schema structure. Do not omit fields.
-5. Before writing, verify the JSON is valid.
-6. Update the `updated` timestamp.
-7. **NEVER write the Canvas API token to the manifest, the report, or any file other than `.idstack/canvas.env`.**
+3. Include the COMPLETE section structure from the schema below. Do not omit fields.
+4. Before writing, verify each payload is valid JSON.
+5. **NEVER write the Canvas API token to the manifest, the report, or any file other than `.idstack/canvas.env`.**
 
 **Fields populated by /idstack:course-import:**
 
@@ -1329,24 +1245,22 @@ Create or update the project manifest.
 - `learning_objectives.ilos` — from Bloom's inference (Step 4)
 - `learning_objectives.alignment_matrix` — partial, from detected objective-assessment links
 
-**Import metadata:** Set the top-level `import_metadata` section. Shown here in the context of the full manifest the Write tool will produce (the outer `import_metadata` key is the section's slot in the manifest, not a wrapper to nest inside the section itself):
+**Import metadata:** The `import_metadata` payload (flat, with no enclosing `import_metadata` key):
 
 ```json
 {
-  "import_metadata": {
-    "source": "cartridge|paste|canvas-api",
-    "report_path": "<set to $_REPORT_PATH from the Step 5 bash block — e.g. .idstack/exports/<course-slug>/course-import.html>",
-    "imported_at": "ISO-8601",
-    "source_lms": "canvas|blackboard|moodle|d2l|unknown",
-    "items_imported": {
-      "modules": 0,
-      "objectives": 0,
-      "assessments": 0,
-      "activities": 0,
-      "pages": 0
-    },
-    "quality_flags": 0
-  }
+  "source": "cartridge|paste|canvas-api",
+  "report_path": "<set to $_REPORT_PATH from the Step 5 bash block — e.g. .idstack/exports/<course-slug>/course-import.html>",
+  "imported_at": "ISO-8601",
+  "source_lms": "canvas|blackboard|moodle|d2l|unknown",
+  "items_imported": {
+    "modules": 0,
+    "objectives": 0,
+    "assessments": 0,
+    "activities": 0,
+    "pages": 0
+  },
+  "quality_flags": 0
 }
 ```
 
@@ -1405,38 +1319,20 @@ The HTML report follows the visual contract in `templates/report.html.tmpl` and 
 
 ### Two ways to write to the manifest
 
-**1. Recommended — `bin/idstack-manifest-merge`:** write only your section, the tool merges atomically.
+**1. Recommended — `bin/idstack-manifest-merge`:** write only your sections, the tool merges atomically.
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
-_IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-# Pass your skill's section on stdin (a heredoc), not a /tmp file:
-"$_IDSTACK/bin/idstack-manifest-merge" --section red_team_audit --payload - <<'PAYLOAD'
+# Run this in a block that starts with your skill's own idstack resolve lines,
+# so $_IDSTACK is set. Pass your skill's section on stdin (a heredoc), not a /tmp file:
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section red_team_audit --payload - <<'PAYLOAD'
 { ...your section's JSON... }
 PAYLOAD
 ```
 
-(This file is spliced into skills verbatim, so the resolution above is written
-out rather than using the `IDSTACK_RESOLVE` placeholder — that placeholder is
-only expanded in `SKILL.md.tmpl` bodies.)
+(Skills also read this file raw, so it carries no `IDSTACK_RESOLVE` placeholder
+and no copy of the resolve lines.)
 
-The merge tool replaces only the named top-level section, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. Use this in preference to inlining the full manifest in `Edit` operations.
+The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. `--create` makes a canonical manifest first when there is none. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
 
 **2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
 
@@ -1810,23 +1706,13 @@ Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6W
 After the skill workflow completes successfully, log the session to the timeline:
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
@@ -1840,25 +1726,15 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 import format issue, course structure pattern), also log it as a learning:
 
 ```bash
-# Resolve the idstack install dir. Re-derived at the top of every bash block —
-# blocks run in separate shells, so a value derived in an earlier block is not
-# available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
 _IDSTACK=""
-# Marketplace cache holds one dir per installed version. Sort the basenames by
-# numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
-# 3.10.0.0 and would pick a stale install once the minor hits double digits.
 _idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
 _idstack_cache=""
 if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-# CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
-# the exact braced token in skill text. The Bash tool's shell does not have it.
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"course-import","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings" log '{"skill":"course-import","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

@@ -2,8 +2,6 @@
 """Tests for bin/idstack-consensus client and caching engine."""
 
 import hashlib
-import importlib.machinery
-import importlib.util
 import json
 import os
 import shutil
@@ -11,12 +9,11 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from pathlib import Path
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CLI_PATH = os.path.join(REPO_ROOT, "bin", "idstack-consensus")
+SYNC_PATH = os.path.join(REPO_ROOT, "scripts", "consensus-sync")
 STE_CHECK_PATH = os.path.join(REPO_ROOT, "bin", "idstack-ste-check")
-JS_CLIENT_PATH = os.path.join(REPO_ROOT, "extension", "shared", "consensus-client.js")
 MYTH_TYPES = ["learning_styles", "hemisphere_learning", "ten_percent_brain", "dales_cone_percentages"]
 
 
@@ -34,8 +31,8 @@ class TestConsensusCLI(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
-    def run_cli(self, args, env=None, cwd=None, input_data=None):
-        cmd = [sys.executable, CLI_PATH] + args
+    def run_cli(self, args, env=None, cwd=None, input_data=None, path=CLI_PATH):
+        cmd = [sys.executable, path] + args
         proc = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
@@ -369,38 +366,52 @@ class TestConsensusCLI(unittest.TestCase):
         ])
         self.assertEqual(proc.returncode, 1)
 
-    def test_sync_dry_run_all_domains(self):
+    # sync is a maintainer tool in scripts/, not a subcommand of the runtime CLI.
+    def run_sync(self, args):
+        return self.run_cli(args, path=SYNC_PATH)
+
+    def test_cli_has_no_sync_subcommand(self):
         proc = self.run_cli(["sync", "--dry-run"])
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("invalid choice", proc.stderr)
+
+    def test_sync_dry_run_all_domains(self):
+        proc = self.run_sync(["--dry-run"])
         self.assertEqual(proc.returncode, 0)
-        self.assertIn("- [Assessment-", proc.stdout)
-        self.assertIn("- [ID-", proc.stdout)
-        self.assertIn("- [Alignment-", proc.stdout)
-        self.assertIn("- [CogLoad-", proc.stdout)
-        self.assertIn("- [Access-", proc.stdout)
+        for short_name in ("Assessment", "Models", "Alignment", "Cognitive Load", "Accessibility"):
+            self.assertIn("(%s)" % short_name, proc.stdout)
         self.assertIn("Dry run", proc.stdout)
         self.assertIn("check-evidence-cards", proc.stdout)
 
     def test_sync_domain_specific(self):
-        proc = self.run_cli(["sync", "--domain", "Assessment", "--dry-run"])
+        proc = self.run_sync(["--domain", "Assessment", "--dry-run"])
         self.assertEqual(proc.returncode, 0)
-        self.assertIn("- [Assessment-", proc.stdout)
-        self.assertIn("Assessment", proc.stdout)
-        self.assertNotIn("- [CogLoad-", proc.stdout)
-        self.assertNotIn("- [Access-", proc.stdout)
+        self.assertIn("(Assessment)", proc.stdout)
+        self.assertNotIn("(Cognitive Load)", proc.stdout)
+        self.assertNotIn("(Accessibility)", proc.stdout)
 
     def test_sync_invalid_domain_fails(self):
-        proc = self.run_cli(["sync", "--domain", "InvalidDomain", "--dry-run"])
+        proc = self.run_sync(["--domain", "InvalidDomain", "--dry-run"])
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("Unknown domain", proc.stderr + proc.stdout)
 
     def test_sync_default_is_dry_run(self):
-        proc = self.run_cli(["sync", "--domain", "Models"])
+        proc = self.run_sync(["--domain", "Models"])
         self.assertEqual(proc.returncode, 0)
-        self.assertIn("- [ID-", proc.stdout)
+        self.assertIn("(Models)", proc.stdout)
         self.assertIn("Dry run", proc.stdout)
 
+    # Without a key or a cache there is no real paper, so sync must print no
+    # citation line. It used to print a built-in one that nobody had checked,
+    # ready to paste into references.md.
+    def test_sync_without_data_prints_no_citation(self):
+        proc = self.run_sync(["--dry-run"])
+        self.assertEqual(proc.returncode, 0)
+        self.assertNotRegex(proc.stdout, r"(?m)^- \[")
+        self.assertIn("No candidate citations", proc.stdout)
+
     def test_sync_evidence_cards_compatibility(self):
-        proc = self.run_cli(["sync", "--dry-run"])
+        proc = self.run_sync(["--dry-run"])
         self.assertEqual(proc.returncode, 0)
         self.assertIn("check-evidence-cards.py found 0 mismatches", proc.stdout)
 
@@ -427,8 +438,9 @@ class TestConsensusCLI(unittest.TestCase):
         with open(os.path.join(self.cache_dir, q_hash + ".json"), "w") as f:
             json.dump(cached_record, f)
 
-        proc = self.run_cli(["sync", "--domain", "Assessment", "--dry-run"])
+        proc = self.run_sync(["--domain", "Assessment", "--dry-run"])
         self.assertEqual(proc.returncode, 0)
+        self.assertIn("- [Assessment-", proc.stdout)
         self.assertIn("Custom Cached Formative Feedback Review", proc.stdout)
         self.assertIn("CachedAuthor", proc.stdout)
 
@@ -495,37 +507,6 @@ class TestConsensusCLI(unittest.TestCase):
         for finding in result:
             self.assertIn("[Tier calibrated:", finding["evidence"])
         self.assert_ste_clean("\n\n".join(f["evidence"] for f in result) + "\n")
-
-    # The extension has a copy of the neuromyth text. The two copies must stay
-    # the same, word for word.
-    @unittest.skipUnless(shutil.which("node"), "node is not installed")
-    def test_neuromyth_text_matches_extension_copy(self):
-        script = (
-            "import { autoCorrectNeuromyth } from %s;\n"
-            "const out = {};\n"
-            "for (const t of %s) {\n"
-            "  out[t] = autoCorrectNeuromyth({ observation: '', evidence: '', recommendation: '' }, t);\n"
-            "}\n"
-            "console.log(JSON.stringify(out));\n"
-        ) % (json.dumps(Path(JS_CLIENT_PATH).as_uri()), json.dumps(MYTH_TYPES))
-        proc = subprocess.run(
-            ["node", "--input-type=module", "-e", script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        js = json.loads(proc.stdout)
-
-        loader = importlib.machinery.SourceFileLoader("idstack_consensus", CLI_PATH)
-        spec = importlib.util.spec_from_loader(loader.name, loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        for myth_type in MYTH_TYPES:
-            finding = {"observation": "", "evidence": "", "recommendation": ""}
-            module.auto_correct_neuromyth(finding, myth_type)
-            for key in ("recommendation", "evidence", "observation"):
-                self.assertEqual(js[myth_type][key], finding[key], "%s %s" % (myth_type, key))
 
 
 if __name__ == "__main__":

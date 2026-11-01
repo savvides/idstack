@@ -9,10 +9,9 @@
 # Two things this harness has to get right, both of which are easy to get
 # wrong:
 #
-#   1. doctor sources bin/lib/version-classify.sh and bin/lib/plugin-status.sh
-#      (see bin/idstack-doctor:21-23), so the fixture copies the whole bin/
-#      tree. Copying just the one script gives a "No such file" on the source
-#      line and every assertion below fails for the wrong reason.
+#   1. doctor sources bin/lib/plugin-status.sh, so the fixture copies the
+#      whole bin/ tree. Copying just the one script gives a "No such file" on
+#      the source line and every assertion below fails for the wrong reason.
 #
 #   2. PATH is replaced, not prepended. The "claude not found" case is only
 #      meaningful if `claude` is genuinely unreachable — with the real PATH
@@ -140,38 +139,23 @@ other-plugin@other
 status: enabled"
 check "neighbour's enabled line is not attributed to idstack" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is installed but not enabled"
 
-# --- legacy install conflicts ---
+# --- python3 ---
+# Every skill saves its results through python3, so its absence is a PROBLEM.
 setup_happy_path
 mock_claude_output "idstack@idstack
 status: enabled"
-mkdir -p "$HOME/.claude/skills"
-ln -s "$TEST_ROOT/dummy" "$HOME/.claude/skills/idstack"
-check "legacy dispatcher symlink is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: legacy symlink at"
+rm "$MOCK_BIN/python3"
+check "missing python3 is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack needs python3 3.9"
+"$DOCTOR_CMD" > "$TEST_ROOT/no-python.txt" 2>&1 || true
+ln -sf "$PYTHON" "$MOCK_BIN/python3"
 
 setup_happy_path
 mock_claude_output "idstack@idstack
 status: enabled"
-mkdir -p "$HOME/.claude/skills/idstack"
-echo "2.0.0" > "$HOME/.claude/skills/idstack/VERSION"
-check "pre-v2.0.1.0 install dir is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: pre-v2\.0\.1\.0 install at"
-
-setup_happy_path
-mock_claude_output "idstack@idstack
-status: enabled"
-mkdir -p "$HOME/.claude/skills"
-ln -s "$TEST_ROOT/dummy-idstack/some-skill" "$HOME/.claude/skills/needs-analysis"
-check "pre-v2 per-skill symlink is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: pre-v2 skill symlink"
-
-# An unrelated directory must not be claimed as a broken idstack install.
-setup_happy_path
-mock_claude_output "idstack@idstack
-status: enabled"
-mkdir -p "$HOME/.claude/skills/idstack"
-echo "someone else's thing" > "$HOME/.claude/skills/idstack/README.md"
-check "unrecognized dir warns rather than claiming ownership" "'$DOCTOR_CMD'" 0 "WARNING: directory at"
+check "python3 3.9 or later is found" "'$DOCTOR_CMD'" 0 "found python3 3\\.(9|[1-9][0-9])"
 
 # --- writing standard (ASD-STE100) ---
-# A person reads every line that doctor prints. Send a healthy run and three
+# A person reads every line that doctor prints. Send a healthy run and the
 # problem runs, which print all of the explanation lines, through the checker.
 STE_OUT="$TEST_ROOT/ste-out"
 mkdir -p "$STE_OUT"
@@ -191,17 +175,12 @@ setup_happy_path
 mock_claude_output "some-other-plugin
 status: enabled"
 echo 'not json at all' > "$MOCK_IDSTACK_DIR/.claude-plugin/plugin.json"
-mkdir -p "$HOME/.claude/skills/idstack"
-echo "someone else's thing" > "$HOME/.claude/skills/idstack/README.md"
 "$DOCTOR_CMD" > "$STE_OUT/not-installed.txt" 2>&1 || true
 
 setup_happy_path
 remove_mock_claude
-mkdir -p "$HOME/.claude/skills/idstack" "$HOME/.claude/plugins"
-echo "2.0.0" > "$HOME/.claude/skills/idstack/VERSION"
-ln -s "$TEST_ROOT/dummy-idstack/some-skill" "$HOME/.claude/skills/needs-analysis"
-ln -s "$TEST_ROOT/dummy" "$HOME/.claude/plugins/idstack"
-"$DOCTOR_CMD" > "$STE_OUT/legacy.txt" 2>&1 || true
+"$DOCTOR_CMD" > "$STE_OUT/no-claude.txt" 2>&1 || true
+cp "$TEST_ROOT/no-python.txt" "$STE_OUT/no-python.txt"
 
 check "doctor output obeys the writing standard (healthy and problem runs)" \
   "'$PYTHON' '$REPO_DIR/bin/idstack-ste-check' --format text '$STE_OUT'/*.txt"

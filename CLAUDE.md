@@ -11,36 +11,38 @@ An open source set of skills for evidence-based instructional design. Runs in Cl
 ```bash
 ./setup              # Install idstack — registers the plugin with Claude Code
 ./setup --local      # Install at project scope (./.claude/) instead of user scope
-./setup --keep-legacy # Leave pre-v2.0.1.0 installs in place instead of removing them
-bin/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.md from the .tmpl sources
+bin/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.md from the .tmpl sources, and the extension's
+                                           # ste-rules.js and neuromyths.js (from the preamble and evidence/neuromyths.json)
 bin/idstack-gen-skills --dry-run           # Check if generated files are up to date
-bin/idstack-doctor                         # Diagnose plugin install (presence, manifest version, legacy-install conflicts)
+bin/idstack-doctor                         # Diagnose plugin install (python3, presence, manifest version)
 bin/idstack-status                         # Course health dashboard (run in a project dir)
 bin/idstack-status --readiness             # Pre-export readiness check only
+bin/idstack-status --context               # Context-recovery lines the preamble reads
 bin/idstack-migrate                        # Migrate an existing .idstack/project.json to the latest schema
 bin/idstack-migrate --init                 # Also create a canonical manifest when none exists (standalone skill runs)
-bin/idstack-manifest-merge --section <s> --payload <f>   # Canonical manifest write path (atomic, section-scoped)
+bin/idstack-manifest-merge --create --section <s> --payload <f>   # Canonical manifest write path (atomic, section-scoped; repeat the pair for several sections)
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
+bin/idstack-slugify --from-manifest        # Same, from the manifest's project_name (what skills call)
 bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
-bin/idstack-consensus {status,configure,query,verify,sync}  # Cache-first Consensus API evidence client (cache: ~/.idstack/cache/consensus)
+bin/idstack-consensus {status,configure,query,verify}  # Cache-first Consensus API evidence client (cache: ~/.idstack/cache/consensus)
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
+scripts/consensus-sync [--domain <name>]   # Maintainer tool: candidate references.md lines per research domain (never edits it)
 ```
 
-Tests (run in CI on every push and PR — see `.github/workflows/test.yml`):
+Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash and node suites):
 
 ```bash
-./test/smoke-test.sh              # 434 assertions: install, SKILL.md freshness, frontmatter, version agreement,
-                                  # canonical section names, /idstack: namespacing, resolve-snippet lockstep, bash -n,
+./test/smoke-test.sh              # 436 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+                                  # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
-./test/integration-test.sh        # 51 behavioral tests across the bin/ scripts; also proves the suite
+./test/integration-test.sh        # 52 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
-./test/test-setup.sh              # 19 behavioral tests for ./setup (flags, scope, legacy cleanup, failure handling)
-./test/test-doctor.sh             # 14 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
+./test/test-setup.sh              # 10 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
+./test/test-doctor.sh             # 12 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches
 ./test/test-status.sh             # 24 tests for bin/idstack-status, incl. the --readiness export gate
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
-./test/test-version-classifier.sh # bin/lib/version-classify.sh unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
-./test/test-preamble-python.sh    # Runs the preamble's embedded python on 3.9 and 3.12
+./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on 3.9 and 3.12
 ./test/test-skill-shell-zsh.sh    # 47 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules via
@@ -61,11 +63,13 @@ python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across 
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9. The test, mutation and release jobs pin Node 22 for the extension and rendered-landing tests.
 
-No build step for users. No dependencies beyond bash (python3 recommended for full features). Skills are plain Markdown files.
+No build step for users. No dependencies beyond bash and python3 3.9 or later; `bin/idstack-doctor` reports a missing or older python3. Skills are plain Markdown files.
 
 ### Releasing
 
 `VERSION` is the source of truth. A bump must also update `.claude-plugin/plugin.json`, a `## vX.Y.Z.W` entry in `CHANGELOG.md`, `README.md`, and `docs/index.html` (`vX.Y.Z.W` plus a 3-part `softwareVersion`). smoke-test and `check-doc-accuracy.py` fail on any mismatch. Pushing a `v*` tag runs `release.yml`, which checks the tag against these files and then creates the GitHub release.
+
+Two versions move on their own schedule. The Chrome extension has its own version in `extension/manifest.json`, and `bin/package-extension.sh` names the zip from it. The manifest schema version (`1.4`) is hard-coded in `templates/manifest-schema.md` and in `check-doc-accuracy.py`, so a schema bump also needs a `bin/idstack-migrate` step.
 
 ## Architecture
 
@@ -112,8 +116,8 @@ Rules for writing the manifest:
 - Own your section only. Read full manifest, modify only your skill's section, preserve everything else.
 - Update the `updated` timestamp on every write.
 - Use `bin/idstack-manifest-merge` for the write path: it's section-scoped, atomic (tempfile + rename), preserves foreign sections, and validates against the canonical schema in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback only.
-- **The one documented exception:** `needs-analysis` and `course-import` keep the Read-modify-Write path because each writes several co-owned sections in one pass, which whole-section merge cannot express. Both state why inline. Don't "fix" them to use the merge tool, and don't copy their pattern into a single-section writer.
-- Running standalone, call `bin/idstack-migrate --init` before merging. On a missing manifest plain `idstack-migrate` is a no-op, so the merge that follows exits 4 and the results are silently never persisted.
+- Pass `--create` on every merge. A skill can run standalone, and without a manifest the merge exits 4 and the results are never saved. `--create` seeds a canonical manifest through `bin/idstack-migrate --init` first; it never replaces one that exists.
+- A skill that writes several sections (`needs-analysis`, `course-import`, `assessment-design`) passes one `--section`/`--payload` pair per section in a single call, so the write is atomic: if any payload is malformed, nothing is written. `--set project_name=<v>` writes the one top-level field a skill owns. For a section that another skill also writes, read it, add your fields, and pass the whole merged section.
 
 Rules for writing the report:
 
@@ -130,19 +134,18 @@ Every skill template follows this pattern:
 2. **`{{PREAMBLE}}`** placeholder (replaced by `templates/preamble.md` during generation)
 3. **Workflow** (Markdown defining the conversational flow, decision trees, outputs)
 4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`)
-5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`${CLAUDE_PLUGIN_ROOT}`, `IDSTACK_HOME`, then the Claude Code marketplace cache). Claude Code writes the plugin path into skill text only where it finds the exact token `${CLAUDE_PLUGIN_ROOT}`, and the Bash tool's shell never has the variable, so never give it a `:-` default. `templates/manifest-schema.md` is spliced verbatim and so writes the resolution out longhand — smoke-test keeps the two in lockstep and fails on any `${CLAUDE_PLUGIN_ROOT:-` in templates or skills.
+5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`${CLAUDE_PLUGIN_ROOT}`, `IDSTACK_HOME`, then the Claude Code marketplace cache). Claude Code writes the plugin path into skill text only where it finds the exact token `${CLAUDE_PLUGIN_ROOT}`, and the Bash tool's shell never has the variable, so never give it a `:-` default. The generator expands the placeholder in `templates/preamble.md` too and leaves the snippet's comment lines out, so the snippet is the only copy. `templates/manifest-schema.md` is also read raw, so it has no placeholder and no resolve lines. smoke-test fails on a hand-written chain in either file and on any `${CLAUDE_PLUGIN_ROOT:-` in templates or skills.
 6. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
 7. **Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/bin/idstack-ste-check"` on that file. smoke-test fails if a skill template has fewer check steps than it must have. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.
 
 The shared preamble includes: interaction conventions (defines how skills use `AskUserQuestion`, `Agent`, and `Skill`), writing standard (the ASD-STE100 rules and word list), update check, manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
 
-Python embedded in the preamble must parse on Python 3.9 — the version macOS ships. `test/test-preamble-python.sh` runs every embedded block on 3.9 and 3.12; a syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases.
+Python that the preamble runs must parse on Python 3.9 — the version macOS ships. Context Recovery calls `bin/idstack-status --context`, which reads the timeline with the same code as the dashboard; `test/test-preamble-python.sh` runs the preamble block against it on 3.9 and 3.12. A syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases. Skills get the course slug from `bin/idstack-slugify --from-manifest`, never from inline Python.
 
 ### Shared shell libraries
 
 Logic used by more than one script — or that deserves a unit test — lives in `bin/lib/` and is sourced by its callers rather than inlined:
 
-- `bin/lib/version-classify.sh` — version comparison, shared by `setup` and `bin/idstack-doctor`
 - `bin/lib/plugin-status.sh` — parses `claude plugin list` output into idstack's own entry
 
 Test the shipped file, never a copy. The version classifier drifted across three PRs while a mirrored copy in its test passed green.
@@ -155,7 +158,7 @@ Test the shipped file, never a copy. The version classifier drifted across three
 
 All text that idstack shows to a person follows the ASD-STE100 Simplified Technical English rules. This includes skill chat, reports, the dashboard, learner content, CLI messages and the Chrome extension.
 
-- The text between `<!-- ste-core:begin -->` and `<!-- ste-core:end -->` in `templates/preamble.md` is the only source of the rules and the word list. `extension/shared/ste-rules.js` has a copy. `test/test-ste-rules.mjs` fails when the two are different.
+- The text between `<!-- ste-core:begin -->` and `<!-- ste-core:end -->` in `templates/preamble.md` is the only source of the rules and the word list. `bin/idstack-gen-skills` writes `extension/shared/ste-rules.js` from that block, and smoke-test fails on a stale copy. Do not edit the JS file by hand.
 - `bin/idstack-ste-check` finds the problems that a script can find. Each skill runs it on each file that the skill writes. The CLI suites, `test/smoke-test.sh` and `test/test-consensus-cli.py` run it on fixed output.
 - Do not add the ASD-STE100 dictionary, or a list that comes from it, to the repo. The idstack word list has a maximum of 50 words. ASD does not endorse idstack, so do not write "STE-compliant" or "certified".
 - The terms of instructional design and software are technical nouns and technical verbs. Do not add them to the word list.
@@ -175,6 +178,8 @@ Every recommendation in a skill must cite its evidence tier using domain codes f
 | T3 | Systematic reviews of mixed evidence |
 | T4 | Observational, no comparison group |
 | T5 | Expert opinion, theoretical frameworks |
+
+`test/test-evidence-labels.mjs` parses this table and asserts the extension's `TIER_METADATA` labels match the Meaning column. Change the two together, and keep the `| Tn | text |` row format.
 
 Format: `[DomainCode-Number] [Tier]` (e.g., `[Alignment-14] [T1]`). Stronger evidence takes precedence when tiers conflict.
 

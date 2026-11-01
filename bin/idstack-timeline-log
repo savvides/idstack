@@ -5,11 +5,13 @@
 # A caller-supplied "ts" is preserved verbatim — useful when logging an event
 # that occurred at a specific in-conversation moment, not when bash ran.
 # Creates .idstack/ if needed. Exit 0 always — never blocks the calling skill.
+# Needs python3; without it, it writes nothing and says so on stderr.
 
 set -e
 
 JSON_ARG="${1:-}"
 [ -z "$JSON_ARG" ] && exit 0
+command -v python3 &>/dev/null || { echo "idstack-timeline-log: python3 is necessary" >&2; exit 0; }
 
 IDSTACK_DIR=".idstack"
 TIMELINE="$IDSTACK_DIR/timeline.jsonl"
@@ -19,8 +21,7 @@ mkdir -p "$IDSTACK_DIR" 2>/dev/null || exit 0
 TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # Use python3 for safe JSON serialization (injects ts field if absent)
-if command -v python3 &>/dev/null; then
-  LINE=$(python3 -c "
+LINE=$(python3 -c "
 import json, sys
 try:
     d = json.loads(sys.argv[1])
@@ -31,9 +32,5 @@ except Exception:
     # Fallback: wrap raw input with timestamp
     print(json.dumps({'raw': sys.argv[1], 'ts': '$TS'}))
 " "$JSON_ARG" 2>/dev/null) || LINE="{\"raw\":\"error\",\"ts\":\"$TS\"}"
-else
-  # No python3: best-effort bash append (no JSON validation, no ts preservation).
-  LINE=$(echo "$JSON_ARG" | sed "s/}$/,\"ts\":\"$TS\"}/")
-fi
 
 echo "$LINE" >> "$TIMELINE" 2>/dev/null || true

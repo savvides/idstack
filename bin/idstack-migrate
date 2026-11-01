@@ -4,7 +4,7 @@
 # the manifest again. It also writes the JSON to stdout, changed or not.
 # When it applies a migration, it writes "MIGRATED <from> <to>" to stderr.
 # If there is no file, the script writes no output and exits 0.
-# If python3 is not available, the script writes the file to stdout with cat.
+# If python3 is not available, the script exits 3 and changes nothing.
 #
 # Usage:
 #   idstack-migrate [--init] [path]
@@ -35,15 +35,13 @@ for arg in "$@"; do
     *) [ -z "$MANIFEST" ] && MANIFEST="$arg" ;;
   esac
 done
+
+command -v python3 &>/dev/null || { echo "idstack-migrate: python3 is necessary" >&2; exit 3; }
 MANIFEST="${MANIFEST:-.idstack/project.json}"
 
 # Seed a fresh manifest when asked. The migration chain below fills in every
 # section, so this only has to carry the fields migrations do not default.
 if [ ! -f "$MANIFEST" ] && [ "$INIT" = "1" ]; then
-  if ! command -v python3 &>/dev/null; then
-    echo "idstack-migrate: python3 is necessary for --init" >&2
-    exit 3
-  fi
   mkdir -p "$(dirname "$MANIFEST")"
   python3 -c "
 import json, sys, datetime
@@ -66,12 +64,6 @@ fi
 
 # Nothing to do if no manifest exists
 [ -f "$MANIFEST" ] || exit 0
-
-# Require python3 for JSON manipulation; fall back to cat if missing
-if ! command -v python3 &>/dev/null; then
-  cat "$MANIFEST"
-  exit 0
-fi
 
 VERSION=$(python3 -c "
 import json, sys

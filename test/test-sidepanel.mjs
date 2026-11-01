@@ -25,6 +25,9 @@ async function openPanel(url, { apiKey, ...chromeOpts } = {}) {
 // content script: the panel injects the shipped extractor and reads the
 // script's completion value.
 let p = await openPanel(COURSE_ROOT);
+// The badge reads the shipped manifest at run time, so a version bump needs no HTML edit.
+const manifestVersion = JSON.parse((await import('node:fs')).readFileSync(new URL('../extension/manifest.json', import.meta.url), 'utf8')).version;
+assert.strictEqual(p.document.querySelector('.badge-version').textContent, `v${manifestVersion.split('.').slice(0, 2).join('.')}`, 'version badge shows v<major>.<minor> of the manifest');
 assert.deepStrictEqual(p.h.calls.executed, [{ target: { tabId: 7 }, files: ['content/extractor.js'] }], 'the panel injects the shipped extractor into the active tab');
 assert.strictEqual(p.$('audit-course-btn').style.display, 'block', 'course audit offered on a course root');
 assert.strictEqual(p.$('page-type-tag').textContent, 'Canvas Course Root');

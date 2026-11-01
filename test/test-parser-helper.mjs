@@ -1,30 +1,30 @@
 import assert from 'node:assert';
-import { parseAuditResponse, cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } from '../extension/background/parser-helper.js';
+import { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } from '../extension/background/parser-helper.js';
 
 // Test 1: Markdown fenced JSON with '```json'
 const rawLlmResponse = "```json\n{\n  \"summary\": {\n    \"bloomsLevel\": \"Remember\",\n    \"alignmentScore\": \"Moderate\",\n    \"keyTakeaway\": \"Quiz focuses only on memorization.\"\n  },\n  \"findings\": [],\n  \"improvedDraft\": {\n    \"title\": \"Analysis Prompt\",\n    \"content\": \"Compare and contrast\"\n  }\n}\n```";
 
-const parsed = parseAuditResponse(rawLlmResponse);
+const parsed = cleanJsonResponse(rawLlmResponse);
 assert.strictEqual(parsed.summary.bloomsLevel, 'Remember');
 assert.strictEqual(parsed.improvedDraft.title, 'Analysis Prompt');
 assert.strictEqual(parsed.summary.alignmentScore, 'Moderate');
 
 // Test 2: Markdown fenced JSON with '```' (without json tag)
 const rawFencedNoTag = "```\n{\n  \"summary\": { \"bloomsLevel\": \"Analyze\" }\n}\n```";
-const parsedNoTag = parseAuditResponse(rawFencedNoTag);
+const parsedNoTag = cleanJsonResponse(rawFencedNoTag);
 assert.strictEqual(parsedNoTag.summary.bloomsLevel, 'Analyze');
 
 // Test 3: Raw clean JSON without fences
 const rawPlainJson = '{"summary": {"bloomsLevel": "Create"}}';
-const parsedPlain = parseAuditResponse(rawPlainJson);
+const parsedPlain = cleanJsonResponse(rawPlainJson);
 assert.strictEqual(parsedPlain.summary.bloomsLevel, 'Create');
 
 // Test 4: JSON with leading/trailing whitespace and fences
 const rawWithWhitespace = '   \n```json\n{"summary": {"bloomsLevel": "Evaluate"}}\n```\n  ';
-const parsedWhitespace = parseAuditResponse(rawWithWhitespace);
+const parsedWhitespace = cleanJsonResponse(rawWithWhitespace);
 assert.strictEqual(parsedWhitespace.summary.bloomsLevel, 'Evaluate');
 
-// Test 5: cleanJsonResponse alias
+// Test 5: plain objects, arrays and whitespace
 assert.strictEqual(typeof cleanJsonResponse, 'function');
 const cleaned = cleanJsonResponse('{"key": "value"}');
 assert.strictEqual(cleaned.key, 'value');

@@ -50,13 +50,13 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings-log idstack-learnings-search idstack-learnings-delete idstack-learnings-promote idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus idstack-ste-check; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-consensus idstack-ste-check; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
 
 # Bash syntax gate for the shell entry points (idstack-manifest-merge is python).
-for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/version-classify.sh bin/lib/plugin-status.sh test/test-helper.sh; do
+for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-learnings bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/plugin-status.sh test/test-helper.sh; do
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
 
@@ -65,7 +65,7 @@ done
 # helper `assert`, and one swallowed failure output entirely, so CI reported a
 # bare FAIL with no diagnostics. A local `PASS=0` is how that regrows.
 check "test-helper.sh exists" "[ -f '$IDSTACK_DIR/test/test-helper.sh' ]"
-for suite in smoke-test integration-test test-manifest-merge test-version-classifier \
+for suite in smoke-test integration-test test-manifest-merge \
              test-plugin-status test-preamble-python test-setup test-doctor test-status \
              test-skill-shell-zsh; do
   check "test/$suite.sh sources the shared helper" \
@@ -169,6 +169,21 @@ check "idstack-slugify: '!!!' → untitled-course" \
   "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' '!!!')\" = 'untitled-course' ]"
 check "idstack-slugify: unicode ASCII-folds — 'Géographie I' → geographie-i" \
   "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Géographie I')\" = 'geographie-i' ]"
+# --from-manifest owns the project_name -> slug rule for the skills and the
+# dashboard; each once read the name with its own inline Python, and the copies
+# disagreed on the needs_analysis.project_name fallback.
+SLUG_TMP=$(mktemp -d)
+printf '%s' '{"project_name": "Intro Bio"}' > "$SLUG_TMP/a.json"
+printf '%s' '{"needs_analysis": {"project_name": "Old Name"}}' > "$SLUG_TMP/b.json"
+check "idstack-slugify --from-manifest reads project_name" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' --from-manifest '$SLUG_TMP/a.json')\" = 'intro-bio' ]"
+check "idstack-slugify --from-manifest falls back to needs_analysis.project_name" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' --from-manifest '$SLUG_TMP/b.json')\" = 'old-name' ]"
+check "idstack-slugify --from-manifest on a missing manifest → untitled-course" \
+  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' --from-manifest '$SLUG_TMP/none.json')\" = 'untitled-course' ]"
+rm -rf "$SLUG_TMP"
+check "no skill template reads project_name with inline Python" \
+  "! grep -l \"get('project_name'\" $IDSTACK_DIR/skills/*/SKILL.md.tmpl | grep -q ."
 check "idstack-slugify: implicit stdin pipeline" \
   "[ \"\$(echo 'Course via Implicit Stdin' | '$IDSTACK_DIR/bin/idstack-slugify')\" = 'course-via-implicit-stdin' ]"
 check "idstack-slugify: explicit dash stdin pipeline" \
@@ -187,14 +202,20 @@ for skill in $REPORT_PRODUCING_SKILLS; do
   check "$skill SKILL.md.tmpl includes Top recommendations" "grep -qi 'Top recommendations' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
-# Manifest write-path contract: single-section owners go through the merge
-# tool; multi-section/first-run writers document the Write-tool fallback the
-# way course-import models it.
-for skill in learning-objectives course-quality-review course-export; do
-  check "$skill SKILL.md.tmpl uses idstack-manifest-merge" "grep -q 'idstack-manifest-merge' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+# Manifest write-path contract: every manifest writer goes through the merge
+# tool, and every merge call passes --create. Skills run standalone; a merge
+# without it exits 4 on a missing manifest and the results are never saved
+# (course-builder once ran a bare migrate that made nothing). Multi-section
+# writers use one call so the write is atomic.
+MANIFEST_WRITERS="needs-analysis course-import learning-objectives assessment-design course-builder course-quality-review accessibility-review red-team course-export"
+for skill in $MANIFEST_WRITERS; do
+  check "$skill SKILL.md.tmpl uses idstack-manifest-merge" "grep -q 'idstack-manifest-merge\" --create' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl has no merge call without --create" "! grep 'bin/idstack-manifest-merge\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | grep -vq -- '--create'"
+  check "$skill SKILL.md.tmpl does not seed the manifest with idstack-migrate" "! grep -q 'idstack-migrate' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 for skill in needs-analysis course-import; do
-  check "$skill SKILL.md.tmpl justifies its Write-tool fallback" "grep -q 'Write-tool fallback' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl writes its sections in one merge call" "grep -q -- '--section context --payload' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl sets project_name through the merge tool" "grep -q -- '--set project_name=' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
 # The learning_preferences_note text has two copies: the schema default and the
@@ -280,7 +301,11 @@ check "pipeline invokes children with the idstack: namespace" "grep -qF 'skill: 
 RESOLVE_LINE="$(grep -m1 '^for _p in' "$IDSTACK_DIR/templates/snippets/idstack-resolve.sh" 2>/dev/null || true)"
 check "resolve snippet has the canonical for-chain" "[ -n \"\$RESOLVE_LINE\" ]"
 check "resolve snippet includes the marketplace cache path" "grep -q 'plugins/cache/idstack' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
-check "preamble embeds the snippet's resolve chain verbatim (x3)" "[ \"\$(grep -cF \"\$RESOLVE_LINE\" '$IDSTACK_DIR/templates/preamble.md')\" -eq 3 ]"
+# The preamble once kept hand copies of the chain, and one drifted unseen. Now
+# gen-skills expands the placeholder there too, and no hand-written chain is left.
+check "preamble uses {{IDSTACK_RESOLVE}}" "grep -q '{{IDSTACK_RESOLVE}}' '$IDSTACK_DIR/templates/preamble.md'"
+check "no hand-written resolve chain in the preamble or schema" "! grep -qE '^for _[a-z]+ in ' '$IDSTACK_DIR/templates/preamble.md' '$IDSTACK_DIR/templates/manifest-schema.md'"
+check "every generated resolve chain is the snippet's" "! grep -h '^for _[a-z]* in ' $IDSTACK_DIR/skills/*/SKILL.md | grep -vqxF \"\$RESOLVE_LINE\""
 for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl uses {{IDSTACK_RESOLVE}}" "grep -q '{{IDSTACK_RESOLVE}}' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl does not hand-roll _IDSTACK" "! grep -Eq '_IDSTACK:?=' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
@@ -300,8 +325,6 @@ RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$ID
   | env -u CLAUDE_PLUGIN_ROOT -u IDSTACK_HOME HOME="$RESOLVE_SIM/home" bash)
 check "the substituted plugin root wins over a stale cache install" "[ '$RESOLVE_SIM_GOT' = '$RESOLVE_SIM/plugin' ]"
 rm -rf "$RESOLVE_SIM"
-# The x3 count above pins only the preamble's "for _p in" copies. The consensus
-# block ("for _dir in") and the longhand copy in manifest-schema.md need this.
 check "no resolve chain gives the plugin root a default" "! grep -rlF '\${CLAUDE_PLUGIN_ROOT:-' '$IDSTACK_DIR/templates' $IDSTACK_DIR/skills/*/SKILL.md.tmpl $IDSTACK_DIR/skills/*/SKILL.md"
 
 # Pipeline orchestrator must produce index.html under the course folder.
@@ -310,11 +333,16 @@ check "no resolve chain gives the plugin root a default" "! grep -rlF '\${CLAUDE
 check "pipeline SKILL.md.tmpl produces index.html in exports/<slug>/" "grep -qE 'exports/.*index.html|\$_EXPORT_DIR/index.html' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 
 # Schema-drift regression: skills that share the canonical schema must use the
-# {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy.
-SCHEMA_HOST_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review"
+# {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy. Only
+# the skills that build several sections inline it; the single-section writers
+# Read the file from the plugin root when they need another section's shape.
+SCHEMA_HOST_SKILLS="needs-analysis course-import"
 for skill in $SCHEMA_HOST_SKILLS; do
   check "$skill SKILL.md.tmpl uses {{MANIFEST_SCHEMA}}" "grep -q '{{MANIFEST_SCHEMA}}' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill generated SKILL.md inlines canonical schema (version 1.4)" "grep -q '\"version\": \"1.4\"' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+done
+for skill in learning-objectives assessment-design course-builder course-quality-review course-export accessibility-review red-team; do
+  check "$skill SKILL.md.tmpl reads the schema from the plugin root" "grep -qF '\${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
 # Schema-drift regression: drifted field names must NOT appear in any SKILL.md.tmpl
@@ -331,40 +359,11 @@ for skill in $MODE_AWARE_SKILLS; do
   check "$skill branches on import_metadata.source" "grep -q 'import_metadata.source' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
-# Legacy-install conflict regression: a pre-v2.0.1.0 dispatcher install at
-# ~/.claude/skills/idstack/ shadows the plugin namespace and breaks
-# /idstack:<skill> resolution. We only check this when run without a $1 override
-# — CI fixtures point $1 at their own checkout and don't share state with the
-# user's home directory.
-if [ -z "${1:-}" ]; then
-  LEGACY_CHECK_DIR="$HOME/.claude/skills/idstack"
-  check "no legacy idstack dispatcher at ~/.claude/skills/idstack/SKILL.md (run: rm -rf $LEGACY_CHECK_DIR)" \
-    "[ ! -f '$LEGACY_CHECK_DIR/SKILL.md' ] || ! grep -q '^name: idstack' '$LEGACY_CHECK_DIR/SKILL.md'"
-  for skill in $SKILLS; do
-    legacy_link="$HOME/.claude/skills/$skill"
-    check "no pre-v2 skill symlink at ~/.claude/skills/$skill pointing into idstack" \
-      "[ ! -L '$legacy_link' ] || ! readlink '$legacy_link' 2>/dev/null | grep -q idstack"
-  done
-fi
-
 # Manifest-merge tool must exist and be executable, and its unit tests must pass.
 check "bin/idstack-manifest-merge exists" "[ -f '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
 check "bin/idstack-manifest-merge is executable" "[ -x '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
 if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
   check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
-fi
-
-# Version classifier (shared by setup + bin/idstack-doctor) must classify
-# multi-digit versions correctly. Pinned to catch the pattern-fragility
-# regression Gemini Code Assist flagged twice. The classifier itself lives in  # IDSTACK_CLI_LEAK_ALLOW
-# bin/lib/version-classify.sh — one definition sourced by setup, doctor, and
-# the unit test, so the test exercises the shipped code, never a copy.
-check "bin/lib/version-classify.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/version-classify.sh' ]"
-check "setup sources the shared version classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/setup'"
-check "idstack-doctor sources the shared version classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/bin/idstack-doctor'"
-check "version-classifier test sources the shared classifier" "grep -q 'lib/version-classify.sh' '$IDSTACK_DIR/test/test-version-classifier.sh'"
-if [ -x "$IDSTACK_DIR/test/test-version-classifier.sh" ]; then
-  check "version-classifier unit tests pass" "'$IDSTACK_DIR/test/test-version-classifier.sh'"
 fi
 
 # `claude plugin list` parsing, also extracted to bin/lib/ so it is testable.
@@ -496,8 +495,9 @@ for skill in $TIMELINE_SKILLS; do
   check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
-# Check preamble uses CLAUDE_PLUGIN_ROOT
-check "preamble supports CLAUDE_PLUGIN_ROOT" "grep -q 'CLAUDE_PLUGIN_ROOT' '$IDSTACK_DIR/templates/preamble.md'"
+# Check every generated skill resolves through CLAUDE_PLUGIN_ROOT (the preamble
+# gets it from the {{IDSTACK_RESOLVE}} expansion)
+check "every generated SKILL.md supports CLAUDE_PLUGIN_ROOT" "! grep -L 'CLAUDE_PLUGIN_ROOT' $IDSTACK_DIR/skills/*/SKILL.md | grep -q ."
 
 # The preamble's embedded python must run on the oldest supported interpreter
 # (macOS system python3 is 3.9) — a SyntaxError there dies silently behind

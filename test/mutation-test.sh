@@ -54,7 +54,7 @@ PY_LT_312=$(python3 -c 'import sys; print(1 if sys.version_info < (3,12) else 0)
 # against, so all three agree by construction even if $SRC is edited mid-run.
 # Copy only what the suites need; skip .git and any nested worktrees.
 mkdir -p "$WORK/base"
-for item in bin skills templates test evidence docs extension .claude-plugin \
+for item in bin scripts skills templates test evidence docs extension .claude-plugin \
             VERSION CHANGELOG.md README.md PRIVACY.md TODOS.md CONTRIBUTING.md \
             DESIGN.md ROADMAP.md CLAUDE.md setup; do
   [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/base/"
@@ -100,18 +100,19 @@ if ( expect_fail "no-op mutation" false ) >/dev/null 2>&1; then
   exit 1
 fi
 
-# 1. f-string bug in the preamble -> test-preamble-python must fail.
-# Only meaningful on Python < 3.12; see PY_LT_312 above.
+# 1. f-string bug in the context-recovery Python (bin/idstack-status --context)
+# -> test-preamble-python must fail. Only meaningful on Python < 3.12; see
+# PY_LT_312 above.
 if [ "$PY_LT_312" = "1" ]; then
   fresh
-  python3 - "$WORK/r/templates/preamble.md" <<'PY'
+  python3 - "$WORK/r/bin/idstack-status" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace("print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))",
-              "print(f'SKILLS_COMPLETED: {','.join(sorted(completed))}')")
+old = "print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))"
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, "print(f'SKILLS_COMPLETED: {','.join(sorted(completed))}')")
 open(p,'w').write(s)
 PY
-  regen
   expect_fail "preamble f-string regression" "$WORK/r/test/test-preamble-python.sh"
 else
   skip_case "preamble f-string regression" \
@@ -120,13 +121,14 @@ fi
 
 # 2. course-import dropped from SUGGESTED_NEXT -> test-preamble-python must fail
 fresh
-python3 - "$WORK/r/templates/preamble.md" <<'PY'
+python3 - "$WORK/r/bin/idstack-status" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace("    ('course-import', 'learning-objectives'),\n", "")
+old = "    ('course-import', 'learning-objectives'),\n"
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, "")
 open(p,'w').write(s)
 PY
-regen
 expect_fail "course-import suggestion regression" "$WORK/r/test/test-preamble-python.sh"
 
 # 3. non-canonical manifest section name returns -> smoke-test must fail
@@ -251,46 +253,6 @@ sed -i.bak '/\*\*Top recommendations:\*\*/d' "$WORK/r/skills/learning-objectives
 regen
 expect_fail "missing Top recommendations" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 11. --keep-legacy ignored by the per-skill symlink loop -> test-setup must fail
-fresh
-python3 - "$WORK/r/setup" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p).read()
-s = s.replace('''      if [ "$KEEP_LEGACY" = "1" ]; then
-        echo "  KEPT legacy symlink: $legacy (--keep-legacy)"
-      else
-        rm "$legacy"
-        echo "  removed legacy symlink: $legacy"
-      fi''', '''      rm "$legacy"
-      echo "  removed legacy symlink: $legacy"''')
-open(p,'w').write(s)
-PY
-expect_fail "--keep-legacy ignored by per-skill loop" "$WORK/r/test/test-setup.sh" "$WORK/r"
-
-# 12. --local scope leaking into $HOME -> test-setup must fail
-fresh
-python3 - "$WORK/r/setup" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p).read()
-s = s.replace('''if [ "$SCOPE" = "local" ]; then
-  vestigial="$(pwd)/.claude/plugins/idstack"
-else
-  vestigial="$HOME/.claude/plugins/idstack"
-fi
-if [ -L "$vestigial" ]; then
-  rm "$vestigial"
-  echo "  removed legacy plugin symlink: $vestigial (pre-marketplace install method)"
-fi''', '''for plugins_base in "$HOME/.claude/plugins" "$(pwd)/.claude/plugins"; do
-  vestigial="$plugins_base/idstack"
-  if [ -L "$vestigial" ]; then
-    rm "$vestigial"
-    echo "  removed legacy plugin symlink: $vestigial"
-  fi
-done''')
-open(p,'w').write(s)
-PY
-expect_fail "--local leaking into \$HOME" "$WORK/r/test/test-setup.sh" "$WORK/r"
-
 # 13. silent failure when `claude` exits nonzero -> test-setup must fail
 fresh
 python3 - "$WORK/r/setup" <<'PY'
@@ -313,8 +275,8 @@ fresh
 python3 - "$WORK/r/README.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace("**Requirement:** [Claude Code](https://claude.ai/code)",
-              "**Requirement:** [Claude Code](https://claude.ai/code) or OpenAI Codex CLI", 1)  # IDSTACK_CLI_LEAK_ALLOW
+s = s.replace("**Requirements:** [Claude Code](https://claude.ai/code)",
+              "**Requirements:** [Claude Code](https://claude.ai/code) or OpenAI Codex CLI", 1)  # IDSTACK_CLI_LEAK_ALLOW
 open(p,'w').write(s)
 PY
 expect_fail "retired-CLI reference back in README" "$WORK/r/test/smoke-test.sh" "$WORK/r"
@@ -1312,17 +1274,18 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "never-accesses-PII claim back in the privacy policy" "$WORK/r/test/test-extension.sh"
 
-# 31f. audit-history retention goes undisclosed -> test-extension must fail.
+# 31f. PRIVACY.md promises an audit history again, which the extension no
+# longer keeps -> test-extension must fail.
 fresh
 python3 - "$WORK/r/PRIVACY.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "The last 20 audit results (page address, title, page type, and the full audit result) are kept in `chrome.storage.local`, as is the Course Dossier you build."
+old = "The extension keeps no audit history."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "The Course Dossier you build is kept in `chrome.storage.local`.", 1)
+s = s.replace(old, "The last 20 audit results are kept in `chrome.storage.local` too.", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "audit-history retention undisclosed" "$WORK/r/test/test-extension.sh"
+expect_fail "audit history promised again" "$WORK/r/test/test-extension.sh"
 
 # 31g. the README crawler bullet overclaims again -> test-extension must fail.
 fresh
@@ -1377,15 +1340,15 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "privacy policy omits a host the manifest can reach" "$WORK/r/test/test-extension.sh"
 
-# 32. the side panel's version badge drifts from the manifest -> test-extension must fail.
-# The badge is hand-written, so a manifest bump alone would leave the panel showing the old version.
+# 32. the side panel stops filling its version badge from the manifest -> test-extension
+# must fail. A hand-written badge once kept the old version after a manifest bump.
 fresh
-python3 - "$WORK/r/extension/sidepanel/index.html" <<'PY'
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = '<span class="badge-version">v1.2</span>'
+old = '  versionBadge.textContent = `v${major}.${minor}`;\n'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, '<span class="badge-version">v1.0</span>', 1)
+s = s.replace(old, '', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "side panel version badge drifts from the manifest" "$WORK/r/test/test-extension.sh"
@@ -1720,20 +1683,20 @@ PY
 expect_fail "a contraction in the setup closing text" "$WORK/r/test/test-setup.sh" "$WORK/r"
 
 # 45a-45c. The text that `idstack-consensus verify` writes into findings. Skills copy
-# it into HTML reports and the manifest, so it must obey the writing standard, and
-# the extension's copy of the neuromyth text must stay the same as the CLI's copy.
+# it into HTML reports and the manifest, so it must obey the writing standard. The
+# neuromyth text lives in evidence/neuromyths.json, and gen-skills writes the
+# extension's copy from it.
 # 45a. A semicolon returns to a neuromyth note -> test-consensus-cli must fail.
-# The mutation changes both copies the same way, so only the STE guard can fail.
 fresh
-python3 - "$WORK/r/bin/idstack-consensus" "$WORK/r/extension/shared/consensus-client.js" <<'PY'
+python3 - "$WORK/r/evidence/neuromyths.json" <<'PY'
 import sys
-for p in sys.argv[1:]:
-    s = open(p, encoding='utf-8').read()
-    old = "Sensory learning styles are a known neuromyth. idstack recommends"
-    assert s.count(old) == 1, 'anchor not unique in %s: %d' % (p, s.count(old))
-    s = s.replace(old, "Sensory learning styles are a known neuromyth; idstack recommends", 1)
-    open(p, 'w', encoding='utf-8').write(s)
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Sensory learning styles are a known neuromyth. idstack recommends"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Sensory learning styles are a known neuromyth; idstack recommends", 1)
+open(p, 'w', encoding='utf-8').write(s)
 PY
+regen
 expect_fail "a neuromyth note has a semicolon again" python3 "$WORK/r/test/test-consensus-cli.py"
 
 # 45b. "should" returns to a tier-calibration note -> test-consensus-cli must fail.
@@ -1749,23 +1712,24 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "a tier-calibration note says should again" python3 "$WORK/r/test/test-consensus-cli.py"
 
-# 45c. The extension's neuromyth text drifts from the CLI's -> test-consensus-cli must fail.
-# Before this guard, nothing kept the two copies the same.
+# 45c. A hand edit makes the extension's generated neuromyth text drift from
+# evidence/neuromyths.json -> smoke-test must fail on the stale file.
 fresh
-python3 - "$WORK/r/extension/shared/consensus-client.js" <<'PY'
+python3 - "$WORK/r/extension/shared/neuromyths.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "'Multimodal dual coding helps all learners.';"
+old = "Multimodal dual coding helps all learners."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "'Multimodal dual coding helps every learner.';", 1)
+s = s.replace(old, "Multimodal dual coding helps every learner.", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "the extension neuromyth text drifts from the CLI text" python3 "$WORK/r/test/test-consensus-cli.py"
+expect_fail "the extension neuromyth text drifts from the CLI text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 47a-47b. The extension's model prompts carry a copy of the preamble's
-# ASD-STE100 rules. test-ste-rules.mjs compares the copy with the ste-core block
-# and checks that both prompts carry it.
-# 47a. The extension copy drifts by one word -> test-extension must fail.
+# 47a-47b. The extension's model prompts carry the preamble's ASD-STE100 rules.
+# gen-skills writes extension/shared/ste-rules.js from the ste-core block, and
+# test-ste-rules.mjs checks that both prompts carry it.
+# 47a. A hand edit makes the generated copy drift by one word -> smoke-test must
+# fail on the stale file.
 fresh
 python3 - "$WORK/r/extension/shared/ste-rules.js" <<'PY'
 import sys
@@ -1775,7 +1739,7 @@ assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '| "utilize" | "employ" | |', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "the extension copy of the STE rules drifts" "$WORK/r/test/test-extension.sh"
+expect_fail "the extension copy of the STE rules drifts" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 47b. The course prompt drops the STE rules -> test-extension must fail.
 fresh
@@ -1862,38 +1826,37 @@ expect_fail "the rendered landing test ignores a Chrome that stops at startup" "
 # the exact token ${CLAUDE_PLUGIN_ROOT}. The Bash tool's shell does not have the
 # variable. With a ":-" default the chain fell through to an old cache install that
 # had no checker, and the check step said only that the check did not run.
-# 51a. The chain gives the plugin root a ":-" default again in all five copies ->
-# smoke-test must fail. All copies move together, so the x3 lockstep count passes
+# 51a. The chain gives the plugin root a ":-" default again -> smoke-test must
+# fail. The snippet is the only copy, so every generated chain still matches it
 # and only the substitution checks can see it.
 fresh
-python3 - "$WORK/r" <<'PY'
+python3 - "$WORK/r/templates/snippets/idstack-resolve.sh" <<'PY'
 import sys
-r = sys.argv[1]
-for rel, n in (("templates/snippets/idstack-resolve.sh", 1), ("templates/preamble.md", 4),
-               ("templates/manifest-schema.md", 1)):
-    p = r + "/" + rel; s = open(p, encoding='utf-8').read()
-    old = '"${CLAUDE_PLUGIN_ROOT}"'
-    assert s.count(old) == n, '%s: anchor count %d' % (rel, s.count(old))
-    s = s.replace(old, '"${CLAUDE_PLUGIN_ROOT:-}"')
-    open(p, 'w', encoding='utf-8').write(s)
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '"${CLAUDE_PLUGIN_ROOT}"'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '"${CLAUDE_PLUGIN_ROOT:-}"')
+open(p, 'w', encoding='utf-8').write(s)
 PY
 regen
 expect_fail "the resolve chain gives the plugin root a default again" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 51b. Only the longhand copy in manifest-schema.md gets the ":-" default again ->
-# smoke-test must fail. The x3 count and the substitution run read only the
-# preamble's copies, so only the repo-wide grep sees this copy.
+# 51b. A hand-written chain comes back into the preamble's Consensus block, as
+# the "for _dir in" copy once drifted there unseen -> smoke-test must fail.
 fresh
-python3 - "$WORK/r/templates/manifest-schema.md" <<'PY'
+python3 - "$WORK/r/templates/preamble.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = 'for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do'
-assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, 'for _p in "${CLAUDE_PLUGIN_ROOT:-}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do', 1)
+old = '# Consensus key detection\n{{IDSTACK_RESOLVE}}\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '# Consensus key detection\n_IDSTACK=""\n'
+  'for _dir in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}"; do\n'
+  '  if [ -n "$_dir" ] && [ -d "$_dir" ]; then _IDSTACK="${_dir%/}"; break; fi\n'
+  'done\n')
 open(p, 'w', encoding='utf-8').write(s)
 PY
 regen
-expect_fail "the manifest-schema resolve chain gives the plugin root a default" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+expect_fail "a hand-written resolve chain returns to the preamble" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 51c. learn's check step folds a missing checker into the python3 token again ->
 # smoke-test must fail. The step still calls the checker, so the count of check
@@ -2088,11 +2051,144 @@ shell_mutation "a report block stops printing the plugin template path" \
 
 # 56a-56c. Claude-Code-only guards (v3.8.0.0) -> smoke-test must fail.
 shell_mutation "an untagged support claim for another agent enters the README" \
-  README.md '**Requirement:** [Claude Code](https://claude.ai/code)' '**Requirement:** [Claude Code](https://claude.ai/code) or Antigravity'  # IDSTACK_CLI_LEAK_ALLOW
+  README.md '**Requirements:** [Claude Code](https://claude.ai/code)' '**Requirements:** [Claude Code](https://claude.ai/code) or Antigravity'  # IDSTACK_CLI_LEAK_ALLOW
 shell_mutation "a skill description names a bare /skill again" \
   skills/needs-analysis/SKILL.md.tmpl '/idstack:learning-objectives, /idstack:course-quality-review' '/learning-objectives, /idstack:course-quality-review'
 shell_mutation "a skill description loses its Use-when trigger" \
   skills/red-team/SKILL.md.tmpl 'Use when asked to' 'It works when asked to'
+
+# 55a-55c. The manifest write path. A standalone skill run has no manifest, and
+# a merge without one exits 4, so the run's results are never saved.
+# 55a. course-builder's merge call loses --create again, as when it ran a bare
+# migrate that made nothing -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'idstack-manifest-merge" --create --section course_content'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, 'idstack-manifest-merge" --section course_content', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "a skill merges without --create again" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 55b. The merge tool ignores --create -> test-manifest-merge must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-manifest-merge" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '    if args.create and not os.path.isfile(args.manifest):\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '    if False:\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the merge tool ignores --create" "$WORK/r/test/test-manifest-merge.sh"
+
+# 55c. The merge tool makes the manifest before it checks the payloads -> the
+# test-manifest-merge suite must fail. A bad payload then leaves a seeded
+# manifest behind.
+fresh
+python3 - "$WORK/r/bin/idstack-manifest-merge" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '    payloads = [load_payload(path) for path in args.payload]\n\n'
+new_pos = '    manifest = load_manifest(args.manifest)\n'
+assert s.count(old) == 1 and s.count(new_pos) == 1, 'anchor count'
+s = s.replace(old, '', 1)
+s = s.replace(new_pos, '    payloads = [load_payload(path) for path in args.payload]\n' + new_pos, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the merge tool makes the manifest before it checks the payloads" "$WORK/r/test/test-manifest-merge.sh"
+
+# 56a-56b. The course slug. Skills and the dashboard each read project_name
+# with their own code once, and the copies disagreed on the fallback.
+# 56a. A skill reads project_name with inline Python again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/skills/red-team/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '_PROJECT_NAME=$(python3 -c "import json; print(json.load(open(\'.idstack/project.json\')).get(\'project_name\',\'\'))")\n'
+  '_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "a skill reads project_name with inline Python again" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 56b. slugify --from-manifest drops the needs_analysis.project_name fallback,
+# so skills and the dashboard disagree again -> smoke-test must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-slugify" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = ' or (d.get("needs_analysis") or {}).get("project_name")'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "slugify --from-manifest drops the needs_analysis fallback" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 57. learnings promote splices the global path into its python source again,
+# so a quote in $HOME is a syntax error -> integration-test must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-learnings" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'GLOBAL = os.environ["GLOBAL"]'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, "GLOBAL = '$GLOBAL'", 1)
+old = "python3 - \"$@\" <<'PY'"
+assert s.count(old) == 1, 'heredoc anchor count %d' % s.count(old)
+s = s.replace(old, 'python3 - "$@" <<PY', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "learnings promote splices \$HOME into its python source" "$WORK/r/test/integration-test.sh"
+
+# 58. migrate falls back to cat without python3 again: it prints the manifest
+# unmigrated and exits 0 -> integration-test must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-migrate" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = 'command -v python3 &>/dev/null || { echo "idstack-migrate: python3 is necessary" >&2; exit 3; }\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '', 1)
+old = '[ -f "$MANIFEST" ] || exit 0\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, old + 'command -v python3 &>/dev/null || { cat "$MANIFEST"; exit 0; }\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "migrate prints the unmigrated manifest without python3" "$WORK/r/test/integration-test.sh"
+
+# 59. the service worker stops deleting the audit history that extension 1.2.0
+# and earlier kept -> test-extension must fail. Without it, PRIVACY.md's "keeps
+# no audit history" is false for every upgraded install.
+fresh
+python3 - "$WORK/r/extension/background/service-worker.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    chrome.storage.local.remove('auditHistory').catch((err) => console.error(err));\n"
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "an update keeps the old audit history" "$WORK/r/test/test-extension.sh"
+
+# 60. consensus-sync prints a built-in citation again when it has no key and no
+# cache -> test-consensus-cli must fail. Nobody checked those citations, and the
+# output is ready to paste into references.md.
+fresh
+python3 - "$WORK/r/scripts/consensus-sync" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    # No real data: print no citation rather than one that nobody checked.\n    return []\n"
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '    return [{"authors": "Li, X. & Wang, Y.", "year": 2025, "title": "A Meta-Analysis", "journal": "Computers & Education", "tier": "T1", "source": "default"}]\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "sync prints a built-in citation again" python3 "$WORK/r/test/test-consensus-cli.py"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

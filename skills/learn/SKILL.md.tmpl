@@ -33,7 +33,7 @@ this is the default.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-search" --limit 10
+"$_IDSTACK/bin/idstack-learnings" search --limit 10
 ```
 
 Format the output as a readable table:
@@ -51,13 +51,13 @@ Search learnings by keyword. Supports `--cross-project` to include global learni
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --limit 10
+"$_IDSTACK/bin/idstack-learnings" search --keyword KEYWORD --limit 10
 ```
 
 For cross-project search:
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-search" --keyword KEYWORD --cross-project --limit 10
+"$_IDSTACK/bin/idstack-learnings" search --keyword KEYWORD --cross-project --limit 10
 ```
 
 If results include global learnings (tagged with `_source`), show their source project.
@@ -68,7 +68,7 @@ Delete a learning by its key. Always confirm with the user before deleting.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-delete" KEY
+"$_IDSTACK/bin/idstack-learnings" delete KEY
 ```
 
 ### promote <key>
@@ -77,7 +77,7 @@ Copy a local learning to the global store so it's available across projects.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-promote" KEY
+"$_IDSTACK/bin/idstack-learnings" promote KEY
 ```
 
 ### export
@@ -86,7 +86,7 @@ Export all learnings to a markdown file.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-search" --limit 1000
+"$_IDSTACK/bin/idstack-learnings" search --limit 1000
 ```
 
 Format as markdown with sections grouped by type (operational, pedagogical, etc.)
@@ -111,6 +111,6 @@ If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do
 
 ## Important Rules
 
-- **Never modify learnings.jsonl directly.** Always use the bin scripts.
+- **Never modify learnings.jsonl directly.** Always use `bin/idstack-learnings`.
 - **Confirm deletes.** Always ask before deleting.
 - **Show source for global learnings.** When cross-project results appear, show which project they came from.

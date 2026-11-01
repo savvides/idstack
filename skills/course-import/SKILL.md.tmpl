@@ -851,20 +851,40 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 ## Step 6: Write Manifest
 
-Create or update the project manifest.
+Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
+course-import adds fields to sections that other skills also write (`context`,
+`needs_analysis`, `learning_objectives`), and it owns `import_metadata`. The merge tool
+replaces whole sections, so for each co-owned section: read the existing section from the
+manifest (if any), add the imported fields to it, and pass the full merged section.
 
-**Why this skill uses the Write-tool fallback (not `bin/idstack-manifest-merge`):** course-import writes a top-level field (`project_name`), partial fields inside `context` (`modality`, `timeline`, `available_tech`), nested entries under `needs_analysis.task_analysis.job_tasks`, additions inside `learning_objectives.ilos` and `learning_objectives.alignment_matrix`, AND the `import_metadata` section. The merge tool only does whole-section replacement, which would clobber co-owned sections. So this skill goes through the Read-modify-Write fallback path described in `templates/manifest-schema.md`.
+Write each payload with the Write tool first, as the flat section contents with no
+enclosing section key: `.idstack/.context-payload.json`, `.idstack/.needs_analysis-payload.json`,
+`.idstack/.learning_objectives-payload.json` and `.idstack/.import_metadata-payload.json`. Then:
+
+```bash
+{{IDSTACK_RESOLVE}}
+"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="<project name>" \
+  --section context --payload .idstack/.context-payload.json \
+  --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
+  --section learning_objectives --payload .idstack/.learning_objectives-payload.json \
+  --section import_metadata --payload .idstack/.import_metadata-payload.json \
+  && rm -f .idstack/.context-payload.json .idstack/.needs_analysis-payload.json \
+           .idstack/.learning_objectives-payload.json .idstack/.import_metadata-payload.json
+```
+
+`--create` makes a canonical manifest first if `.idstack/project.json` does not
+exist yet (the standalone case). It never replaces a manifest that exists. If any payload is malformed, the tool
+writes nothing.
 
 **CRITICAL — Manifest Integrity Rules:**
-1. If a manifest already exists, READ it first.
-2. PRESERVE sections populated by other skills (especially needs_analysis from
-   /idstack:needs-analysis). Import ADDS to these sections, does not replace.
-3. If learning_objectives already has data and the user chose "merge," combine
+1. PRESERVE what other skills wrote in the co-owned sections (especially
+   needs_analysis from /idstack:needs-analysis). Import ADDS to these sections, does not
+   replace them.
+2. If learning_objectives already has data and the user chose "merge," combine
    imported ILOs with existing ones (use new ILO IDs that don't conflict).
-4. Include the COMPLETE schema structure. Do not omit fields.
-5. Before writing, verify the JSON is valid.
-6. Update the `updated` timestamp.
-7. **NEVER write the Canvas API token to the manifest, the report, or any file other than `.idstack/canvas.env`.**
+3. Include the COMPLETE section structure from the schema below. Do not omit fields.
+4. Before writing, verify each payload is valid JSON.
+5. **NEVER write the Canvas API token to the manifest, the report, or any file other than `.idstack/canvas.env`.**
 
 **Fields populated by /idstack:course-import:**
 
@@ -876,24 +896,22 @@ Create or update the project manifest.
 - `learning_objectives.ilos` — from Bloom's inference (Step 4)
 - `learning_objectives.alignment_matrix` — partial, from detected objective-assessment links
 
-**Import metadata:** Set the top-level `import_metadata` section. Shown here in the context of the full manifest the Write tool will produce (the outer `import_metadata` key is the section's slot in the manifest, not a wrapper to nest inside the section itself):
+**Import metadata:** The `import_metadata` payload (flat, with no enclosing `import_metadata` key):
 
 ```json
 {
-  "import_metadata": {
-    "source": "cartridge|paste|canvas-api",
-    "report_path": "<set to $_REPORT_PATH from the Step 5 bash block — e.g. .idstack/exports/<course-slug>/course-import.html>",
-    "imported_at": "ISO-8601",
-    "source_lms": "canvas|blackboard|moodle|d2l|unknown",
-    "items_imported": {
-      "modules": 0,
-      "objectives": 0,
-      "assessments": 0,
-      "activities": 0,
-      "pages": 0
-    },
-    "quality_flags": 0
-  }
+  "source": "cartridge|paste|canvas-api",
+  "report_path": "<set to $_REPORT_PATH from the Step 5 bash block — e.g. .idstack/exports/<course-slug>/course-import.html>",
+  "imported_at": "ISO-8601",
+  "source_lms": "canvas|blackboard|moodle|d2l|unknown",
+  "items_imported": {
+    "modules": 0,
+    "objectives": 0,
+    "assessments": 0,
+    "activities": 0,
+    "pages": 0
+  },
+  "quality_flags": 0
 }
 ```
 
@@ -956,5 +974,5 @@ import format issue, course structure pattern), also log it as a learning:
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"course-import","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings" log '{"skill":"course-import","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

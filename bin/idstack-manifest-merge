@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-idstack-manifest-merge — atomically replace one section of .idstack/project.json.
+idstack-manifest-merge — atomically replace sections of .idstack/project.json.
 
 Contract:
   Reads the manifest, validates it parses as JSON, replaces ONLY the named
-  top-level section with the supplied payload, updates the top-level "updated"
-  timestamp, and writes back. All other sections (version, project_name,
-  created, foreign skill sections) are preserved verbatim.
+  top-level sections with the supplied payloads, updates the top-level
+  "updated" timestamp, and writes back once. All other sections (version,
+  project_name, created, foreign skill sections) are preserved verbatim.
+  Every payload is validated before anything is written, so a bad payload
+  leaves the manifest (or its absence) unchanged.
 
   This is section-level REPLACEMENT, not recursive deep-merge — the contract
   is intentionally simple. If you need to merge values within your section,
@@ -14,13 +16,20 @@ Contract:
   merged payload here.
 
 Usage:
-  idstack-manifest-merge --section <name> --payload <path|->
+  idstack-manifest-merge [--create] [--set project_name=<value>]
+                         --section <name> --payload <path|->
+                         [--section <name> --payload <path|-> ...]
                          [--manifest <path>] [--quiet]
 
   --section   Top-level section name. Must be one of the whitelisted sections
               defined in the canonical schema. Unknown names exit 3.
   --payload   Path to a JSON file containing the section payload, or "-" to
-              read from stdin.
+              read from stdin. Pairs with the --section in the same position;
+              repeat the pair to write several sections in one atomic write.
+  --set       Set a top-level field. Only project_name. Unknown keys exit 3.
+  --create    If the manifest is missing, make a canonical one first
+              (bin/idstack-migrate --init). Without it a missing manifest
+              exits 4, which catches a run in the wrong directory.
   --manifest  Path to the manifest. Default: .idstack/project.json
   --quiet     Suppress progress output. Errors still go to stderr.
 
@@ -37,6 +46,7 @@ Exit codes:
 import argparse
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -57,17 +67,29 @@ ALLOWED_SECTIONS = {
     "preferences",
 }
 
+# Top-level scalar fields that --set may write.
+SETTABLE_FIELDS = {"project_name"}
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Replace one section of an idstack manifest with an atomic write.",
+        description="Replace sections of an idstack manifest with one atomic write.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--section", required=True, help="The name of the section to replace.")
+    parser.add_argument(
+        "--section", action="append", required=True, help="The name of a section to replace."
+    )
     parser.add_argument(
         "--payload",
+        action="append",
         required=True,
-        help='The path to the JSON payload file. Use "-" for stdin.',
+        help='The path to the JSON payload file for the --section in the same position. Use "-" for stdin.',
+    )
+    parser.add_argument(
+        "--set", action="append", default=[], metavar="KEY=VALUE", help="Set a top-level field."
+    )
+    parser.add_argument(
+        "--create", action="store_true", help="Make a canonical manifest first if there is none."
     )
     parser.add_argument(
         "--manifest",
@@ -75,7 +97,14 @@ def parse_args():
         help="The path to the manifest. Default: .idstack/project.json",
     )
     parser.add_argument("--quiet", action="store_true", help="Show only error messages.")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if len(args.section) != len(args.payload):
+        parser.error("give one --payload for each --section")
+    if len(set(args.section)) != len(args.section):
+        parser.error("give each --section only one time")
+    if args.payload.count("-") > 1:
+        parser.error('only one --payload can be "-" (stdin)')
+    return args
 
 
 def die(code, message):
@@ -123,6 +152,20 @@ def load_manifest(manifest_path):
     return data
 
 
+def create_manifest(manifest_path):
+    """Seed a canonical manifest with idstack-migrate --init, so the migrations
+    stay the only definition of each section's default."""
+    migrate = os.path.join(os.path.dirname(os.path.realpath(__file__)), "idstack-migrate")
+    result = subprocess.run(
+        [migrate, "--init", manifest_path],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
+    if result.returncode != 0 or not os.path.isfile(manifest_path):
+        die(6, f"cannot make the manifest {manifest_path!r}: {result.stderr.strip()}")
+
+
 def write_atomic(manifest_path, data):
     """Write JSON atomically via tempfile + rename, so a crash mid-write
     cannot leave the manifest truncated or partially overwritten."""
@@ -144,20 +187,39 @@ def write_atomic(manifest_path, data):
 def main():
     args = parse_args()
 
-    if args.section not in ALLOWED_SECTIONS:
-        allowed = ", ".join(sorted(ALLOWED_SECTIONS))
-        die(3, f"unknown section {args.section!r}. The known sections are: {allowed}")
+    for section in args.section:
+        if section not in ALLOWED_SECTIONS:
+            allowed = ", ".join(sorted(ALLOWED_SECTIONS))
+            die(3, f"unknown section {section!r}. The known sections are: {allowed}")
 
-    payload = load_payload(args.payload)
+    fields = {}
+    for item in args.set:
+        key, sep, value = item.partition("=")
+        if not sep or key not in SETTABLE_FIELDS:
+            known = ", ".join(sorted(SETTABLE_FIELDS))
+            die(3, f"unknown --set {item!r}. Use KEY=VALUE with a key from: {known}")
+        fields[key] = value
+
+    payloads = [load_payload(path) for path in args.payload]
+
+    created = False
+    if args.create and not os.path.isfile(args.manifest):
+        create_manifest(args.manifest)
+        created = True
     manifest = load_manifest(args.manifest)
 
-    manifest[args.section] = payload
+    for section, payload in zip(args.section, payloads):
+        manifest[section] = payload
+    manifest.update(fields)
     manifest["updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     write_atomic(args.manifest, manifest)
 
     if not args.quiet:
-        print(f"idstack replaced the section {args.section!r} in {args.manifest}")
+        if created:
+            print(f"idstack made the manifest {args.manifest}")
+        for section in args.section:
+            print(f"idstack replaced the section {section!r} in {args.manifest}")
 
 
 if __name__ == "__main__":

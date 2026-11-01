@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { installChrome, resetGlobals } from './extension-harness.mjs';
 import {
-  getSettings, saveSettings, getAuditHistory, saveAuditResult,
+  getSettings, saveSettings,
   getDossier, addToDossier, removeFromDossier, clearDossier
 } from '../extension/shared/storage.js';
 
@@ -10,13 +10,6 @@ installChrome();
 assert.strictEqual((await getSettings()).apiKey, '', 'no key configured by default');
 await saveSettings({ apiKey: 'test-key' });
 assert.strictEqual((await getSettings()).apiKey, 'test-key');
-
-// Audit history: newest first, capped at 20
-for (let i = 0; i < 22; i++) await saveAuditResult({ title: `Audit ${i}` });
-const history = await getAuditHistory();
-assert.strictEqual(history.length, 20, 'history keeps the last 20 audits');
-assert.strictEqual(history[0].title, 'Audit 21', 'newest audit first');
-assert.ok(history[0].timestamp, 'entries are timestamped');
 
 // Dossier: add, replace-by-url, remove, clear
 const a = { url: 'https://canvas.instructure.com/courses/1/assignments/2', title: 'Lab 1', result: {} };

@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+# Manage idstack learnings: .idstack/learnings.jsonl and the global store at
+# ~/.idstack/global/learnings.jsonl.
+# Usage: idstack-learnings log '{"skill":"course-import","type":"operational","key":"canvas-rubrics","insight":"Uses HTML format","confidence":8}'
+#        idstack-learnings search [--limit N] [--type T] [--keyword K] [--cross-project]
+#        idstack-learnings delete <key>
+#        idstack-learnings promote <key>
+#
+# log      Appends one learning and adds a "ts" field. Creates .idstack/ if needed.
+#          Exit 0 always, so it never blocks the calling skill.
+# search   Prints matching JSONL lines (default limit 3).
+# delete   Removes the most recent entry with the key, atomically. Exit 1 on error.
+# promote  Copies the most recent entry with the key to the global store and
+#          tags it with the source project. Exit 1 on error.
+# Every subcommand needs python3 3.9 or later; without it they exit 2, except log.
+
+LOCAL=".idstack/learnings.jsonl"
+GLOBAL_DIR="$HOME/.idstack/global"
+GLOBAL="$GLOBAL_DIR/learnings.jsonl"
+
+usage() {
+  echo "Usage: idstack-learnings log '<json>' | search [--limit N] [--type T] [--keyword K] [--cross-project] | delete <key> | promote <key>" >&2
+  exit 1
+}
+
+# The paths go in through the environment, not spliced into the source, so a
+# $HOME with a quote in it cannot break the program.
+learnings_py() {
+  LOCAL="$LOCAL" GLOBAL="$GLOBAL" python3 - "$@" <<'PY'
+import json, os, shutil, sys, tempfile, time
+
+LOCAL = os.environ["LOCAL"]
+GLOBAL = os.environ["GLOBAL"]
+cmd, args = sys.argv[1], sys.argv[2:]
+
+
+def last_index(lines, key):
+    """Index of the last line whose record has this key, or -1."""
+    found = -1
+    for i, line in enumerate(lines):
+        try:
+            if json.loads(line).get("key") == key:
+                found = i
+        except Exception:
+            pass
+    return found
+
+
+def read_lines(path):
+    with open(path, encoding="utf-8") as f:
+        return f.readlines()
+
+
+if cmd == "log":
+    ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    try:
+        d = json.loads(args[0])
+        d["ts"] = ts
+    except Exception:
+        d = {"raw": args[0], "ts": ts}
+    try:
+        with open(LOCAL, "a", encoding="utf-8") as f:
+            f.write(json.dumps(d) + "\n")
+    except OSError:
+        pass
+
+elif cmd == "search":
+    type_filter, keyword, limit, sources = args[0], args[1].lower(), args[2], args[3:]
+    try:
+        limit = int(limit)
+    except ValueError:
+        limit = 3
+    matches = []
+    for src in sources:
+        try:
+            lines = read_lines(src)
+        except Exception:
+            continue
+        for line in lines:
+            try:
+                d = json.loads(line)
+                if type_filter and d.get("type") != type_filter:
+                    continue
+                if keyword and keyword not in (d.get("insight", "") + " " + d.get("key", "")).lower():
+                    continue
+                if src == GLOBAL:
+                    d["_source"] = "global"
+                matches.append(json.dumps(d))
+            except Exception:
+                pass
+    # Local learnings come last in sources, so matches[-limit:] gives local
+    # precedence, backfilled by global.
+    for m in matches[-limit:]:
+        print(m)
+
+elif cmd == "delete":
+    key = args[0]
+    lines = read_lines(LOCAL)
+    i = last_index(lines, key)
+    if i == -1:
+        print(f"idstack found no learning with the key: {key}", file=sys.stderr)
+        sys.exit(1)
+    lines.pop(i)
+    directory = os.path.dirname(os.path.abspath(LOCAL)) or "."
+    fd, tmp_path = tempfile.mkstemp(prefix=".learnings-delete.", dir=directory, suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        shutil.copymode(LOCAL, tmp_path)
+        os.replace(tmp_path, LOCAL)
+    except Exception as exc:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        print(f"idstack cannot write the learnings file {LOCAL}: {exc}", file=sys.stderr)
+        sys.exit(1)
+    print(f"idstack removed the learning: {key}")
+
+elif cmd == "promote":
+    key = args[0]
+    lines = read_lines(LOCAL)
+    i = last_index(lines, key)
+    if i == -1:
+        print(f"idstack found no learning with the key: {key}", file=sys.stderr)
+        sys.exit(1)
+    match = json.loads(lines[i])
+    project_name = "unknown"
+    try:
+        with open(".idstack/project.json", encoding="utf-8") as f:
+            project_name = json.load(f).get("project_name", "unknown")
+    except Exception:
+        pass
+    match["_source_project"] = project_name
+    match["_promoted"] = True
+    # One appended line, so the global store needs no tempfile rewrite.
+    os.makedirs(os.path.dirname(GLOBAL), exist_ok=True)
+    with open(GLOBAL, "a", encoding="utf-8") as f:
+        f.write(json.dumps(match) + "\n")
+    print(f'idstack added "{key}" to the global learnings (source: {project_name})')
+PY
+}
+
+CMD="${1:-}"
+[ $# -gt 0 ] && shift
+
+if ! command -v python3 &>/dev/null; then
+  echo "idstack-learnings: python3 is necessary" >&2
+  [ "$CMD" = log ] && exit 0
+  exit 2
+fi
+
+case "$CMD" in
+  log)
+    [ -z "${1:-}" ] && exit 0
+    mkdir -p "$(dirname "$LOCAL")" 2>/dev/null || exit 0
+    learnings_py log "$1" 2>/dev/null
+    exit 0
+    ;;
+
+  search)
+    LIMIT=3
+    TYPE=""
+    KEYWORD=""
+    CROSS_PROJECT=0
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --limit) LIMIT="$2"; shift 2 ;;
+        --limit=*) LIMIT="${1#--limit=}"; shift ;;
+        --type) TYPE="$2"; shift 2 ;;
+        --type=*) TYPE="${1#--type=}"; shift ;;
+        --keyword) KEYWORD="$2"; shift 2 ;;
+        --keyword=*) KEYWORD="${1#--keyword=}"; shift ;;
+        --cross-project) CROSS_PROJECT=1; shift ;;
+        *) shift ;;
+      esac
+    done
+
+    # Global first if cross-project, so local comes last and takes precedence.
+    SOURCES=()
+    [ "$CROSS_PROJECT" -eq 1 ] && [ -f "$GLOBAL" ] && SOURCES+=("$GLOBAL")
+    [ -f "$LOCAL" ] && SOURCES+=("$LOCAL")
+    [ ${#SOURCES[@]} -eq 0 ] && exit 0
+    learnings_py search "$TYPE" "$KEYWORD" "$LIMIT" "${SOURCES[@]}"
+    ;;
+
+  delete|promote)
+    KEY="${1:-}"
+    [ -z "$KEY" ] && usage
+    [ -f "$LOCAL" ] || { echo "There are no local learnings." >&2; exit 1; }
+    learnings_py "$CMD" "$KEY"
+    ;;
+
+  *)
+    usage
+    ;;
+esac

@@ -1,5 +1,5 @@
 import { buildAuditPrompt, buildCourseAuditPrompt } from '../shared/prompts.js';
-import { getSettings, saveAuditResult } from '../shared/storage.js';
+import { getSettings } from '../shared/storage.js';
 import { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } from './parser-helper.js';
 import { crawlCanvasCourse } from './canvas-crawler.js';
 import { verifyFindingsWithConsensus } from '../shared/consensus-client.js';
@@ -8,6 +8,15 @@ const LLM_TIMEOUT_MS = 25000;   // Chrome kills an extension SW whose fetch resp
 // Fewer words than this means an unreadable page (browser page, PDF viewer,
 // a single Modules item title); the model would return an audit of nothing.
 const MIN_AUDIT_WORDS = 10;
+
+// Extension 1.2.0 and earlier kept the last 20 audit results in
+// chrome.storage.local, and nothing read them. Delete them on update, so an
+// upgraded install keeps no more than PRIVACY.md says.
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onInstalled) {
+  chrome.runtime.onInstalled.addListener(() => {
+    chrome.storage.local.remove('auditHistory').catch((err) => console.error(err));
+  });
+}
 
 // Open the panel from action.onClicked, not openPanelOnActionClick: Chrome routes a
 // side-panel-toggle click past its activeTab grant (crbug.com/40904917), and activeTab
@@ -57,12 +66,24 @@ async function callLlmApi(apiKey, prompt) {
 
   const result = cleanJsonResponse(rawText);
   // The renderer and dossier compiler read every finding and call string methods
-  // on tier and severity; refuse a shape they cannot handle before it is saved.
+  // on tier and severity; refuse a shape they cannot handle before it reaches them.
   const optionalString = (v) => v == null || typeof v === 'string';
   if (!Array.isArray(result?.findings) || !result.findings.every((f) => f && typeof f === 'object' && optionalString(f.tier) && optionalString(f.severity))) {
     throw new Error('The AI response is not in the audit format. Try the audit again.');
   }
   return result;
+}
+
+// One pipeline for both audits: the model (or the demo result when there is no
+// key), then the Consensus pass.
+async function runAudit(input, buildPrompt, buildDemo) {
+  const settings = await getSettings();
+  const apiKey = settings?.apiKey?.trim();
+  const auditResult = apiKey ? await callLlmApi(apiKey, buildPrompt(input)) : buildDemo(input);
+  if (auditResult && auditResult.findings) {
+    auditResult.findings = await verifyFindingsWithConsensus(auditResult.findings, settings?.consensusApiKey);
+  }
+  return auditResult;
 }
 
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
@@ -78,27 +99,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
             // The extractor and side panel explain pages they could not or would not read.
             throw new Error(request.payload?.emptyReason || `This page does not have sufficient text to audit. It has ${wordCount} words, and an audit must have ${MIN_AUDIT_WORDS} words or more. Browser pages, PDF viewers and image-only pages do not give text to idstack.`);
           }
-          const settings = await getSettings();
-          
-          let auditResult;
-          if (settings && settings.apiKey && settings.apiKey.trim()) {
-            const prompt = buildAuditPrompt(request.payload);
-            auditResult = await callLlmApi(settings.apiKey.trim(), prompt);
-          } else {
-            // Graceful demo fallback when no API key is provided
-            auditResult = getDemoAuditResult(request.payload);
-          }
-
-          if (auditResult && auditResult.findings) {
-            auditResult.findings = await verifyFindingsWithConsensus(auditResult.findings, settings?.consensusApiKey);
-          }
-
-          await saveAuditResult({
-            url: request.payload?.url || '',
-            title: request.payload?.title || 'Current Tab',
-            pageType: request.payload?.pageType || 'Web Page',
-            result: auditResult
-          });
+          const auditResult = await runAudit(request.payload, buildAuditPrompt, getDemoAuditResult);
 
           sendResponse({ success: true, data: auditResult });
         } catch (err) {
@@ -123,27 +124,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
           if (!courseData.syllabus.trim() && courseData.assignments.length === 0) {
             throw new Error('This course has no syllabus text and no assignments for idstack to audit.');
           }
-          const settings = await getSettings();
-
-          let auditResult;
-          if (settings && settings.apiKey && settings.apiKey.trim()) {
-            const prompt = buildCourseAuditPrompt(courseData);
-            auditResult = await callLlmApi(settings.apiKey.trim(), prompt);
-          } else {
-            // Graceful demo fallback for course audit
-            auditResult = getDemoCourseAuditResult(courseData);
-          }
-
-          if (auditResult && auditResult.findings) {
-            auditResult.findings = await verifyFindingsWithConsensus(auditResult.findings, settings?.consensusApiKey);
-          }
-
-          await saveAuditResult({
-            url: `${origin}/courses/${courseId}`,
-            title: courseData.title || 'Canvas Course',
-            pageType: 'Canvas Course (Full Audit)',
-            result: auditResult
-          });
+          const auditResult = await runAudit(courseData, buildCourseAuditPrompt, getDemoCourseAuditResult);
 
           sendResponse({ success: true, data: auditResult, courseData });
         } catch (err) {
@@ -155,6 +136,5 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
   });
 }
 
-export { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult, crawlCanvasCourse, callLlmApi, verifyFindingsWithConsensus };
 
 

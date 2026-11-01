@@ -71,13 +71,12 @@ Commit the regenerated files in the same commit as the template change. The smok
 
 ### Embedded Python must run on 3.9
 
-Any Python embedded in `templates/preamble.md` or a skill body has to parse on Python 3.9 — that is what macOS ships, and it is the interpreter most designers will hit. An f-string reusing a quote inside its replacement field is legal from 3.12 (PEP 701) and a SyntaxError before it, which is exactly how context recovery stayed silently broken for several releases. `test/test-preamble-python.sh` runs every embedded block on both 3.9 and 3.12.
+Any Python embedded in `templates/preamble.md` or a skill body has to parse on Python 3.9 — that is what macOS ships, and it is the interpreter most designers will hit. An f-string reusing a quote inside its replacement field is legal from 3.12 (PEP 701) and a SyntaxError before it, which is exactly how context recovery stayed silently broken for several releases. The preamble's Context Recovery calls `bin/idstack-status --context`, and `test/test-preamble-python.sh` runs that block on both 3.9 and 3.12.
 
 ### Shared shell libraries
 
 Logic used by more than one script — or worth a unit test — belongs in `bin/lib/`, sourced by its callers rather than copy-pasted:
 
-- `bin/lib/version-classify.sh` — version comparison, shared by `setup` and `bin/idstack-doctor`
 - `bin/lib/plugin-status.sh` — parses `claude plugin list` down to idstack's own entry
 
 Point the test at the shipped file, never at a copy of the logic. The version classifier drifted across three PRs while a mirrored copy inside its own test kept passing green.
@@ -97,8 +96,8 @@ Write report text in ASD-STE100 (see the "Writing Standard (ASD-STE100)" section
 - **Own your section only.** Read the full manifest, modify only the section your skill owns, preserve everything else.
 - **Update the `updated` timestamp** on every write.
 - **Use `bin/idstack-manifest-merge`** for the write path. It's section-scoped, atomic (tempfile + rename), preserves foreign sections, and validates against the canonical schema in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback.
-- **One documented exception.** `needs-analysis` and `course-import` keep the Read-modify-Write path because each writes several co-owned sections in one pass, which whole-section merge cannot express. Both say so inline. Don't convert them, and don't copy the pattern into a skill that owns a single section.
-- **Standalone runs need `bin/idstack-migrate --init` first.** On a missing manifest, plain `idstack-migrate` is a no-op, so the merge that follows exits 4 and the skill's results are silently never persisted. `--init` creates a canonical manifest with every section at its default.
+- **Pass `--create` on every merge.** Skills run standalone, and on a missing manifest the merge exits 4 and the results are never saved. `--create` seeds a canonical manifest (through `bin/idstack-migrate --init`) and never replaces one that exists.
+- **Several sections, one call.** A skill that writes more than one section repeats the `--section`/`--payload` pair in a single call, so the write is atomic. `--set project_name=<v>` writes the top-level name. For a section another skill also writes, read it, add your fields, and pass the whole merged section.
 
 ## Evidence standards
 
@@ -129,19 +128,18 @@ bin/idstack-gen-skills --dry-run  # Generated files up to date? Run this first.
 ./test/smoke-test.sh              # Verify the install
 ```
 
-Every suite below runs in CI (`.github/workflows/test.yml`) on every push and pull request. Run whichever ones your change touches locally; CI runs them all:
+Every suite below runs in CI (`.github/workflows/test.yml`) on every pull request and every push to `main`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other suites. Run whichever ones your change touches locally; CI runs them all:
 
 | Suite | Covers |
 |-------|--------|
-| `test/smoke-test.sh` | Install, `SKILL.md` freshness, YAML frontmatter, version agreement across `VERSION` / `plugin.json` / `CHANGELOG.md`, canonical manifest section names, `/idstack:` namespacing, resolve-snippet lockstep, schema migrations, `bash -n` on every script, and the ASD-STE100 checks on the report templates and the extension output |
+| `test/smoke-test.sh` | Install, `SKILL.md` freshness, YAML frontmatter, version agreement across `VERSION` / `plugin.json` / `CHANGELOG.md`, canonical manifest section names, `/idstack:` namespacing, resolve-snippet single source, schema migrations, `bash -n` on every script, and the ASD-STE100 checks on the report templates and the extension output |
 | `test/integration-test.sh` | Behavioral tests across the `bin/` scripts; also asserts the suite leaves your working tree untouched |
-| `test/test-setup.sh` | `./setup` behavior — flag parsing, scope selection, all three legacy-cleanup shapes, failure handling. Runs against a repo copy with a fake `$HOME` and a stub `claude` |
+| `test/test-setup.sh` | `./setup` behavior — flag parsing, scope selection, failure handling, regeneration. Runs against a repo copy with a fake `$HOME` and a stub `claude` |
 | `test/test-doctor.sh` | `bin/idstack-doctor` — every PROBLEM/WARNING branch and the exit contract. Runs against a repo copy with a pinned `PATH`, so "claude not found" means genuinely not found |
 | `test/test-status.sh` | `bin/idstack-status`, including the `--readiness` export gate. Each threshold is probed at its own boundary with the other two held passing |
 | `test/test-manifest-merge.sh` | `bin/idstack-manifest-merge` |
-| `test/test-version-classifier.sh` | `bin/lib/version-classify.sh` |
 | `test/test-plugin-status.sh` | `bin/lib/plugin-status.sh` |
-| `test/test-preamble-python.sh` | The preamble's embedded Python, on 3.9 and 3.12 |
+| `test/test-preamble-python.sh` | The preamble's Context Recovery block (`idstack-status --context`), on 3.9 and 3.12 |
 | `test/test-extension.sh` | The Chrome extension. Imports the shipped `extension/` modules through `test/extension-harness.mjs` (Node 20.19+ or 22.7+) and fails if a hand-copied `.cjs` twin comes back |
 | `test/test-rendered-landing.js` | Renders `docs/index.html` in headless Chrome across 11 widths and asserts the rendered outcome: no horizontal scroll, 44px touch targets, breakpoint column counts, sticky nav. Catches regressions the text suite cannot see (selector lists, `@container`, nested or print-only media queries, a `<style>` inside an HTML comment). Skips loudly with no browser |
 | `test/test-responsive-landing.js` | Responsive and mobile-ergonomics invariants for `docs/index.html` — fluid tokens, notch-safe gutters, breakpoint-scoped rules, touch targets. Runs on node, via `smoke-test.sh` |

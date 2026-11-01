@@ -1,36 +1,19 @@
 #!/usr/bin/env bash
 set -e
 
-# Resolve the *physical* path so legacy-symlink cleanup below can't delete the
-# directory we're currently sourcing setup from. Without -P, IDSTACK_DIR may be
-# the legacy ~/.claude/skills/idstack symlink path, and removing it would leave
-# the new plugin symlink pointing at a deleted target.
+# Resolve the *physical* path, so the marketplace registers the clone itself
+# and not a symlink to it.
 IDSTACK_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
-# Shared legacy-VERSION classifier (also sourced by bin/idstack-doctor; pinned
-# by test/test-version-classifier.sh).
-. "$IDSTACK_DIR/bin/lib/version-classify.sh"
-
 # Default install: user-scope plugin so /idstack:<skill> is discovered.
-LEGACY_SKILLS_DIR="$HOME/.claude/skills"
-SCOPE="global"
 CLAUDE_SCOPE="user"  # claude plugin scope: user (global) or project (--local)
-KEEP_LEGACY=0        # --keep-legacy: leave every legacy install shape in place
 
 for arg in "$@"; do
   case "$arg" in
-    --local)
-      LEGACY_SKILLS_DIR="$(pwd)/.claude/skills"
-      SCOPE="local"
-      CLAUDE_SCOPE="project"
-      ;;
-    --keep-legacy) KEEP_LEGACY=1 ;;
+    --local) CLAUDE_SCOPE="project" ;;
     -h|--help)
-      echo "Command: ./setup [--local] [--keep-legacy]"
-      echo "  --local       Installs idstack at project scope (./.claude/), not at user scope."
-      echo "  --keep-legacy Keeps the legacy installs in \$HOME/.claude/skills/. These are the"
-      echo "                pre-v2.0.1.0 dispatcher directory, the v2.0 dispatcher symlink and"
-      echo "                the pre-v2 per-skill symlinks. By default, setup removes them."
+      echo "Command: ./setup [--local]"
+      echo "  --local  Installs idstack at project scope (./.claude/), not at user scope."
       exit 0
       ;;
     *) echo "ERROR: unknown argument: $arg" >&2; echo "Run ./setup --help for more information." >&2; exit 2 ;;
@@ -57,91 +40,6 @@ if [ ! -f "$IDSTACK_DIR/.claude-plugin/marketplace.json" ]; then
   echo "ERROR: missing .claude-plugin/marketplace.json at $IDSTACK_DIR" >&2
   echo "       Claude Code installs plugins through a marketplace manifest. Setup stopped." >&2
   exit 1
-fi
-
-# Clean up legacy v2.0 + pre-v2 installs under $LEGACY_SKILLS_DIR. Each scope
-# only touches its own scope's legacy path: a --local install cleans up legacy
-# entries under ./.claude/skills/, and never mutates the user's global skills
-# directory.
-
-# v2.0 install (single dispatcher symlink). Only registered /idstack, never
-# exposed the 11 namespaced sub-skills.
-LEGACY_SKILLS_LINK="$LEGACY_SKILLS_DIR/idstack"
-if [ -L "$LEGACY_SKILLS_LINK" ]; then
-  legacy_target=$(readlink "$LEGACY_SKILLS_LINK" 2>/dev/null || true)
-  if [ "$KEEP_LEGACY" = "1" ]; then
-    echo "  KEPT legacy symlink: $LEGACY_SKILLS_LINK (--keep-legacy)"
-    echo "           NOTE: This symlink overrides the plugin namespace. It can cause errors in /idstack:<skill> commands."
-  else
-    rm "$LEGACY_SKILLS_LINK"
-    echo "  removed legacy symlink: $LEGACY_SKILLS_LINK${legacy_target:+ (was -> $legacy_target)}"
-  fi
-elif [ -d "$LEGACY_SKILLS_LINK" ] && [ "$LEGACY_SKILLS_LINK" != "$IDSTACK_DIR" ]; then
-  # Pre-v2.0.1.0 install was a real clone with a top-level dispatcher
-  # SKILL.md. Left in place, it shadows the plugin: Claude Code matches the
-  # dispatcher on /idstack and the dispatcher then tries to invoke bare-name
-  # sub-skills that the plugin-only layout no longer exposes. Detect that
-  # signature and remove it.
-  legacy_is_dispatcher=0
-  if [ -f "$LEGACY_SKILLS_LINK/SKILL.md" ] && \
-     grep -q '^name: idstack' "$LEGACY_SKILLS_LINK/SKILL.md" 2>/dev/null; then
-    legacy_is_dispatcher=1
-  fi
-  legacy_is_old_version=0
-  if [ -f "$LEGACY_SKILLS_LINK/VERSION" ]; then
-    legacy_version=$(tr -d '[:space:]' < "$LEGACY_SKILLS_LINK/VERSION")
-    # Classified by the shared classifier in bin/lib/version-classify.sh
-    # (pinned by test/test-version-classifier.sh).
-    if [ "$(classify_version "$legacy_version")" = "legacy" ]; then
-      legacy_is_old_version=1
-    fi
-  fi
-  if [ "$legacy_is_dispatcher" = "1" ] || [ "$legacy_is_old_version" = "1" ]; then
-    if [ "$KEEP_LEGACY" = "1" ]; then
-      echo "  KEPT legacy install directory: $LEGACY_SKILLS_LINK (--keep-legacy)"
-      echo "           NOTE: This directory overrides the plugin namespace. It can cause errors in /idstack:<skill> commands."
-    else
-      rm -rf "$LEGACY_SKILLS_LINK"
-      echo "  removed legacy install directory: $LEGACY_SKILLS_LINK (pre-v2.0.1.0 dispatcher)"
-    fi
-  else
-    echo "  WARNING: directory at $LEGACY_SKILLS_LINK is not a known idstack install."
-    echo "           Setup did not remove it. If you do not want it, remove it manually:"
-    echo "             rm -rf $LEGACY_SKILLS_LINK"
-  fi
-fi
-
-# Pre-v2 individual skill symlinks. Only remove ones that point into idstack.
-LEGACY_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
-for skill in $LEGACY_SKILLS; do
-  legacy="$LEGACY_SKILLS_DIR/$skill"
-  if [ -L "$legacy" ]; then
-    link_target=$(readlink "$legacy" 2>/dev/null || true)
-    if echo "$link_target" | grep -q "idstack"; then
-      if [ "$KEEP_LEGACY" = "1" ]; then
-        echo "  KEPT legacy symlink: $legacy (--keep-legacy)"
-      else
-        rm "$legacy"
-        echo "  removed legacy symlink: $legacy"
-      fi
-    fi
-  fi
-done
-
-# Vestigial bare-symlink cleanup. Older setup versions symlinked the repo into
-# ~/.claude/plugins/idstack (or ./.claude/plugins/idstack for --local). Current
-# Claude Code discovers plugins through the marketplace registry, not bare
-# symlinks, so that link is dead weight. Only ever removes a *symlink* — a real
-# directory there might be someone's clone, and is left untouched. Scope-aware:
-# a --local install cleans only ./.claude/plugins and never mutates $HOME.
-if [ "$SCOPE" = "local" ]; then
-  vestigial="$(pwd)/.claude/plugins/idstack"
-else
-  vestigial="$HOME/.claude/plugins/idstack"
-fi
-if [ -L "$vestigial" ]; then
-  rm "$vestigial"
-  echo "  removed legacy plugin symlink: $vestigial (pre-marketplace install method)"
 fi
 
 # Claude Code install — register this repo as a single-plugin marketplace, then

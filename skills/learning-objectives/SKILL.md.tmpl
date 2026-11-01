@@ -321,8 +321,7 @@ Before writing the manifest, generate an HTML report so the designer has a singl
 ```bash
 {{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
-_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/learning-objectives.html"
 mkdir -p "$_EXPORT_DIR/assets"
@@ -360,14 +359,14 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 Create or update the project manifest at `.idstack/project.json`.
 
-**If MANIFEST_EXISTS (primary path):** write the `learning_objectives` section via
+Write the `learning_objectives` section via
 `bin/idstack-manifest-merge`. The merge tool replaces only the named section, preserves
 every other section verbatim, validates JSON, writes atomically (tempfile + rename), and
 updates the top-level `updated` timestamp for you:
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-manifest-merge" --section learning_objectives --payload - <<'PAYLOAD'
+"$_IDSTACK/bin/idstack-manifest-merge" --create --section learning_objectives --payload - <<'PAYLOAD'
 {
   "report_path": "<set to $_REPORT_PATH from the bash block above — e.g. .idstack/exports/<course-slug>/learning-objectives.html>",
   "ilos": [],
@@ -382,18 +381,12 @@ PAYLOAD
 ```
 
 Replace the placeholder payload above with the actual session data. Include the COMPLETE
-section structure — do not omit fields. If the tool exits non-zero (e.g., exit 4 = manifest
-not found, exit 2 = malformed manifest), report the error to the user and stop; never
-silently overwrite.
+section structure — do not omit fields. `--create` makes a canonical manifest first if `.idstack/project.json` does not
+exist yet (the standalone case). It never replaces a manifest that exists.
+If the tool exits non-zero (e.g., exit 2 = malformed manifest), report the error to the
+user and stop; never silently overwrite.
 
-**If NO_MANIFEST (first run only):** use the Write tool to create the full manifest —
-first-run init writes the whole document; the merge tool replaces exactly one section per
-call. Initialize ALL sections (including `needs_analysis`, `context`, and `quality_review`)
-with empty/default values per the schema below so downstream skills find the expected
-structure, set the `updated` timestamp to the current time, and verify the JSON is valid
-before writing.
-
-In both paths, set `learning_objectives.report_path` to the value of `$_REPORT_PATH` from
+Set `learning_objectives.report_path` to the value of `$_REPORT_PATH` from
 the bash block above — i.e., `.idstack/exports/<course-slug>/learning-objectives.html`.
 
 **Populate the `learning_objectives` section:**
@@ -424,9 +417,8 @@ Write the manifest, then confirm to the user:
 **Next step:** Run `/idstack:assessment-design` to design assessments aligned to your objectives
 with evidence-based rubrics and feedback strategies."
 
----
-
-{{MANIFEST_SCHEMA}}
+For the full manifest schema (other sections you may need to read), Read
+`${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
 ## Feedback
 
@@ -451,5 +443,5 @@ import format issue, course structure pattern), also log it as a learning:
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings-log" '{"skill":"learning-objectives","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+"$_IDSTACK/bin/idstack-learnings" log '{"skill":"learning-objectives","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
 ```

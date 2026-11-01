@@ -34,17 +34,23 @@ check() {
 
   _out=$(eval "$_cmd" 2>&1) || _code=$?
 
+  # A failing check shows 5 lines of its output. In CI it shows all of it: CI
+  # runs the unit suites only through smoke-test, and a nested suite's FAIL
+  # lines are rarely in its first 5.
+  local _keep=5
+  [ -n "${CI:-}" ] && _keep=100000
+
   if [ "$_code" -ne "$_want_exit" ]; then
     FAIL=$((FAIL + 1))
     echo "  FAIL: $_desc (expected exit $_want_exit, got $_code)"
-    [ -n "$_out" ] && printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
+    [ -n "$_out" ] && printf '%s\n' "$_out" | head -n "$_keep" | sed 's/^/        | /'
     return 0
   fi
 
   if [ -n "$_want_out" ] && ! printf '%s\n' "$_out" | grep -qE "$_want_out"; then
     FAIL=$((FAIL + 1))
     echo "  FAIL: $_desc (exit $_code correct, output missing /$_want_out/)"
-    [ -n "$_out" ] && printf '%s\n' "$_out" | head -5 | sed 's/^/        | /'
+    [ -n "$_out" ] && printf '%s\n' "$_out" | head -n "$_keep" | sed 's/^/        | /'
     return 0
   fi
 

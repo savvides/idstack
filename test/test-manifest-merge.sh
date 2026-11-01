@@ -140,10 +140,11 @@ check "--init manifest is at the latest schema version" \
 # missing the sections downstream skills read.
 check "--init manifest carries every mergeable section" \
   "python3 -c \"
-import json, re, sys
+import json
 d = json.load(open('$INIT_DIR/.idstack/project.json'))
-src = open('$MERGE').read()
-allowed = set(re.findall(r'\\\"([a-z_]+)\\\",?\\s*(?:#|\\n)', src.split('ALLOWED_SECTIONS')[1].split(']')[0]))
+ns = {'__name__': 'merge'}
+exec(open('$MERGE').read(), ns)
+allowed = ns['ALLOWED_SECTIONS']
 missing = sorted(s for s in allowed if s not in d)
 assert not missing, 'missing from --init manifest: ' + repr(missing)
 \""
@@ -183,6 +184,55 @@ set +e
 EC=$?
 set -e
 check "payload with string root exits 1" "[ $EC -eq 1 ]"
+
+# --- Test 15: --create makes a canonical manifest, then merges into it ---
+rm -f "$WORK/project.json"
+echo '{"overall_score": 81}' | "$MERGE" --create --section quality_review --payload - --manifest "$WORK/project.json" --quiet
+check "--create makes a missing manifest" "[ -f '$WORK/project.json' ]"
+check "--create manifest is canonical and carries the section" \
+  "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"version\"]==\"1.4\" and \"red_team_audit\" in d and d[\"quality_review\"]=={\"overall_score\": 81}'"
+
+# --- Test 16: --create never replaces an existing manifest ---
+seed_manifest
+echo '{}' | "$MERGE" --create --section quality_review --payload - --manifest "$WORK/project.json" --quiet
+check "--create keeps an existing manifest" "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"needs_analysis\"]=={\"existing\": \"data\"}'"
+
+# --- Test 17: several sections and --set in one write ---
+seed_manifest
+echo '{"a": 1}' > "$WORK/p1.json"
+echo '{"b": 2}' | "$MERGE" --set project_name="New Name" --section assessments --payload "$WORK/p1.json" \
+  --section learning_objectives --payload - --manifest "$WORK/project.json" --quiet
+check "multi-section write replaces each section" \
+  "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"assessments\"]=={\"a\": 1} and d[\"learning_objectives\"]=={\"b\": 2}'"
+check "--set writes project_name" "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"project_name\"]==\"New Name\"'"
+
+# --- Test 18: a bad second payload writes nothing, not even a --create manifest ---
+seed_manifest
+cp "$WORK/project.json" "$WORK/before.json"
+echo 'not json' > "$WORK/bad.json"
+set +e
+"$MERGE" --section assessments --payload "$WORK/p1.json" --section learning_objectives --payload "$WORK/bad.json" \
+  --manifest "$WORK/project.json" --quiet 2>/dev/null
+EC=$?
+set -e
+check "bad second payload exits 1" "[ $EC -eq 1 ]"
+check "bad second payload leaves the manifest unchanged" "cmp -s '$WORK/project.json' '$WORK/before.json'"
+rm -f "$WORK/project.json"
+set +e
+"$MERGE" --create --section assessments --payload "$WORK/bad.json" --manifest "$WORK/project.json" --quiet 2>/dev/null
+set -e
+check "bad payload with --create makes no manifest" "[ ! -f '$WORK/project.json' ]"
+
+# --- Test 19: --set takes only known keys; pairs must match ---
+seed_manifest
+set +e
+echo '{}' | "$MERGE" --set version=9 --section quality_review --payload - --manifest "$WORK/project.json" --quiet 2>/dev/null
+EC=$?
+"$MERGE" --section assessments --section quality_review --payload "$WORK/p1.json" --manifest "$WORK/project.json" --quiet 2>/dev/null
+EC2=$?
+set -e
+check "--set with an unknown key exits 3" "[ $EC -eq 3 ]"
+check "a --section with no --payload is refused" "[ $EC2 -ne 0 ]"
 
 echo ""
 echo "manifest-merge: $PASS/$TOTAL passed, $FAIL failed"
