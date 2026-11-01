@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-01-claude-desktop-onramp-design.md`
 
-**Verified:** Tasks 1–5 of an earlier draft were dry-run in throwaway worktrees; every anchor matched and all suites passed at the end. The fixes from that run are folded in below. Counts marked "Expected" were measured, or derived from measured counts where the fix changed the number of checks.
+**Verified:** Tasks 1–5 were dry-run in throwaway worktrees, then Tasks 1–3 again after revision; every anchor matched and the Expected counts in Tasks 1–3 were measured. A last round of text-only fixes (the dashboard-age check, the manifest-validity block, the pipeline and course-import rows) adds no test checks, so those counts hold; Task 3 Step 7 and Step 8 confirm them.
 
 ## Global Constraints
 
@@ -265,8 +265,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 for skill in $REPORT_PRODUCING_SKILLS; do
   check "$skill prints an absolute report link" \
     "grep -qF 'echo \"Report link: \$(pwd -P)/\$_REPORT_PATH\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
-  check "$skill closing message names the Report link line" \
-    "[ \$(grep -c 'Report link:' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl') -ge 2 ]"
+  check "$skill closing message points at the Report Links rule" \
+    "grep -qF 'written as the Report Links section of the preamble tells you' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 check "pipeline prints an absolute dashboard link" \
   "grep -qF 'echo \"Dashboard link: \$(pwd -P)/\$_EXPORT_DIR/index.html\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
@@ -340,6 +340,9 @@ Do not add a dashboard line to the report blocks: only the pipeline rewrites the
 | `course-quality-review.tmpl:802` | ``report to `.idstack/exports/<course-slug>/course-quality-review.html`. The`` | ``report: <the Report link, written as the Report Links section of the preamble tells you>. The`` |
 | `course-quality-review.tmpl:804` | `Open it in a web browser.` | `Click the link to open it.` |
 | `pipeline.tmpl:193` | ``The course dashboard is at `.idstack/exports/<course-slug>/index.html`. Open it in a web browser to see the cross-cutting view.`` | ``The course dashboard is at <the Dashboard link, written as the Report Links section of the preamble tells you>. Click it to see the cross-cutting view.`` |
+| `course-import.tmpl` (`Write the manifest, then confirm:`, near 918) | `Write the manifest, then confirm:` | `Write the manifest, then confirm. Write the message as Markdown text, not in a code block, so that the link works:` |
+| `pipeline.tmpl:127` | `I updated the course dashboard. The next skill` | `I updated the course dashboard: <the Dashboard link, written as the Report Links section of the preamble tells you>. The next skill` |
+| `pipeline.tmpl:136` | `(no skills are re-run; this step is the entire body of that branch).` | `(no skills are re-run; this step is the entire body of that branch). At the end of that branch, give the Dashboard link as the Report Links section of the preamble tells you.` |
 | `course-export.tmpl` (`Run the merge, then confirm:`, near 1067) | `Run the merge, then confirm:` | `Run the merge, then confirm. Start the message with <the Report link, written as the Report Links section of the preamble tells you>:` |
 
 In `skills/red-team/SKILL.md.tmpl` (the parent talks to the user; a sub-agent writes the report):
@@ -349,8 +352,9 @@ In `skills/red-team/SKILL.md.tmpl` (the parent talks to the user; a sub-agent wr
 | 341 | ``- Path: the value of `$_REPORT_PATH` (e.g., `.idstack/exports/<course-slug>/red-team.html`)`` | ``- Path (for the manifest): the value of `$_REPORT_PATH`, a relative path (e.g., `.idstack/exports/<course-slug>/red-team.html`)`` and, on a new line after it, `- Link (for the user): the path from the "Report link:" line` |
 | 351 | `top critical finding, and the report path.` | `top critical finding, and <the Link that the orchestrator returned, written as the Report Links section of the preamble tells you>.` |
 | 352 | `3. Mention: "The full HTML report is at the path above. Open it in a web browser to see all of the findings."` | `3. Mention: "Click the link to see all of the findings."` |
+| 350 | `1. Read the HTML report file at the path the orchestrator returned (e.g.,` | `1. Read the HTML report file at the Path that the orchestrator returned (e.g.,` |
 | 405 | `<set to the orchestrator-returned path — e.g.` | `<set to the Path that the orchestrator returned, not the Link — e.g.` |
-| 440 | ``The report is at `.idstack/exports/<course-slug>/red-team.html`."`` | `The report is at <the Link that the orchestrator returned>."` |
+| 440 | ``The report is at `.idstack/exports/<course-slug>/red-team.html`."`` | `The report is at <the Link that the orchestrator returned, written as the Report Links section of the preamble tells you>."` |
 
 - [ ] **Step 6: Add the preamble section.** In `templates/preamble.md`, insert directly before `## Preamble: Context Recovery`. Use form **L** unless Task 0 chose **P**.
 
@@ -364,8 +368,9 @@ The line gives the full path of the report. `/idstack:pipeline` and
 `/idstack:start` print a `Dashboard link:` line for the course dashboard.
 
 When you tell the user about a report or the dashboard, put the path from that
-line in a Markdown link, on a separate line. Put angle brackets around the
-path, because a folder name can have a space. For example:
+line in a Markdown link. Put angle brackets around the path, because a folder
+name can have a space. Use link text that names the file, for example "Open
+the report" or "Open the course dashboard". For example:
 
 [Open the report](</Users/ana/Courses/BIO 101/.idstack/exports/bio-101/course-import.html>)
 
@@ -526,7 +531,7 @@ description: |
 allowed-tools:
   - Bash
   - Read
-  - Write
+  - Edit
   - Skill
   - AskUserQuestion
 ---
@@ -554,7 +559,9 @@ not give the update command.
 
 When Step 4 starts a different skill with the Skill tool, the limits of this
 skill stop. Do all of the steps of that skill, including the files that it
-writes and its timeline entry.
+writes and its timeline entry. Two rules of this skill stay in effect after the
+handoff. Do not give the update command, and do not give the NO_PROFILE note.
+Do not give the welcome-back message again.
 
 ## Step 1: Setup check
 
@@ -618,17 +625,25 @@ gives you a link to each report that it writes." Then ask with AskUserQuestion:
 - **Design a new course** — "Start with a needs analysis." Go to Step 4 with
   `idstack:needs-analysis`.
 
-**If MANIFEST_EXISTS and the JSON is not valid:** Tell the user that the file
-`.idstack/project.json` in this folder is damaged, and give the parse error in
-one sentence. Ask with AskUserQuestion: "Do you want idstack to repair the
-file?"
+**If MANIFEST_EXISTS:** Run this block first.
+
+```bash
+if _ERR=$(python3 -c 'import json; json.load(open(".idstack/project.json"))' 2>&1); then echo "MANIFEST_OK"; else echo "MANIFEST_INVALID: $(printf '%s\n' "$_ERR" | tail -n 1)"; fi
+```
+
+**If MANIFEST_INVALID:** The file `.idstack/project.json` in this folder is
+damaged. Tell the user this, and give the error from the MANIFEST_INVALID line.
+This replaces the STOP in the Project Manifest section of the preamble. Ask
+with AskUserQuestion: "Do you want idstack to repair the file?"
 
 - **Repair the file** — "Correct only the JSON syntax. Keep all of the data."
-  Correct only the JSON syntax and keep all of the data. This is the only file
-  that this skill can change. Then continue with the next paragraph.
+  Use the Edit tool to correct only the JSON syntax. This is the only file that
+  this skill can change. Then run the block above again. If it shows
+  MANIFEST_OK, continue with the next paragraph. If not, tell the user that
+  idstack cannot repair the file. STOP.
 - **Stop** — "Do not change the file." STOP.
 
-**If MANIFEST_EXISTS and the JSON is valid:** give the welcome-back message from
+**If MANIFEST_OK:** give the welcome-back message from
 the Context Recovery section of the preamble. Then ask with AskUserQuestion:
 "What do you want to do?"
 
@@ -660,6 +675,7 @@ _SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "unt
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 if [ -f "$_EXPORT_DIR/index.html" ]; then
   echo "Dashboard link: $(pwd -P)/$_EXPORT_DIR/index.html"
+  if find "$_EXPORT_DIR" -maxdepth 1 -name '*.html' ! -name index.html -newer "$_EXPORT_DIR/index.html" | grep -q .; then echo "DASHBOARD_OLD"; fi
 else
   echo "NO_DASHBOARD"
   find "$_EXPORT_DIR" -maxdepth 1 -name '*.html' 2>/dev/null | sort | while IFS= read -r f; do echo "Report link: $(pwd -P)/$f"; done
@@ -667,10 +683,13 @@ fi
 ```
 
 - **Dashboard link:** give the path as the "Report Links" section of the
-  preamble tells you. Then STOP.
-- **NO_DASHBOARD:** Tell the user: "This course has no dashboard. Type
-  `/idstack:pipeline` to make the dashboard." Then give each `Report link:` path
-  as the "Report Links" section of the preamble tells you. Then STOP.
+  preamble tells you. If the output also shows DASHBOARD_OLD, tell the user:
+  "This dashboard is older than some of the reports. To update it, type
+  `/idstack:pipeline`." Then STOP.
+- **NO_DASHBOARD:** Tell the user: "This course has no dashboard. idstack makes
+  the dashboard when a stage of the course design is complete. To start the
+  next stage, type `/idstack:pipeline`." Then give each `Report link:` path as
+  the "Report Links" section of the preamble tells you. Then STOP.
 
 ## Step 6: Run one skill
 

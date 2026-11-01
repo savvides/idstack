@@ -85,13 +85,16 @@ Context Recovery blocks run before its own steps.
      course".
    - `MANIFEST_EXISTS`: give the welcome-back line from Context Recovery, then
      ask "Continue the pipeline", "Open the course dashboard" or "Run one skill".
-   - Malformed manifest: give the parse error and ask whether idstack may
-     repair the JSON syntax (keeping all data), as the preamble rule says. That
-     is the only file this skill may change. If the user declines, stop.
+   - Malformed manifest: a small python3 block checks the JSON (the preamble's
+     migrate step prints invalid JSON without an error). Give the parse error
+     and ask whether idstack may repair the JSON syntax with the Edit tool,
+     keeping all data. Check again after the repair. That is the only file this
+     skill may change. If the user declines, or the repair fails, stop.
 4. Hand off with the Skill tool (`skill: "idstack:<name>"`) to
    `/idstack:course-import`, `/idstack:needs-analysis`, `/idstack:pipeline`, or
    the skill that the user chose. "Open the course dashboard" prints a
-   `Dashboard link:` line when the file exists. Otherwise it says that
+   `Dashboard link:` line when the file exists, and says so when a report is
+   newer than the dashboard. Otherwise it says that
    `/idstack:pipeline` makes the dashboard, gives a `Report link:` for each
    report in the course folder, and stops. If the Skill tool fails, tell the user the
    command to type, as `/idstack:pipeline` does.
@@ -104,7 +107,8 @@ Rules:
 - `/idstack:start` writes no files, so it has zero `idstack-ste-check` steps.
   The smoke-test check-count map gets an explicit `start) want=0 ;;` entry.
 - When the Skill tool starts another skill, `/idstack:start`'s limits stop; that
-  skill writes its files and logs as usual.
+  skill writes its files and logs as usual. Its rules against terminal-only
+  text (the update command, the profile note) and a second welcome-back stay.
 - `/idstack:start` does not log to the timeline. A `completed` event would
   become `LAST_SKILL` and corrupt the welcome-back and next-step lines.
 
