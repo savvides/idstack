@@ -2175,6 +2175,18 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "doctor --quick no longer reports the macOS stub" "$WORK/r/test/test-doctor.sh"
 
+# 61c. A report block stops printing its full report link -> smoke-test must
+# fail. The desktop user then has no link to click.
+shell_mutation "a report block stops printing its absolute report link" \
+  skills/learning-objectives/SKILL.md.tmpl 'echo "Report link: $(pwd -P)/$_REPORT_PATH"
+' ''
+
+# 61d. A closing message sends the user to a web browser again -> smoke-test
+# must fail. That text names a relative path, and the model follows it over
+# the preamble's Report Links rule.
+shell_mutation "a closing message tells the user to open the report in a web browser" \
+  skills/learning-objectives/SKILL.md.tmpl 'Click the link to open it.' 'Open it in a web browser.'
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

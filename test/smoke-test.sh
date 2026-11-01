@@ -645,6 +645,22 @@ for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
   fi
 done
 
+# A desktop user opens a report by clicking its full path in chat. Each report
+# block prints one, and the closing message points at it rather than at a
+# relative path; the pipeline does the same for the dashboard.
+for skill in $REPORT_PRODUCING_SKILLS; do
+  check "$skill prints an absolute report link" \
+    "grep -qF 'echo \"Report link: \$(pwd -P)/\$_REPORT_PATH\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill closing message points at the Report Links rule" \
+    "grep -qF 'written as the Report Links section of the preamble tells you' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+check "pipeline prints an absolute dashboard link" \
+  "grep -qF 'echo \"Dashboard link: \$(pwd -P)/\$_EXPORT_DIR/index.html\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+check "preamble tells skills to give the report link" \
+  "grep -q '^## Preamble: Report Links' '$IDSTACK_DIR/templates/preamble.md'"
+check "no skill tells the user to open a report in a web browser" \
+  "! grep -l 'Open it in a web browser' $IDSTACK_DIR/skills/*/SKILL.md.tmpl"
+
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

@@ -305,6 +305,7 @@ cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
+echo "Report link: $(pwd -P)/$_REPORT_PATH"
 ```
 
 Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/accessibility-review.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
@@ -385,9 +386,9 @@ After writing the manifest, confirm to the user:
 
 "I saved your accessibility review in two files:
 
-- **Read this:** `.idstack/exports/<course-slug>/accessibility-review.html` — the report
+- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the report
   with WCAG violations (Necessary changes), UDL recommendations (Recommended changes), evidence-backed
-  findings on every item, and the 3 highest-impact quick wins. Open it in a web browser.
+  findings on every item, and the 3 highest-impact quick wins. Click the link to open it.
   The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 

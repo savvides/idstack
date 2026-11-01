@@ -820,6 +820,7 @@ cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
+echo "Report link: $(pwd -P)/$_REPORT_PATH"
 ```
 
 Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-import.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
@@ -915,7 +916,7 @@ writes nothing.
 }
 ```
 
-Write the manifest, then confirm:
+Write the manifest, then confirm. Write the message as Markdown text, not in a code block, so that the link works:
 
 ```
 ## Import Complete
@@ -933,9 +934,9 @@ Write the manifest, then confirm:
 **Quality triage:** {F} flags found
 
 **Two artifacts:**
-- **Read this:** `.idstack/exports/<course-slug>/course-import.html` — the import report
+- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the import report
   with evidence-backed quality flags, the Bloom's classification table, and recommended
-  next steps tied to specific findings. Open it in a web browser. The folder has all of the files for the report.
+  next steps tied to specific findings. Click the link to open it. The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Recommended next steps:**

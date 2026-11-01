@@ -162,6 +162,14 @@ PY
   check "[$sh] Canvas block stops with CANVAS_ENV_MISSING when there is no settings file" \
     "printf '%s' \"\$out\" | grep -q CANVAS_ENV_MISSING"
 
+  # Report links: a real report block prints the full path of the report.
+  mkdir -p "$P/links"
+  b=$(block learning-objectives '_REPORT_PATH="$_EXPORT_DIR/learning-objectives.html"')
+  out=$(run "$P/links" "$b")
+  want="Report link: $(cd "$P/links" && pwd -P)/.idstack/exports/untitled-course/learning-objectives.html"
+  check "[$sh] a report block prints an absolute report link" \
+    "printf '%s\n' \"\$out\" | grep -qxF \"\$want\""
+
   # Every preamble block exits 0 and prints the same output in both shells.
   mkdir -p "$P/pre/.idstack"
   printf '%s\n' '{"ts":"2026-08-04T00:00:00Z","skill":"needs-analysis","event":"completed"}' > "$P/pre/.idstack/timeline.jsonl"

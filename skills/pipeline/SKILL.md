@@ -280,6 +280,24 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
 
+## Preamble: Report Links
+
+A skill that writes a report runs a block that prints a `Report link:` line.
+The line gives the full path of the report. `/idstack:pipeline` and
+`/idstack:start` print a `Dashboard link:` line for the course dashboard.
+
+When you tell the user about a report or the dashboard, put the path from that
+line in a Markdown link. Put angle brackets around the path, because a folder
+name can have a space. Use link text that names the file, for example "Open
+the report" or "Open the course dashboard". For example:
+
+[Open the report](</Users/ana/Courses/BIO 101/.idstack/exports/bio-101/course-import.html>)
+
+In the Claude desktop app, the user clicks the link to open the file. Give only
+a path from a `Report link:` or `Dashboard link:` line, or a link that a
+sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+the report, do not give the path.
+
 ## Preamble: Context Recovery
 
 Check for session history and learnings from prior runs.
@@ -429,7 +447,7 @@ the new starting point. Generate the course dashboard (Step 4) before stopping s
 partial-run dashboard is up to date.
 
 **Between skills**, briefly announce the transition:
-"[skill-name] is completed. I updated the course dashboard. The next skill is /idstack:<next-skill>."
+"[skill-name] is completed. I updated the course dashboard: <the Dashboard link, written as the Report Links section of the preamble tells you>. The next skill is /idstack:<next-skill>."
 
 ### Step 4: Generate Course Dashboard
 
@@ -438,7 +456,7 @@ After each skill completes (or after the orchestrator finishes the run, includin
 **When this step runs:**
 
 - Inline after each skill completes during the orchestrator's main loop (Step 3, item 4) — so a partial pipeline still leaves a useful dashboard behind if the designer pauses.
-- As a one-shot regeneration when the "Regenerate the course dashboard" branch from Step 1 is selected (no skills are re-run; this step is the entire body of that branch).
+- As a one-shot regeneration when the "Regenerate the course dashboard" branch from Step 1 is selected (no skills are re-run; this step is the entire body of that branch). At the end of that branch, give the Dashboard link as the Report Links section of the preamble tells you.
 
 **Prep.** Compute the course slug and prepare the export folder:
 
@@ -459,6 +477,7 @@ mkdir -p "$_EXPORT_DIR/assets"
 cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Dashboard template: $_IDSTACK/templates/index.html.tmpl"
 echo "Dashboard: $_EXPORT_DIR/index.html"
+echo "Dashboard link: $(pwd -P)/$_EXPORT_DIR/index.html"
 ```
 
 **Inputs.** Read each per-skill HTML report file if it exists (they're already in `$_EXPORT_DIR/`):
@@ -513,7 +532,7 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 When all remaining skills have been executed:
 - Announce: "The pipeline is completed. Your course went through all 8 stages."
-- Confirm the dashboard path: "The course dashboard is at `.idstack/exports/<course-slug>/index.html`. Open it in a web browser to see the cross-cutting view. The per-skill HTML reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
+- Confirm the dashboard path: "The course dashboard is at <the Dashboard link, written as the Report Links section of the preamble tells you>. Click it to see the cross-cutting view. The per-skill HTML reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
 - If `/idstack:course-quality-review` produced a score, show it.
 - Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.
 - Log the pipeline run so "the pipeline was run" is recoverable from the timeline:

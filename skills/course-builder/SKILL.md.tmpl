@@ -569,6 +569,7 @@ cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
+echo "Report link: $(pwd -P)/$_REPORT_PATH"
 ```
 
 Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-builder.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
@@ -644,9 +645,9 @@ After writing the manifest, confirm:
 
 "I generated your course content. You have three outputs:
 
-- **Read this:** `.idstack/exports/<course-slug>/course-builder.html` — the build report
+- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the build report
   with evidence-backed design choices, cognitive-load notes, and a placeholders list.
-  Open it in a web browser. The folder has all of the files for the report.
+  Click the link to open it. The folder has all of the files for the report.
 - Course content: `.idstack/course-content/` (the course files — review them and add
   your voice and institutional details).
 - System state: `.idstack/project.json` (the manifest — for downstream skills).

@@ -280,6 +280,24 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
 
+## Preamble: Report Links
+
+A skill that writes a report runs a block that prints a `Report link:` line.
+The line gives the full path of the report. `/idstack:pipeline` and
+`/idstack:start` print a `Dashboard link:` line for the course dashboard.
+
+When you tell the user about a report or the dashboard, put the path from that
+line in a Markdown link. Put angle brackets around the path, because a folder
+name can have a space. Use link text that names the file, for example "Open
+the report" or "Open the course dashboard". For example:
+
+[Open the report](</Users/ana/Courses/BIO 101/.idstack/exports/bio-101/course-import.html>)
+
+In the Claude desktop app, the user clicks the link to open the file. Give only
+a path from a `Report link:` or `Dashboard link:` line, or a link that a
+sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+the report, do not give the path.
+
 ## Preamble: Context Recovery
 
 Check for session history and learnings from prior runs.
@@ -883,6 +901,7 @@ cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
+echo "Report link: $(pwd -P)/$_REPORT_PATH"
 ```
 
 Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-builder.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
@@ -976,9 +995,9 @@ After writing the manifest, confirm:
 
 "I generated your course content. You have three outputs:
 
-- **Read this:** `.idstack/exports/<course-slug>/course-builder.html` — the build report
+- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the build report
   with evidence-backed design choices, cognitive-load notes, and a placeholders list.
-  Open it in a web browser. The folder has all of the files for the report.
+  Click the link to open it. The folder has all of the files for the report.
 - Course content: `.idstack/course-content/` (the course files — review them and add
   your voice and institutional details).
 - System state: `.idstack/project.json` (the manifest — for downstream skills).

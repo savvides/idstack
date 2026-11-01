@@ -280,6 +280,24 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
 
+## Preamble: Report Links
+
+A skill that writes a report runs a block that prints a `Report link:` line.
+The line gives the full path of the report. `/idstack:pipeline` and
+`/idstack:start` print a `Dashboard link:` line for the course dashboard.
+
+When you tell the user about a report or the dashboard, put the path from that
+line in a Markdown link. Put angle brackets around the path, because a folder
+name can have a space. Use link text that names the file, for example "Open
+the report" or "Open the course dashboard". For example:
+
+[Open the report](</Users/ana/Courses/BIO 101/.idstack/exports/bio-101/course-import.html>)
+
+In the Claude desktop app, the user clicks the link to open the file. Give only
+a path from a `Report link:` or `Dashboard link:` line, or a link that a
+sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+the report, do not give the path.
+
 ## Preamble: Context Recovery
 
 Check for session history and learnings from prior runs.
@@ -610,6 +628,7 @@ cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
+echo "Report link: $(pwd -P)/$_REPORT_PATH"
 ```
 
 Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/accessibility-review.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
@@ -708,9 +727,9 @@ After writing the manifest, confirm to the user:
 
 "I saved your accessibility review in two files:
 
-- **Read this:** `.idstack/exports/<course-slug>/accessibility-review.html` — the report
+- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the report
   with WCAG violations (Necessary changes), UDL recommendations (Recommended changes), evidence-backed
-  findings on every item, and the 3 highest-impact quick wins. Open it in a web browser.
+  findings on every item, and the 3 highest-impact quick wins. Click the link to open it.
   The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 

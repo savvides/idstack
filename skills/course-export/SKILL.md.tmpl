@@ -124,6 +124,7 @@ cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Course export folder: $_EXPORT_DIR"
+echo "Report link: $(pwd -P)/$_REPORT_PATH"
 ```
 
 All subsequent paths (`.imscc`, SCORM `.zip`, HTML report) write into
@@ -1064,7 +1065,7 @@ sections from the manifest (if they exist). The `verdict` is:
 - `export_blocked`: not used (export never blocks, advisory only)
 - Empty string if no reviews exist
 
-Run the merge, then confirm:
+Run the merge, then confirm. Start the message with <the Report link, written as the Report Links section of the preamble tells you>:
 
 "I saved your export metadata to `.idstack/project.json`.
 
