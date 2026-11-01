@@ -208,8 +208,12 @@ expect(
   rejectedPreludes.length === 0,
   `@media prelude names a breakpoint but does not scope to it: ${rejectedPreludes.join(' | ')}`
 );
-// One stylesheet, inline. An external sheet would carry rules this file never sees.
-expect(!/<link[^>]+rel=["']?stylesheet/i.test(html), 'page must not pull in an external stylesheet');
+// One stylesheet, inline. An external sheet would carry rules this file never sees. The one
+// exception is the Google Fonts sheet, which holds only @font-face rules (the same URL the
+// reports load from templates/report.html.tmpl), so it cannot change layout.
+const externalSheets = (html.match(/<link[^>]+rel=["']?stylesheet[^>]*>/gi) || [])
+  .filter(tag => !/href=["']https:\/\/fonts\.googleapis\.com\/css2\?/i.test(tag));
+expect(externalSheets.length === 0, `page must not pull in an external stylesheet other than Google Fonts: ${externalSheets.join(' ')}`);
 // A dropped block and a missing rule both look like "not found" downstream. Separate them here so
 // a renamed breakpoint reports itself instead of blaming every rule inside it.
 expect(at480.length > 0, 'no @media (max-width: 480px) block found — breakpoint renamed?');

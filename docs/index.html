@@ -13,6 +13,11 @@
   <link rel="apple-touch-icon" href="favicon.png">
   <link rel="alternate" type="application/rss+xml" title="idstack releases" href="https://github.com/savvides/idstack/releases.atom">
 
+  <!-- Same three families and URL as templates/report.html.tmpl, so the site and the reports match. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
+
   <!-- Open Graph -->
   <meta property="og:title" content="idstack — Evidence-based instructional design with peer-reviewed citations">
   <meta property="og:description" content="108 peer-reviewed studies across 11 research domains. Every recommendation cites its evidence tier. Open source, MIT-licensed. Runs in Claude Code and Chrome.">
@@ -70,39 +75,43 @@
     }
 
     :root {
-      /* Dark-only — near-black with the indigo→purple signature. See DESIGN.md § Color. */
-      --bg:           #0a0a0f;
-      --raised:       #16161f;
-      --ink:          #e4e4e7;
-      --ink-soft:     #c4c4cc;
-      --ink-muted:    #8b8b96;
-      --rule:         #1e1e2e;
-      --rule-strong:  #2a2a3e;
-      --accent:       #818cf8;
-      --accent-blue:  #60a5fa;
-      --accent-soft:  rgba(99,102,241,0.12);
+      /* The report system's "Proof" tokens (templates/assets/idstack.css), plus the
+         landing's prussian hero. See DESIGN.md § Color and § Landing page. */
+      --bg:           #faf8f3;
+      --raised:       #ffffff;
+      --ink:          #1a1815;
+      --ink-soft:     #3a352e;
+      --ink-muted:    #6b6358;
+      --rule:         #e6e0d2;
+      --rule-strong:  #d4cdb9;
+      --accent:       #7a1f1f;
+      --accent-blue:  #1d4a5e;
+      --accent-soft:  #f4eae8;
+      --on-accent:    #faf8f3;
 
-      --accent-start: #6366f1;
-      --accent-end:   #a855f7;
-      --accent-gradient: linear-gradient(135deg, #6366f1, #a855f7);
+      --hero-bg:      #163a4a;
+      --hero-ink:     #faf8f3;
+      --hero-soft:    #dfe6e8;
+      --hero-panel:   #0f2c39;
+      --hero-rule:    #2b5263;
 
-      --tier-1: #4ade80;
-      --tier-2: #60a5fa;
-      --tier-3: #fbbf24;
-      --tier-4: #fb923c;
-      --tier-5: #a1a1aa;
+      --tier-1: #2f7a4a;
+      --tier-2: #2864a8;
+      --tier-3: #a87726;
+      --tier-4: #b35a1f;
+      --tier-5: #6b6b6b;
 
-      --severity-warning-bg: #2e2210;
-      --severity-warning-fg: #e3b25c;
-      --severity-critical-bg: #2e1612;
-      --severity-critical-fg: #e89786;
-      --severity-info-bg:    #1a2030;
-      --severity-info-fg:    #9bafd2;
+      --severity-warning-bg: #fbf0d9;
+      --severity-warning-fg: #7a4f0c;
+      --severity-critical-bg: #f5dcd5;
+      --severity-critical-fg: #8c2515;
+      --severity-info-bg:    #e7eaf1;
+      --severity-info-fg:    #344566;
 
-      --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      --font-body:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      --font-ui:      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      --font-mono:    "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+      --font-display: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-body:    'Source Serif 4', 'Source Serif Pro', 'Charter', 'Iowan Old Style', 'Sitka Text', Georgia, serif;
+      --font-ui:      'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
 
       --max:    1120px;
       --prose:  62ch;
@@ -112,6 +121,41 @@
       /* Minimum interactive target. 44px is the Apple HIG / WCAG 2.5.5 figure; the page
          previously carried three different ad-hoc floors (36/40/42px). */
       --tap-min: 44px;
+    }
+
+    /* Dark mode follows the reader's system setting, with the report stylesheet's dark
+       tokens. No toggle: the light theme is canonical, dark is a courtesy. */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:           #16140f;
+        --raised:       #1f1d18;
+        --ink:          #ebe7dd;
+        --ink-soft:     #cfc9bc;
+        --ink-muted:    #968f80;
+        --rule:         #2c2a23;
+        --rule-strong:  #3d3a30;
+        --accent:       #d97461;
+        --accent-blue:  #6aa6e3;
+        --accent-soft:  #2a1d1a;
+        --on-accent:    #16140f;
+
+        --hero-bg:      #10232c;
+        --hero-panel:   #0b1a21;
+        --hero-rule:    #24414e;
+
+        --tier-1: #5fc185;
+        --tier-2: #6aa6e3;
+        --tier-3: #d6a64c;
+        --tier-4: #e58f53;
+        --tier-5: #a3a3a3;
+
+        --severity-warning-bg: #2e2210;
+        --severity-warning-fg: #e3b25c;
+        --severity-critical-bg: #2e1612;
+        --severity-critical-fg: #e89786;
+        --severity-info-bg:    #1a2030;
+        --severity-info-fg:    #9bafd2;
+      }
     }
 
     html { scroll-behavior: smooth; }
@@ -159,22 +203,21 @@
     h1, h2, h3 {
       font-family: var(--font-display);
       color: var(--ink);
-      letter-spacing: -0.015em;
+      letter-spacing: -0.02em;
       line-height: 1.15;
     }
 
     /* ──────────────────────────────────────────────
-       Topbar
+       Topbar — prussian, continuous with the hero
        ────────────────────────────────────────────── */
     .topbar {
       position: sticky;
       top: 0;
       z-index: 50;
-      background: color-mix(in srgb, var(--bg) 88%, transparent);
-      backdrop-filter: saturate(160%) blur(10px);
-      -webkit-backdrop-filter: saturate(160%) blur(10px);
-      border-bottom: 1px solid var(--rule);
+      background: var(--hero-bg);
+      border-bottom: 1px solid var(--hero-rule);
     }
+    .topbar a:focus-visible { outline-color: var(--hero-ink); }
     .nav {
       display: flex;
       align-items: center;
@@ -186,8 +229,8 @@
     .brand {
       font-family: var(--font-display);
       font-size: clamp(1.2rem, 3vw, 1.35rem);
-      font-weight: 600;
-      color: var(--ink);
+      font-weight: 700;
+      color: var(--hero-ink);
       text-decoration: none;
       letter-spacing: -0.01em;
       display: inline-flex;
@@ -201,7 +244,7 @@
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--accent);
+      color: var(--hero-soft);
       margin-left: 0.35rem;
       vertical-align: super;
     }
@@ -212,14 +255,15 @@
       flex-wrap: wrap;
     }
     .nav-links a {
-      color: var(--ink-soft);
+      color: var(--hero-soft);
+      font-family: var(--font-ui);
       text-decoration: none;
       font-size: clamp(0.82rem, 1.8vw, 0.93rem);
       padding: 0.25rem 0;
-      transition: color 0.15s ease;
+      transition: color 0.1s cubic-bezier(0.2, 0, 0, 1);
       white-space: nowrap;
     }
-    .nav-links a:hover { color: var(--ink); }
+    .nav-links a:hover { color: var(--hero-ink); text-decoration: underline; }
 
     @media (max-width: 480px) {
       .nav { padding-top: 0.65rem; padding-bottom: 0.65rem; gap: 0.6rem; }
@@ -244,24 +288,10 @@
     }
     .section + .section { border-top: 1px solid var(--rule); }
 
-    .eyebrow {
-      font-family: var(--font-ui);
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--accent-start);
-      background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 0.6rem;
-    }
-
     .section-header { margin-bottom: 2.5rem; }
     .section-header h2 {
       font-size: clamp(1.6rem, 3vw, 2.1rem);
-      font-weight: 600;
+      font-weight: 700;
       margin-bottom: 0.75rem;
     }
     .section-header .lede {
@@ -271,49 +301,58 @@
     }
 
     /* ──────────────────────────────────────────────
-       Hero — single column, generous whitespace
+       Hero — prussian band: the claim, then a real session
        ────────────────────────────────────────────── */
-    .hero {
-      padding-block: clamp(2.5rem, 6vw, 5.5rem) clamp(2.25rem, 5vw, 4.5rem);
+    .hero-band {
+      background: var(--hero-bg);
+      color: var(--hero-ink);
     }
-    .hero-text { max-width: 56rem; }
+    .hero {
+      padding-block: clamp(2.5rem, 6vw, 5rem) clamp(2.5rem, 5vw, 4.5rem);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: clamp(2rem, 4vw, 3rem);
+      align-items: start;
+    }
+    @media (min-width: 1024px) {
+      .hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+    }
 
     .hero h1 {
-      font-size: clamp(1.85rem, 5.2vw, 3.4rem);
-      font-weight: 600;
-      letter-spacing: -0.022em;
-      line-height: 1.1;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.06;
       margin-bottom: 1.25rem;
       text-wrap: balance;
       overflow-wrap: break-word;
-      max-width: 22ch;
-      color: var(--accent-start);
-      background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      max-width: 18ch;
+      color: var(--hero-ink);
     }
     .hero .lede {
-      font-size: clamp(0.98rem, 1.6vw, 1.15rem);
-      color: var(--ink-soft);
+      font-size: clamp(1rem, 1.6vw, 1.15rem);
+      color: var(--hero-soft);
       line-height: 1.6;
       max-width: var(--prose);
       margin-bottom: 1.75rem;
     }
+    .hero a { color: var(--hero-ink); }
+    .hero a:focus-visible { outline-color: var(--hero-ink); }
 
     .hero-meta {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 0.45rem 0.65rem;
-      font-size: 0.78rem;
-      letter-spacing: 0.03em;
-      color: var(--ink-muted);
-      margin-bottom: 1.25rem;
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      letter-spacing: 0.02em;
+      color: var(--hero-soft);
+      margin-top: 1.5rem;
     }
     .hero-meta .dot {
       width: 4px; height: 4px; border-radius: 50%;
-      background: var(--ink-muted);
+      background: var(--hero-soft);
       display: inline-block;
       flex-shrink: 0;
     }
@@ -322,8 +361,8 @@
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-start);
+      background: var(--hero-panel);
+      border: 1px solid var(--hero-rule);
       border-radius: 2px;
       padding: 0.5rem 0.55rem 0.5rem 0.8rem;
       width: 100%;
@@ -331,7 +370,7 @@
       overflow: hidden;
     }
     .install-pill .prompt {
-      color: var(--accent);
+      color: var(--hero-soft);
       font-family: var(--font-mono);
       font-weight: 600;
       flex-shrink: 0;
@@ -340,7 +379,7 @@
       background: transparent;
       border: none;
       padding: 0;
-      color: var(--ink);
+      color: var(--hero-ink);
       font-size: 0.83rem;
       flex: 1 1 0;
       min-width: 0;
@@ -350,7 +389,7 @@
     }
     .copy-btn {
       background: transparent;
-      border: 1px solid var(--rule);
+      border: 1px solid var(--rule-strong);
       border-radius: 2px;
       padding: 0.4rem 0.75rem;
       min-height: var(--tap-min);
@@ -360,11 +399,15 @@
       font-size: 0.78rem;
       cursor: pointer;
       flex-shrink: 0;
-      transition: border-color 0.15s, color 0.15s;
+      transition: border-color 0.1s cubic-bezier(0.2, 0, 0, 1), color 0.1s cubic-bezier(0.2, 0, 0, 1);
     }
-    .copy-btn:hover { color: var(--ink); border-color: var(--rule-strong); }
+    .copy-btn:hover { color: var(--ink); border-color: var(--ink-muted); }
     .copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .copy-btn[data-copied="true"] { color: var(--tier-1); border-color: var(--tier-1); }
+    .install-pill .copy-btn { color: var(--hero-soft); border-color: var(--hero-rule); }
+    .install-pill .copy-btn:hover { color: var(--hero-ink); border-color: var(--hero-soft); }
+    .install-pill .copy-btn:focus-visible { outline-color: var(--hero-ink); }
+    .install-pill .copy-btn[data-copied="true"] { color: var(--hero-ink); border-color: var(--hero-ink); }
 
     .cta-row {
       display: flex;
@@ -379,52 +422,57 @@
       gap: 0.75rem;
       flex-wrap: wrap;
     }
+    /* One solid color per surface: oxblood on ivory, ivory on the prussian hero. */
     .btn-chrome {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 0.55rem;
-      background: #2563eb;
-      color: #ffffff;
+      background: var(--accent);
+      color: var(--on-accent);
       font-family: var(--font-ui);
       font-weight: 600;
-      font-size: 0.88rem;
-      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      padding: 0.6rem 1.1rem;
       min-height: var(--tap-min);
       border-radius: 2px;
       text-decoration: none;
-      transition: background 0.15s ease;
+      transition: background 0.1s cubic-bezier(0.2, 0, 0, 1);
       flex-shrink: 0;
     }
     .btn-chrome:hover {
-      background: #1d4ed8;
-      color: #ffffff;
+      background: color-mix(in srgb, var(--accent) 86%, var(--ink));
+      color: var(--on-accent);
       text-decoration: none;
     }
     .btn-chrome:focus-visible {
       outline: 2px solid var(--accent);
       outline-offset: 2px;
     }
+    .hero .btn-chrome { background: var(--hero-ink); color: var(--hero-bg); }
+    .hero .btn-chrome:hover { background: var(--hero-soft); color: var(--hero-bg); }
+    .hero .btn-chrome:focus-visible { outline-color: var(--hero-ink); }
     .btn-chrome .btn-badge {
       font-size: 0.72rem;
-      background: rgba(255, 255, 255, 0.22);
-      padding: 0.1rem 0.4rem;
+      border: 1px solid currentColor;
+      padding: 0.05rem 0.4rem;
       border-radius: 2px;
       font-weight: 500;
     }
     .cta-or {
-      font-size: 0.82rem;
-      color: var(--ink-muted);
+      font-size: 0.85rem;
+      color: var(--hero-soft);
       font-family: var(--font-ui);
     }
     .cta-secondary {
+      font-family: var(--font-ui);
       font-size: 0.92rem;
-      color: var(--ink-muted);
       text-decoration: none;
       align-self: flex-start;
       padding: 0.2rem 0;
     }
-    .cta-secondary:hover { color: var(--ink); text-decoration: underline; }
+    .hero .cta-secondary { color: var(--hero-soft); }
+    .hero .cta-secondary:hover { color: var(--hero-ink); text-decoration: underline; }
 
     @media (max-width: 480px) {
       .cta-actions { flex-direction: column; align-items: stretch; gap: 0.6rem; }
@@ -432,7 +480,61 @@
       .cta-or { text-align: center; }
     }
 
-    /* Tier + severity pills */
+    /* The session replay (closes #131): a static transcript that ends in a cited finding. */
+    .session {
+      background: var(--hero-panel);
+      border: 1px solid var(--hero-rule);
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.65;
+      color: var(--hero-soft);
+      min-width: 0;
+    }
+    .session-head {
+      padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid var(--hero-rule);
+      font-size: 0.72rem;
+      letter-spacing: 0.02em;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .session-body { padding: 0.9rem; }
+    .session-line { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 0.5rem; }
+    .session-line + .session-line { margin-top: 0.35rem; }
+    .session-who { color: var(--hero-soft); opacity: 1; }
+    .session-you .session-said { color: var(--hero-ink); }
+    .session-finding {
+      margin-top: 0.9rem;
+      background: var(--bg);
+      color: var(--ink);
+      padding: 0.95rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    .session-finding .finding-tags { display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.5rem; }
+    .session-finding .finding-title {
+      font-family: var(--font-display);
+      font-size: 1.02rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.35rem;
+    }
+    .session-finding p + p { margin-top: 0.45rem; }
+    .session-finding .finding-label {
+      font-family: var(--font-ui);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-right: 0.35rem;
+    }
+    .session-finding code { font-size: 0.8em; }
+    .session-more { margin-top: 0.75rem; }
+
+    /* Tier + severity pills: outlined tier chips, as in the reports. */
     .tier {
       display: inline-flex;
       align-items: center;
@@ -451,15 +553,15 @@
     .tier-3 { color: var(--tier-3); }
     .tier-4 { color: var(--tier-4); }
     .tier-5 { color: var(--tier-5); }
+    /* On prussian the outlined chip is too dark to read, so the hero fills it instead. */
+    .hero .lede .tier { color: #ffffff; border-color: transparent; }
+    .hero .lede .tier-1 { background: #2f7a4a; }
+    .hero .lede .tier-5 { background: #6b6b6b; }
 
     .cite-pill {
       font-family: var(--font-mono);
       font-size: 0.78rem;
-      color: var(--ink-soft);
-      background: rgba(99,102,241,0.15);
-      border: 1px solid var(--accent-start);
-      padding: 0.15em 0.5em;
-      border-radius: 2px;
+      color: var(--accent-blue);
       white-space: nowrap;
     }
 
@@ -478,15 +580,13 @@
     .severity-info { background: var(--severity-info-bg); color: var(--severity-info-fg); }
 
     /* ──────────────────────────────────────────────
-       Evidence — tier legend + per-domain cards
+       Evidence — tier legend + ranked domain index
        ────────────────────────────────────────────── */
     .evidence-legend {
       display: flex;
       flex-wrap: wrap;
       gap: 0.75rem clamp(1rem, 3vw, 1.75rem);
-      margin-bottom: 2.25rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--rule);
+      margin-bottom: 1.5rem;
       font-family: var(--font-ui);
       font-size: 0.88rem;
       color: var(--ink-soft);
@@ -505,9 +605,8 @@
     }
     .evidence-legend-dot {
       display: inline-block;
-      width: 0.6rem;
-      height: 0.6rem;
-      border-radius: 50%;
+      width: 0.7rem;
+      height: 0.7rem;
       transform: translateY(1px);
       flex-shrink: 0;
     }
@@ -517,61 +616,60 @@
     .evidence-legend-dot.t4 { background: var(--tier-4); }
     .evidence-legend-dot.t5 { background: var(--tier-5); }
 
-    .evidence-grid {
+    /* One row per domain, ranked by study count. The bar is 15 studies wide at full
+       length (the largest domain); each segment is that domain's count at one tier. */
+    .evidence-index { list-style: none; border-top: 1px solid var(--rule-strong); }
+    .evidence-row {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 0;
-    }
-    @media (min-width: 768px) {
-      .evidence-grid {
-        grid-template-columns: 1fr 1fr;
-        column-gap: clamp(2rem, 4vw, 3rem);
-      }
-    }
-
-    .evidence-card {
-      padding: 1.25rem 0;
+      grid-template-columns: minmax(0, 1fr) 5.5rem minmax(0, 15rem);
+      grid-template-areas: "title count bar" "body body body";
+      gap: 0.2rem 1rem;
+      align-items: center;
+      padding: 0.95rem 0;
       border-bottom: 1px solid var(--rule);
     }
-    .evidence-card:last-child { border-bottom: none; }
-
-    .evidence-card-title {
-      font-family: var(--font-display);
-      font-size: 1.12rem;
-      font-weight: 600;
+    .evidence-row-title {
+      grid-area: title;
+      font-size: 1.02rem;
+      font-weight: 700;
       letter-spacing: -0.01em;
-      color: var(--ink);
-      margin-bottom: 0.55rem;
     }
-
-    .evidence-card-body {
-      font-family: var(--font-body);
-      font-size: 0.98rem;
+    .evidence-row-count {
+      grid-area: count;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .tier-mix { grid-area: bar; display: flex; height: 0.75rem; }
+    .tier-mix span { display: block; height: 100%; flex: none; }
+    .tier-mix .t1 { background: var(--tier-1); }
+    .tier-mix .t2 { background: var(--tier-2); }
+    .tier-mix .t3 { background: var(--tier-3); }
+    .tier-mix .t4 { background: var(--tier-4); }
+    .tier-mix .t5 { background: var(--tier-5); }
+    .evidence-row-body {
+      grid-area: body;
+      font-size: 0.95rem;
       line-height: 1.55;
       color: var(--ink-soft);
       max-width: var(--prose);
-      margin-bottom: 0.7rem;
+      margin-top: 0.2rem;
     }
-
-    .evidence-card-meta {
-      font-family: var(--font-ui);
-      font-size: 0.8rem;
-      color: var(--ink-muted);
-      letter-spacing: 0.02em;
-    }
-    .evidence-card-meta .meta-sep {
-      display: inline-block;
-      width: 3px;
-      height: 3px;
-      border-radius: 50%;
-      background: var(--ink-muted);
-      vertical-align: middle;
-      margin: 0 0.5rem;
-      transform: translateY(-1px);
-    }
-    .evidence-card-meta .meta-tier {
+    .evidence-row-tiers {
       font-family: var(--font-mono);
-      letter-spacing: 0.04em;
+      font-size: 0.78rem;
+      color: var(--ink-muted);
+      margin-left: 0.35rem;
+      white-space: nowrap;
+    }
+    @media (max-width: 640px) {
+      .evidence-row {
+        grid-template-columns: minmax(0, 1fr) 5.5rem;
+        grid-template-areas: "title count" "bar bar" "body body";
+        gap: 0.45rem 0.75rem;
+      }
     }
 
     .evidence-foot {
@@ -629,12 +727,11 @@
       border-radius: 0;
       padding: 0.85rem 0.85rem 0.85rem 0.85rem;
       cursor: default;
-      transition: border-color 0.15s, transform 0.15s;
+      transition: border-color 0.1s cubic-bezier(0.2, 0, 0, 1);
     }
     .pipeline-node:hover,
     .pipeline-node:focus-within {
-      border-color: var(--accent);
-      transform: translateY(-1px);
+      border-color: var(--accent-blue);
     }
     .pipeline-node:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .pipeline-node .node-num {
@@ -650,12 +747,13 @@
       display: block;
       font-family: var(--font-mono);
       font-size: 0.78rem;
-      color: var(--accent);
+      color: var(--accent-blue);
       margin-bottom: 0.3rem;
       word-break: break-word;
       padding-right: 1.5rem;
     }
     .pipeline-node .node-desc {
+      font-family: var(--font-ui);
       font-size: 0.78rem;
       color: var(--ink-muted);
       line-height: 1.4;
@@ -849,44 +947,6 @@
     }
 
     /* ──────────────────────────────────────────────
-       What's new
-       ────────────────────────────────────────────── */
-    .release-card {
-      background: var(--raised);
-      border: 1px solid var(--rule);
-      border-radius: 0;
-      padding: clamp(1.25rem, 3vw, 1.75rem);
-      max-width: var(--prose);
-    }
-    .release-card .release-meta {
-      font-family: var(--font-mono);
-      font-size: 0.78rem;
-      color: var(--ink-muted);
-      margin-bottom: 0.45rem;
-      letter-spacing: 0.02em;
-    }
-    .release-card h3 {
-      font-family: var(--font-display);
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 0.85rem;
-    }
-    .release-card p {
-      font-size: 0.97rem;
-      color: var(--ink-soft);
-      line-height: 1.6;
-      margin-bottom: 0.85rem;
-    }
-    .release-card p:last-child { margin-bottom: 0; }
-
-    .whats-next {
-      margin-top: 1.5rem;
-      font-size: 0.92rem;
-      color: var(--ink-muted);
-      max-width: var(--prose);
-    }
-
-    /* ──────────────────────────────────────────────
        Footer
        ────────────────────────────────────────────── */
     .footer {
@@ -970,13 +1030,13 @@
       font-family: var(--font-ui);
       font-size: 0.85rem;
       font-weight: 700;
-      color: #f5f5fb;
-      background: var(--accent-gradient);
-      border: 1px solid var(--rule);
+      color: var(--on-accent);
+      background: var(--accent);
+      border: 1px solid var(--accent);
       border-radius: 0 2px 2px 0;
       cursor: pointer;
     }
-    .footer-signup button:hover { opacity: 0.92; }
+    .footer-signup button:hover { background: color-mix(in srgb, var(--accent) 86%, var(--ink)); }
     .footer-signup button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .signup-note {
       margin-top: 0.55rem;
@@ -1023,17 +1083,11 @@
   <main id="main">
 
     <!-- ────────── Hero ────────── -->
+    <div class="hero-band">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-text">
-        <p class="hero-meta">
-          <span>Open source</span>
-          <span class="dot" aria-hidden="true"></span>
-          <span>MIT</span>
-          <span class="dot" aria-hidden="true"></span>
-          <span>v3.9.0.0 · Claude Code &amp; Chrome Extension</span>
-        </p>
-        <h1 id="hero-title">Evidence-based instructional design with peer-reviewed citations.</h1>
-        <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation includes its evidence tier: <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code and as a native Chrome Extension.</p>
+        <h1 id="hero-title">Course design advice that shows its sources.</h1>
+        <p class="lede">idstack reviews your course in Claude Code or Chrome. Each recommendation names the study behind it and how strong that evidence is, from <span class="tier tier-1">T1</span> meta-analyses and RCTs to <span class="tier tier-5">T5</span> expert opinion. 108 peer-reviewed studies across 11 research domains.</p>
 
         <div class="cta-row">
           <div class="cta-actions">
@@ -1055,17 +1109,44 @@
             <code id="install-cmd">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
             <button class="copy-btn" type="button" data-copy-target="install-cmd" aria-label="Copy install command">Copy</button>
           </div>
-          <a class="cta-secondary" href="#evidence">→&nbsp; See the evidence base</a>
+          <a class="cta-secondary" href="#evidence">→&nbsp; See the 108 studies</a>
         </div>
+
+        <p class="hero-meta">
+          <span>Open source</span>
+          <span class="dot" aria-hidden="true"></span>
+          <span>MIT</span>
+          <span class="dot" aria-hidden="true"></span>
+          <span>v3.9.0.0 · Claude Code &amp; Chrome Extension</span>
+        </p>
       </div>
+
+      <figure class="session" aria-label="Sample session: importing a Canvas course">
+        <figcaption class="session-head">Claude Code · sample session</figcaption>
+        <div class="session-body">
+          <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">/idstack:course-import</span></p>
+          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">How do you want to import your course? A) Common Cartridge B) Paste documents C) Canvas API D) PDF E) SCORM</span></p>
+          <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">C. Here is my Canvas URL and access token.</span></p>
+          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">Connected. Found 12 modules, 8 assignments, 4 discussions, 6 outcomes. 4 flags:</span></p>
+
+          <div class="session-finding">
+            <p class="finding-tags"><span class="severity severity-warning">warning</span> <span class="tier tier-1">T1</span></p>
+            <p class="finding-title">All 8 assessments are auto-graded quizzes with no rubrics</p>
+            <p><span class="finding-label">Evidence</span>Elaborated feedback produces larger learning gains than correctness-only feedback. <span class="cite-pill">[Assessment-8] [T1]</span></p>
+            <p><span class="finding-label">Next</span>Run <code>/idstack:assessment-design</code> to add rubrics and feedback.</p>
+          </div>
+
+          <p class="session-line session-more"><span class="session-who"></span><span class="session-said">+ 3 more flags, for example: only 4 of 12 modules state learning objectives.</span></p>
+        </div>
+      </figure>
     </section>
+    </div>
 
     <!-- ────────── Evidence ────────── -->
     <section class="section" id="evidence" aria-labelledby="evidence-title">
       <header class="section-header">
-        <p class="eyebrow">Evidence</p>
         <h2 id="evidence-title">Every recommendation cites its source.</h2>
-        <p class="lede">Stronger evidence tiers take precedence when findings conflict. All 108 references are documented in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a> with public sources, verifiable citations, and zero proprietary studies.</p>
+        <p class="lede">The 11 research domains below are ranked by study count. Each bar shows the tier mix of that domain's references. You can see where idstack rests on trials and where it rests on reviews or expert opinion. Stronger evidence tiers take precedence when findings conflict. All 108 references are documented in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a> with public sources, verifiable citations, and zero proprietary studies.</p>
       </header>
 
       <div class="evidence-legend" role="note" aria-label="Evidence tier legend">
@@ -1076,73 +1157,74 @@
         <span class="evidence-legend-item"><span class="evidence-legend-dot t5" aria-hidden="true"></span><strong>T5</strong>&nbsp;expert opinion &amp; theory</span>
       </div>
 
-      <div class="evidence-grid" role="list" aria-label="Research domains">
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Instructional Design Models &amp; Frameworks</h3>
-          <p class="evidence-card-body">ADDIE, ARCS, ASSURE, and UDL address distinct instructional contexts. Literature reviews show that combining complementary frameworks produces stronger alignment than adhering to a single model.</p>
-          <p class="evidence-card-meta">12 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T2–T5</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Constructive Alignment &amp; Learning Objectives</h3>
-          <p class="evidence-card-body">Misalignment between objectives, activities, and assessments directly degrades learning retention. Revised Bloom's taxonomy provides measurable action verbs to align evaluation criteria with intended cognitive levels.</p>
-          <p class="evidence-card-meta">10 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T1–T5</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Needs Analysis</h3>
-          <p class="evidence-card-body">Evaluates three distinct levels (organizational, task, and learner) before content development begins. Systematic needs assessment prevents courses from addressing peripheral topics instead of core skill gaps.</p>
-          <p class="evidence-card-meta">7 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T3</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Cognitive Load Theory &amp; Instructional Sequencing</h3>
-          <p class="evidence-card-body">Working memory limits the volume of novel information learners process simultaneously. Intrinsic and extraneous load principles determine when visual cues clarify concepts and when redundant explanations induce cognitive overload.</p>
-          <p class="evidence-card-meta">15 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T1–T5</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Formative Assessment &amp; Feedback</h3>
-          <p class="evidence-card-body">Elaborated feedback that explains error patterns and corrective action yields significantly higher retention than simple correctness indicators. Nicol's principles structure criteria for rubrics, self-assessment, and peer review.</p>
-          <p class="evidence-card-meta">10 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T1–T5</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Multimedia Learning Principles</h3>
-          <p class="evidence-card-body">Mayer's cognitive principles (coherence, signaling, segmenting, modality, redundancy) govern effective integration of text and graphics. Violations generate extraneous cognitive load and impair knowledge transfer.</p>
-          <p class="evidence-card-meta">10 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T1–T5</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Learner Analysis &amp; Differentiation</h3>
-          <p class="evidence-card-body">Prior knowledge is the strongest predictor of instructional efficacy. Differentiated scaffolding supports novice skill acquisition while avoiding the expertise-reversal effect on advanced learners.</p>
-          <p class="evidence-card-meta">8 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T1–T5</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Evaluation Models</h3>
-          <p class="evidence-card-body">Assessment strategies must be designed concurrently with course architecture. Kirkpatrick's four-level model structures evaluation across reaction, learning, behavior, and institutional results.</p>
-          <p class="evidence-card-meta">8 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T3–T5</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Rapid Prototyping &amp; Design-Based Research</h3>
-          <p class="evidence-card-body">Formative pilot testing with representative cohorts surfaces usability and conceptual bottlenecks early. Design-based research frameworks ensure iterative revisions maintain methodological rigor.</p>
-          <p class="evidence-card-meta">9 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T2–T5</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Online Course Quality Frameworks</h3>
-          <p class="evidence-card-body">Quality Matters (QM) standards and the Community of Inquiry (CoI) model (teaching, social, and cognitive presence) represent the most extensively validated rubrics for online course quality. idstack audits against both.</p>
-          <p class="evidence-card-meta">10 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T1–T4</span></p>
-        </article>
-
-        <article class="evidence-card" role="listitem">
-          <h3 class="evidence-card-title">Accessibility &amp; Universal Design for Learning</h3>
-          <p class="evidence-card-body">WCAG 2.1 AA establishes the legal baseline for digital accessibility. Universal Design for Learning (UDL 3.0) provides proactive pathways (engagement, representation, action) to support diverse learner populations from inception.</p>
-          <p class="evidence-card-meta">9 studies<span class="meta-sep" aria-hidden="true"></span><span class="meta-tier">T1–T5</span></p>
-        </article>
-      </div>
+      <ol class="evidence-index" aria-label="Research domains, ranked by study count">
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Cognitive Load Theory &amp; Instructional Sequencing</h3>
+          <span class="evidence-row-count">15 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 4 at T1, 1 at T2, 4 at T3, 6 at T5" data-tiers="4,1,4,0,6" style="width:100%"><span class="t1" style="width:26.67%"></span><span class="t2" style="width:6.67%"></span><span class="t3" style="width:26.67%"></span><span class="t5" style="width:40%"></span></span>
+          <p class="evidence-row-body">Working memory limits the volume of novel information learners process simultaneously. Intrinsic and extraneous load principles determine when visual cues clarify concepts and when redundant explanations induce cognitive overload. <span class="evidence-row-tiers">T1–T5</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Instructional Design Models &amp; Frameworks</h3>
+          <span class="evidence-row-count">12 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T2, 10 at T3, 1 at T5" data-tiers="0,1,10,0,1" style="width:80%"><span class="t2" style="width:8.33%"></span><span class="t3" style="width:83.33%"></span><span class="t5" style="width:8.33%"></span></span>
+          <p class="evidence-row-body">ADDIE, ARCS, ASSURE, and UDL address distinct instructional contexts. Literature reviews show that combining complementary frameworks produces stronger alignment than adhering to a single model. <span class="evidence-row-tiers">T2–T5</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Constructive Alignment &amp; Learning Objectives</h3>
+          <span class="evidence-row-count">10 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T1, 3 at T2, 1 at T3, 2 at T4, 3 at T5" data-tiers="1,3,1,2,3" style="width:66.67%"><span class="t1" style="width:10%"></span><span class="t2" style="width:30%"></span><span class="t3" style="width:10%"></span><span class="t4" style="width:20%"></span><span class="t5" style="width:30%"></span></span>
+          <p class="evidence-row-body">Misalignment between objectives, activities, and assessments directly degrades learning retention. Revised Bloom's taxonomy provides measurable action verbs to align evaluation criteria with intended cognitive levels. <span class="evidence-row-tiers">T1–T5</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Formative Assessment &amp; Feedback</h3>
+          <span class="evidence-row-count">10 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 6 at T1, 2 at T2, 1 at T3, 1 at T5" data-tiers="6,2,1,0,1" style="width:66.67%"><span class="t1" style="width:60%"></span><span class="t2" style="width:20%"></span><span class="t3" style="width:10%"></span><span class="t5" style="width:10%"></span></span>
+          <p class="evidence-row-body">Elaborated feedback that explains error patterns and corrective action yields significantly higher retention than simple correctness indicators. Nicol's principles structure criteria for rubrics, self-assessment, and peer review. <span class="evidence-row-tiers">T1–T5</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Multimedia Learning Principles</h3>
+          <span class="evidence-row-count">10 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 4 at T1, 1 at T2, 3 at T3, 1 at T4, 1 at T5" data-tiers="4,1,3,1,1" style="width:66.67%"><span class="t1" style="width:40%"></span><span class="t2" style="width:10%"></span><span class="t3" style="width:30%"></span><span class="t4" style="width:10%"></span><span class="t5" style="width:10%"></span></span>
+          <p class="evidence-row-body">Mayer's cognitive principles (coherence, signaling, segmenting, modality, redundancy) govern effective integration of text and graphics. Violations generate extraneous cognitive load and impair knowledge transfer. <span class="evidence-row-tiers">T1–T5</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Online Course Quality Frameworks</h3>
+          <span class="evidence-row-count">10 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T1, 1 at T2, 1 at T3, 7 at T4" data-tiers="1,1,1,7,0" style="width:66.67%"><span class="t1" style="width:10%"></span><span class="t2" style="width:10%"></span><span class="t3" style="width:10%"></span><span class="t4" style="width:70%"></span></span>
+          <p class="evidence-row-body">Quality Matters (QM) standards and the Community of Inquiry (CoI) model (teaching, social, and cognitive presence) represent the most extensively validated rubrics for online course quality. idstack audits against both. <span class="evidence-row-tiers">T1–T4</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Rapid Prototyping &amp; Design-Based Research</h3>
+          <span class="evidence-row-count">9 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T2, 2 at T3, 1 at T4, 4 at T5" data-tiers="0,2,2,1,4" style="width:60%"><span class="t2" style="width:22.22%"></span><span class="t3" style="width:22.22%"></span><span class="t4" style="width:11.11%"></span><span class="t5" style="width:44.44%"></span></span>
+          <p class="evidence-row-body">Formative pilot testing with representative cohorts surfaces usability and conceptual bottlenecks early. Design-based research frameworks ensure iterative revisions maintain methodological rigor. <span class="evidence-row-tiers">T2–T5</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Accessibility &amp; Universal Design for Learning</h3>
+          <span class="evidence-row-count">9 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T1, 1 at T2, 4 at T3, 3 at T5" data-tiers="1,1,4,0,3" style="width:60%"><span class="t1" style="width:11.11%"></span><span class="t2" style="width:11.11%"></span><span class="t3" style="width:44.44%"></span><span class="t5" style="width:33.33%"></span></span>
+          <p class="evidence-row-body">WCAG 2.1 AA establishes the legal baseline for digital accessibility. Universal Design for Learning (UDL 3.0) provides proactive pathways (engagement, representation, action) to support diverse learner populations from inception. <span class="evidence-row-tiers">T1–T5</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Learner Analysis &amp; Differentiation</h3>
+          <span class="evidence-row-count">8 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T1, 2 at T2, 2 at T4, 2 at T5" data-tiers="2,2,0,2,2" style="width:53.33%"><span class="t1" style="width:25%"></span><span class="t2" style="width:25%"></span><span class="t4" style="width:25%"></span><span class="t5" style="width:25%"></span></span>
+          <p class="evidence-row-body">Prior knowledge is the strongest predictor of instructional efficacy. Differentiated scaffolding supports novice skill acquisition while avoiding the expertise-reversal effect on advanced learners. <span class="evidence-row-tiers">T1–T5</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Evaluation Models</h3>
+          <span class="evidence-row-count">8 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 3 at T3, 1 at T4, 4 at T5" data-tiers="0,0,3,1,4" style="width:53.33%"><span class="t3" style="width:37.5%"></span><span class="t4" style="width:12.5%"></span><span class="t5" style="width:50%"></span></span>
+          <p class="evidence-row-body">Assessment strategies must be designed concurrently with course architecture. Kirkpatrick's four-level model structures evaluation across reaction, learning, behavior, and institutional results. <span class="evidence-row-tiers">T3–T5</span></p>
+        </li>
+        <li class="evidence-row">
+          <h3 class="evidence-row-title">Needs Analysis</h3>
+          <span class="evidence-row-count">7 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 7 at T3" data-tiers="0,0,7,0,0" style="width:46.67%"><span class="t3" style="width:100%"></span></span>
+          <p class="evidence-row-body">Evaluates three distinct levels (organizational, task, and learner) before content development begins. Systematic needs assessment prevents courses from addressing peripheral topics instead of core skill gaps. <span class="evidence-row-tiers">T3</span></p>
+        </li>
+      </ol>
 
       <p class="evidence-foot">Every recommendation includes a research domain code and evidence tier (such as <code>[Alignment-14] [T1]</code>) linking directly to the cited paper. The complete bibliography is available in plain Markdown for verification.</p>
     </section>
@@ -1150,7 +1232,6 @@
     <!-- ────────── Pipeline ────────── -->
     <section class="section" id="pipeline" aria-labelledby="pipeline-title">
       <header class="section-header">
-        <p class="eyebrow">Pipeline</p>
         <h2 id="pipeline-title">Eleven skills. Pipeline optional.</h2>
         <p class="lede">Eight skills execute sequentially through <code>/idstack:pipeline</code>, while standalone utilities handle course import and institutional memory. You can run any skill independently on existing course files without creating an upfront manifest.</p>
       </header>
@@ -1218,7 +1299,6 @@
     <!-- ────────── Output ────────── -->
     <section class="section" id="output" aria-labelledby="output-title">
       <header class="section-header">
-        <p class="eyebrow">Output</p>
         <h2 id="output-title">Each skill writes both a report and a manifest.</h2>
         <p class="lede">Every analytical skill outputs two artifacts: a standalone HTML report formatted for faculty and stakeholders, and a structured JSON manifest consumed by downstream skills. Files are organized in <code>.idstack/exports/&lt;course-slug&gt;/</code>.</p>
       </header>
@@ -1265,7 +1345,6 @@
     <!-- ────────── Install ────────── -->
     <section class="section" id="install" aria-labelledby="install-title">
       <header class="section-header">
-        <p class="eyebrow">Install</p>
         <h2 id="install-title">Get started in seconds.</h2>
       </header>
 
@@ -1313,56 +1392,6 @@
       </div>
     </section>
 
-    <!-- ────────── What's new ────────── -->
-    <section class="section" id="whats-new" aria-labelledby="whatsnew-title">
-      <header class="section-header">
-        <p class="eyebrow">What's new</p>
-        <h2 id="whatsnew-title">Recent Updates &amp; Release Notes</h2>
-      </header>
-
-      <article class="release-card">
-        <p class="release-meta">October 9, 2026 · v3.7.0.0</p>
-        <h3>Simplified Technical English output &amp; a fix for finding idstack's scripts.</h3>
-        <p>idstack now writes the English text that it shows to a person in the ASD-STE100 Simplified Technical English rules. This includes skill chat, reports, the course dashboard and the Chrome extension. A new script, <code>bin/idstack-ste-check</code>, finds some of the rule problems. Each skill runs it on each report, dashboard or course file that it writes for a person. ASD does not endorse idstack.</p>
-        <p>This release also fixes how skills find idstack's own scripts. Before, a skill could run the scripts of an old copy of idstack. The first report of <code>/idstack:needs-analysis</code> or <code>/idstack:course-import</code> now goes in the right folder. The Chrome extension is now version 1.2.0, and five buttons have new names, for example <strong>Audit Full Course</strong> and <strong>Remove All from Dossier</strong>.</p>
-      </article>
-
-      <article class="release-card">
-        <p class="release-meta">September 24, 2026 · v3.6.0.0</p>
-        <h3>Consensus evidence checks &amp; a hardened Chrome extension.</h3>
-        <p>An optional Consensus evidence engine runs on your own API key. <code>/idstack:course-quality-review</code>, <code>/idstack:assessment-design</code>, and <code>/idstack:red-team</code> now check their findings before writing them: four well-known neuromyths are corrected with or without a key, and with one each claim is matched against the research literature. The Chrome extension can run the same check and marks the findings it matches.</p>
-        <p>The Chrome extension, now 1.1.0, no longer requests access to every website, refuses Canvas pages that show student records, reads every page of a course's assignments, and its privacy notes now say what is sent to Google and to Consensus.</p>
-      </article>
-
-      <article class="release-card">
-        <p class="release-meta">August 16, 2026 · v3.5.0.0 · patched through v3.5.1.0</p>
-        <h3>Chrome Side Panel co-pilot &amp; Course Dossier export.</h3>
-        <p>idstack is officially published as a native <a href="https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm" target="_blank" rel="noopener">Chrome Side Panel extension on the Chrome Web Store</a>. It provides in-browser Bloom's taxonomy classification, constructive alignment reviews, and empirical citations (T1–T5) for Canvas LMS assignments, syllabi, and Google Docs without requiring command-line configuration.</p>
-        <p>This release also introduces a background Canvas course crawler for multi-page syllabus audits, a Course Dossier export drawer that compiles multi-page findings into structured Markdown (<code>.md</code>) reports, atomic writes for learnings logs (Issue #60), and local-over-global search precedence (Issue #61).</p>
-        <p>Patched in v3.5.1.0 (August 30): corrected mobile layout on this page. Content no longer sits under the display cutout on notched phones, every button and input meets a 44px minimum touch target at all screen widths, and horizontal overflow is prevented rather than hidden.</p>
-      </article>
-
-      <article class="release-card">
-        <p class="release-meta">August 6, 2026 · v3.4.0.0 · patched through v3.4.0.1</p>
-        <h3>Dedicated Claude Code Plugin Architecture</h3>
-        <p>idstack previously provided an experimental OpenAI Codex CLI build (v2.5.0.0 through v3.3.0.4). The codebase now focuses exclusively on Claude Code to ensure reliable end-to-end testing and performance across all 11 skills.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: dated release note, not a capability claim -->
-        <p>To update an existing installation, run <code>git pull &amp;&amp; ./setup</code> from your local repository. If migrating from the legacy Codex build, see the <a href="https://github.com/savvides/idstack/blob/main/CHANGELOG.md" rel="noopener">release notes</a> for manual cleanup steps.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: dated release note, not a capability claim -->
-        <p>The v3.4.0.1 update calibrated landing page evidence metrics against <code>evidence/references.md</code>, added outbound Canvas API upload and <code>git fetch</code> disclosures to <a href="https://github.com/savvides/idstack/blob/main/PRIVACY.md" rel="noopener">the privacy policy</a>, and clarified Windows shell requirements.</p>
-      </article>
-
-      <article class="release-card">
-        <p class="release-meta">August 4, 2026 · v3.3.0.0 · patched through v3.3.0.4</p>
-        <h3>Cross-Platform Python Compatibility &amp; Pipeline Orchestration</h3>
-        <p>Resolved an f-string syntax incompatibility on Python versions prior to 3.12 (including default macOS Python 3.9), restoring session context recovery, score progression tracking, and next-step recommendations. Continuous integration now verifies Python 3.9 compatibility.</p>
-        <p>This release also corrected namespacing for sub-skills in <code>/idstack:pipeline</code>, restored prior run detection, improved next-step routing for imported courses, and resolved character escaping for course titles with apostrophes.</p>
-        <p>Patched in v3.3.0.1 (August 5): skill notifications now reference valid runnable <code>/idstack:&lt;skill&gt;</code> commands.</p>
-        <p>Patched in v3.3.0.2 (August 6): resolved a type-filtering issue when searching learnings records containing apostrophes.</p>
-        <p><a href="https://github.com/savvides/idstack/releases" rel="noopener">→ All releases on GitHub</a></p>
-      </article>
-
-      <p class="whats-next">Next: additional specialist skills (content sequencing, media selection, Kirkpatrick evaluation), and push-to-LMS so improvements land back in Canvas without copy-paste. See the <a href="https://github.com/savvides/idstack/blob/main/ROADMAP.md" rel="noopener">roadmap</a>.</p>
-    </section>
-
   </main>
 
   <footer class="footer" role="contentinfo">
@@ -1373,6 +1402,7 @@
       </div>
       <div class="footer-links">
         <a href="https://github.com/savvides/idstack" rel="noopener">GitHub</a>
+        <a href="https://github.com/savvides/idstack/releases" rel="noopener">Releases</a>
         <a href="https://github.com/savvides/idstack/blob/main/LICENSE" rel="noopener">MIT License</a>
         <a href="https://github.com/savvides/idstack/blob/main/PRIVACY.md" rel="noopener">Privacy</a>
         <a href="https://github.com/savvides/idstack/blob/main/CONTRIBUTING.md" rel="noopener">Contribute</a>

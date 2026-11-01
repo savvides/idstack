@@ -3,177 +3,125 @@
 <head>
   <meta charset="UTF-8">
   <title>idstack OG card</title>
+  <!-- Source for og-image.png (1200x630). Render with headless Chrome:
+       chrome --headless --hide-scrollbars --window-size=1200,630 --screenshot=og-image.png og-template.html
+       Fonts and colors follow docs/index.html (DESIGN.md § Landing page). -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:           #0a0a0f;
-      --ink:          #e4e4e7;
-      --ink-soft:     #c4c4cc;
-      --ink-muted:    #8b8b96;
-      --rule:         #2a2a3e;
-      --accent:       #818cf8;
-      --accent-blue:  #60a5fa;
-      --tier-1: #4ade80;
-      --tier-2: #60a5fa;
-      --tier-3: #fbbf24;
-      --tier-4: #fb923c;
-      --tier-5: #a1a1aa;
+      --hero-bg:   #163a4a;
+      --hero-ink:  #faf8f3;
+      --hero-soft: #dfe6e8;
+      --hero-rule: #2b5263;
+      /* The report dark-mode tier colors: the light ones sink into prussian. */
+      --tier-1: #5fc185;
+      --tier-2: #6aa6e3;
+      --tier-3: #d6a64c;
+      --tier-4: #e58f53;
+      --tier-5: #a3a3a3;
     }
 
     html, body {
       width: 1200px;
       height: 630px;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--hero-bg);
+      color: var(--hero-ink);
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
 
     .card {
       width: 1200px;
       height: 630px;
-      padding: 64px 80px;
+      padding: 64px 80px 56px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      position: relative;
     }
 
-    .brand-row {
-      display: flex;
-      align-items: baseline;
-      gap: 18px;
-    }
     .brand {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 28px;
+      font-family: 'Public Sans', sans-serif;
+      font-size: 30px;
       font-weight: 700;
-      letter-spacing: 0.01em;
-      color: #6366f1;
-      background: linear-gradient(135deg, #6366f1, #a855f7);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.01em;
     }
     .brand-beta {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.18em;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--ink-muted);
+      color: var(--hero-soft);
       vertical-align: super;
-      margin-left: 4px;
-    }
-    .kicker {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: #818cf8;
-      border-left: 1px solid var(--rule);
-      padding-left: 18px;
+      margin-left: 6px;
     }
 
-    .hero {
-      max-width: 1040px;
-    }
     .hero-title {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 72px;
-      font-weight: 600;
+      font-family: 'Public Sans', sans-serif;
+      font-size: 78px;
+      font-weight: 700;
       line-height: 1.04;
-      letter-spacing: -0.022em;
-      color: #6366f1;
-      background: linear-gradient(135deg, #6366f1, #a855f7);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 28px;
+      letter-spacing: -0.03em;
+      max-width: 900px;
+      margin-bottom: 26px;
     }
     .lede {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 26px;
-      font-weight: 400;
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 27px;
       line-height: 1.4;
-      color: var(--ink-soft);
-      max-width: 960px;
+      color: var(--hero-soft);
+      max-width: 940px;
     }
-    .lede strong {
-      color: var(--ink);
-      font-weight: 600;
+    .cite {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      color: var(--hero-ink);
     }
 
-    .bottom-rail {
+    .rail { border-top: 1px solid var(--hero-rule); padding-top: 22px; }
+    /* 108 studies by tier (T1 19, T2 14, T3 36, T4 14, T5 25), from evidence/references.md. */
+    .mix { display: flex; height: 14px; margin-bottom: 16px; }
+    .mix span { display: block; height: 100%; }
+    .rail-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-top: 1px solid var(--rule);
-      padding-top: 22px;
-    }
-    .tier-legend {
-      display: flex;
-      gap: 28px;
-      align-items: center;
-    }
-    .tier-legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-    }
-    .tier-dot {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .tier-dot.t1 { background: var(--tier-1); }
-    .tier-dot.t2 { background: var(--tier-2); }
-    .tier-dot.t3 { background: var(--tier-3); }
-    .tier-dot.t4 { background: var(--tier-4); }
-    .tier-dot.t5 { background: var(--tier-5); }
-    .tier-legend-item strong {
-      font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
-      font-weight: 600;
-      color: var(--ink);
-      font-size: 17px;
-      letter-spacing: 0.04em;
-    }
-
-    .url {
-      font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 18px;
-      font-weight: 500;
-      color: var(--ink-muted);
-      letter-spacing: 0.02em;
+      color: var(--hero-soft);
     }
+    .legend { display: flex; gap: 26px; }
+    .legend b { font-weight: 700; margin-right: 6px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <header class="brand-row">
-      <span class="brand">idstack<sup class="brand-beta">beta</sup></span>
-      <span class="kicker">Evidence-based · Open source · MIT</span>
-    </header>
+    <span class="brand">idstack<sup class="brand-beta">beta</sup></span>
 
-    <div class="hero">
-      <h1 class="hero-title">Evidence-based instructional design, transparently cited.</h1>
-      <p class="lede"><strong>108 peer-reviewed studies</strong> across <strong>11 research domains</strong>. Every recommendation tagged with its evidence tier. Runs in Claude Code.</p>
+    <div>
+      <h1 class="hero-title">Course design advice that shows its sources.</h1>
+      <p class="lede">108 peer-reviewed studies across 11 research domains. Every recommendation names its study and evidence tier, like <span class="cite">[Assessment-8] [T1]</span>.</p>
     </div>
 
-    <div class="bottom-rail">
-      <div class="tier-legend">
-        <span class="tier-legend-item"><span class="tier-dot t1"></span><strong>T1</strong></span>
-        <span class="tier-legend-item"><span class="tier-dot t2"></span><strong>T2</strong></span>
-        <span class="tier-legend-item"><span class="tier-dot t3"></span><strong>T3</strong></span>
-        <span class="tier-legend-item"><span class="tier-dot t4"></span><strong>T4</strong></span>
-        <span class="tier-legend-item"><span class="tier-dot t5"></span><strong>T5</strong></span>
+    <div class="rail">
+      <div class="mix" aria-hidden="true">
+        <span style="width:17.59%;background:var(--tier-1)"></span>
+        <span style="width:12.96%;background:var(--tier-2)"></span>
+        <span style="width:33.33%;background:var(--tier-3)"></span>
+        <span style="width:12.96%;background:var(--tier-4)"></span>
+        <span style="width:23.15%;background:var(--tier-5)"></span>
       </div>
-      <span class="url">idstack.org</span>
+      <div class="rail-row">
+        <span class="legend">
+          <span><b style="color:var(--tier-1)">T1</b>19</span>
+          <span><b style="color:var(--tier-2)">T2</b>14</span>
+          <span><b style="color:var(--tier-3)">T3</b>36</span>
+          <span><b style="color:var(--tier-4)">T4</b>14</span>
+          <span><b style="color:var(--tier-5)">T5</b>25</span>
+        </span>
+        <span>idstack.org</span>
+      </div>
     </div>
   </div>
 </body>
