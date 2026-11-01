@@ -90,7 +90,7 @@ idstack: Reading your manifest... I have 12 modules, 6 objectives,
             and technical help resources
 ```
 
-You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses; `learn` is a separate cross-project memory utility — those two sit outside the linear chain, which is why pipeline runs 8 of the 11 skills).
+You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses, `learn` is a separate cross-project memory utility, and `start` is the first-run guide. These three sit outside the linear chain, which is why pipeline runs 8 of the 12 skills).
 
 ## Install (30 seconds)
 
@@ -163,6 +163,9 @@ Setup installed idstack in Claude Code (scope: user).
 
   To use a skill, run /idstack:<skill>
 
+  If you do not know where to start:
+    /idstack:start
+
   If you have a course, import it and examine it:
     /idstack:course-import -> /idstack:course-quality-review
 
@@ -172,7 +175,7 @@ Setup installed idstack in Claude Code (scope: user).
   Run the full pipeline:
     /idstack:pipeline
 
-  All skills: needs-analysis, learning-objectives, assessment-design,
+  All skills: start, needs-analysis, learning-objectives, assessment-design,
     course-builder, course-quality-review, accessibility-review,
     red-team, course-export, course-import, pipeline, learn
 
@@ -238,6 +241,7 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 
 | Skill | Your specialist | What they do |
 |-------|----------------|--------------|
+| `/idstack:start` | **Guide** | The first skill to run in a course folder. It makes sure that idstack can run, then starts the correct skill: course import, needs analysis or the pipeline. It writes no report. |
 | `/idstack:needs-analysis` | **Needs Analyst** | Three-level assessment before you build anything. Organizational analysis (is training even the right intervention?), task analysis (what must learners do?), learner profiling (prior knowledge, not learning styles). Creates the project manifest. Auto-detects imported courses and runs a design-fit check instead of the training-decision gate. Writes `.idstack/exports/<course-slug>/needs-analysis.html`. |
 | `/idstack:learning-objectives` | **Curriculum Designer** | Writes measurable objectives with revised Bloom's taxonomy. Classifies on two dimensions (knowledge type + cognitive process). Bidirectional alignment check: does each objective have a matching activity AND assessment? Flags gaps. Writes `.idstack/exports/<course-slug>/learning-objectives.html`. |
 | `/idstack:assessment-design` | **Assessment Architect** | Designs assessments aligned to Bloom's levels with evidence-based rubrics and feedback strategies. Applies Nicol's 7 principles of good feedback. Builds formative checkpoints before summative assessments. For imported courses, switches to audit mode: classifies existing rubric criteria on Bloom's, compares to ILOs, and surfaces alignment gaps without proposing new assessments. Writes `.idstack/exports/<course-slug>/assessment-design.html`. |
@@ -325,7 +329,7 @@ BUILD (contributors only; installs ship the generated SKILL.md files)
 INSTALL
 
   ./setup ──▶ registers .claude-plugin/plugin.json with Claude Code
-                └─▶ 11 skills, invoked as /idstack:<skill>
+                └─▶ 12 skills, invoked as /idstack:<skill>
   bin/idstack-doctor   diagnoses the install
                        (bin/lib/plugin-status.sh)
 
@@ -484,7 +488,7 @@ cd <your idstack clone> && ./setup
 
 **Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Remove the old install, then clone fresh and run setup: `rm -rf ~/.claude/skills/idstack && git clone https://github.com/savvides/idstack.git && cd idstack && ./setup`. Setup no longer removes old installs for you; the CHANGELOG lists every path an older install can leave behind.
 
-**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `bin/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 11 SKILL.md files, and python3 — printing the exact remediation command for whatever it finds.
+**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `bin/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 12 SKILL.md files, and python3 — printing the exact remediation command for whatever it finds.
 
 ## Contributing
 

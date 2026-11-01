@@ -1151,8 +1151,8 @@
     <section class="section" id="pipeline" aria-labelledby="pipeline-title">
       <header class="section-header">
         <p class="eyebrow">Pipeline</p>
-        <h2 id="pipeline-title">Eleven skills. Pipeline optional.</h2>
-        <p class="lede">Eight skills execute sequentially through <code>/idstack:pipeline</code>, while standalone utilities handle course import and institutional memory. You can run any skill independently on existing course files without creating an upfront manifest.</p>
+        <h2 id="pipeline-title">Twelve skills. Pipeline optional.</h2>
+        <p class="lede">Eight skills execute sequentially through <code>/idstack:pipeline</code>, while standalone utilities handle first-run setup, course import and institutional memory. You can run any skill independently on existing course files without creating an upfront manifest.</p>
       </header>
 
       <div class="pipeline-canvas">
@@ -1201,6 +1201,10 @@
         </ol>
 
         <div class="pipeline-aside-row" aria-label="Skills outside the linear pipeline">
+          <div class="pipeline-aside">
+            <span class="aside-tag">start</span>
+            <span>Checks that idstack can run in a course folder, then starts the correct skill. The first skill to run.</span>
+          </div>
           <div class="pipeline-aside">
             <span class="aside-tag">course-import</span>
             <span>Extracts existing modules, assignments, and syllabi from Canvas API, IMSCC, or SCORM.</span>
@@ -1292,7 +1296,7 @@
         <div class="install-track-card">
           <div class="install-track-header">
             <h3>Claude Code Plugin</h3>
-            <span class="track-badge">Full 11-Skill Pipeline</span>
+            <span class="track-badge">Full 12-Skill Pipeline</span>
           </div>
           <div class="install-block" role="group" aria-label="Install command">
             <span class="prompt" aria-hidden="true">$</span>
@@ -1300,7 +1304,7 @@
             <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
           </div>
 
-          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 11 skills. Re-run it after a <code>git pull</code> to update.</p>
+          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 12 skills. Re-run it after a <code>git pull</code> to update.</p>
 
           <p class="install-prose">Requires a bash shell (Terminal on macOS or Linux, WSL or Git Bash on Windows). PowerShell and <code>cmd</code> are not supported for setup execution. Requires Python 3.9 or later: the skills save their results with it. <code>bin/idstack-doctor</code> checks for it.</p>
 

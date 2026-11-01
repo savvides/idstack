@@ -15,6 +15,7 @@ bin/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.md f
                                            # ste-rules.js (from the preamble)
 bin/idstack-gen-skills --dry-run           # Check if generated files are up to date
 bin/idstack-doctor                         # Diagnose plugin install (python3, presence, manifest version)
+bin/idstack-doctor --quick                 # One python3 code for /idstack:start: OK, PYTHON_MISSING, PYTHON_OLD or PYTHON_STUB
 bin/idstack-status                         # Course health dashboard (run in a project dir)
 bin/idstack-status --readiness             # Pre-export readiness check only
 bin/idstack-status --context               # Context-recovery lines the preamble reads
@@ -86,7 +87,7 @@ skills/{skill-name}/
 
 In a merge or rebase conflict on a generated `SKILL.md`, take either side, resolve the `.tmpl`, then run `bin/idstack-gen-skills`.
 
-11 skills total. The 8-skill linear pipeline is the canonical sequence; `/idstack:course-import` joins it when there's an existing course to start from, and `/idstack:learn` is a cross-project memory utility that runs outside the pipeline. All invoked via `/idstack:<skill>`:
+12 skills total. The 8-skill linear pipeline is the canonical sequence; `/idstack:course-import` joins it when there's an existing course to start from, `/idstack:learn` is a cross-project memory utility that runs outside the pipeline, and `/idstack:start` is the first-run guide that checks the setup and starts the correct skill. All invoked via `/idstack:<skill>`:
 
 ```
 /idstack:pipeline (orchestrates the 8-skill linear chain, auto-skips completed)
@@ -96,6 +97,8 @@ In a merge or rebase conflict on a generated `SKILL.md`, take either side, resol
 /idstack:course-import ─────────────┘
 
 /idstack:learn (manage cross-project learnings)
+
+/idstack:start (first-run guide: setup check, folder check, then hands off)
 ```
 
 Any skill also works standalone (asks questions directly if no manifest exists).
@@ -205,6 +208,7 @@ GitHub Issues is the only tracker. Do not add TODO lists or backlog files to the
 
 When working in this repo, route user requests to the appropriate idstack skill:
 
+- First run, "where do I start", or a Claude desktop app user → `/idstack:start`
 - New course / fresh design → `/idstack:needs-analysis` (or `/idstack:pipeline` to chain all 8)
 - Existing course (Canvas, Blackboard, Moodle, D2L cartridge, SCORM, PDF) → `/idstack:course-import`
 - Bloom's classification, learning objectives, ILO development → `/idstack:learning-objectives`
