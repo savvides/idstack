@@ -340,8 +340,6 @@ RUN (Claude Code, inside your course project folder)
      ▼
   workflow: one AskUserQuestion at a time
      │  cites evidence/references.md as [Domain-N] [T1–T5]
-     │  review skills: bin/idstack-consensus verify ──▶ Consensus API
-     │                 (live only when CONSENSUS_API_KEY is set)
      │
      ├──▶ .idstack/project.json        manifest: the system view (JSON)
      │      written via bin/idstack-manifest-merge (atomic, one section);
@@ -366,9 +364,8 @@ CHROME EXTENSION (separate runtime: no Claude Code, no .idstack/ folder)
      │
      └─ RUN_AUDIT ──▶ background/service-worker
                         ├─ canvas-crawler (whole-course audits)
-                        ├─ shared/prompts ──▶ Google AI API (your key;
-                        │                     demo findings without one)
-                        └─ shared/consensus-client ──▶ Consensus API
+                        └─ shared/prompts ──▶ Google AI API (your key;
+                                              demo findings without one)
      ◀── findings, saved to chrome.storage; dossier export as Markdown
 ```
 
@@ -457,7 +454,7 @@ Run `bin/idstack-status` from your project directory for the dashboard (quality 
 Yes, python3 3.9 or later. Every skill saves its results to the project manifest with it, and the status dashboard, learnings and timeline use it too. macOS and most Linux systems already have it. Run `bin/idstack-doctor` to check; it reports a missing or older python3 as a problem.
 
 **Is my data safe?**
-idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Session history (`.idstack/timeline.jsonl`) and learnings (`.idstack/learnings.jsonl`) are also local. In the Claude Code plugin, course data reaches external servers only when you explicitly invoke integration skills (such as Canvas API calls via `/idstack:course-import` or `/idstack:course-export`) or perform hourly update checks via `git fetch`, and findings are sent to Consensus only if you set up your own Consensus key. The Chrome extension sends page text to Google's API when you run an audit with your own API key saved, and finding text to Consensus when you also save a Consensus key; see [PRIVACY.md](PRIVACY.md). Claude Code's own privacy policy applies to the AI conversation.
+idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Session history (`.idstack/timeline.jsonl`) and learnings (`.idstack/learnings.jsonl`) are also local. In the Claude Code plugin, course data reaches external servers only when you explicitly invoke integration skills (such as Canvas API calls via `/idstack:course-import` or `/idstack:course-export`) or perform hourly update checks via `git fetch`. The Chrome extension sends page text to Google's API when you run an audit with your own API key saved; see [PRIVACY.md](PRIVACY.md). Claude Code's own privacy policy applies to the AI conversation.
 
 **Can I edit the project manifest directly?**
 You can, but let the skills manage it. If you do edit it, keep the JSON valid.

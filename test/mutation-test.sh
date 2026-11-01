@@ -1255,9 +1255,9 @@ fresh
 python3 - "$WORK/r/PRIVACY.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "Your Google API key and your Consensus key are saved in `chrome.storage.sync`."
+old = "Your Google API key is saved in `chrome.storage.sync`."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "Your Google API key and your Consensus key are saved in `chrome.storage.local`.", 1)
+s = s.replace(old, "Your Google API key is saved in `chrome.storage.local`.", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "privacy policy names the wrong storage area for the API key" "$WORK/r/test/test-extension.sh"
@@ -1327,15 +1327,14 @@ PY
 expect_fail "FERPA-compliance claim back in the privacy policy" "$WORK/r/test/test-extension.sh"
 
 # 31j. the policy stops naming a host the manifest can reach -> test-extension must fail.
-# #89 added api.consensus.app to host_permissions without a word in PRIVACY.md. The
-# plugin section names the host too, so this proves the check reads the extension section.
+# #89 added a host to host_permissions without a word in PRIVACY.md.
 fresh
 python3 - "$WORK/r/PRIVACY.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "from your browser to Consensus (`api.consensus.app`)"
+old = "Generative Language API (`generativelanguage.googleapis.com`)"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "from your browser to Consensus", 1)
+s = s.replace(old, "Generative Language API", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "privacy policy omits a host the manifest can reach" "$WORK/r/test/test-extension.sh"
@@ -1682,49 +1681,6 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "a contraction in the setup closing text" "$WORK/r/test/test-setup.sh" "$WORK/r"
 
-# 45a-45c. The text that `idstack-consensus verify` writes into findings. Skills copy
-# it into HTML reports and the manifest, so it must obey the writing standard. The
-# neuromyth text lives in evidence/neuromyths.json, and gen-skills writes the
-# extension's copy from it.
-# 45a. A semicolon returns to a neuromyth note -> test-consensus-cli must fail.
-fresh
-python3 - "$WORK/r/evidence/neuromyths.json" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "Sensory learning styles are a known neuromyth. idstack recommends"
-assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "Sensory learning styles are a known neuromyth; idstack recommends", 1)
-open(p, 'w', encoding='utf-8').write(s)
-PY
-regen
-expect_fail "a neuromyth note has a semicolon again" python3 "$WORK/r/test/test-consensus-cli.py"
-
-# 45b. "should" returns to a tier-calibration note -> test-consensus-cli must fail.
-# This note has no copy in the extension.
-fresh
-python3 - "$WORK/r/bin/idstack-consensus" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = 'to T4 because the evidence has no meta-analysis or controlled trial.]"'
-assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, 'to T4 because the evidence should have a meta-analysis or controlled trial.]"', 1)
-open(p, 'w', encoding='utf-8').write(s)
-PY
-expect_fail "a tier-calibration note says should again" python3 "$WORK/r/test/test-consensus-cli.py"
-
-# 45c. A hand edit makes the extension's generated neuromyth text drift from
-# evidence/neuromyths.json -> smoke-test must fail on the stale file.
-fresh
-python3 - "$WORK/r/extension/shared/neuromyths.js" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "Multimodal dual coding helps all learners."
-assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "Multimodal dual coding helps every learner.", 1)
-open(p, 'w', encoding='utf-8').write(s)
-PY
-expect_fail "the extension neuromyth text drifts from the CLI text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
-
 # 47a-47b. The extension's model prompts carry the preamble's ASD-STE100 rules.
 # gen-skills writes extension/shared/ste-rules.js from the ste-core block, and
 # test-ste-rules.mjs checks that both prompts carry it.
@@ -1841,15 +1797,16 @@ PY
 regen
 expect_fail "the resolve chain gives the plugin root a default again" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 51b. A hand-written chain comes back into the preamble's Consensus block, as
-# the "for _dir in" copy once drifted there unseen -> smoke-test must fail.
+# 51b. A hand-written chain comes back into the preamble's context-recovery
+# block, as the "for _dir in" copy once drifted into a preamble block unseen ->
+# smoke-test must fail.
 fresh
 python3 - "$WORK/r/templates/preamble.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = '# Consensus key detection\n{{IDSTACK_RESOLVE}}\n'
+old = '# Context recovery: timeline + learnings\n{{IDSTACK_RESOLVE}}\n'
 assert s.count(old) == 1, 'anchor count %d' % s.count(old)
-s = s.replace(old, '# Consensus key detection\n_IDSTACK=""\n'
+s = s.replace(old, '# Context recovery: timeline + learnings\n_IDSTACK=""\n'
   'for _dir in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}"; do\n'
   '  if [ -n "$_dir" ] && [ -d "$_dir" ]; then _IDSTACK="${_dir%/}"; break; fi\n'
   'done\n')
@@ -2175,20 +2132,6 @@ s = s.replace(old, '', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "an update keeps the old audit history" "$WORK/r/test/test-extension.sh"
-
-# 60. consensus-sync prints a built-in citation again when it has no key and no
-# cache -> test-consensus-cli must fail. Nobody checked those citations, and the
-# output is ready to paste into references.md.
-fresh
-python3 - "$WORK/r/scripts/consensus-sync" <<'PY'
-import sys
-p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "    # No real data: print no citation rather than one that nobody checked.\n    return []\n"
-assert s.count(old) == 1, 'anchor count %d' % s.count(old)
-s = s.replace(old, '    return [{"authors": "Li, X. & Wang, Y.", "year": 2025, "title": "A Meta-Analysis", "journal": "Computers & Education", "tier": "T1", "source": "default"}]\n', 1)
-open(p, 'w', encoding='utf-8').write(s)
-PY
-expect_fail "sync prints a built-in citation again" python3 "$WORK/r/test/test-consensus-cli.py"
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

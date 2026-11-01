@@ -22,14 +22,15 @@
   [ -L ~/.claude/plugins/idstack ] && rm ~/.claude/plugins/idstack
   ```
 
-### Changed — `idstack-consensus sync` is now `scripts/consensus-sync`
+### Removed — the Consensus integration
 
-- **The literature sync is a maintainer tool, not a runtime command.** No skill calls it, and it runs `test/check-evidence-cards.py`, so it must run from a clone. Its flags and output are the same. `bin/idstack-consensus` keeps `status`, `configure`, `query` and `verify`.
-- **`scripts/consensus-sync` does not print built-in citations.** With no Consensus key and no cached answer, it printed a built-in citation for each domain. Nobody had examined those citations against the literature, and some of them were not real papers. Now the script tells you that it has no candidate for that domain.
+- **idstack does not use Consensus.** `bin/idstack-consensus`, `scripts/consensus-sync`, the Consensus key check in the preamble and the Consensus section of `bin/idstack-doctor` are removed. You update `evidence/references.md` manually.
+- **The Evidence QA Gate is removed from `/idstack:assessment-design`, `/idstack:course-quality-review` and `/idstack:red-team`.** These skills do not correct neuromyths automatically, and they do not do a live check of evidence tiers. `test/check-citation-tiers.py` continues to check the tiers in the repo.
+- **The Chrome extension does not send findings to Consensus.** The Consensus key field, the badge on findings and the `api.consensus.app` permission are removed.
 
 ### Removed — the audit history of the Chrome extension
 
-- **The extension does not keep an audit history.** It kept the last 20 audit results in `chrome.storage.local`, and nothing read them. When the extension updates, it deletes the history that it kept. The Course Dossier does not change. PRIVACY.md tells this. The extension version is still 1.2.0, so the Chrome Web Store gets this change only with the next extension release.
+- **The extension does not keep an audit history.** It kept the last 20 audit results in `chrome.storage.local`, and nothing read them. When the extension updates, it deletes the history that it kept. The Course Dossier does not change. PRIVACY.md tells this. The extension version is now 1.2.1, which also removes a host permission and needs a new Chrome Web Store upload.
 
 ## v3.8.0.0 (2026-10-30)
 

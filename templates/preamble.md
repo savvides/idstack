@@ -240,23 +240,6 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
 
-## Preamble: Evidence Engine & Consensus QA
-
-Check whether a Consensus API key is configured for live literature grounding.
-
-```bash
-# Consensus key detection
-{{IDSTACK_RESOLVE}}
-_CONSENSUS_KEY=$("$_IDSTACK/bin/idstack-consensus" status 2>/dev/null | grep -q '"api_key_configured": true' && echo "CONFIGURED" || echo "UNCONFIGURED")
-[ -n "$_CONSENSUS_KEY" ] && echo "CONSENSUS:$_CONSENSUS_KEY"
-```
-
-**If CONFIGURED:** Live literature grounding via Consensus API is active. Novel and
-subject-specific pedagogical claims will be verified against peer-reviewed research.
-**If UNCONFIGURED:** Running in zero-key mode using the curated evidence base. On first
-run, after the main workflow is underway (not before), mention: "Note: Set CONSENSUS_API_KEY
-to let idstack use Consensus to check its claims against published research."
-
 ## Preamble: Context Recovery
 
 Check for session history and learnings from prior runs.

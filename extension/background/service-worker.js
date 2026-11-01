@@ -2,7 +2,6 @@ import { buildAuditPrompt, buildCourseAuditPrompt } from '../shared/prompts.js';
 import { getSettings } from '../shared/storage.js';
 import { cleanJsonResponse, getDemoAuditResult, getDemoCourseAuditResult } from './parser-helper.js';
 import { crawlCanvasCourse } from './canvas-crawler.js';
-import { verifyFindingsWithConsensus } from '../shared/consensus-client.js';
 
 const LLM_TIMEOUT_MS = 25000;   // Chrome kills an extension SW whose fetch response takes >30 s
 // Fewer words than this means an unreadable page (browser page, PDF viewer,
@@ -74,16 +73,12 @@ async function callLlmApi(apiKey, prompt) {
   return result;
 }
 
-// One pipeline for both audits: the model (or the demo result when there is no
-// key), then the Consensus pass.
+// One pipeline for both audits: the model, or the demo result when there is no
+// key.
 async function runAudit(input, buildPrompt, buildDemo) {
   const settings = await getSettings();
   const apiKey = settings?.apiKey?.trim();
-  const auditResult = apiKey ? await callLlmApi(apiKey, buildPrompt(input)) : buildDemo(input);
-  if (auditResult && auditResult.findings) {
-    auditResult.findings = await verifyFindingsWithConsensus(auditResult.findings, settings?.consensusApiKey);
-  }
-  return auditResult;
+  return apiKey ? callLlmApi(apiKey, buildPrompt(input)) : buildDemo(input);
 }
 
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {

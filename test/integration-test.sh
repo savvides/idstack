@@ -208,8 +208,8 @@ check "dry-run passes when fresh" \
 
 SANDBOX="$TEST_DIR/repo"
 mkdir -p "$SANDBOX"
-# gen-skills reads evidence/neuromyths.json and writes into extension/shared/.
-cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/skills" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/evidence" "$IDSTACK_DIR/extension" "$SANDBOX/"
+# gen-skills writes into extension/shared/.
+cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/skills" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/extension" "$SANDBOX/"
 
 check "dry-run detects stale SKILL.md (sandbox)" \
   "echo 'stale content' >> '$SANDBOX/skills/needs-analysis/SKILL.md' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run"

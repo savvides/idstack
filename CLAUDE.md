@@ -24,15 +24,13 @@ bin/idstack-manifest-merge --create --section <s> --payload <f>   # Canonical ma
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
 bin/idstack-slugify --from-manifest        # Same, from the manifest's project_name (what skills call)
 bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
-bin/idstack-consensus {status,configure,query,verify}  # Cache-first Consensus API evidence client (cache: ~/.idstack/cache/consensus)
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
-scripts/consensus-sync [--domain <name>]   # Maintainer tool: candidate references.md lines per research domain (never edits it)
 ```
 
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash and node suites):
 
 ```bash
-./test/smoke-test.sh              # 436 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 433 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 52 behavioral tests across the bin/ scripts; also proves the suite
@@ -43,7 +41,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on 3.9 and 3.12
-./test/test-skill-shell-zsh.sh    # 47 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
+./test/test-skill-shell-zsh.sh    # 44 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules via
                                   # test/extension-harness.mjs (Node >= 20.19 or 22.7; never add .cjs twins)
@@ -51,7 +49,6 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # bin/idstack-ste-check unit tests (smoke-test also runs them)
-python3 test/test-consensus-cli.py      # bin/idstack-consensus tests, incl. neuromyth text parity with extension/shared/consensus-client.js (smoke-test runs it)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
 python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
@@ -59,7 +56,7 @@ python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across 
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails
 ```
 
-`test/test-helper.sh` is not a suite — it is sourced by every **bash** suite that runs assertions itself and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion (`test-extension.sh` is the exception: it delegates to node). Do not add a local counter block to a bash suite; smoke-test fails on one, and a mutation proves that guard works. The node suites (`test-extension.sh`'s seventeen unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it; they accumulate their own problems and report a count, which is the same contract in another language.
+`test/test-helper.sh` is not a suite — it is sourced by every **bash** suite that runs assertions itself and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion (`test-extension.sh` is the exception: it delegates to node). Do not add a local counter block to a bash suite; smoke-test fails on one, and a mutation proves that guard works. The node suites (`test-extension.sh`'s fourteen unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it; they accumulate their own problems and report a count, which is the same contract in another language.
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9. The test, mutation and release jobs pin Node 22 for the extension and rendered-landing tests.
 
@@ -152,14 +149,14 @@ Test the shipped file, never a copy. The version classifier drifted across three
 
 ### Chrome extension
 
-`extension/` is a Manifest V3 side panel that audits Canvas, Google Docs and web pages. Plain ES modules: no package.json, no build step. `shared/ste-rules.js` and `shared/consensus-client.js` copy text from `templates/preamble.md` and `bin/idstack-consensus`; tests fail when the copies differ, so change both.
+`extension/` is a Manifest V3 side panel that audits Canvas, Google Docs and web pages. Plain ES modules: no package.json, no build step. `bin/idstack-gen-skills` writes `shared/ste-rules.js` from `templates/preamble.md`; do not edit it.
 
 ### Writing standard (ASD-STE100)
 
 All text that idstack shows to a person follows the ASD-STE100 Simplified Technical English rules. This includes skill chat, reports, the dashboard, learner content, CLI messages and the Chrome extension.
 
 - The text between `<!-- ste-core:begin -->` and `<!-- ste-core:end -->` in `templates/preamble.md` is the only source of the rules and the word list. `bin/idstack-gen-skills` writes `extension/shared/ste-rules.js` from that block, and smoke-test fails on a stale copy. Do not edit the JS file by hand.
-- `bin/idstack-ste-check` finds the problems that a script can find. Each skill runs it on each file that the skill writes. The CLI suites, `test/smoke-test.sh` and `test/test-consensus-cli.py` run it on fixed output.
+- `bin/idstack-ste-check` finds the problems that a script can find. Each skill runs it on each file that the skill writes. The CLI suites and `test/smoke-test.sh` run it on fixed output.
 - Do not add the ASD-STE100 dictionary, or a list that comes from it, to the repo. The idstack word list has a maximum of 50 words. ASD does not endorse idstack, so do not write "STE-compliant" or "certified".
 - The terms of instructional design and software are technical nouns and technical verbs. Do not add them to the word list.
 
