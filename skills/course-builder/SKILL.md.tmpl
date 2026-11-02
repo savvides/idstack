@@ -164,7 +164,7 @@ Decide which mode this skill is operating in **before** running the content gene
 
 - **Gap-fill mode** — both of these must be true:
   - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
-  - `course_content.modules` is non-empty (the imported course actually has content; not a half-import)
+  - `course_content.modules` is non-empty (from an earlier course-builder run; course-import does not write `course_content`)
 - **Build-new mode** — anything else (no manifest, no import_metadata, manual source, or zero modules in course_content).
 
 **Announce the chosen mode to the user as the first sentence:**

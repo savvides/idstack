@@ -9,8 +9,9 @@
 # It also writes extension/shared/ste-rules.js from the ste-core block of the
 # preamble, so the Chrome extension carries the same writing rules as the skills.
 #
-# The source file is skills/<name>/SKILL.md.tmpl. It contains the {{PREAMBLE}},
-# {{MANIFEST_SCHEMA}} and {{IDSTACK_RESOLVE}} placeholders. {{IDSTACK_RESOLVE}}
+# The source file is skills/<name>/SKILL.md.tmpl. It contains the {{PREAMBLE}}
+# and {{IDSTACK_RESOLVE}} placeholders. {{MANIFEST_SCHEMA}} is optional: only
+# needs-analysis and course-import use it. {{IDSTACK_RESOLVE}}
 # puts the canonical $_IDSTACK resolution (templates/snippets/idstack-resolve.sh)
 # into each bash block that uses it. Each block runs in a different shell.
 # Thus each block must contain all of its code. The placeholder is expanded in

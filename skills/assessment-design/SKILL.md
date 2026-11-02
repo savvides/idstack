@@ -660,7 +660,7 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **Condition (BOTH must be true):**
 - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
-- `assessments.items` is non-empty (course-import populated it) OR `course_content.assessments` is non-empty (cartridge has assessment artifacts)
+- `assessments.items` is non-empty (from an earlier assessment-design run; course-import does not write it) OR `course_content.assessments` is non-empty (cartridge has assessment artifacts)
 
 **Announce the chosen mode to the user as the first sentence:**
 

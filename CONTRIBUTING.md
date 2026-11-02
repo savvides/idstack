@@ -48,7 +48,7 @@ The bare `name` field becomes the slash-command suffix: `name: course-import` is
 
 **3. Skill implementation** — the rest of the file is Markdown that defines the skill's workflow, decision trees, and outputs.
 
-**4. `{{MANIFEST_SCHEMA}}` placeholder** — replaced with `templates/manifest-schema.md`.
+**4. `{{MANIFEST_SCHEMA}}` placeholder (optional)** — replaced with `templates/manifest-schema.md`. Only `needs-analysis` and `course-import` use it.
 
 **5. `{{IDSTACK_RESOLVE}}` placeholder** — replaced with `templates/snippets/idstack-resolve.sh`. Put this at the top of **every** bash block that calls `$_IDSTACK/bin/...`, not just the first. Bash blocks run in separate shells, so a value derived in an earlier block isn't there in a later one. Skipping it is how `learn` and `course-export` ended up pointing `bin/` calls at a nonexistent directory for marketplace installs.
 
@@ -152,7 +152,7 @@ Every suite below runs in CI (`.github/workflows/test.yml`) on every pull reques
 | `python3 test/test-citation-tiers.py` | `test/check-citation-tiers.py` on small test repos: codes with commas between them, a citation that a line break splits, and a blank line that ends a citation. `test/smoke-test.sh` runs it |
 | `python3 test/test-report-section.py` | `bin/idstack-report-section`: `init`, `check`, `append`, `approve` and `finish`. `test/smoke-test.sh` runs it |
 | `python3 test/test-ste-check.py` | `bin/idstack-ste-check`: each rule that it examines, the text that it does not examine, and the clean fixtures in `test/fixtures/ste/`. `test/smoke-test.sh` runs it |
-| `python3 test/check-doc-accuracy.py .` | Validates version agreement, manifest schema version, binary/flag references, link targets, and surface accuracy across docs |
+| `python3 test/check-doc-accuracy.py .` | Checks version agreement (including `softwareVersion`), the manifest schema version, that each `bin/` path in README exists and is executable, that each `test/` file named in CLAUDE.md and CONTRIBUTING.md exists, DESIGN.md's required paths, and that removed date fields have not come back |
 | `test/mutation-test.sh` | Reintroduces each known defect into a throwaway copy and asserts the guarding test fails. Add a mutation here whenever you fix a bug — it is what proves your new test would have caught it |
 
 The CI matrix is ubuntu on Python 3.9 and 3.12, plus macOS on 3.12 for BSD `grep`/`sed`/`awk` differences. `mutation-test.sh` runs once, pinned to 3.9. Do not skip hooks or push with a red suite.
@@ -165,7 +165,7 @@ The CI matrix is ubuntu on Python 3.9 and 3.12, plus macOS on 3.12 for BSD `grep
 . "$(dirname "$0")/test-helper.sh"
 
 check "description"            "some-command"              # must exit 0
-check "rejects a bad payload"  "$MERGE --section bogus"  3  # must exit 3
+check "rejects an unknown section"  "$MERGE --section bogus --payload p.json"  3  # must exit 3
 check "names the failing skill" "$STATUS --readiness"    0  "INCOMPLETE"
 ```
 

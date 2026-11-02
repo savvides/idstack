@@ -63,7 +63,8 @@ python3 test/test-report-section.py     # 37 tests for bin/idstack-report-sectio
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
 python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
-python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
+python3 test/check-doc-accuracy.py .   # Verifies version strings, the schema version, that each bin/ path in README exists and is
+                                       # executable, and that each test/ file named in CLAUDE.md and CONTRIBUTING.md exists
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails.
                                   # The full run takes ~2.5 h: run it in the background.
                                   # A case whose anchor text no longer matches prints ERROR, and no result counts until
@@ -179,7 +180,7 @@ Every skill template follows this pattern:
 1. **YAML frontmatter** with `name`, `description`, and `allowed-tools` fields.
 2. **`{{PREAMBLE}}`** placeholder (replaced by `templates/preamble.md` during generation)
 3. **Workflow** (Markdown defining the conversational flow, decision trees, outputs)
-4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`)
+4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`). Optional: only `needs-analysis` and `course-import` use it
 5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`${CLAUDE_PLUGIN_ROOT}`, `IDSTACK_HOME`, then the Claude Code marketplace cache). Claude Code writes the plugin path into skill text only where it finds the exact token `${CLAUDE_PLUGIN_ROOT}`, and the Bash tool's shell never has the variable, so never give it a `:-` default. The generator expands the placeholder in `templates/preamble.md` too and leaves the snippet's comment lines out, so the snippet is the only copy. `templates/manifest-schema.md` is also read raw, so it has no placeholder and no resolve lines. smoke-test fails on a hand-written chain in either file and on any `${CLAUDE_PLUGIN_ROOT:-` in templates or skills.
 6. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
 7. **Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/bin/idstack-ste-check"` on that file. `test/smoke-test.sh` sets the number of check steps for each skill template, and fails on a different number. Update it when you add or remove a check step. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.

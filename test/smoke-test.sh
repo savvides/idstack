@@ -11,7 +11,6 @@ IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 # Single source of truth for the released version — all version assertions
 # derive from VERSION so a release bump can't leave this test stale.
 VER="$(tr -d '[:space:]' < "$IDSTACK_DIR/VERSION" 2>/dev/null || true)"
-VER3="${VER%.*}"  # 4-component 3.2.0.0 -> 3-component 3.2.0 (JSON-LD softwareVersion)
 
 echo "idstack smoke test"
 echo "  idstack dir: $IDSTACK_DIR"
@@ -393,8 +392,9 @@ check "idstack-doctor no longer uses a fixed -A4 window" "! grep -q 'grep -A4' '
 if [ -x "$IDSTACK_DIR/test/test-plugin-status.sh" ]; then
   check "plugin-status unit tests pass" "'$IDSTACK_DIR/test/test-plugin-status.sh'"
 fi
-# Hooked in here as well as in CI because release.yml's gate runs only
-# smoke-test.sh — doctor's branches would otherwise be unverified at release.
+# Run here because neither test.yml nor release.yml starts this suite as a
+# step of its own: both start smoke-test.sh, so without this hook doctor's
+# branches would go unverified in CI and at release.
 if [ -x "$IDSTACK_DIR/test/test-doctor.sh" ]; then
   check "doctor behavioral tests pass" "'$IDSTACK_DIR/test/test-doctor.sh'"
 fi

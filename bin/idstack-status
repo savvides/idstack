@@ -14,8 +14,8 @@
 #   READY_QUALITY_MIN          = 70   (quality_review.overall_score must be >=)
 #   READY_ACCESS_MIN           = 80   (accessibility_review.score.overall must be >=)
 #   READY_RED_CRITICAL_MAX     = 0    (red_team_audit.findings_summary.critical must be <=)
-#   READY_LEVEL_A_VIOLATIONS_OK = false (any WCAG Level-A violation forces NOT-READY)
-# Tune by editing the constants in the readiness python block below.
+#   Any WCAG Level-A violation forces NOT-READY (fixed behavior, not a constant).
+# Tune by editing the shell constants below; the readiness python block reads them.
 READY_QUALITY_MIN=70
 READY_ACCESS_MIN=80
 READY_RED_CRITICAL_MAX=0
