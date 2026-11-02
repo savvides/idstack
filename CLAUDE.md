@@ -56,11 +56,11 @@ python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, 
 python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
 python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails.
-                                  # Takes more than 10 minutes: run it in the background.
+                                  # The full run takes ~2.5 h: run it in the background.
                                   # A case whose anchor text no longer matches prints ERROR, and no result counts until
                                   # it is fixed. When you rename or move text, grep this file for it and update the anchor
-                                  # The full run takes ~2.5 h. To run only cases from N on (header, baseline and no-op
-                                  # control included): { sed '/^# 1\. /,$d' test/mutation-test.sh;
+                                  # To run only cases from N on (header, baseline and no-op control included):
+                                  # { sed '/^# 1\. /,$d' test/mutation-test.sh;
                                   #   awk '/^shell_mutation\(\) \{/,/^}/' test/mutation-test.sh;
                                   #   sed -n '/^# 61a\./,$p' test/mutation-test.sh; } > "$f" && bash "$f" "$(pwd -P)"
 ```
@@ -77,9 +77,7 @@ No build step for users. No dependencies beyond bash and python3 3.9 or later; `
 
 `VERSION` is the source of truth. A bump must also update `.claude-plugin/plugin.json`, a `## vX.Y.Z.W` entry in `CHANGELOG.md`, `README.md`, and `docs/index.html` (`vX.Y.Z.W` plus the same 4-part `softwareVersion`). smoke-test and `check-doc-accuracy.py` fail on any mismatch. Pushing a `v*` tag runs `release.yml`, which checks the tag against these files and then creates the GitHub release.
 
-If `CHANGELOG.md` has an `## Unreleased` entry when you bump, move its sections into the new `## vX.Y.Z.W` entry (and its summary). Do not leave both headings.
-
-Changes that are not released yet go under `## Unreleased` at the top of `CHANGELOG.md`. The version checks look only for `## vX.Y.Z.W`.
+Changes that are not released yet go under `## Unreleased` at the top of `CHANGELOG.md`; the version checks look only for `## vX.Y.Z.W`. At a bump, move its sections into the new `## vX.Y.Z.W` entry (and its summary). Do not leave both headings.
 
 Two versions move on their own schedule. The Chrome extension has its own version in `extension/manifest.json`, and `bin/package-extension.sh` names the zip from it. The manifest schema version (`1.4`) is hard-coded in `templates/manifest-schema.md` and in `check-doc-accuracy.py`, so a schema bump also needs a `bin/idstack-migrate` step.
 
