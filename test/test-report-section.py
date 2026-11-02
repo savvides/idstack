@@ -185,7 +185,7 @@ class ReportSectionTest(unittest.TestCase):
 
     # append ---------------------------------------------------------------
 
-    def test_append_adds_sections_before_the_footer_and_deletes_the_draft(self):
+    def test_append_adds_sections_before_the_footer_and_keeps_the_draft(self):
         self.init()
         result = self.append(TASKS)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

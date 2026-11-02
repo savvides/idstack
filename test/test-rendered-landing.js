@@ -48,7 +48,8 @@ if (!fs.existsSync(landingPath)) {
 }
 
 // Widths worth asserting: the narrowest phone anyone still ships, the common iPhone/Android
-// logical widths, both breakpoints the stylesheet declares, and a desktop width.
+// logical widths, four of the six breakpoints the stylesheet declares (480, 640, 880, 1024;
+// not 720 or 1080), and a desktop width.
 const WIDTHS = [320, 360, 375, 390, 414, 480, 640, 768, 880, 1024, 1280];
 const TAP_MIN = 44;
 const TAP_SELECTORS = ['.copy-btn', '.btn-chrome', '.footer-signup input[type="email"]', '.footer-signup button'];

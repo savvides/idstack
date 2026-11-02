@@ -37,7 +37,7 @@ _The Consensus integration and the neuromyth correction were removed in v3.9.0.0
 - **Automated background Canvas course crawler.** Audits a Canvas course's syllabus and assignments in the background, with your existing Canvas login, without requiring developer API keys.
 - **Course Dossier multi-page compiler & Markdown exporter.** Compiles the audits of several pages into one Markdown dossier, with a table of the audited materials and one section for each page.
 - **Automated Web Store packaging.** Added `bin/package-extension.sh` to package clean `.zip` bundles for the Chrome Web Store Developer Console.
-- **Atomic learnings deletion with permission preservation (#60).** Replaced destructive file truncation in `bin/lib/idstack-learnings-delete` (now part of `bin/idstack-learnings`) with an atomic tempfile-and-rename pattern that preserves POSIX permissions.
+- **Atomic learnings deletion with permission preservation (#60).** Replaced destructive file truncation in `bin/idstack-learnings-delete` (now `bin/idstack-learnings delete`) with an atomic tempfile-and-rename pattern that preserves POSIX permissions.
 - **Cross-project local-over-global search precedence (#61).** Enforces project-local learnings priority over global store records during cross-project searches in `bin/idstack-learnings-search` (now `bin/idstack-learnings search`).
 - **Full test coverage for slugify stdin/emojis & migrate malformed manifest fallback (#62).** Added smoke tests for stdin piping, emoji handling in `bin/idstack-slugify`, and graceful fallback on malformed JSON manifests in `bin/idstack-migrate`.
 
@@ -111,7 +111,7 @@ _Audit mode and gap-fill mode start only when the manifest already has assessmen
 - **Manifest preferences** — schema v1.3 adds verbosity, export format, preferred LMS settings.
 - **Sub-agent architecture** — `/idstack:red-team` (5 parallel agents), `/idstack:accessibility-review` (2 parallel), `/idstack:course-quality-review` (3 parallel). Sequential fallback when a sub-agent cannot start.
 - **Spec review loop** — `/idstack:course-builder` validates alignment via adversarial subagent after generating content.
-- **IDSTACK_HOME** — all paths portable via env var. Lets a development checkout override the installed plugin.
+- **IDSTACK_HOME** — all paths portable via env var. (Since v3.7.0.0 the plugin that Claude Code loaded comes first. IDSTACK_HOME is used only when that path is not available. To test a development checkout, point the plugin install at it with `./setup`.)
 
 ### Bidirectional pipeline + evidence depth (v1.5.1)
 - All 9 skills now write back to the manifest. Downstream skills get richer input from upstream analysis.

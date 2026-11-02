@@ -289,19 +289,31 @@ These document the **shape of array elements and dictionary values** that the ca
 ```
 `/idstack:course-import` can also add `"confidence": "high|ambiguous"` and `"alignment_status": "imported-unverified"`. `/idstack:learning-objectives` checks these items again.
 
-**`assessments.items[]`** — each item:
+**`assessments.items[]`** — `/idstack:assessment-design` writes each item (`/idstack:course-import` does not write this array):
 ```json
 {
   "id": "A-1",
-  "type": "quiz|discussion|rubric|peer_review|gate|...",
   "title": "Module 1 Quiz",
-  "weight": 5,
-  "ilos_measured": ["ILO-1", "ILO-3"],
-  "rubric_present": true,
-  "elaborated_feedback": false,
-  "alignment_status": "weak|moderate|strong"
+  "type": "quiz|essay|project|case-study|peer-review|portfolio|presentation",
+  "format": "formative|summative",
+  "aligned_ilos": ["ILO-1", "ILO-3"],
+  "rubric": {
+    "criteria": [
+      { "name": "Criterion name", "weight": 40,
+        "levels": { "exceeds": "...", "meets": "...", "approaching": "...", "below": "..." } }
+    ],
+    "levels": ["exceeds", "meets", "approaching", "below"],
+    "total_points": 100
+  },
+  "feedback_strategy": {
+    "type": "elaborated|correctness|peer|self-assessment",
+    "timing": "immediate|delayed|iterative",
+    "principles_applied": [1, 2, 3, 5, 6]
+  },
+  "evidence_tier": "T1"
 }
 ```
+The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|moderate|strong"`.
 
 **`assessments.rubrics[]`** — each item:
 ```json
@@ -355,23 +367,15 @@ These document the **shape of array elements and dictionary values** that the ca
 }
 ```
 
-**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.alignment_audit.findings[]`**, **`quality_review.cross_domain_checks.<check>.flags[]`**, and other findings arrays — each item:
-```json
-{
-  "id": "<dimension>-<n>",
-  "description": "...",
-  "evidence": "[Domain-N] [TX]",
-  "severity": "critical|warning|info"
-}
-```
+**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.coi_presence.<presence>.findings[]`** and **`quality_review.alignment_audit.findings[]`** — each item is a plain string. `/idstack:course-quality-review` writes one short finding sentence per item, for example `"findings": ["Syllabus has no course-level objectives."]`. **`quality_review.cross_domain_checks.<check>.flags[]`** has no fixed item shape. The skill writes a list of flags, or `[]` when the check found nothing. The severity and evidence tier of quality-review findings are in `quality_review.recommendations[]` and `quality_review.quick_wins[]`, not in these arrays.
 
 ### Mode field — design-new vs audit-existing
 
-`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
+`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check). `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report status line (`idstack-report-section init --mode`).
 
 Allowed values per skill:
 - `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
-- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
+- `assessments.mode`: not written by the current skill. The report records the mode: `"Mode 1"` = full upstream data, `"Mode 2"` = ILOs-from-scratch, `"Mode 3"` = audit existing assessments
 - `course_content.mode`: `"build-new"` or `"gap-fill"`
 
 Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).

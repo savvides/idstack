@@ -54,7 +54,9 @@ for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-sta
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
 
-# Bash syntax gate for the shell entry points (idstack-manifest-merge is python).
+# Bash syntax gate for most shell entry points. bin/idstack-timeline-log and
+# bin/package-extension.sh are not checked here; idstack-manifest-merge,
+# idstack-ste-check and idstack-report-section are python.
 for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-learnings bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/lib/plugin-status.sh test/test-helper.sh; do
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
@@ -92,11 +94,12 @@ for skill in $SKILLS; do
 done
 
 # Landing page (docs/index.html) - "Evidence Instrument" invariants (DESIGN.md,
-# 2026-11-01). The landing uses the report system's Proof tokens and fonts with a
-# prussian hero. Guards against regressions: the dark/indigo look or its gradients
-# coming back, a theme toggle creeping in (dark mode follows prefers-color-scheme),
-# the fonts drifting from the reports, or the stale bare-clone install string
-# returning (see dea7ebc).
+# 2026-11-01). The landing uses the Proof tokens and fonts from DESIGN.md with a
+# prussian hero; it is the only styled surface, since reports are plain Markdown.
+# Guards against regressions: the dark/indigo look or its gradients coming back,
+# a theme toggle creeping in (dark mode follows prefers-color-scheme), the fonts
+# drifting from DESIGN.md, or the stale bare-clone install string returning
+# (see dea7ebc).
 LANDING="$IDSTACK_DIR/docs/index.html"
 check "landing/index.html exists" "[ -f '$LANDING' ]"
 check "landing: ivory Proof background (#faf8f3)" "grep -q -- '--bg: *#faf8f3' '$LANDING'"
@@ -352,8 +355,9 @@ check "pipeline SKILL.md.tmpl produces index.md in exports/<slug>/" "grep -qE 'e
 
 # Schema-drift regression: skills that share the canonical schema must use the
 # {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy. Only
-# the skills that build several sections inline it; the single-section writers
-# Read the file from the plugin root when they need another section's shape.
+# needs-analysis and course-import inline it; the other writers (assessment-design
+# among them, though it also writes several sections) Read the file from the plugin
+# root when they need another section's shape.
 SCHEMA_HOST_SKILLS="needs-analysis course-import"
 for skill in $SCHEMA_HOST_SKILLS; do
   check "$skill SKILL.md.tmpl uses {{MANIFEST_SCHEMA}}" "grep -q '{{MANIFEST_SCHEMA}}' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
@@ -658,7 +662,7 @@ check "generator exits 2 on an unknown argument" "'$IDSTACK_DIR/bin/idstack-gen-
 check "resolve chain drops the ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
 check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/preamble.md'"
 
-# Repo-wide sweep for the retired CLI's name. Three exemptions:
+# Repo-wide sweep for the retired CLI's name. Four exemptions:
 #
 #   1. CHANGELOG.md — the release record, which has to keep describing what was
 #      removed and how to clean up after it.
@@ -669,17 +673,21 @@ check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_
 #      --exclude-dir matches a name at any depth, so never add the dotless
 #      `superpowers`: it exempted the committed specs and plans under
 #      docs/superpowers/ and superpowers/.
-#   3. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Kinds of line that carry the tag
+#   3. designs/ and docs/designs/ — left over from an earlier design-notes
+#      folder; neither exists in the repo. --exclude-dir matches a name, so
+#      docs/designs (with a slash) matches nothing, and designs is exempt at
+#      any depth.
+#   4. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Kinds of line that carry the tag
 #      include: this block's own patterns, the unsupported-fork pointer on
-#      the landing page and in README.md, the comments crediting "Gemini Code Assist" — a PR-review bot  # IDSTACK_CLI_LEAK_ALLOW
-#      that flagged the version classifier four times, unrelated to the CLI and
-#      the reason those test cases exist — and mentions of the Gemini model API  # IDSTACK_CLI_LEAK_ALLOW
+#      the landing page and in README.md, dated historical mentions (ROADMAP.md),
+#      the leak payloads that test/mutation-test.sh injects, and mentions of the
+#      Gemini model API  # IDSTACK_CLI_LEAK_ALLOW
 #      the Chrome extension calls, which is an LLM endpoint, not a CLI.
 #
 #      A tag is for a dated, historical mention or the extension's model API.
 #      It is NEVER for a line that claims idstack runs somewhere it does not.
 #      Tag individual lines, never whole files, and never filter on a bare
-#      string: an earlier draft dropped every line containing the bot's name
+#      string: an earlier draft dropped every line containing a PR-review bot's name
 #      repo-wide, which would have let an untagged capability claim through
 #      anywhere it appeared.
 CLI_LEAK_RE='codex|gemini|antigravity' # IDSTACK_CLI_LEAK_ALLOW

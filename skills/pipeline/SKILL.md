@@ -32,8 +32,10 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions in parallel. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
@@ -710,5 +712,5 @@ done
 - **Respect the user.** If at any point the user says "stop", "pause", or "that's
   enough for now", stop the pipeline gracefully. Their progress is saved in
   timeline.jsonl and they can resume later with `/idstack:pipeline`.
-- **No quality gate yet.** In v2.0, skip logic is purely completion-based. Quality-gated
+- **No quality gate yet.** Skip logic is purely completion-based. Quality-gated
   skipping (only skip if score > threshold) is planned for a future version.

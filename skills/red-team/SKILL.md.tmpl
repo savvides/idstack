@@ -90,7 +90,7 @@ Use the **Agent tool** with `subagent_type=general-purpose`. The prompt is the f
 
 - `{{FOCUS}}` → the user's choice from Step 1 (or `Full sweep` by default)
 - `{{MANIFEST_INFO}}` → either `Manifest at .idstack/project.json — read it directly.` or, in standalone mode, the captured course information from Step 1
-- `{{COURSE_FILES_HINT}}` → if the manifest has `course_content.content_dir`, set this to that path; otherwise `Look under ./course/ or ./modules/ for generated course files.`
+- `{{COURSE_FILES_HINT}}` → if the manifest has `course_content.content_dir`, set this to that path; otherwise `Look under .idstack/course-content/ for generated course files.`
 
 Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble at the end of the prompt. The orchestrator cannot see the preamble.
 

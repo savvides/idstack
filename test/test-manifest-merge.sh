@@ -124,8 +124,8 @@ set -e
 check "manifest with string root exits 2" "[ $EC -eq 2 ]"
 
 # --- idstack-migrate --init: the manifest bootstrap the merge tool depends on ---
-# Skills running standalone create the manifest with --init before merging;
-# without it the merge exits 4 and standalone results are never persisted.
+# Skills pass --create to the merge, which runs idstack-migrate --init when
+# no manifest exists; without --create the merge exits 4 and standalone results are never saved.
 MIGRATE="$(cd "$(dirname "$0")/.." && pwd -P)/bin/idstack-migrate"
 
 INIT_DIR="$WORK/initcase"

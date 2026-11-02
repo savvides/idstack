@@ -31,8 +31,10 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions in parallel. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
@@ -806,7 +808,7 @@ Use the IDs `align-1`, `bloom-1`, `expertise-1` and so on. The findings come fro
 
 - **Summary:** two or three sentences. Tell how many ILOs you have, how many are aligned, and the most important gap or mismatch.
 - **Top recommendations:** the three to five alignment fixes that have the largest effect, in the order of priority. Use the IDs `REC-1`, `REC-2` and so on. In each Action cell, write the finding ID that the action fixes.
-- **Limitations:** The alignment data comes from the descriptions in the manifest, not from the rubric criteria. The expertise reversal flags come from the learner profile, not from a learner survey.
+- **Limitations:** The alignment data comes from the activities and the assessments that you gave in this session, not from the rubric or the course materials. The expertise reversal flags come from the learner profile, not from a learner survey.
 - **Next steps:** Run `/idstack:assessment-design`. It designs assessments that align with these objectives, with rubrics and feedback plans from the research.
 
 Run the finish command of the Step Review.

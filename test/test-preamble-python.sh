@@ -28,7 +28,7 @@ trap 'rm -rf "$WORK"' EXIT
 
 # Extract the Context Recovery bash fence from the preamble source. Generated
 # SKILL.md files embed this block (gen-skills splices it), so testing the source
-# covers all 22 outputs. Expand {{IDSTACK_RESOLVE}} the way gen-skills does, and
+# covers every generated SKILL.md. Expand {{IDSTACK_RESOLVE}} the way gen-skills does, and
 # write this repo in place of ${CLAUDE_PLUGIN_ROOT} the way Claude Code does.
 awk -v snippet="$IDSTACK_DIR/templates/snippets/idstack-resolve.sh" '
   /^## Preamble: Context Recovery/{s=1}

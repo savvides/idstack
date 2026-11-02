@@ -165,11 +165,11 @@ Decide which mode this skill is operating in **before** running the content gene
 - **Gap-fill mode** — both of these must be true:
   - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
   - `course_content.modules` is non-empty (from an earlier course-builder run; course-import does not write `course_content`)
-- **Build-new mode** — anything else (no manifest, no import_metadata, manual source, or zero modules in course_content).
+- **Build-new mode** — anything else (no manifest, no import_metadata, a `paste` or `pdf` source, or zero modules in course_content).
 
 **Announce the chosen mode to the user as the first sentence:**
 - "Mode: build-new. I will generate a new syllabus, new module pages, and new assessment documents."
-- "Mode: gap-fill (idstack found a cartridge import). The course is available. I will generate ONLY the missing artifacts that upstream skills found. I will not generate a new syllabus or new modules. To generate all of the course again, say 'rebuild'."
+- "Mode: gap-fill (idstack found a course import). The course is available. I will generate ONLY the missing artifacts that upstream skills found. I will not generate a new syllabus or new modules. To generate all of the course again, say 'rebuild'."
 
 After you announce the mode, start the report. Run this block. In the `--mode` value, replace `<mode>` with `build-new` or `gap-fill`.
 
@@ -230,8 +230,9 @@ Read the full manifest. Tell the user the proposed output in one sentence, for e
   material.
 - If no task analysis but ILOs exist: group ILOs by knowledge domain or cognitive
   level progression. Each group becomes a module.
-- If `import_metadata` exists with module structure: preserve the imported module
-  organization unless the user requests restructuring.
+- If `import_metadata` exists, the imported modules are in `task_analysis.job_tasks`,
+  one task for each imported module. Keep that module organization, one module for
+  each task, unless the user asks to restructure it.
 - Map the module count to the `context.timeline`. A 16-week course with 5 modules
   means roughly 3 weeks per module. A 4-week intensive with 5 modules means
   compressed pacing — flag this and recommend reducing scope or increasing
@@ -657,7 +658,7 @@ The payload is the **flat section contents** (no enclosing `course_content` key)
 
 **Mode field.** Set `mode` to `"build-new"` for a from-scratch generation or `"gap-fill"` when this run was triggered by upstream skills flagging missing artifacts. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
 
-The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. This helps downstream skills (like `/idstack:course-export`) know what still needs to be filled in.
+The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. It is a record for the designer of what still needs to be filled in. No other skill reads this field.
 
 Use only the approved rows of the report. `generated_files` comes from the `## Generated artifacts` rows. `placeholders_used` comes from their Notes cells. `recommended_generation_targets` comes from the `## Generation targets` rows.
 

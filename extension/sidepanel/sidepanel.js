@@ -339,6 +339,9 @@ if (auditCourseBtn) {
 
     showState('loading');
 
+    // These stages run on fixed timers (600 ms, 1300 ms), not on real progress: the
+    // service worker sends one reply when the crawl and the audit both finish. A fast
+    // reply skips the later stages; a slow crawl or model call stays at 85% until then.
     const timer1 = setTimeout(() => {
       if (statusText) statusText.textContent = 'idstack reads the assignments...';
       if (progressFill) progressFill.style.width = '60%';

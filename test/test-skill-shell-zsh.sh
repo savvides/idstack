@@ -7,9 +7,11 @@
 # `for x in $VAR` (zsh does not word-split), and a packaging block that relied
 # on a variable from an earlier call.
 #
-# Each block is extracted from skills/<name>/SKILL.md (what ships), its
-# placeholders are filled in, and it runs in a scratch course project. zsh runs
-# with -f (no rc files), so default options such as NOMATCH apply.
+# Each skill block is extracted from skills/<name>/SKILL.md (what ships), its
+# placeholders are filled in, and it runs in a scratch course project. The
+# preamble blocks come from templates/preamble.md, with the resolve snippet
+# spliced in as bin/idstack-gen-skills does. zsh runs with -f (no rc files),
+# so default options such as NOMATCH apply.
 set -u
 
 . "$(dirname "$0")/test-helper.sh"

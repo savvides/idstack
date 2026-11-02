@@ -6,8 +6,9 @@
 # of the classifier, and gen-skills counted a missing-placeholder template as
 # neither generated nor failed).
 #
-# Slower than the gate suites (it copies the repo and runs smoke-test once per
-# mutation), so it is NOT wired into smoke-test.sh. Run it after touching a
+# Slower than the gate suites (it copies the repo for each mutation and runs
+# that mutation's guarding suite, often smoke-test), so it is NOT wired into
+# smoke-test.sh. Run it after touching a
 # test, a guard, or bin/lib/. CI runs it as a separate job.
 #
 # Usage: test/mutation-test.sh [path-to-repo]   (defaults to this checkout)
@@ -84,7 +85,8 @@ regen() {
 # Baseline: the unmutated copy must pass, or every expect_fail below reports
 # GUARDED for the wrong reason. fresh() once omitted extension/, so smoke-test
 # failed on every copy and each smoke-guarded case "passed" while guarding
-# nothing. smoke-test runs every other guarding suite, so one run covers them.
+# nothing. smoke-test runs every other guarding suite except integration-test.sh,
+# so this run does not cover the three cases that integration-test.sh guards.
 fresh
 if ! "$WORK/r/test/smoke-test.sh" "$WORK/r" >"$WORK/baseline.log" 2>&1; then
   echo "  ERROR: the unmutated copy fails smoke-test; every GUARDED result would be meaningless" >&2
@@ -149,7 +151,7 @@ expect_fail "bare /skill reference regression" "$WORK/r/test/smoke-test.sh" "$WO
 # The guard above matched only backticked refs until v3.3.0.1, so three plain-prose
 # examples sat in the preamble's context-recovery section telling the model to say
 # "/assessment-design is the natural next step" — a command that does nothing. The
-# preamble is spliced into all 22 skill files, so this reached every user.
+# preamble was spliced into every skill file (22 at the time), so this reached every user.
 fresh
 sed -i.bak 's|the next skill is /idstack:assessment-design|the next skill is /assessment-design|' \
   "$WORK/r/templates/preamble.md"
@@ -591,7 +593,7 @@ PY
 expect_fail "tier scale puts randomized trials in T2" "$WORK/r/test/test-extension.sh"
 
 # 26b. the demo cites Biggs as [Alignment-3] [T2] again -> test-extension must
-# fail. references.md files Biggs as [Alignment-1] T5; [Alignment-3] is Pereira, T4.
+# fail. references.md files Biggs as [Alignment-1] T5; [Alignment-3] is Pereira, T5.
 fresh
 python3 - "$WORK/r/extension/background/parser-helper.js" <<'PY'
 import sys
@@ -2245,7 +2247,7 @@ shell_mutation "start no longer refuses a Claude app scratch workspace" \
   skills/start/SKILL.md.tmpl '  "$_HOME_DIR/Library/Application Support/Claude/scratch-workspaces/"*) echo "NOT_A_COURSE_FOLDER: $_HERE" ;;
 ' ''
 
-# 62a-62m. The Step Review. Each report skill shows each step as a table with a
+# 62a-62n. The Step Review. Each report skill shows each step as a table with a
 # citation in each row, the user approves it, and bin/idstack-report-section
 # adds it to the report.
 # 62a. The helper stops comparing a tier with evidence/references.md ->

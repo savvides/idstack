@@ -198,7 +198,7 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 
 ## Cross-Domain High-Confidence Principles
 
-These findings appear across 3+ domains and are treated as design axioms:
+Each of these findings is in 2 or more domains, and idstack treats them as design axioms:
 
 1. **Alignment is non-negotiable.** Objectives -> activities -> assessments -> evaluation must form a coherent chain. (Domains 2, 5, 8, 10)
 2. **Expertise level changes what works.** Scaffolding that helps a novice can backfire on an expert. (Domains 4, 6, 7)

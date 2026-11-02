@@ -32,8 +32,10 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions in parallel. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
@@ -594,8 +596,9 @@ Before the first Step Review, use the Read tool on the files from the "Report ru
 
 All subsequent paths (`.imscc`, SCORM `.zip`, Markdown report) write into
 `$_EXPORT_DIR`, never directly into `.idstack/`. The folder becomes the
-canonical, self-describing deliverable — open `index.md` to navigate, or
-zip the whole folder to hand to a stakeholder.
+canonical, self-describing deliverable. Zip the whole folder to hand to a
+stakeholder. If you ran `/idstack:pipeline`, open its `index.md` course
+dashboard to navigate.
 
 ---
 
@@ -620,6 +623,8 @@ done
 **Step review:** do the Step Review in the preamble. Section: `## Readiness`. Columns: `ID | Check | Value | Threshold | Status`.
 
 Write one row for each line of the readiness output. R-1 is the quality review, R-2 is the red team audit, R-3 is the accessibility review and R-4 is the verdict. Copy the values, the thresholds and the status from the output.
+
+If the output is only `No timeline data. Run the pipeline skills first.`, no review has run. Write R-1, R-2 and R-3 with the Value `-`, the Threshold `-` and the Status `NOT RUN`. Write R-4 with the verdict `INCOMPLETE (run /idstack:course-quality-review, /idstack:red-team, /idstack:accessibility-review)`.
 
 The verdict changes the question of the Step Review:
 
@@ -704,12 +709,11 @@ Read all files in `.idstack/course-content/`:
 find .idstack/course-content/ -type f | sort
 ```
 
-Read each file to understand the content structure. Expect files like:
+Read each file to understand the content structure. /idstack:course-builder writes these files:
 - `syllabus.md` — Course syllabus
-- `module-01.md`, `module-02.md`, etc. — Module content pages
-- `assessment-01.md`, `assessment-02.md`, etc. — Assignment and quiz specs
-- `rubric-01.md`, `rubric-02.md`, etc. — Rubric definitions
-- `discussion-01.md`, `discussion-02.md`, etc. — Discussion prompts
+- `modules/module-01-<slug>.md`, `modules/module-02-<slug>.md`, etc. — Module content pages. A module page for an online or hybrid course also has its discussion prompt, in a `## Discussion Prompt` section.
+- `assessments/assessment-01-<slug>.md`, `assessments/assessment-02-<slug>.md`, etc. — Assignment and quiz specs
+- `rubrics/rubric-01-<slug>.md`, `rubrics/rubric-02-<slug>.md`, etc. — Rubric definitions
 
 Also read the manifest to get the course title, module structure, and ILO
 alignment data. The manifest provides the organizational spine; the content
@@ -1550,8 +1554,15 @@ in its manifest key for context — the payload file contains only the inner obj
 ```
 
 The `readiness_check` section captures the state of prior reviews at export time.
-Populate it from the approved Readiness rows. Those rows come from the `quality_review`,
-`red_team_audit`, and `accessibility_review` sections of the manifest (if they exist). The `verdict` is:
+Populate it from the approved Readiness rows, which copy the `idstack-status --readiness`
+output. A row with the Status `NOT RUN` gives `false` for its `*_reviewed` field. Any other
+Status gives `true`. idstack-status reads that status from the `completed` events in
+`.idstack/timeline.jsonl`. The scores and counts come from the `quality_review`,
+`red_team_audit` and `accessibility_review` sections of the manifest (if they exist).
+
+The accessibility row gives a score, not a count of critical findings. Set
+`accessibility_critical` to the WCAG Level-A violation count that the row shows, or 0 if
+the row shows none. The `verdict` is:
 - `export_clean`: all reviewed, no critical findings
 - `export_with_warnings`: reviewed but has critical/warning findings
 - `export_blocked`: not used (export never blocks, advisory only)

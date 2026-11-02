@@ -13,8 +13,9 @@ init    writes the report header, an in-progress status line, a Summary
         placeholder, one placeholder for each --reserve heading, and the footer.
         It replaces a report from an earlier run.
 check   examines a draft section (the Step Review in templates/preamble.md):
-        each "## " section has a table, the first column is ID, a cited table
-        ends with Justification and Evidence, each Evidence cell has only
+        each "## " section other than Summary, Limitations and Next steps has
+        a table, the first column is ID, a cited table ends with Justification
+        and Evidence, each Evidence cell has only
         citations whose tiers agree with evidence/references.md, a findings
         table is in severity order, and the text obeys bin/idstack-ste-check.
 append  runs check, then puts each section of the draft in the report, marked as a

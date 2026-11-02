@@ -11,9 +11,10 @@
 #
 #   --init   If there is no manifest, make a canonical manifest with each
 #            section at its default value. If there is a manifest, migrate it.
-#            Skills that run without the pipeline use this flag. Then the first
-#            run has a manifest for bin/idstack-manifest-merge. That tool
-#            replaces one section, and it exits 4 when there is no manifest.
+#            bin/idstack-manifest-merge --create uses this flag, so a skill
+#            that runs without the pipeline has a manifest on its first run.
+#            That tool replaces one or more sections. Without --create, it
+#            exits 4 when there is no manifest.
 #
 # To make the --init manifest, the script writes a small v1.0 document and
 # applies the usual migrations to it. Thus the migrations are the only
