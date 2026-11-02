@@ -50,7 +50,7 @@ export PATH="$MOCK_BIN"
 
 SKILLS="needs-analysis learning-objectives course-quality-review course-import \
 assessment-design course-builder course-export accessibility-review red-team \
-pipeline learn"
+pipeline learn start"
 
 setup_happy_path() {
   rm -rf "$MOCK_IDSTACK_DIR/.claude-plugin" "$MOCK_IDSTACK_DIR/skills" "$HOME/.claude"
@@ -154,6 +154,45 @@ mock_claude_output "idstack@idstack
 status: enabled"
 check "python3 3.9 or later is found" "'$DOCTOR_CMD'" 0 "found python3 3\\.(9|[1-9][0-9])"
 
+# --- --quick: one machine-readable code for /idstack:start ---
+# The order is the point. A working python3 wins over a failing xcode-select,
+# because a python.org install leaves the Command Line Tools absent. A stub
+# check that ran first would block that user every time.
+# The OK checks compare the whole output: the full report also ends with an
+# OK line, so a regex would pass even if --quick were ignored.
+# Fakes REPLACE the file in MOCK_BIN. Remove it first: MOCK_BIN/python3 is a
+# symlink to the real interpreter, and a redirect would write through it.
+fake_cmd() { # fake_cmd <name> <shell body>
+  rm -f "$MOCK_BIN/$1"
+  printf '#!/bin/sh\n%s\n' "$2" > "$MOCK_BIN/$1"
+  chmod +x "$MOCK_BIN/$1"
+}
+restore_quick_cmds() {
+  rm -f "$MOCK_BIN/uname" "$MOCK_BIN/xcode-select" "$MOCK_BIN/python3"
+  ln -sf "$PYTHON" "$MOCK_BIN/python3"
+}
+
+setup_happy_path
+check "--quick prints only OK when python3 is 3.9 or later" "[ \"\$('$DOCTOR_CMD' --quick 2>&1)\" = OK ]"
+
+fake_cmd uname 'echo Darwin'
+fake_cmd xcode-select 'exit 2'
+check "--quick prints only OK on a Mac with python.org python3 and no developer tools" "[ \"\$('$DOCTOR_CMD' --quick 2>&1)\" = OK ]"
+
+fake_cmd python3 'exit 1'
+check "--quick prints PYTHON_STUB for the macOS python3 stub" "'$DOCTOR_CMD' --quick" 1 "^PYTHON_STUB$"
+
+fake_cmd uname 'echo Linux'
+check "--quick prints PYTHON_OLD for an old python3 that is not the macOS stub" "'$DOCTOR_CMD' --quick" 1 "^PYTHON_OLD$"
+restore_quick_cmds
+
+rm "$MOCK_BIN/python3"
+check "--quick prints PYTHON_MISSING without python3" "'$DOCTOR_CMD' --quick" 1 "^PYTHON_MISSING$"
+restore_quick_cmds
+
+check "an unknown argument exits 2" "'$DOCTOR_CMD' --bogus" 2 "ERROR: unknown argument: --bogus"
+"$DOCTOR_CMD" --bogus > "$TEST_ROOT/bad-arg.txt" 2>&1 || true
+
 # --- writing standard (ASD-STE100) ---
 # A person reads every line that doctor prints. Send a healthy run and the
 # problem runs, which print all of the explanation lines, through the checker.
@@ -181,6 +220,7 @@ setup_happy_path
 remove_mock_claude
 "$DOCTOR_CMD" > "$STE_OUT/no-claude.txt" 2>&1 || true
 cp "$TEST_ROOT/no-python.txt" "$STE_OUT/no-python.txt"
+cp "$TEST_ROOT/bad-arg.txt" "$STE_OUT/bad-arg.txt"
 
 check "doctor output obeys the writing standard (healthy and problem runs)" \
   "'$PYTHON' '$REPO_DIR/bin/idstack-ste-check' --format text '$STE_OUT'/*.txt"

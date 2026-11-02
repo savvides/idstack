@@ -38,8 +38,9 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
-- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
-  child skill in-process via the `Skill` tool.
+- **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
+  child skill in-process through the `Skill` tool. `/idstack:start` also uses it to start
+  the first skill for the user.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as
   `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
   command. This applies in reports, manifests, and AskUserQuestion options as much as in
@@ -280,6 +281,24 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
 
+## Preamble: Report Links
+
+A skill that writes a report runs a block that prints a `Report link:` line.
+The line gives the full path of the report. `/idstack:pipeline` and
+`/idstack:start` print a `Dashboard link:` line for the course dashboard.
+
+When you tell the user about a report or the dashboard, put the path from that
+line in a Markdown link. Put angle brackets around the path, because a folder
+name can have a space. Use link text that names the file, for example "Open
+the report" or "Open the course dashboard". For example:
+
+[Open the report](</Users/ana/Courses/BIO 101/.idstack/exports/bio-101/course-import.html>)
+
+In the Claude desktop app, the user clicks the link to open the file. Give only
+a path from a `Report link:` or `Dashboard link:` line, or a link that a
+sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+the report, do not give the path.
+
 ## Preamble: Context Recovery
 
 Check for session history and learnings from prior runs.
@@ -438,6 +457,8 @@ cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Course export folder: $_EXPORT_DIR"
+echo "Report path: $_REPORT_PATH"
+echo "Report link: $(pwd -P)/$_REPORT_PATH"
 ```
 
 All subsequent paths (`.imscc`, SCORM `.zip`, HTML report) write into
@@ -1371,7 +1392,7 @@ in its manifest key for context — the payload file contains only the inner obj
 ```json
 {
   "export_metadata": {
-    "report_path": "<set to $_REPORT_PATH from the Prepare Course Export Folder block — e.g. .idstack/exports/<course-slug>/course-export.html>",
+    "report_path": "<set to the relative path from the "Report path:" line of the Prepare Course Export Folder block, not the Report link — e.g. .idstack/exports/<course-slug>/course-export.html>",
     "exported_at": "ISO-8601 timestamp",
     "format": "imscc|canvas-api|scorm",
     "destination": "file path (.idstack/exports/<course-slug>/course-export.imscc) or Canvas URL",
@@ -1405,7 +1426,7 @@ sections from the manifest (if they exist). The `verdict` is:
 - `export_blocked`: not used (export never blocks, advisory only)
 - Empty string if no reviews exist
 
-Run the merge, then confirm:
+Run the merge, then confirm. Start the message with <the Report link, written as the Report Links section of the preamble tells you>:
 
 "I saved your export metadata to `.idstack/project.json`.
 

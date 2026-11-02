@@ -1,12 +1,33 @@
 # Changelog
 
-## Unreleased
+## v3.10.0.0 (2026-11-01)
+
+This release lets you use idstack in the Claude desktop app with no terminal. A new skill, `/idstack:start`, checks your setup and starts the correct skill. Each skill gives you a link that opens its report in the app. The evidence base has 38 new references, and 27 references have a correct evidence tier.
+
+To update: `cd` into your idstack clone, then `git pull && ./setup`. For a marketplace install, run `claude plugin update idstack@idstack`.
+
+### Added — `/idstack:start`
+
+- **`/idstack:start` is the first skill to run in a course folder.** It makes sure that python3 3.9 or a later version is available. It stops if the session is in your home folder, Documents, Desktop or Downloads. Then it asks if you want to import a course or design a new one.
+- **`bin/idstack-doctor --quick` prints one python3 code.** The codes are `OK`, `PYTHON_MISSING`, `PYTHON_OLD` and `PYTHON_STUB`. `PYTHON_STUB` tells the macOS python3 stub apart from a python3 that is too old.
+
+### Added — report links
+
+- **Each skill gives the full path of its report.** In the Claude desktop app, you click the link to open the report. The pipeline gives a link to the course dashboard.
+
+### Added — Claude desktop app guide
+
+- **README and idstack.org show how to install idstack in the Claude desktop app.**
 
 ### Changed — the evidence base
 
 - **`evidence/references.md` has 38 new references, from 108 to 146.** We found them with Consensus searches and kept only the papers that two independent reviews accepted. 26 are meta-analyses (T1). They give new evidence on 4C/ID, gamification, worked examples, productive failure, the expertise reversal effect, signaling, seductive details, interactive video, rubrics, self- and peer-assessment, adaptive learning, the Community of Inquiry presences, and UDL achievement. Each new reference has the next free number in its domain. No reference has a new number. The landing page cards and the study count show the new totals.
 - **27 references have a correct evidence tier.** We compared the design that each abstract states with the tier table in `evidence/references.md`. Two reviewers then examined each change, and we kept only the changes that both accepted. 25 tiers go down and two go up. For example, CogLoad-17 (13 participants) goes from T1 to T2, Online-13 (a literature review) goes from T1 to T3, and Online-15 (a design experiment in one course) goes from T2 to T4. ID-113 goes from T5 to T3 and Access-6 goes from T2 to T3, because each is a systematic review. The skills, the README and the Chrome extension demo now cite the new tiers. The README T2 example is now Chen et al. (2018).
 - **Ten references have correct metadata.** Online-3 is from 2006 and Online-17 is from 2002: the two papers are from the *Journal of Asynchronous Learning Networks*, and 2019 is the date when *Online Learning* put them online. Assessment-10 is from 2015, not 2013. Seven titles were paraphrases and now are the published titles: Alignment-3, Alignment-16, Prototype-9, Prototype-16, Online-1, Online-13 and Online-15.
+
+### Tests
+
+- `test/test-doctor.sh` tests each `--quick` code with fake `python3`, `uname` and `xcode-select` commands. `test/test-skill-shell-zsh.sh` runs the new `/idstack:start` blocks and a report-link block in bash and zsh. `test/mutation-test.sh` has cases 61a–61f.
 
 ## v3.9.0.0 (2026-11-01)
 

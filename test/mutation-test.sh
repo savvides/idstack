@@ -2148,6 +2148,57 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "learnings delete drops the file mode" "$WORK/r/test/integration-test.sh"
 
+# 61a. doctor --quick checks for the macOS stub before the python3 version ->
+# test-doctor must fail. A python.org python3 on a Mac with no Command Line
+# Tools would then be told to install the developer tools every time.
+fresh
+python3 - "$WORK/r/bin/idstack-doctor" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '  if command -v python3 >/dev/null 2>&1 && python3 -c'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '  if [ "$(uname -s 2>/dev/null)" = "Darwin" ] && ! xcode-select -p >/dev/null 2>&1; then echo "PYTHON_STUB"; exit 1; fi\n' + old, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "doctor --quick reports the stub before it tries python3" "$WORK/r/test/test-doctor.sh"
+
+# 61b. doctor --quick stops telling the stub apart from an old python3 ->
+# test-doctor must fail.
+fresh
+python3 - "$WORK/r/bin/idstack-doctor" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = '    echo "PYTHON_STUB"\n'
+assert s.count(old) == 1, 'anchor count %d' % s.count(old)
+s = s.replace(old, '    echo "PYTHON_OLD"\n', 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "doctor --quick no longer reports the macOS stub" "$WORK/r/test/test-doctor.sh"
+
+# 61c. A report block stops printing its full report link -> smoke-test must
+# fail. The desktop user then has no link to click.
+shell_mutation "a report block stops printing its absolute report link" \
+  skills/learning-objectives/SKILL.md.tmpl 'echo "Report link: $(pwd -P)/$_REPORT_PATH"
+' ''
+
+# 61d. A closing message sends the user to a web browser again -> smoke-test
+# must fail. That text names a relative path, and the model follows it over
+# the preamble's Report Links rule.
+shell_mutation "a closing message tells the user to open the report in a web browser" \
+  skills/learning-objectives/SKILL.md.tmpl 'Click the link to open it.' 'Open it in a web browser.'
+
+# 61e. /idstack:start stops refusing the home folder -> smoke-test must fail
+# (through test-skill-shell-zsh). A desktop session starts in the home folder,
+# and the next skill would write .idstack/ there.
+shell_mutation "start no longer refuses the home folder" \
+  skills/start/SKILL.md.tmpl '/|"$_HOME_DIR"|"$_HOME_DIR/Documents"' '/|"$_HOME_DIR/Documents"'
+
+# 61f. /idstack:start's no-write rule outlives the handoff again -> smoke-test
+# must fail. The child skill would then not save its manifest or report.
+shell_mutation "start does not release its limits at the handoff" \
+  skills/start/SKILL.md.tmpl 'When Step 4 starts a different skill with the Skill tool, the limits of this
+skill stop.' ''
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

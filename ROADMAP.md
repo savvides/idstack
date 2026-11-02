@@ -4,6 +4,11 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### idstack in the Claude desktop app & `/idstack:start` (v3.10.0.0)
+- **You can use idstack with no terminal.** Install it in the Code tab of the Claude desktop app, then type `/idstack:start`.
+- **`/idstack:start` checks your setup and starts the correct skill.** It finds the macOS python3 stub and a session in your home folder before they cause a problem.
+- **Each skill gives you a link to its report.** Click the link to open the report in the app.
+
 ### ASD-STE100 writing standard & a fix for finding idstack's scripts (v3.7.0.0)
 - **idstack writes the English text that it shows to a person in ASD-STE100.** This includes skill chat, reports, the course dashboard, CLI messages and the Chrome extension. `bin/idstack-ste-check` finds some of the problems, and each skill runs it on each report, dashboard or course file that it writes for a person. ASD does not endorse idstack.
 - **Skills find the plugin that Claude Code loaded.** Before, a skill could run the scripts of an old copy of idstack. If an install has no checker, the check step now says so and gives the path.

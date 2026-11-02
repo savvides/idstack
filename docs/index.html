@@ -42,7 +42,7 @@
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
-    "softwareVersion": "3.9.0.0",
+    "softwareVersion": "3.10.0.0",
     "datePublished": "2026-04-20",
     "offers": {
       "@type": "Offer",
@@ -1030,7 +1030,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v3.9.0.0 · Claude Code &amp; Chrome Extension</span>
+          <span>v3.10.0.0 · Claude Code &amp; Chrome Extension</span>
         </p>
         <h1 id="hero-title">Evidence-based instructional design with peer-reviewed citations.</h1>
         <p class="lede">146 peer-reviewed studies across 11 research domains. Every recommendation includes its evidence tier: <span class="tier tier-1">T1</span> meta-analyses and RCTs through <span class="tier tier-5">T5</span> expert opinion. Runs in Claude Code and as a native Chrome Extension.</p>
@@ -1151,8 +1151,8 @@
     <section class="section" id="pipeline" aria-labelledby="pipeline-title">
       <header class="section-header">
         <p class="eyebrow">Pipeline</p>
-        <h2 id="pipeline-title">Eleven skills. Pipeline optional.</h2>
-        <p class="lede">Eight skills execute sequentially through <code>/idstack:pipeline</code>, while standalone utilities handle course import and institutional memory. You can run any skill independently on existing course files without creating an upfront manifest.</p>
+        <h2 id="pipeline-title">Twelve skills. Pipeline optional.</h2>
+        <p class="lede">Eight skills execute sequentially through <code>/idstack:pipeline</code>, while standalone utilities handle first-run setup, course import and institutional memory. You can run any skill independently on existing course files without creating an upfront manifest.</p>
       </header>
 
       <div class="pipeline-canvas">
@@ -1201,6 +1201,10 @@
         </ol>
 
         <div class="pipeline-aside-row" aria-label="Skills outside the linear pipeline">
+          <div class="pipeline-aside">
+            <span class="aside-tag">start</span>
+            <span>Checks that idstack can run in a course folder, then starts the correct skill. The first skill to run.</span>
+          </div>
           <div class="pipeline-aside">
             <span class="aside-tag">course-import</span>
             <span>Extracts existing modules, assignments, and syllabi from Canvas API, IMSCC, or SCORM.</span>
@@ -1291,8 +1295,22 @@
 
         <div class="install-track-card">
           <div class="install-track-header">
+            <h3>Claude Desktop App</h3>
+            <span class="track-badge">No Terminal</span>
+          </div>
+          <p class="install-prose">In the Code tab of the Claude desktop app, select a folder for your course. Then paste this line in the message box:</p>
+          <div class="install-block" role="group" aria-label="Desktop install command">
+            <span class="prompt" aria-hidden="true">›</span>
+            <code id="install-cmd-3">/plugin marketplace add savvides/idstack</code>
+            <button class="copy-btn" type="button" data-copy-target="install-cmd-3" aria-label="Copy desktop install command">Copy</button>
+          </div>
+          <p class="install-prose">Click <strong>+</strong>, then <strong>Add plugins</strong>, and install idstack. Then start a new session and select the course folder again, because Claude Code loads a plugin only when a session starts. Type <code>/idstack:start</code>. Each skill gives you a link to open its report in the app.</p>
+        </div>
+
+        <div class="install-track-card">
+          <div class="install-track-header">
             <h3>Claude Code Plugin</h3>
-            <span class="track-badge">Full 11-Skill Pipeline</span>
+            <span class="track-badge">Full 12-Skill Pipeline</span>
           </div>
           <div class="install-block" role="group" aria-label="Install command">
             <span class="prompt" aria-hidden="true">$</span>
@@ -1300,13 +1318,13 @@
             <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
           </div>
 
-          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 11 skills. Re-run it after a <code>git pull</code> to update.</p>
+          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 12 skills. Re-run it after a <code>git pull</code> to update.</p>
 
           <p class="install-prose">Requires a bash shell (Terminal on macOS or Linux, WSL or Git Bash on Windows). PowerShell and <code>cmd</code> are not supported for setup execution. Requires Python 3.9 or later: the skills save their results with it. <code>bin/idstack-doctor</code> checks for it.</p>
 
           <p class="install-prose">To verify an installation, run <code>bin/idstack-doctor</code> to diagnose plugin registration or <code>bin/idstack-status</code> to view course health.</p>
 
-          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:pipeline</code>.</p>
+          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:start</code>.</p>
 
           <p class="install-prose">Not using Claude Code? idstack supports Claude Code only. Use the Chrome extension, or fork the repo and adapt the skills for a different agent, for example Codex or Antigravity. idstack does not support or test those forks.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
         </div>
@@ -1320,6 +1338,11 @@
         <h2 id="whatsnew-title">Recent Updates &amp; Release Notes</h2>
       </header>
 
+      <article class="release-card">
+        <p class="release-meta">November 1, 2026 · v3.10.0.0</p>
+        <h3>idstack in the Claude desktop app.</h3>
+        <p>Install idstack in the Code tab of the Claude desktop app, then type <code>/idstack:start</code>. It checks your setup and starts the correct skill. Each skill gives you a link that opens its report in the app.</p>
+      </article>
       <article class="release-card">
         <p class="release-meta">October 9, 2026 · v3.7.0.0</p>
         <h3>Simplified Technical English output &amp; a fix for finding idstack's scripts.</h3>

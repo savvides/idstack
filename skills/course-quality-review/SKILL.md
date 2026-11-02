@@ -38,8 +38,9 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
-- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
-  child skill in-process via the `Skill` tool.
+- **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
+  child skill in-process through the `Skill` tool. `/idstack:start` also uses it to start
+  the first skill for the user.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as
   `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
   command. This applies in reports, manifests, and AskUserQuestion options as much as in
@@ -279,6 +280,24 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
+
+## Preamble: Report Links
+
+A skill that writes a report runs a block that prints a `Report link:` line.
+The line gives the full path of the report. `/idstack:pipeline` and
+`/idstack:start` print a `Dashboard link:` line for the course dashboard.
+
+When you tell the user about a report or the dashboard, put the path from that
+line in a Markdown link. Put angle brackets around the path, because a folder
+name can have a space. Use link text that names the file, for example "Open
+the report" or "Open the course dashboard". For example:
+
+[Open the report](</Users/ana/Courses/BIO 101/.idstack/exports/bio-101/course-import.html>)
+
+In the Claude desktop app, the user clicks the link to open the file. Give only
+a path from a `Report link:` or `Dashboard link:` line, or a link that a
+sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+the report, do not give the path.
 
 ## Preamble: Context Recovery
 
@@ -1082,6 +1101,7 @@ cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
 echo "Report template: $_IDSTACK/templates/report.html.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Report path: $_REPORT_PATH"
+echo "Report link: $(pwd -P)/$_REPORT_PATH"
 ```
 
 Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-quality-review.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
@@ -1122,9 +1142,9 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 After writing both the manifest and the quality report, confirm to the user:
 
 "I saved your quality review to `.idstack/project.json`. I also wrote a shareable HTML
-report to `.idstack/exports/<course-slug>/course-quality-review.html`. The
+report: <the Report link, written as the Report Links section of the preamble tells you>. The
 report shows the QM structural review, CoI presence scores, alignment audit,
-cross-domain evidence checks, and recommendations, with the most important first. Open it in a web browser.
+cross-domain evidence checks, and recommendations, with the most important first. Click the link to open it.
 The folder also contains the CSS file.
 
 **Score: XX/100** [If previous: "Previous: X/100 (DATE). Delta: +/-Z."]
