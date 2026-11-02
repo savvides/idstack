@@ -23,6 +23,23 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 
 - **`/idstack:start` stops in a temporary folder of the Claude desktop app.** The app can start a session in a folder under `~/Library/Application Support/Claude/scratch-workspaces/`. That folder is hidden, and the app can delete it. Before, `/idstack:start` let the session continue there, and the next skill wrote the course data in that folder.
 
+### Documentation
+
+- **The documentation agrees with the code.** An audit compared each document with the skills and the scripts.
+  - The README and the landing page show the 4 import options of `/idstack:course-import`, and the Canvas token goes into `.idstack/canvas.env`, not into the chat.
+  - The README sample session shows the draft sections and the approval questions.
+  - The red-team triage options, the report-section flow and the evidence table are correct.
+  - The README tells how to update an install from the Claude desktop app. idstack does not tell you about a new version: the update check runs only from a git clone.
+- **PRIVACY.md names the citation search of `/idstack:red-team` and `.idstack/canvas.env`.**
+- **Some fixed text in the skills is correct now.**
+  - `/idstack:accessibility-review` gives the WCAG and UDL scores out of 50.
+  - `/idstack:course-export` names its three export paths and tells what the IMSCC package contains.
+  - The Canvas token messages give the full path to New Access Token.
+  - `/idstack:learn` tells which entry `delete` removes.
+  - `/idstack:red-team` tells you to run it again for a new score.
+  - The demo of a full-course audit in the Chrome extension says that it is a sample.
+- **CONTRIBUTING.md, CLAUDE.md, ROADMAP.md and `templates/manifest-schema.md` are correct.** They describe what `bin/idstack-manifest-merge` checks and which skills write each manifest section. They also list the test suites and mark the features that a later release removed.
+
 ### Tests
 
 - `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61i.

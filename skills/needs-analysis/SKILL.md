@@ -200,7 +200,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 if [ -n "$_UPD" ]; then echo "$_UPD"; fi
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It installs the new version in Claude Code." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -331,7 +331,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -487,8 +487,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -952,12 +952,12 @@ The merge tool replaces only the named top-level sections, preserves every other
 | Field | Owner skill(s) | Notes |
 |---|---|---|
 | `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
-| `project_name` | (any) | Set on first manifest creation. Don't overwrite once set. |
+| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis or course-import sets it with `--set project_name=<v>`. Don't overwrite once set. |
 | `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
 | `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
-| `context` | needs-analysis (initial) | Modality, timeline, class size, etc. Edited by skills that learn new context. |
-| `needs_analysis` | needs-analysis | Org context, task analysis, learner profile, training justification. |
-| `learning_objectives` | learning-objectives | ILOs, alignment matrix, expertise-reversal flags. |
+| `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |
+| `needs_analysis` | needs-analysis, course-import | Org context, task analysis, learner profile, training justification. |
+| `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. |
 | `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
 | `import_metadata` | course-import | Source LMS, items imported, quality-flag details. |
@@ -965,7 +965,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
 | `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
-| `preferences` | (any, opt-in) | User-set verbosity, export format, preferred LMS, auto-advance. |
+| `preferences` | (user, by hand) | Verbosity, export format, preferred LMS, auto-advance. `bin/idstack-migrate` writes the defaults. No skill writes this section; the preamble reads `verbosity`. |
 
 ### Full schema (canonical shape)
 

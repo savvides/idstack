@@ -201,7 +201,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 if [ -n "$_UPD" ]; then echo "$_UPD"; fi
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It installs the new version in Claude Code." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -332,7 +332,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -488,8 +488,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -824,7 +824,7 @@ Write three rows: the WCAG component, the UDL component and the overall score. C
 
 **Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`. Columns: `ID | Action | Justification | Evidence`.
 
-- **Summary:** 2 or 3 sentences. Start with the overall score, the number of WCAG Level A violations, and the largest barrier in the course. Add this line: "Overall XX/100 · WCAG XX/100 · UDL XX/100".
+- **Summary:** 2 or 3 sentences. Start with the overall score, the number of WCAG Level A violations, and the largest barrier in the course. Add this line: "Overall XX/100 · WCAG XX/50 · UDL XX/50".
 - **Top recommendations:** the 3 changes that give the most improvement for the least work. Use the approved findings. Cite each row.
 - **Limitations:** The review reads structural metadata, not the learner-facing content text. The review checks that alt text is present, not that it is accurate. The UDL recommendations come from manifest signals, not from observed learner use.
 - **Next steps:** If the course has WCAG Level A violations, correct them first, because they stop access. Then run `/idstack:red-team` for an adversarial persona test. The persona dimension simulates learners who need the accommodations that this review audited.
@@ -922,7 +922,7 @@ After writing the manifest, confirm to the user:
   The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
-**Score:** Overall XX/100 · WCAG XX/100 · UDL XX/100. [If Level A violations exist,
+**Score:** Overall XX/100 · WCAG XX/50 · UDL XX/50. [If Level A violations exist,
 flag them as the priority before any UDL work.]
 
 **Next step:** Run `/idstack:red-team` for an adversarial persona test. The persona

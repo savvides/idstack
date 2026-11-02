@@ -3,8 +3,8 @@ name: learn
 description: |
   Manage the course-design learnings that idstack saved across sessions. Search, list,
   delete, promote, and export them. Use when asked about idstack learnings, for example
-  "what has idstack learned about this course", "show idstack learnings", "prune stale
-  idstack learnings", or "export idstack learnings". (idstack)
+  "what has idstack learned about this course", "show idstack learnings", "delete an idstack
+  learning", or "export idstack learnings". (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -64,7 +64,7 @@ If results include global learnings (tagged with `_source`), show their source p
 
 ### delete <key>
 
-Delete a learning by its key. Always confirm with the user before deleting.
+Delete the most recent local learning with this key. Older local entries with the same key, and copies in the global store, stay. To remove an older entry, run the command again. Always confirm with the user before deleting.
 
 ```bash
 {{IDSTACK_RESOLVE}}

@@ -1,16 +1,16 @@
 # Sample Course: Introduction to Data Ethics
 
 This is a reference course scenario for testing the idstack pipeline. It includes
-intentional quality gaps that /course-quality-review should catch.
+intentional quality gaps that /idstack:course-quality-review should catch.
 
 ## Manual Test Protocol
 
 1. Start a fresh Claude Code session in an empty directory
 2. Copy this file to the working directory
-3. Run `/needs-analysis` — provide answers from the scenario below
-4. Run `/learning-objectives` — verify it reads the manifest and references task analysis
-5. Run `/course-quality-review` — verify it catches the intentional gaps listed below
-6. Check `.idstack/project.json` — verify valid JSON with all sections populated
+3. Run `/idstack:needs-analysis` — provide answers from the scenario below
+4. Run `/idstack:learning-objectives` — verify it reads the manifest and references task analysis
+5. Run `/idstack:course-quality-review` — verify it catches the intentional gaps listed below
+6. Check `.idstack/project.json` — verify valid JSON. The context, needs_analysis, learning_objectives and quality_review sections are populated; the sections of skills that did not run keep their default values
 
 ---
 
@@ -79,7 +79,7 @@ Campus Wi-Fi is reliable.
 - Final project: Write a data ethics impact assessment
 - Discussion forum posts (participation credit, no rubric)
 
-### Intentional Quality Gaps (for /course-quality-review to catch)
+### Intentional Quality Gaps (for /idstack:course-quality-review to catch)
 
 1. **Alignment gap:** ILO "evaluate a dataset for bias" (analyze/evaluate level) is only
    assessed via multiple-choice quiz (remember/understand level). The assessment doesn't

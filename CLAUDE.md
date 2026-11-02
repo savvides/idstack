@@ -32,9 +32,12 @@ bin/idstack-report-section append <report> <draft>   # Check, then add the secti
 bin/idstack-report-section approve <report> [--draft <f>]  # Remove each draft mark; print SECTION_APPROVED: <heading>; delete the draft
 bin/idstack-report-section finish <report> # Fail on a placeholder or a draft that remains; remove the status line
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
+bin/idstack-timeline-log '<json>'          # Append one event to .idstack/timeline.jsonl (adds "ts"; never fails the skill)
+bin/idstack-learnings log|search|delete|promote   # Project learnings in .idstack/learnings.jsonl; promote copies to ~/.idstack/global/
+bin/idstack-update-check                   # Preamble update check: git fetch, hourly cache. Runs only from a git clone, not the plugin cache
 ```
 
-Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash and node suites):
+Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash, node and python suites, but not `mutation-test.sh`, which CI runs in its own job):
 
 ```bash
 ./test/smoke-test.sh              # 541 assertions: install, SKILL.md freshness, frontmatter, version agreement,
@@ -47,7 +50,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-status.sh             # 27 tests for bin/idstack-status, incl. the --readiness export gate
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
-./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on 3.9 and 3.12
+./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on the local python3; CI covers 3.9 and 3.12
 ./test/test-skill-shell-zsh.sh    # 86 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules via
@@ -76,7 +79,7 @@ python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across 
 
 The counts in the comments above are kept by hand. After you add or remove a check, update them from a real run.
 
-`test/test-helper.sh` is not a suite — it is sourced by every **bash** suite that runs assertions itself and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion (`test-extension.sh` is the exception: it delegates to node). Do not add a local counter block to a bash suite; smoke-test fails on one, and a mutation proves that guard works. The node suites (`test-extension.sh`'s fourteen unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it; they accumulate their own problems and report a count, which is the same contract in another language.
+`test/test-helper.sh` is not a suite — it is sourced by every **bash** suite that runs assertions itself and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion (`test-extension.sh` is the exception: it delegates to node). Do not add a local counter block to a bash suite; smoke-test fails on one, and a mutation proves that guard works. The node suites (`test-extension.sh`'s sixteen unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it; they accumulate their own problems and report a count, which is the same contract in another language.
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9. The test, mutation and release jobs pin Node 22 for the extension and rendered-landing tests.
 
@@ -153,7 +156,7 @@ Rules for writing the manifest:
 - Validate JSON on read. If malformed, report and stop. Never silently overwrite.
 - Own your section only. Read full manifest, modify only your skill's section, preserve everything else.
 - Update the `updated` timestamp on every write.
-- Use `bin/idstack-manifest-merge` for the write path: it's section-scoped, atomic (tempfile + rename), preserves foreign sections, and validates against the canonical schema in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback only.
+- Use `bin/idstack-manifest-merge` for the write path: it's section-scoped, atomic (tempfile + rename), preserves foreign sections, and rejects a section name that is not in the canonical schema in `templates/manifest-schema.md` (exit 3) and a payload that is not a JSON object (exit 1). It does not check the fields inside a section. Inline full-manifest `Edit` is the deprecated fallback only.
 - Pass `--create` on every merge. A skill can run standalone, and without a manifest the merge exits 4 and the results are never saved. `--create` seeds a canonical manifest through `bin/idstack-migrate --init` first; it never replaces one that exists.
 - A skill that writes several sections (`needs-analysis`, `course-import`, `assessment-design`) passes one `--section`/`--payload` pair per section in a single call, so the write is atomic: if any payload is malformed, nothing is written. `--set project_name=<v>` writes the one top-level field a skill owns. For a section that another skill also writes, read it, add your fields, and pass the whole merged section.
 
@@ -179,11 +182,11 @@ Every skill template follows this pattern:
 4. **`{{MANIFEST_SCHEMA}}`** placeholder (replaced by `templates/manifest-schema.md`)
 5. **`{{IDSTACK_RESOLVE}}`** placeholder (replaced by `templates/snippets/idstack-resolve.sh`). Unlike the other two, this one appears many times per template — once at the top of every bash block that calls `$_IDSTACK/bin/...`. Bash blocks run in separate shells, so `_IDSTACK` must be re-derived in each; the snippet is the single definition of that resolution order (`${CLAUDE_PLUGIN_ROOT}`, `IDSTACK_HOME`, then the Claude Code marketplace cache). Claude Code writes the plugin path into skill text only where it finds the exact token `${CLAUDE_PLUGIN_ROOT}`, and the Bash tool's shell never has the variable, so never give it a `:-` default. The generator expands the placeholder in `templates/preamble.md` too and leaves the snippet's comment lines out, so the snippet is the only copy. `templates/manifest-schema.md` is also read raw, so it has no placeholder and no resolve lines. smoke-test fails on a hand-written chain in either file and on any `${CLAUDE_PLUGIN_ROOT:-` in templates or skills.
 6. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion)
-7. **Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/bin/idstack-ste-check"` on that file. smoke-test fails if a skill template has fewer check steps than it must have. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.
+7. **Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/bin/idstack-ste-check"` on that file. `test/smoke-test.sh` sets the number of check steps for each skill template, and fails on a different number. Update it when you add or remove a check step. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.
 
 The shared preamble includes: interaction conventions (defines how skills use `AskUserQuestion`, `Agent`, and `Skill`), writing standard (the ASD-STE100 rules and word list), update check, manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
 
-Python that the preamble runs must parse on Python 3.9 — the version macOS ships. Context Recovery calls `bin/idstack-status --context`, which reads the timeline with the same code as the dashboard; `test/test-preamble-python.sh` runs the preamble block against it on 3.9 and 3.12. A syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases. Skills get the course slug from `bin/idstack-slugify --from-manifest`, never from inline Python.
+Python that the preamble runs must parse on Python 3.9 — the version macOS ships. Context Recovery calls `bin/idstack-status --context`, which reads the timeline with the same code as the dashboard; `test/test-preamble-python.sh` runs the preamble block against it on the local python3, and the CI matrix runs it on 3.9 and 3.12. A syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases. Skills get the course slug from `bin/idstack-slugify --from-manifest`, never from inline Python.
 
 ### Shared libraries
 
@@ -230,8 +233,8 @@ Format: `[DomainCode-Number] [Tier]` (e.g., `[Alignment-14] [T1]`). Stronger evi
 Editing `evidence/references.md`:
 - Add each new reference with the next free number in its domain. Never renumber or reuse a number.
 - When a tier changes, update every `[Code-N] [Tn]` that cites it, then run `bin/idstack-gen-skills`. If a grouped citation (`[A] [B] [T1]`) now has mixed tiers, split it (`[A] [T1] [B] [T2]`).
-- `check-citation-tiers.py` does not scan `extension/`. Grep `extension/background/parser-helper.js` (the demo findings) yourself.
-- The total study count is hand-typed: 5 places in `docs/index.html`, plus `DESIGN.md` and `docs/og-template.html`. `check-evidence-cards.py` checks only the per-domain cards.
+- `check-citation-tiers.py` does not scan `extension/`. `test/test-evidence-labels.mjs` (run by `test-extension.sh`) checks the codes and tiers in `extension/shared/prompts.js`, `extension/background/parser-helper.js` (the demo findings) and `extension/shared/evidence-base.js`.
+- The total study count is hand-typed: 5 places in `docs/index.html`, plus `DESIGN.md` and `docs/og-template.html`. The README evidence table has hand-typed study counts, T1 counts and tier ranges for 7 domains. `check-evidence-cards.py` checks only the per-domain cards.
 - `test/mutation-test.sh` quotes literal citation lines and needs one card tier range that is unique on the page (case 18). After changing tiers, grep it for the old strings.
 - The Consensus MCP server, if connected, can verify references and find newer ones. Run at most 3 searches at a time. idstack itself has no Consensus integration since v3.9.0.0.
 

@@ -41,12 +41,12 @@ The merge tool replaces only the named top-level sections, preserves every other
 | Field | Owner skill(s) | Notes |
 |---|---|---|
 | `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
-| `project_name` | (any) | Set on first manifest creation. Don't overwrite once set. |
+| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis or course-import sets it with `--set project_name=<v>`. Don't overwrite once set. |
 | `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
 | `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
-| `context` | needs-analysis (initial) | Modality, timeline, class size, etc. Edited by skills that learn new context. |
-| `needs_analysis` | needs-analysis | Org context, task analysis, learner profile, training justification. |
-| `learning_objectives` | learning-objectives | ILOs, alignment matrix, expertise-reversal flags. |
+| `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |
+| `needs_analysis` | needs-analysis, course-import | Org context, task analysis, learner profile, training justification. |
+| `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. |
 | `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
 | `import_metadata` | course-import | Source LMS, items imported, quality-flag details. |
@@ -54,7 +54,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
 | `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
-| `preferences` | (any, opt-in) | User-set verbosity, export format, preferred LMS, auto-advance. |
+| `preferences` | (user, by hand) | Verbosity, export format, preferred LMS, auto-advance. `bin/idstack-migrate` writes the defaults. No skill writes this section; the preamble reads `verbosity`. |
 
 ### Full schema (canonical shape)
 

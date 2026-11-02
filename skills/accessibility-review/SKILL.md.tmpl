@@ -332,7 +332,7 @@ Write three rows: the WCAG component, the UDL component and the overall score. C
 
 **Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`. Columns: `ID | Action | Justification | Evidence`.
 
-- **Summary:** 2 or 3 sentences. Start with the overall score, the number of WCAG Level A violations, and the largest barrier in the course. Add this line: "Overall XX/100 · WCAG XX/100 · UDL XX/100".
+- **Summary:** 2 or 3 sentences. Start with the overall score, the number of WCAG Level A violations, and the largest barrier in the course. Add this line: "Overall XX/100 · WCAG XX/50 · UDL XX/50".
 - **Top recommendations:** the 3 changes that give the most improvement for the least work. Use the approved findings. Cite each row.
 - **Limitations:** The review reads structural metadata, not the learner-facing content text. The review checks that alt text is present, not that it is accurate. The UDL recommendations come from manifest signals, not from observed learner use.
 - **Next steps:** If the course has WCAG Level A violations, correct them first, because they stop access. Then run `/idstack:red-team` for an adversarial persona test. The persona dimension simulates learners who need the accommodations that this review audited.
@@ -412,7 +412,7 @@ After writing the manifest, confirm to the user:
   The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
-**Score:** Overall XX/100 · WCAG XX/100 · UDL XX/100. [If Level A violations exist,
+**Score:** Overall XX/100 · WCAG XX/50 · UDL XX/50. [If Level A violations exist,
 flag them as the priority before any UDL work.]
 
 **Next step:** Run `/idstack:red-team` for an adversarial persona test. The persona

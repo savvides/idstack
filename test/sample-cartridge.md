@@ -1,4 +1,4 @@
-# Testing /course-import with a Common Cartridge
+# Testing /idstack:course-import with a Common Cartridge
 
 ## How to get a test .imscc file
 
@@ -21,8 +21,8 @@ The intentional quality gaps in the sample should trigger quality flags.
 ## Test protocol
 
 1. Place the .imscc file in your working directory
-2. Run `/course-import`
-3. Choose option A (Common Cartridge)
+2. Run `/idstack:course-import`
+3. Choose "LMS or SCORM package file"
 4. Provide the file path
 5. Verify:
    - Course structure extracted correctly (modules, items)
@@ -30,4 +30,4 @@ The intentional quality gaps in the sample should trigger quality flags.
    - Task analysis mapping is reasonable
    - Bloom's classification on any imported objectives
    - `.idstack/project.json` is valid JSON with populated fields
-6. Run `/course-quality-review` and verify it reads the imported data
+6. Run `/idstack:course-quality-review` and verify it reads the imported data

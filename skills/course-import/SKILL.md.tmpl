@@ -381,7 +381,7 @@ echo "$BODY" | head -5
 
 Handle errors:
 - HTTP 401: "Token rejected. Make sure you copied the full token. In Canvas:
-  Account → Settings → New Access Token."
+  Account → Settings → Approved Integrations → New Access Token."
 - HTTP 403: "Access denied. Your token does not have the necessary permissions."
 - Network error: "idstack cannot connect to Canvas at that URL. Check the address."
 
@@ -830,10 +830,10 @@ Use only the approved rows of the report. `job_tasks` has the approved `T-` rows
 
 ```json
 {
-  "source": "cartridge|paste|canvas-api",
+  "source": "cartridge|paste|canvas-api|pdf|scorm",
   "report_path": "<set to $_REPORT_PATH from the Step 1b bash block — e.g. .idstack/exports/<course-slug>/course-import.md>",
   "imported_at": "ISO-8601",
-  "source_lms": "canvas|blackboard|moodle|d2l|unknown",
+  "source_lms": "canvas|blackboard|moodle|d2l|rise|storyline|unknown",
   "items_imported": {
     "modules": 0,
     "objectives": 0,

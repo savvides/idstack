@@ -201,7 +201,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 if [ -n "$_UPD" ]; then echo "$_UPD"; fi
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It installs the new version in Claude Code." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -332,7 +332,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -488,8 +488,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -669,7 +669,7 @@ Also read `.idstack/project.json` for project_name, scores (`quality_review.over
   - The first paragraph gives the verdict.
   - The second paragraph gives the themes that occur in more than one skill.
   - The third paragraph tells where to start. It is optional. If you do not use it, remove its placeholder.
-- **Readiness table** — fill the one row of the Readiness pipe table (Quality, Accessibility, Red-team confidence, Verdict). Write the verdict as a text label: `Ready`, `Issues`, `Blocked`, or `Pending` (when the skill has not run). If a score is not available, replace the full cell, `/100` included, with `not run`. Thresholds match `bin/idstack-status --readiness`.
+- **Readiness table** — fill the one row of the Readiness pipe table (Quality, Accessibility, Red-team confidence, Verdict). Write the verdict as a text label: `Ready`, `Issues`, `Blocked`, or `Pending` (when the skill has not run). If a score is not available, replace the full cell, `/100` included, with `not run`. The quality (70) and accessibility (80) thresholds match `bin/idstack-status --readiness`. For red-team, `--readiness` checks the number of critical findings (it must be 0), not the confidence score.
 - **Skill reports table** — one pipe-table row per pipeline skill. In the Status column, write `Done` if the per-skill report file exists without the in-progress line `**Status:** in progress. A section with a draft mark waits for your approval.`, and `Pending` in all other conditions. The Signal column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). In the Report column, link the relative Markdown filename (e.g., `[needs-analysis.md](needs-analysis.md)`). If the report file is not in the folder, write `not run` in the Report column. Add the optional course-import row when that report is present.
 - **Top cross-cutting issues** (numbered list): 3–5 highest-impact findings that appear in or affect multiple per-skill reports. Each item shows the source skill(s) and the citation as plain text, for example `[Alignment-14] [T1]`.
 - **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: "This folder has no LMS packages. To make them, run `/idstack:course-export`."
@@ -698,7 +698,7 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 ### Step 5: Pipeline Complete
 
 When all remaining skills have been executed:
-- Announce: "The pipeline is completed. Your course went through all 8 stages."
+- Announce: "The pipeline is completed. Your course went through all of the pipeline stages."
 - Confirm the dashboard path: "The course dashboard is at <the Dashboard path, written as a link as the Report Links section of the preamble tells you>. Click it to see the cross-cutting view. The per-skill reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
 - If `/idstack:course-quality-review` produced a score, show it.
 - Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.

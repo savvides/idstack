@@ -202,7 +202,7 @@ _UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
 if [ -n "$_UPD" ]; then echo "$_UPD"; fi
 ```
 
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
+If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It installs the new version in Claude Code." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -333,7 +333,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -489,8 +489,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -963,7 +963,7 @@ Put the approved rows of the five Dimension sections in one table. Put the `crit
 - **Summary:** 2–3 sentences. Lead with the confidence score (0–100) and the band ("High confidence" / "Moderate confidence, changes necessary" / "Low confidence, important gaps" / "New design necessary"). Include the one-line scoreboard: "Confidence XX/100 · Critical N · Warning N · Info N". Use the counts of the approved findings.
 - **Top recommendations:** the 3 changes that would most improve the score. Give each row the ID `R-1` to `R-3`. Name the finding id in the Action cell. Use the citation of that finding.
 - **Limitations:** the `limitations` text from the JSON file. Add the text that you put in Limitations during the Step Reviews.
-- **Next steps:** If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
+- **Next steps:** If the confidence score is less than 60, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If it is 60 or more, recommend `/idstack:course-export`. The score does not change after the fixes in this run. To get a new score, run `/idstack:red-team` again.
 
 Run the finish command of the Step Review.
 
@@ -1051,7 +1051,7 @@ rm -f .idstack/.red-team-findings.json
 
 Two sentences:
 - "Confidence: X/100. I made N changes and deferred M changes. The report is at <the Report path, written as a link as the Report Links section of the preamble tells you>."
-- If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
+- If the confidence score is less than 60, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If it is 60 or more, recommend `/idstack:course-export`. To get a new score after the fixes, run `/idstack:red-team` again.
 
 If the user wants to verify fixes hold, they can re-run `/idstack:red-team` — that's deliberately manual to avoid token costs of automatic re-verification.
 
