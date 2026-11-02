@@ -363,13 +363,13 @@ Key findings encoded as decision rules in this skill:
   smaller, learner-paced segments reduces cognitive overload and improves transfer.
   This is the segmenting principle from multimedia learning research. Long,
   continuous presentations without natural breakpoints degrade learning, especially
-  for complex material with high element interactivity [Multimedia-6] [T3].
+  for complex material with high element interactivity [Multimedia-6] [T5].
 
 - **Spaced learning with temporal gaps is superior to massed learning.** Distributing
   practice and content exposure across time produces stronger long-term retention
   than concentrating the same content into a single session. Course modules should
   build in spaced retrieval opportunities — revisiting earlier concepts in later
-  modules, not just moving linearly through new content [CogLoad-6] [T1].
+  modules, not just moving linearly through new content [CogLoad-6] [T2].
 
 - **Active learning activities at appropriate cognitive levels improve outcomes.**
   Activities must match the cognitive level of the objective they serve. A module
@@ -389,7 +389,7 @@ Key findings encoded as decision rules in this skill:
   the organization and key concepts of material — headings, summaries, learning
   objectives at the start of each module — help learners build accurate mental
   models. Every module should open with a clear statement of what learners will
-  accomplish and close with a synthesis of key takeaways [Multimedia-6] [T3].
+  accomplish and close with a synthesis of key takeaways [Multimedia-6] [T5].
 
 ---
 
@@ -625,7 +625,7 @@ All of the materials are on the course site."]
   institution text. Put the institution's own words in a Markdown block quotation
   (lines that start with `> `). The writing check skips block quotations.
 - The schedule should show a clear progression. If spaced practice is built in,
-  note where earlier topics resurface [CogLoad-6] [T1].
+  note where earlier topics resurface [CogLoad-6] [T2].
 
 Present the syllabus to the user for review. Iterate if needed. Do not move to
 Step 4 until the user approves the syllabus.
@@ -721,7 +721,7 @@ module will resurface later.]
 - Use pre-assessment or self-assessment to help learners choose their path
 - Ensure the core activity works at the median expertise level
 
-**Segmenting and spacing** [Multimedia-6] [T3] [CogLoad-6] [T1]:
+**Segmenting and spacing** [Multimedia-6] [T5] [CogLoad-6] [T2]:
 - No single content section should exceed what a learner can process in one
   sitting. For complex material, break into subsections with practice or
   reflection points between them.
@@ -730,7 +730,7 @@ module will resurface later.]
   is spaced practice, which is one of the strongest effects in learning
   science.
 
-**Signaling** [Multimedia-6] [T3]:
+**Signaling** [Multimedia-6] [T5]:
 - Every module opens with objectives (advance organizer)
 - Every module closes with a summary (consolidation)
 - Key terms and concepts are highlighted or called out

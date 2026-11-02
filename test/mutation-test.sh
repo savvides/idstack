@@ -332,7 +332,7 @@ fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import io, sys
 p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
-old = '<span class="meta-tier">T3</span>'
+old = '<span class="meta-tier">T2–T5</span>'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 io.open(p, 'w', encoding='utf-8').write(s.replace(old, '<span class="meta-tier">T1–T5</span>'))
 PY
@@ -1906,9 +1906,9 @@ fresh
 python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "**Segmenting and spacing** [Multimedia-6] [T3] [CogLoad-6] [T1]:\n"
+old = "**Segmenting and spacing** [Multimedia-6] [T5] [CogLoad-6] [T2]:\n"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "**Segmenting and spacing** [Multimedia-6] [CogLoad-6] [T1] [T3]:\n", 1)
+s = s.replace(old, "**Segmenting and spacing** [Multimedia-6] [CogLoad-6] [T2] [T5]:\n", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 regen

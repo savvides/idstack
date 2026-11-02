@@ -459,7 +459,7 @@ assessments to match."**
 For each objective provided, classify on both Bloom's dimensions (knowledge and
 cognitive process) before proceeding to assessment design. Use the same classification
 approach as the `/idstack:learning-objectives` skill: ask for clarification when verbs are
-ambiguous [Alignment-12] [T2].
+ambiguous [Alignment-12] [T4].
 
 ### Mode 3: Audit Existing Assessments
 
