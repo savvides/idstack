@@ -95,7 +95,7 @@ _Audit mode and gap-fill mode start only when the manifest already has assessmen
 - `/idstack:needs-analysis`, `/idstack:assessment-design`, and `/idstack:course-builder` auto-detect imported courses and switch behavior. Needs-analysis runs a design-fit check instead of the training-decision gate. Assessment-design switches to audit mode (classifies existing rubric criteria on Bloom's). Course-builder switches to gap-fill mode (generates only the artifacts upstream skills flagged as missing).
 
 ### Red-team in a clean-context sub-agent + triage-and-fix loop (v2.2)
-- `/idstack:red-team` now spawns a clean-context sub-agent so the audit can't inherit build-bias from the parent. After the audit, control returns to the parent with a triage-and-fix prompt (Critical / Critical+High / All / Skip).
+- `/idstack:red-team` now spawns a clean-context sub-agent so the audit can't inherit build-bias from the parent. After the audit, control returns to the parent with a triage-and-fix prompt (Critical only / Critical + Warning / All findings / Skip).
 
 ### Manifest-merge tool + schema cleanup (v2.1)
 - New `bin/idstack-manifest-merge` is the canonical write path: section-scoped, atomic (tempfile + rename), preserves foreign sections, accepts only the section names in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback.

@@ -26,7 +26,7 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
 
 ## Typography
 
-- **Display + body:** **Source Serif 4** (Adobe / open source). Body-serif is the deliberate commitment — every paragraph reinforces the publication mood. Source Serif 4 has multiple optical sizes (`opsz` axis) so the same family handles 13px captions through 65px hero headlines without going off-design.
+- **Display + body:** **Source Serif 4** (Adobe / open source). Body-serif is the deliberate commitment — every paragraph reinforces the publication mood. Source Serif 4 has multiple optical sizes (`opsz` axis) so the same family handles 13px captions through display headings without going off-design.
 - **UI / labels / badges / table cells:** **Public Sans** (USWDS / open source). Designed for US-government documents; reads as "official record" rather than "SaaS chrome." Anti-Inter.
 - **Landing display voice:** on `docs/index.html` only, headings use **Public Sans 700** with tight tracking (−0.02 to −0.03em). Body text stays Source Serif 4. Headlines then read as an official record rather than an editorial essay; the May 2026 landing with serif headlines read as generic. Reports are unchanged.
 - **Citations / IDs / code / file paths:** **JetBrains Mono** (open source). Citations like `[Alignment-14] [T1]` are the academic-paper convention rendered in mono: functional reference notation, not decorative.
@@ -35,13 +35,15 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
 
   | Token | rem | px | Role |
   |---|---|---|---|
-  | `h1` | 3.82 | 65 | Page title (report header, landing hero) |
+  | `h1` | 3.82 | 65 | Page title (reference scale; the landing hero uses its own size, see below) |
   | `h2` | 2.44 | 41 | Section heading |
   | `h3` | 1.95 | 33 | Subsection heading |
   | `h4` | 1.56 | 27 | Finding card title |
   | `h5` | 1.25 | 21 | Inline emphasis heading |
   | `body` | 1.00 | 17 | Default paragraph |
   | `small` | 0.80 | 14 | Captions, mono citations, badges |
+
+- **Landing page sizes:** `docs/index.html` sets no root font size, so there 1rem = 16px and the 17px base is only the body text size (`body { font-size: 1.0625rem }`). The hero `h1` is Public Sans 700 at `clamp(2rem, 5vw, 3.3rem)`, which is 32px to about 53px.
 
 - **Line heights:** 1.65 body · 1.20 display · 1.40 UI.
 - **When to use fluid `clamp()` type (landing page):** only where the size genuinely moves —

@@ -35,7 +35,7 @@ idstack runs inside Claude Code, which is operated by Anthropic. Your conversati
 - `/idstack:course-import` **downloads** your course data from Canvas.
 - `/idstack:course-export` **uploads** generated course content to Canvas — modules, pages, assignments, and discussions are POSTed to your Canvas instance so they appear in the course.
 
-Both run only when you invoke that skill and confirm the target course. You paste your token into `.idstack/canvas.env` in your course folder, not into the chat. idstack makes that file readable only by you and adds it to `.idstack/.gitignore`, so git does not add it. The token is used for those API calls and is not sent anywhere else. When you are done, delete the file or revoke the token in Canvas. The receiving Canvas instance is your institution's, not ours.
+Both run only when you invoke that skill and give it the Canvas URL and course ID. `/idstack:course-export` also changes Canvas only after you approve its export plan. You paste your token into `.idstack/canvas.env` in your course folder, not into the chat. idstack makes that file readable only by you and adds it to `.idstack/.gitignore`, so git does not add it. The token is used for those API calls and is not sent anywhere else. When you are done, delete the file or revoke the token in Canvas. The receiving Canvas instance is your institution's, not ours.
 
 **Citation currency check.** `/idstack:red-team` uses Claude Code's WebSearch tool when it is available. It searches the web for newer meta-analyses, trials or retractions for each T1 or T2 citation that the course uses. The search terms come from the cited studies, not from your course text. Without WebSearch, the audit runs without this check.
 

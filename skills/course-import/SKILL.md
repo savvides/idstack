@@ -533,7 +533,7 @@ Every recommendation and flag includes its evidence tier:
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 - If `needs_analysis` has data from /idstack:needs-analysis: note it. You will PRESERVE
   this data. Import adds to task_analysis (job_tasks) and does not replace it.

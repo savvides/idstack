@@ -171,7 +171,7 @@ You can use idstack in the Code tab of the [Claude desktop app](https://claude.a
 5. Start a new session. Select the course folder again with the folder button. Claude Code loads a plugin only when a session starts.
 6. Type `/idstack:start` and press Return. idstack checks your setup, then asks how you want to start.
 
-Each skill gives you a link to its report. Click the link to open the report in the app.
+Each skill that writes a report gives you a link to it. Click the link to open the report in the app.
 
 **macOS asks you to install developer tools?** idstack needs python3. Click **Install** in the macOS window. When the installation is complete, type `/idstack:start` again.
 
