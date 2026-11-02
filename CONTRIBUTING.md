@@ -44,7 +44,7 @@ allowed-tools:
 
 The bare `name` field becomes the slash-command suffix: `name: course-import` is invoked as `/idstack:course-import`. The installed plugin handles the `idstack:` namespace; do not prefix the name yourself.
 
-**2. `{{PREAMBLE}}` placeholder** — this is replaced by `bin/idstack-gen-skills` with the shared preamble (writing standard, update check, manifest check, context recovery).
+**2. `{{PREAMBLE}}` placeholder** — this is replaced by `bin/idstack-gen-skills` with the shared preamble (writing standard, manifest check, context recovery).
 
 **3. Skill implementation** — the rest of the file is Markdown that defines the skill's workflow, decision trees, and outputs.
 

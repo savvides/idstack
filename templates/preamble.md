@@ -162,16 +162,6 @@ prompt. The sub-agent cannot see this preamble.
 Example sentences in a skill show the content of a message. Write them in STE when you
 use them.
 
-## Preamble: Update Check
-
-```bash
-{{IDSTACK_RESOLVE}}
-_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-if [ -n "$_UPD" ]; then echo "$_UPD"; fi
-```
-
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It installs the new version in Claude Code." Then continue normally.
-
 ## Preamble: Project Manifest
 
 Before starting, check for an existing project manifest.

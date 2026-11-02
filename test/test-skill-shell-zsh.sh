@@ -23,7 +23,7 @@ echo "test-skill-shell-zsh"
 check "zsh is installed (CI installs it on Linux)" "command -v zsh"
 command -v zsh >/dev/null 2>&1 || { echo ""; echo "Results: $PASS/$TOTAL passed, $FAIL failed"; exit 1; }
 
-# A copy of the plugin without .git, so the update check makes no network call.
+# A copy of the plugin, used as IDSTACK_HOME.
 mkdir -p "$WORK/plugin"
 cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/evidence" "$IDSTACK_DIR/VERSION" "$WORK/plugin/"
 export IDSTACK_HOME="$WORK/plugin"

@@ -331,10 +331,9 @@ RUN (Claude Code, inside your course project folder)
 
   /idstack:<skill>
      │
-     ├─ preamble: update check (bin/idstack-update-check) · manifest check
-     │            (bin/idstack-migrate) · preferences · designer profile
-     │            (~/.idstack/profile.yaml) · context recovery (reads the
-     │            timeline and learnings below)
+     ├─ preamble: manifest check (bin/idstack-migrate) · preferences ·
+     │            designer profile (~/.idstack/profile.yaml) · context
+     │            recovery (reads the timeline and learnings below)
      ▼
   workflow: one AskUserQuestion at a time
      │  cites evidence/references.md as [Domain-N] [T1–T5]

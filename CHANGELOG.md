@@ -29,7 +29,7 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
   - The README and the landing page show the 4 import options of `/idstack:course-import`, and the Canvas token goes into `.idstack/canvas.env`, not into the chat.
   - The README sample session shows the draft sections and the approval questions.
   - The red-team triage options, the report-section flow and the evidence table are correct.
-  - The README tells how to update an install from the Claude desktop app. idstack does not tell you about a new version: the update check runs only from a git clone.
+  - The README tells how to update an install from the Claude desktop app.
 - **PRIVACY.md names the citation search of `/idstack:red-team` and `.idstack/canvas.env`.**
 - **Some fixed text in the skills is correct now.**
   - `/idstack:accessibility-review` gives the WCAG and UDL scores out of 50.
@@ -39,6 +39,10 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
   - `/idstack:red-team` tells you to run it again for a new score.
   - The demo of a full-course audit in the Chrome extension says that it is a sample.
 - **CONTRIBUTING.md, CLAUDE.md, ROADMAP.md and `templates/manifest-schema.md` are correct.** They describe what `bin/idstack-manifest-merge` checks and which skills write each manifest section. They also list the test suites and mark the features that a later release removed.
+
+### Removed — the update check
+
+- **idstack does not check for updates.** `bin/idstack-update-check` ran `git fetch` only when the skills ran from a git clone. Every plugin install runs from the plugin folder of Claude Code, which has no `.git` folder, so the check did not run for those installs. The script and the update step of the preamble are removed, so no skill makes a request to GitHub. To update, use the steps in the README. Closes #149.
 
 ### Fixed — a stopped skill and the extension feedback
 

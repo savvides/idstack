@@ -180,25 +180,6 @@ prompt. The sub-agent cannot see this preamble.
 Example sentences in a skill show the content of a message. Write them in STE when you
 use them.
 
-## Preamble: Update Check
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-if [ -n "$_UPD" ]; then echo "$_UPD"; fi
-```
-
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It installs the new version in Claude Code." Then continue normally.
-
 ## Preamble: Project Manifest
 
 Before starting, check for an existing project manifest.
@@ -515,15 +496,13 @@ The preamble says "This skill will create or update the manifest during its
 workflow." That line is not true for this skill. The preamble can update an old
 manifest to the current schema. That is correct.
 
-In this skill, do not give the NO_PROFILE note. If the Update Check shows
-UPDATE_AVAILABLE, tell the user that a new version of idstack is available. Do
-not give the update command.
+In this skill, do not give the NO_PROFILE note.
 
 When Step 4 starts a different skill with the Skill tool, the limits of this
 skill stop. Do all of the steps of that skill, including the files that it
-writes and its timeline entry. Three rules of this skill stay in effect after the
-handoff. Do not give the update command, and do not give the NO_PROFILE note.
-Do not give the welcome-back message again.
+writes and its timeline entry. Two rules of this skill stay in effect after the
+handoff. Do not give the NO_PROFILE note, and do not give the welcome-back
+message again.
 
 ## Step 1: Setup check
 
