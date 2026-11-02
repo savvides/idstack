@@ -12,7 +12,8 @@
 # delete   Removes the most recent entry with the key, atomically. Exit 1 on error.
 # promote  Copies the most recent entry with the key to the global store and
 #          tags it with the source project. Exit 1 on error.
-# Every subcommand needs python3 3.9 or later; without it they exit 2, except log.
+# Every subcommand needs python3 (idstack supports 3.9 or later). If python3 is
+# not on PATH, every subcommand except log exits 2; log exits 0.
 
 LOCAL=".idstack/learnings.jsonl"
 GLOBAL_DIR="$HOME/.idstack/global"

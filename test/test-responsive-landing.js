@@ -7,7 +7,7 @@
  * regression at once. Separately: check() (test/test-helper.sh, which smoke-test.sh sources) prints
  * only the first 5 lines of a failing command, so per-assertion "PASS:" logs would push the real
  * failure out of view — hence no PASS logging, and the problem count printed first so it survives
- * that truncation. Under CI the 5-line cap still elides the 5th problem onward.
+ * that truncation. Under CI (CI set), check() prints all of the output, so nothing is elided.
  *
  * Three rules this file learned the hard way:
  *

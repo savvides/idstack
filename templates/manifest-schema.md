@@ -268,7 +268,7 @@ These document the **shape of array elements and dictionary values** that the ca
 
 **`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape, values are arrays of assessment titles.
 
-**`learning_objectives.alignment_matrix.gaps[]`** — each item:
+**`learning_objectives.alignment_matrix.gaps[]`** — `/idstack:assessment-design` writes each item as the object below. `/idstack:learning-objectives` writes each item as a string that describes the gap. A skill that reads `gaps[]` must accept both forms.
 ```json
 {
   "ilo": "ILO-1",
@@ -282,11 +282,12 @@ These document the **shape of array elements and dictionary values** that the ca
 ```json
 {
   "id": "ILO-1",
-  "statement": "Analyze competitive forces in...",
-  "blooms_level": "analyze",
-  "blooms_confidence": "high|medium|low"
+  "objective": "Analyze competitive forces in...",
+  "knowledge_dimension": "factual|conceptual|procedural|metacognitive",
+  "cognitive_process": "remember|understand|apply|analyze|evaluate|create"
 }
 ```
+`/idstack:course-import` can also add `"confidence": "high|ambiguous"` and `"alignment_status": "imported-unverified"`. `/idstack:learning-objectives` checks these items again.
 
 **`assessments.items[]`** — each item:
 ```json

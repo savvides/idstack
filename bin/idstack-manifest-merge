@@ -36,7 +36,9 @@ Usage:
 Exit codes:
   0  success
   1  malformed payload JSON
-  2  malformed manifest JSON
+  2  malformed manifest JSON, or a command-line error (argparse: a missing
+     --section or --payload, a count mismatch, a repeated --section, or
+     more than one "-" payload)
   3  unknown section name
   4  manifest file not found
   5  payload file not found

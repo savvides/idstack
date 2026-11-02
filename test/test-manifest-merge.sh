@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# (see idstack-migrate --init coverage at the end of this file)
+# (see idstack-migrate --init coverage after Test 12 in this file)
 # Unit tests for bin/idstack-manifest-merge.
-# Run from the repo root (or sourced by smoke-test.sh).
+# Run from the repo root, or through smoke-test.sh, which runs it.
 
 set -e
 

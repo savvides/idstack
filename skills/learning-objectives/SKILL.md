@@ -875,7 +875,7 @@ PAYLOAD
 Replace the placeholder payload above with the actual session data. Include the COMPLETE
 section structure — do not omit fields. `--create` makes a canonical manifest first if `.idstack/project.json` does not
 exist yet (the standalone case). It never replaces a manifest that exists.
-If the tool exits non-zero (e.g., exit 2 = malformed manifest), report the error to the
+If the tool exits non-zero (e.g., exit 2 = malformed manifest or a command-line error), report the error to the
 user and stop; never silently overwrite.
 
 Set `learning_objectives.report_path` to the value of `$_REPORT_PATH` from

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Behavioral tests for bin/idstack-status.
 #
-# --readiness (bin/idstack-status:193-294) is the pre-export gate: it decides
+# --readiness (the "Readiness table" block in bin/idstack-status) is the pre-export gate: it decides
 # whether a course is fit to ship. It had no coverage at all.
 #
 # Verdict-state tests alone are not enough here. A fixture that sits below
