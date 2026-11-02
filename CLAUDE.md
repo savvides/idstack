@@ -25,6 +25,7 @@ bin/idstack-manifest-merge --create --section <s> --payload <f>   # Canonical ma
 bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .idstack/exports/
 bin/idstack-slugify --from-manifest        # Same, from the manifest's project_name (what skills call)
 bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
+bin/idstack-ste-check --format markdown <f> # Use for .tmpl/.md: skips frontmatter and code fences. Reports a paragraph's problems on its first line
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 ```
 
@@ -57,6 +58,10 @@ python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across 
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails.
                                   # A case whose anchor text no longer matches prints ERROR, and no result counts until
                                   # it is fixed. When you rename or move text, grep this file for it and update the anchor
+                                  # The full run takes ~2.5 h. To run only cases from N on (header, baseline and no-op
+                                  # control included): { sed '/^# 1\. /,$d' test/mutation-test.sh;
+                                  #   awk '/^shell_mutation\(\) \{/,/^}/' test/mutation-test.sh;
+                                  #   sed -n '/^# 61a\./,$p' test/mutation-test.sh; } > "$f" && bash "$f" "$(pwd -P)"
 ```
 
 The counts in the comments above are kept by hand. After you add or remove a check, update them from a real run.
@@ -70,6 +75,8 @@ No build step for users. No dependencies beyond bash and python3 3.9 or later; `
 ### Releasing
 
 `VERSION` is the source of truth. A bump must also update `.claude-plugin/plugin.json`, a `## vX.Y.Z.W` entry in `CHANGELOG.md`, `README.md`, and `docs/index.html` (`vX.Y.Z.W` plus the same 4-part `softwareVersion`). smoke-test and `check-doc-accuracy.py` fail on any mismatch. Pushing a `v*` tag runs `release.yml`, which checks the tag against these files and then creates the GitHub release.
+
+If `CHANGELOG.md` has an `## Unreleased` entry when you bump, move its sections into the new `## vX.Y.Z.W` entry (and its summary). Do not leave both headings.
 
 Two versions move on their own schedule. The Chrome extension has its own version in `extension/manifest.json`, and `bin/package-extension.sh` names the zip from it. The manifest schema version (`1.4`) is hard-coded in `templates/manifest-schema.md` and in `check-doc-accuracy.py`, so a schema bump also needs a `bin/idstack-migrate` step.
 
@@ -101,6 +108,8 @@ In a merge or rebase conflict on a generated `SKILL.md`, take either side, resol
 /idstack:start (first-run guide: setup check, folder check, then hands off)
 ```
 
+Adding a skill: update every hard-coded skill list and count. smoke-test catches some of them; `git grep -nE '(^|[^0-9])N skills'` finds the rest (`\b` does not work in `git grep -E` on macOS).
+
 Any skill also works standalone (asks questions directly if no manifest exists).
 
 ### Project manifest and reports — the dual-output contract
@@ -131,6 +140,7 @@ Rules for writing the report:
 - Every skill that writes a report copies `$_IDSTACK/templates/assets/idstack.css` into `.idstack/exports/<course-slug>/assets/idstack.css` so the folder is self-contained when zipped or moved.
 - Write all report text in ASD-STE100, as the "Writing Standard (ASD-STE100)" section of `templates/preamble.md` tells. Write a recommendation as "idstack recommends that you …" or "You can …". Do not use "consider", "may", "should" or "suggest". idstack is a collaborator.
 - Cite every recommendation. Findings without a `[Domain-N] [Tier]` citation belong in *Limitations* or *Notes*, not *Findings*.
+- The report-prep block prints `Report path:` (relative, for the manifest `report_path`) and `Report link:` (absolute, for the user). In a skill's quoted closing message, name the link as a `<…>` placeholder, as `<course-slug>` is: the model says quoted text word for word. Never write "Open it in a web browser"; smoke-test fails on it.
 
 ### SKILL.md.tmpl structure
 
