@@ -176,7 +176,7 @@ No medium / long durations. No scroll-driven animations. No parallax. No entranc
 
 - Gradients of any kind: mesh heroes, gradient text, gradient buttons. This binds the reports and the landing page.
 - A kicker label above every heading. The heading carries its own weight.
-- Equal-size cards for content of unequal weight (for example, research domains with 7 and 15 studies). Rank it and show the difference.
+- Equal-size cards for content of unequal weight (for example, research domains with 10 and 19 studies). Rank it and show the difference.
 - Stock photo of person looking at laptop (Quality Matters does this; category cliché).
 - 3-column or 5-column badge-icon feature grid (Quality Matters has FIVE; category cliché).
 - Bright association blue + orange palette.

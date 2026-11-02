@@ -616,8 +616,8 @@
     .evidence-legend-dot.t4 { background: var(--tier-4); }
     .evidence-legend-dot.t5 { background: var(--tier-5); }
 
-    /* One row per domain, ranked by study count. The bar is 15 studies wide at full
-       length (the largest domain); each segment is that domain's count at one tier. */
+    /* One row per domain, ranked by study count. The bar width scales to the study
+       count (the largest domain = full width); each segment is that domain's count at one tier. */
     .evidence-index { list-style: none; border-top: 1px solid var(--rule-strong); }
     .evidence-row {
       display: grid;
@@ -1240,10 +1240,10 @@
       <div class="pipeline-canvas">
         <p class="pipeline-track-label">Sequence (left to right) under <span class="track-mono">/idstack:pipeline</span></p>
         <ol class="pipeline-flow" role="list">
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 1: needs-analysis. Three-level needs assessment and design-fit gate.">
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 1: needs-analysis. Three-level needs assessment and training-decision gate, or a design-fit check for an imported course.">
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">needs-analysis</span>
-            <span class="node-desc">Three-level needs assessment; design-fit gate.</span>
+            <span class="node-desc">Three-level needs assessment; training-decision gate (design-fit check for imports).</span>
           </li>
           <li class="pipeline-node" tabindex="0" aria-label="Skill 2: learning-objectives. Bloom's classification and bidirectional alignment.">
             <span class="node-num" aria-hidden="true"></span>
