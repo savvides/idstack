@@ -270,8 +270,9 @@ When working in this repo, route user requests to the appropriate idstack skill:
 - Package for LMS (IMS Common Cartridge, Canvas API, SCORM) → `/idstack:course-export`
 - Search, prune, promote, or export cross-project learnings → `/idstack:learn`
 
-Skills are auto-discovered by Claude Code via the plugin manifest at
-`.claude-plugin/plugin.json`.
+Claude Code auto-discovers the skills from the plugin's default `skills/`
+directory (`skills/<name>/SKILL.md`). `.claude-plugin/plugin.json` registers
+the plugin (name, version, metadata) and does not list the skills.
 
 ## Design system
 

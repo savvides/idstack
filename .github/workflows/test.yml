@@ -69,8 +69,9 @@ jobs:
         with:
           python-version: '3.9'
       # Node 22 for the same two reasons as the test job, and a hard requirement here: fresh()
-      # copies extension/ and smoke runs test-extension.sh in every case, and the landing-page
-      # mutations are guarded only by the node suites, so without node they report NOT-GUARDED.
+      # copies extension/ and smoke runs test-extension.sh in every case, and the responsive
+      # landing-page mutations are guarded only by the node suites (test-responsive-landing.js,
+      # test-rendered-landing.js), so without node they report NOT-GUARDED.
       # The rendered-landing mutation additionally needs Chrome.
       - uses: actions/setup-node@v4
         with:

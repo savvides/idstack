@@ -95,7 +95,8 @@ done
 
 # Landing page (docs/index.html) - "Evidence Instrument" invariants (DESIGN.md,
 # 2026-11-01). The landing uses the Proof tokens and fonts from DESIGN.md with a
-# prussian hero; it is the only styled surface, since reports are plain Markdown.
+# prussian hero. Since reports are plain Markdown, the landing and the Chrome
+# extension side panel are the only styled surfaces.
 # Guards against regressions: the dark/indigo look or its gradients coming back,
 # a theme toggle creeping in (dark mode follows prefers-color-scheme), the fonts
 # drifting from DESIGN.md, or the stale bare-clone install string returning
@@ -437,8 +438,9 @@ for skill in $SKILLS; do
 done
 rm -rf "$STE_NOCHK"
 
-# The Step Review. Each report skill shows the output of each step in a table,
-# the user approves it, and bin/idstack-report-section adds it to the report.
+# The Step Review. After each step, bin/idstack-report-section adds the output
+# to the report file as a draft section with a table. The user reads it there
+# and approves it, and `approve` removes the draft mark.
 if command -v python3 &>/dev/null; then
   check "report-section unit tests pass" "python3 '$IDSTACK_DIR/test/test-report-section.py'"
 fi

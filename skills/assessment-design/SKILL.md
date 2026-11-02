@@ -34,7 +34,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   in plain chat and stop for the answer.
 - **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
   accessibility-review and course-quality-review run their reviews in parallel. red-team
-  starts one orchestrator, which runs its five dimensions in parallel. course-builder
+  starts one orchestrator, which runs its five dimensions. course-builder
   starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
   returns nothing, accessibility-review and course-quality-review run its steps
@@ -669,7 +669,7 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **Announce the chosen mode to the user as the first sentence:**
 
-> "Mode 3: audit-existing. The imported course contains [N] assessments and [M] rubrics. I will audit them against your ILOs. I will not design new assessments. To add new assessments, say 'design more'."
+> "Mode 3: audit-existing. idstack found [N] assessments and [M] rubrics from an earlier idstack run on this imported course. I will audit them against your ILOs. I will not design new assessments. To add new assessments, say 'design more'."
 
 **What audit-existing does (and doesn't do):**
 

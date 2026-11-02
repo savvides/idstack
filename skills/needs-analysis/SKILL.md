@@ -33,7 +33,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   in plain chat and stop for the answer.
 - **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
   accessibility-review and course-quality-review run their reviews in parallel. red-team
-  starts one orchestrator, which runs its five dimensions in parallel. course-builder
+  starts one orchestrator, which runs its five dimensions. course-builder
   starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
   returns nothing, accessibility-review and course-quality-review run its steps
@@ -934,7 +934,7 @@ PAYLOAD
 (Skills also read this file raw, so it carries no `IDSTACK_RESOLVE` placeholder
 and no copy of the resolve lines.)
 
-The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. `--create` makes a canonical manifest first when there is none. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
+The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. When there is no manifest, `--create` first makes one with `bin/idstack-migrate --init`. That manifest is at the current schema version and has every top-level section, but a section can lack fields until its skill writes it. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
 
 **2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
 

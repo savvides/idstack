@@ -44,7 +44,7 @@ Skills build the Markdown structure from `templates/report.md.tmpl`. The data ea
 - **Severity taxonomy.** `critical` (course will measurably fail learners) / `warning` (likely problem worth addressing) / `info` (worth knowing, not blocking).
 - **Tier taxonomy** comes from `evidence/references.md` — `T1` (RCTs/meta-analyses) through `T5` (expert opinion).
 - **Don't pad.** Three solid findings beat ten thin ones. The designer's time is the binding constraint.
-- **Match the manifest.** Every finding in the report must correspond to a finding in the manifest's structured arrays (`findings`, `wcag_violations`, `flags`, etc.) so downstream skills can read them programmatically.
+- **Match the manifest where it has findings.** When the skill's manifest section has a findings array (`quality_review`, `red_team_audit`, `accessibility_review`), each finding in the report corresponds to an item in that array, so downstream skills can read it programmatically. needs-analysis, course-builder, course-export and course-import keep their findings only in the report; their manifest sections hold counts and state, not the findings.
 - **No raw JSON in the report.** Use tables, prose, and lists. The JSON lives in the manifest; the Markdown is for the human.
 - **Markdown, not HTML.** Skills write plain Markdown: headings, paragraphs, lists, pipe tables and code spans. Do not write HTML elements, classes or styles. Write the citation as plain text (`[Alignment-14] [T1]`). When prose contains code, file paths, or skill names, put them in a code span (`` ` ``).
 - **Self-contained folder.** A report has no stylesheet, scripts or images. Links between reports are relative (`[Course dashboard](index.md)`), so the folder still works when it is zipped or moved.

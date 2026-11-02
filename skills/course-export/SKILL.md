@@ -34,7 +34,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   in plain chat and stop for the answer.
 - **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
   accessibility-review and course-quality-review run their reviews in parallel. red-team
-  starts one orchestrator, which runs its five dimensions in parallel. course-builder
+  starts one orchestrator, which runs its five dimensions. course-builder
   starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
   returns nothing, accessibility-review and course-quality-review run its steps
@@ -1006,10 +1006,10 @@ file "$_EXPORT_DIR/course-export.imscc"
 unzip -l "$_EXPORT_DIR/course-export.imscc"
 # Count items
 echo "---"
-echo "Module pages: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'modules/' | wc -l)"
-echo "Assignments: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'assignments/' | wc -l)"
-echo "Quizzes: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'quizzes/' | wc -l)"
-echo "Discussions: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'discussions/' | wc -l)"
+echo "Module pages: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'modules/[^/]' | wc -l)"
+echo "Assignments: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'assignments/[^/]' | wc -l)"
+echo "Quizzes: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'quizzes/[^/]' | wc -l)"
+echo "Discussions: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'discussions/[^/]' | wc -l)"
 ```
 
 Do not show this output in the chat. From it, collect the data for the rows of
@@ -1408,7 +1408,7 @@ Replace `<export folder>` again, then run the command:
 _EXPORT_DIR="<export folder>"
 file "$_EXPORT_DIR/scorm-export.zip"
 unzip -l "$_EXPORT_DIR/scorm-export.zip" | head -20
-echo "Total files: $(unzip -l "$_EXPORT_DIR/scorm-export.zip" | tail -1)"
+echo "Total files: $(unzip -Z1 "$_EXPORT_DIR/scorm-export.zip" | grep -vc '/$')"
 ```
 
 Verify:
