@@ -26,24 +26,29 @@ bin/idstack-slugify "<project name>"       # Derive the <course-slug> used for .
 bin/idstack-slugify --from-manifest        # Same, from the manifest's project_name (what skills call)
 bin/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
 bin/idstack-ste-check --format markdown <f> # Use for .tmpl/.md: skips frontmatter and code fences. Reports a paragraph's problems on its first line
+bin/idstack-report-section init <report> --skill <s> --title <t>   # Start a report: header, status line, placeholders (--reserve, --mode)
+bin/idstack-report-section check <draft>   # Check a draft section: table shape, citation tiers, ASD-STE100
+bin/idstack-report-section append <report> <draft>   # Check, then add the section to the report as a draft (atomic)
+bin/idstack-report-section approve <report> [--draft <f>]  # Remove each draft mark; print SECTION_APPROVED: <heading>; delete the draft
+bin/idstack-report-section finish <report> # Fail on a placeholder or a draft that remains; remove the status line
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 ```
 
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash and node suites):
 
 ```bash
-./test/smoke-test.sh              # 474 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 537 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 52 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 10 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
 ./test/test-doctor.sh             # 18 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches and --quick
-./test/test-status.sh             # 24 tests for bin/idstack-status, incl. the --readiness export gate
+./test/test-status.sh             # 27 tests for bin/idstack-status, incl. the --readiness export gate
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on 3.9 and 3.12
-./test/test-skill-shell-zsh.sh    # 58 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
+./test/test-skill-shell-zsh.sh    # 84 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules via
                                   # test/extension-harness.mjs (Node >= 20.19 or 22.7; never add .cjs twins)
@@ -51,6 +56,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # bin/idstack-ste-check unit tests (smoke-test also runs them)
+python3 test/test-report-section.py     # 35 tests for bin/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
 python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
@@ -63,6 +69,9 @@ python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across 
                                   # control included): { sed '/^# 1\. /,$d' test/mutation-test.sh;
                                   #   awk '/^shell_mutation\(\) \{/,/^}/' test/mutation-test.sh;
                                   #   sed -n '/^# 61a\./,$p' test/mutation-test.sh; } > "$f" && bash "$f" "$(pwd -P)"
+                                  # To check only that every anchor still matches (~30 s): run a copy in which
+                                  # expect_fail records STALE instead of running the suites, with the baseline
+                                  # smoke run and the case-0 no-op control turned off
 ```
 
 The counts in the comments above are kept by hand. After you add or remove a check, update them from a real run.
@@ -72,6 +81,17 @@ The counts in the comments above are kept by hand. After you add or remove a che
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9. The test, mutation and release jobs pin Node 22 for the extension and rendered-landing tests.
 
 No build step for users. No dependencies beyond bash and python3 3.9 or later; `bin/idstack-doctor` reports a missing or older python3. Skills are plain Markdown files.
+
+### Testing a branch in the desktop app
+
+Desktop sessions load idstack from the GitHub marketplace. To try a worktree, then switch back:
+
+```bash
+claude plugin marketplace remove idstack && ./setup    # point the install at this checkout
+claude plugin uninstall idstack@idstack && claude plugin install idstack@idstack   # same VERSION keeps the old cache; reinstall copies the new files
+# ...open a NEW session in a course folder (a running one keeps the skill it already loaded)...
+claude plugin marketplace remove idstack && claude plugin marketplace add https://github.com/savvides/idstack.git && claude plugin install idstack@idstack
+```
 
 ### Releasing
 
@@ -120,13 +140,15 @@ Any skill also works standalone (asks questions directly if no manifest exists).
 Every skill that produces findings writes **both**:
 
 1. **JSON section** in `.idstack/project.json` — system state for downstream skills, the pipeline orchestrator, and `bin/idstack-status`.
-2. **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the human view, branded and self-contained. Visual contract: `templates/report.html.tmpl` + `templates/assets/idstack.css`. Content contract: `templates/report-format.md`. The skill writes the relative path back into its section's `report_path` field.
+2. **Markdown report** at `.idstack/exports/<course-slug>/<skill>.md` — the human view, plain Markdown with no styling. Skeleton: `templates/report.md.tmpl`. Content contract: `templates/report-format.md`. The skill writes the relative path back into its section's `report_path` field.
 
-The HTML is what the instructional designer reads (open in any browser; the folder is self-contained, with CSS bundled). The JSON is for the system. The two stay in sync: every finding in the report corresponds to a finding in the manifest's structured arrays.
+After each step, `bin/idstack-report-section` adds the output to the report at once as a draft section with a table (the "Step Review" in `templates/preamble.md`). The user reads the table in the report file, not in the chat. The chat keeps only a note of a maximum of three lines and the question. When the user approves the section, `approve` removes the draft mark. A stopped session keeps every section, and an unapproved one keeps its draft mark. The manifest is written after `finish` and holds only approved rows, and scores come from approved rows.
 
-`<course-slug>` is derived from the manifest's `project_name` via `bin/idstack-slugify` (NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). All per-course artifacts — every per-skill HTML report, the pipeline `index.html` dashboard, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder, so the deliverable is self-describing when zipped, emailed, or handed off.
+The Markdown report is what the instructional designer reads. The JSON is for the system. The two stay in sync: every finding in the report corresponds to a finding in the manifest's structured arrays.
 
-`/idstack:pipeline` produces `.idstack/exports/<course-slug>/index.html` — the cross-cutting course dashboard. It surfaces readiness scores, top issues that recur across multiple skills, evidence themes, links to every per-skill report, and where to start. Regenerated on every pipeline run (including partial runs and explicit re-runs when all skills are already complete).
+`<course-slug>` is derived from the manifest's `project_name` via `bin/idstack-slugify` (NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). All per-course artifacts — every per-skill Markdown report, the pipeline `index.md` dashboard, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder, so the deliverable is self-describing when zipped, emailed, or handed off.
+
+`/idstack:pipeline` produces `.idstack/exports/<course-slug>/index.md` — the cross-cutting course dashboard, from the skeleton in `templates/index.md.tmpl`. It surfaces readiness scores, top issues that recur across multiple skills, evidence themes, links to every per-skill report, and where to start. Regenerated on every pipeline run (including partial runs and explicit re-runs when all skills are already complete).
 
 Rules for writing the manifest:
 
@@ -139,11 +161,15 @@ Rules for writing the manifest:
 
 Rules for writing the report:
 
-- Follow the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md` — observation → evidence → why-it-matters → recommendation, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. Use the CSS hooks the stylesheet styles: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`.
-- Every skill that writes a report copies `$_IDSTACK/templates/assets/idstack.css` into `.idstack/exports/<course-slug>/assets/idstack.css` so the folder is self-contained when zipped or moved.
+- Follow the skeleton in `templates/report.md.tmpl` and the **content contract** in `templates/report-format.md` — observation → evidence → why-it-matters → recommendation, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. Write Markdown, not HTML: `## <Heading>` sections, pipe tables and plain-text citations (`[Domain-N] [TN]`). There is no stylesheet to copy.
+- Build the report with the preamble's Step Review, never in one write. Run `init` in the report-prep block, `check` and `append` for each draft, `approve` when the user approves it, then `finish`. Never show the table in the chat or put a row in the question. A skill names the section and its columns and does not repeat the procedure.
+- Every step table has `ID` first and `Justification | Evidence` last: one sentence and a citation from `evidence/references.md` per row. `check` refuses a code that is not there or has the wrong tier. Fact sections (Project context, Course information, Imported structure, Readiness, Export contents, Generated artifacts) have no Justification or Evidence.
+- Findings are a table (`ID | Severity | What we saw | Recommendation | Justification | Evidence`). The helper writes the `### Finding` blocks from it. The skill does not.
 - Write all report text in ASD-STE100, as the "Writing Standard (ASD-STE100)" section of `templates/preamble.md` tells. Write a recommendation as "idstack recommends that you …" or "You can …". Do not use "consider", "may", "should" or "suggest". idstack is a collaborator.
 - Cite every recommendation. Findings without a `[Domain-N] [Tier]` citation belong in *Limitations* or *Notes*, not *Findings*.
-- The report-prep block prints `Report path:` (relative, for the manifest `report_path`) and `Report link:` (absolute, for the user). In a skill's quoted closing message, name the link as a `<…>` placeholder, as `<course-slug>` is: the model says quoted text word for word. Never write "Open it in a web browser"; smoke-test fails on it.
+- The report-prep block prints `Report path:`, relative to the course folder. The skill writes it to the manifest `report_path` and gives it to the user as a Markdown link, with the same path as the link text and no angle brackets (the "Report Links" section of `templates/preamble.md`). The slug is ASCII kebab-case, so the relative path has no spaces and the link opens in the Claude desktop app. `/idstack:pipeline` and `/idstack:start` print `Dashboard path:` for the dashboard in the same way. In a skill's quoted closing message, name the link as a `<…>` placeholder, as `<course-slug>` is: the model says quoted text word for word. Never write "Open it in a web browser"; smoke-test fails on it.
+- In the desktop app a path in chat is a link only when it is relative to the session folder: a Markdown link (any link text) or a path in backticks. An absolute path and a bare path are plain text (tested in the app). The Step Review note writes the exact line `Read the draft in [<path>](<path>).`, with the path that `append` prints. Given only "the report link", the model wrote the report name as plain text.
+- AskUserQuestion refuses an option with no description. Give every option a short description; never write a rule that removes them.
 
 ### SKILL.md.tmpl structure
 
@@ -161,11 +187,12 @@ The shared preamble includes: interaction conventions (defines how skills use `A
 
 Python that the preamble runs must parse on Python 3.9 — the version macOS ships. Context Recovery calls `bin/idstack-status --context`, which reads the timeline with the same code as the dashboard; `test/test-preamble-python.sh` runs the preamble block against it on 3.9 and 3.12. A syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases. Skills get the course slug from `bin/idstack-slugify --from-manifest`, never from inline Python.
 
-### Shared shell libraries
+### Shared libraries
 
-Logic used by more than one script — or that deserves a unit test — lives in `bin/lib/` and is sourced by its callers rather than inlined:
+Logic used by more than one script — or that deserves a unit test — lives in `bin/lib/` and is loaded by its callers rather than inlined:
 
 - `bin/lib/plugin-status.sh` — parses `claude plugin list` output into idstack's own entry
+- `bin/lib/citations.py` — parses `[Code-N] [Tn]` citations and the tiers in `evidence/references.md`. Imported by `bin/idstack-report-section` and `test/check-citation-tiers.py`
 
 Test the shipped file, never a copy. The version classifier drifted across three PRs while a mirrored copy in its test passed green.
 
@@ -248,4 +275,4 @@ Skills are auto-discovered by Claude Code via the plugin manifest at
 
 Always read `DESIGN.md` (repo root) before making any visual or UI decision in this project. All font choices, colors, spacing, border radii, motion timing, and aesthetic direction are defined there. Do not deviate without explicit user approval and a corresponding update to `DESIGN.md`.
 
-When generating HTML reports, the report stylesheet at `templates/assets/idstack.css` is the canonical implementation of `DESIGN.md`. Any update to `DESIGN.md` should be reflected there (and in `docs/index.html` for landing-page tokens) in the same PR.
+Reports and the dashboard are plain Markdown and carry no styling, so `DESIGN.md` does not apply to them. Reflect any update to `DESIGN.md` in `docs/index.html` (landing-page tokens) in the same PR.

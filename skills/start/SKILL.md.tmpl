@@ -152,23 +152,23 @@ step." Then STOP.
 {{IDSTACK_RESOLVE}}
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
-if [ -f "$_EXPORT_DIR/index.html" ]; then
-  echo "Dashboard link: $(pwd -P)/$_EXPORT_DIR/index.html"
-  if find "$_EXPORT_DIR" -maxdepth 1 -name '*.html' ! -name index.html -newer "$_EXPORT_DIR/index.html" | grep -q .; then echo "DASHBOARD_OLD"; fi
+if [ -f "$_EXPORT_DIR/index.md" ]; then
+  echo "Dashboard path: $_EXPORT_DIR/index.md"
+  if find "$_EXPORT_DIR" -maxdepth 1 -name '*.md' ! -name index.md -newer "$_EXPORT_DIR/index.md" | grep -q .; then echo "DASHBOARD_OLD"; fi
 else
   echo "NO_DASHBOARD"
-  find "$_EXPORT_DIR" -maxdepth 1 -name '*.html' 2>/dev/null | sort | while IFS= read -r f; do echo "Report link: $(pwd -P)/$f"; done
+  find "$_EXPORT_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | sort | while IFS= read -r f; do echo "Report path: $f"; done
 fi
 ```
 
-- **Dashboard link:** give the path as the "Report Links" section of the
-  preamble tells you. If the output also shows DASHBOARD_OLD, tell the user:
+- **Dashboard path:** give the path as a link, as the "Report Links" section
+  of the preamble tells you. If the output also shows DASHBOARD_OLD, tell the user:
   "This dashboard is older than some of the reports.
   `/idstack:pipeline` updates the dashboard after it runs the next stage." Then STOP.
 - **NO_DASHBOARD:** Tell the user: "This course has no dashboard.
   `/idstack:pipeline` makes the dashboard. To make it, type
-  `/idstack:pipeline`." Then give each `Report link:` path as
-  the "Report Links" section of the preamble tells you. Then STOP.
+  `/idstack:pipeline`." Then give each `Report path:` path as a
+  link, as the "Report Links" section of the preamble tells you. Then STOP.
 
 ## Step 6: Run one skill
 

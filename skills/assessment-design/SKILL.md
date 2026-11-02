@@ -49,7 +49,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 ## Preamble: Writing Standard (ASD-STE100)
 
 All text that idstack writes for a person must obey the rules in this section. This
-includes chat text, AskUserQuestion questions and options, HTML reports, the course
+includes chat text, AskUserQuestion questions and options, reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
 reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
@@ -251,8 +251,8 @@ except: pass
 fi
 ```
 
-**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
-(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:concise:** Keep explanations brief. Do not cite evidence in chat prose.
+Always cite evidence in Step Review tables and in reports.
 **If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
 considered, and rationale for each recommendation.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
@@ -283,21 +283,189 @@ with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Report Links
 
-A skill that writes a report runs a block that prints a `Report link:` line.
-The line gives the full path of the report. `/idstack:pipeline` and
-`/idstack:start` print a `Dashboard link:` line for the course dashboard.
+A skill that writes a report runs a block that prints a `Report path:` line.
+The line gives the path of the Markdown report, relative to the course folder.
+`/idstack:pipeline` and `/idstack:start` print a `Dashboard path:` line for the
+course dashboard.
 
 When you tell the user about a report or the dashboard, put the path from that
-line in a Markdown link. Put angle brackets around the path, because a folder
-name can have a space. Use link text that names the file, for example "Open
-the report" or "Open the course dashboard". For example:
+line in a Markdown link. Use the same path as the link text. For example:
 
-[Open the report](</Users/ana/Courses/BIO 101/.idstack/exports/bio-101/course-import.html>)
+[.idstack/exports/bio-101/course-import.md](.idstack/exports/bio-101/course-import.md)
 
-In the Claude desktop app, the user clicks the link to open the file. Give only
-a path from a `Report link:` or `Dashboard link:` line, or a link that a
-sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+Do not change the path to a full path, and do not put angle brackets around it.
+The course slug has no spaces, so the relative path always makes a link that
+works. In the Claude desktop app, the user clicks the link to open the report.
+Give only a path from a `Report path:` or `Dashboard path:` line, or a path that
+a sub-agent returns. Do not make up a path. If the skill stopped before it wrote
 the report, do not give the path.
+
+## Preamble: Step Review
+
+Only the skills that write a report do a Step Review. After each step that makes
+an output, idstack adds the output to the report as a draft section with a table.
+The user reads the section in the report file, not in the chat. The user approves
+the section, and idstack removes the draft mark. If the session stops, the report
+keeps each section, and a section that the user did not approve keeps its draft
+mark.
+
+The skill tells you where to do a Step Review with a `**Step review:**` line.
+That line gives the section heading and the table columns.
+
+**The shape of a section**
+
+- Start the section with a `## <Heading>` line. Then write the table.
+- The first column is `ID`. Give each row an ID that does not change, for
+  example `T-1` or `ILO-2`.
+- The last two columns are `Justification` and `Evidence`.
+- In the Justification cell, write one sentence. Tell why the row is correct for
+  this course. Use the evidence from the research.
+- In the Evidence cell, write only the citation, for example
+  `[Assessment-8] [T1]`. Use a code from the "Evidence list:" file. Use the tier
+  that the file gives for that code.
+- If you cannot cite a row, do not put it in the table. Put the text in the
+  Limitations section.
+- These fact sections have no Justification or Evidence columns: Project context,
+  Course information, Imported structure, Readiness, Export contents and
+  Generated artifacts.
+- A findings table has these columns:
+  `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+  Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
+  first, then `warning`, then `info`. Do not write `### Finding` blocks.
+  idstack writes them from the approved rows.
+
+**The procedure**
+
+1. Write the section to `.idstack/.report-section.md` with the Write tool.
+2. Run the check command:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+```
+
+3. If the output shows problems, correct the draft. Then do step 2 again. Do the
+   check a maximum of three times. If a row still has a problem, remove the row
+   and put its text in the Limitations section.
+4. Run the append command. It adds the section to the report as a draft. In
+   this command, replace `<path>` with the path from the "Report path:" line.
+   Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+```
+
+5. Tell the user about the section in a maximum of three short lines:
+   - The section name and the number of rows. For findings, give the number of
+     each severity.
+   - The most important row, in one sentence.
+   - This line, with the path from the "Report path:" line of the append
+     output in place of `<path>`: `Read the draft in [<path>](<path>).` Write
+     the link exactly in this form. Do not write the name of the report as
+     text only. The user clicks the link to open the report.
+   Do not show the table in the chat. Do not put the table, a row or a citation
+   in the question or in its options.
+6. Ask with AskUserQuestion: "Do you approve the <section name> section?" Give
+   these three options. Each option must have its description. Do not add a
+   preview.
+   - "Approve", with the description "Keep this section as it is."
+   - "Change a row", with the description "Tell me the row ID and the change."
+   - "Remove a row", with the description "Tell me the row ID to remove."
+7. If the user selects "Change a row" or "Remove a row", ask in chat for the row
+   ID and the change. Change the draft file. Then go to step 2. The append
+   command replaces the section in the report.
+8. If the user selects "Approve", run the approve command. In this command,
+   replace `<path>` with the path from the "Report path:" line. Then run the
+   command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+```
+
+9. Go to the next step only if the output starts with `SECTION_APPROVED`.
+
+**Rules**
+
+- Ask one question for each Step Review. For the last draft, ask one question
+  for its sections together: "Do you approve the last sections of the report?"
+  This question replaces the old approval question of the step. Questions that collect data from the user stay.
+- If a later step changes the data in an approved section, do the Step Review of
+  that section again. Use the same heading. idstack replaces the old section.
+- Use only the approved rows in the manifest. Calculate each score from the
+  approved rows.
+- If a step has no rows, do not do its Step Review. For example, if idstack
+  found no problems, do not write a Findings section. Tell the result in the
+  Summary. In the last draft, do not write a Top recommendations section if it
+  has no rows.
+- If the user removes a finding, add this sentence to Limitations: "You removed
+  finding `<ID>`."
+- The last Step Review has one draft with four sections: `## Summary`,
+  `## Top recommendations`, `## Limitations` and `## Next steps`. The Summary,
+  Limitations and Next steps sections are text, with no table. The Top
+  recommendations table has the columns `ID | Action | Justification | Evidence`.
+- After the user approves the last section, run the finish command. In this
+  command, replace `<path>` with the path from the "Report path:" line. Then run
+  the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+```
+
+- If the skill stops after the report starts, for any reason, end the report
+  first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
+  not write a Top recommendations section. Then run the finish command. This
+  includes an error, a missing file, and a user who stops the skill.
+- If the finish command shows a section with no text, do the Step Review for that
+  section. If it shows a draft section, ask the user to approve that section.
+  Then run the finish command again.
+- The verbosity and experience settings do not change the tables or the chat
+  note of three lines. Each table always has its citations.
+- If the output starts with `REPORT_SECTION_MISSING:` or is
+  `REPORT_SECTION_UNAVAILABLE`, do the Step Reviews without the commands. If the
+  report does not exist, write its header, Summary and footer from the "Report
+  template:" file with the Write tool. Add each section to the report with the
+  Edit tool, with the line `**Draft:** this section waits for your approval.`
+  under its heading. Remove that line when the user approves the section. Tell the user one time that idstack did not check the
+  citations.
 
 ## Preamble: Context Recovery
 
@@ -444,21 +612,42 @@ The shared preamble above already ran the manifest existence check
 
 Determine your operating mode based on available data. **Check Mode 3 first** — it's the more specific case (imported course with existing assessments) and takes precedence over Mode 1 even when both conditions hold.
 
+### Start the Report
+
+Find the mode with the conditions in Mode 1, Mode 2 and Mode 3 below. Then, before you do the work of the mode, run this block. In the block, replace `<mode>` with `Mode 1`, `Mode 2` or `Mode 3`.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+# Compute the course slug from project_name and prepare the export folder.
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/assessment-design.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
+echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill assessment-design --title "Assessment Design Report" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+```
+
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
+
 ### Mode 1: Full Upstream Data
 
 **Condition:** Manifest exists with populated `learning_objectives.ilos` array.
 
-Summarize what you have:
+Tell what you have in one short line. Do not show the ILOs in the chat:
 
-"From your learning objectives, I have [X] ILOs:
-
-| ID | Objective | Knowledge | Process |
-|----|-----------|-----------|---------|
-| ILO-1 | [text] | [dimension] | [level] |
-| ... | ... | ... | ... |
-
-I will use these Bloom's classifications to recommend assessment types that align with
-each objective's cognitive level."
+"I have [X] learning objectives. I use their Bloom's levels to recommend assessment types."
 
 If `needs_analysis.learner_profile` is also available, note the prior knowledge level:
 "Your learners are [level]. I will use this level in the feedback strategy recommendations."
@@ -480,6 +669,10 @@ cognitive process) before proceeding to assessment design. Use the same classifi
 approach as the `/idstack:learning-objectives` skill: ask for clarification when verbs are
 ambiguous [Alignment-12] [T4].
 
+**Step review:** do the Step Review in the preamble. Section: `## Learning objectives`. Columns: `ID | Objective | Knowledge | Process | Justification | Evidence`.
+
+Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the clarification questions about ambiguous verbs before this review.
+
 ### Mode 3: Audit Existing Assessments
 
 **Condition (BOTH must be true):**
@@ -500,17 +693,31 @@ ambiguous [Alignment-12] [T4].
   - **Orphaned criteria** — a rubric criterion doesn't measure any stated ILO.
   - **Missing rubric** — an assessment has weight ≥10% but no rubric.
   - **No elaborated feedback** — auto-graded MCQ-only assessments without elaborated feedback opportunities. [Assessment-8] [T1]
-- ✅ Output: an audit table per assessment, plus 1-3 rubric-improvement recommendations.
+- ✅ Output: three reviewed tables (inventory, rubric alignment audit, audit actions), plus 1-3 rubric-improvement recommendations.
 - ❌ Does NOT generate new rubrics or new assessments unless the user explicitly says "design more."
 
 **Audit workflow steps (replaces Steps 1-4 of the design workflow below):**
 
 1. **Inventory.** List every assessment from `assessments.items` (or derived from cartridge if items is empty). Note type, title, weight, ILOs claimed.
+
+**Step review:** do the Step Review in the preamble. Section: `## Assessment inventory`. Columns: `ID | Assessment | Type | Weight | ILOs claimed | Justification | Evidence`.
+
+Use the assessment IDs from the manifest, for example `A-1`. In the Justification cell, tell why the type and the weight can measure the ILOs that the assessment claims.
+
 2. **Per-assessment Bloom's mapping.** For each assessment, examine its rubric criteria and classify each on Bloom's. Record in `assessments.items[].alignment_status` (`"weak" | "moderate" | "strong"` per the canonical schema) based on whether the criteria collectively reach the ILO's claimed level.
 3. **Cross-walk.** Build a `learning_objectives.alignment_matrix.gaps[]` entries for each Bloom-mismatch, untested ILO, or orphaned criterion. Use the canonical `gaps[]` shape: `{ilo, type, description, severity}`.
+
+**Step review:** do the Step Review in the preamble. Section: `## Rubric alignment audit`. Columns: `ID | Criterion | Bloom's level | ILO | Status | Justification | Evidence`.
+
+Make one row for each rubric criterion and one row for each untested ILO. Use row IDs like `A-1-C1`. In the Status cell, write `aligned`, `Bloom's mismatch`, `untested ILO`, `orphaned criterion` or `missing rubric`.
+
 4. **Recommendations.** Surface the top 1-3 fixes — usually rubric criterion edits, not new assessments. If the user wants to act on them, propose specific edits and apply via `Edit`. Track applied/deferred fixes in a new optional `assessments.audit_notes` array.
 
-When done, write the report and do its writing standard check (see the "Generate Report" section). Then write the manifest with `bin/idstack-manifest-merge` (see the "Write Manifest" section). Do not do the remaining steps of this skill (Steps 1-4 of the design workflow are for design-new mode only).
+**Step review:** do the Step Review in the preamble. Section: `## Audit actions`. Columns: `ID | Change | Status | Justification | Evidence`.
+
+Make one row for each fix. Use the IDs `AN-1`, `AN-2` and so on. In the Status cell, write `applied` or `deferred`.
+
+When the audit actions are approved, do the Findings and the closing Step Reviews and the writing standard check (see the "Generate Report" section). Then write the manifest with `bin/idstack-manifest-merge` (see the "Write Manifest" section). Do not do the remaining steps of this skill (Steps 1-5 of the design workflow are for design-new mode only).
 
 ---
 
@@ -533,32 +740,25 @@ Use this alignment table:
 | Evaluate | Peer review, critique, portfolio with reflection |
 | Create | Project, design challenge, original research, presentation |
 
-**Present each recommendation individually.** For each ILO, show:
+**Step review:** do the Step Review in the preamble. Section: `## Assessment plan`. Columns: `ID | ILO | Assessment | Type | Format | Points | Justification | Evidence`.
 
-"**ILO-X:** [objective text]
-- Bloom's level: [process] / [knowledge dimension]
-- Recommended assessment types: [list from table above]
-- idstack recommends: [specific recommendation with rationale]
+Make one row for each assessment, with the IDs `A-1`, `A-2` and so on. In the Justification cell, tell why the type measures the Bloom's level of the ILO. If Step 2 changes the points, do this Step Review again with the same heading.
 
-Does this assessment type work for your context, or do you want a different
-format?"
-
-Use one AskUserQuestion per assessment to confirm or adjust.
-
-**Flag misalignments.** If the user requests an assessment type that does not match
+**Flag misalignments.** If the user selects "Change a row" and asks for an assessment type that does not match
 the ILO's cognitive level, flag it directly:
 
 "You asked for multiple-choice for ILO-X, which targets '[evaluate]'. Multiple-choice
 primarily measures recognition and recall (remember level). This causes a constructive
 alignment gap. You cannot know if students can evaluate, because the test measures
-only if they can recognize [Alignment-1] [T5].
+only if they can recognize.
 
 idstack recommends: [aligned alternatives]. Do you want to change the format, or keep
 multiple-choice? Multiple-choice measures a lower cognitive level than the objective
 states."
 
-Do not silently accept misaligned choices. Present the evidence, let the user decide,
-and record their decision.
+Do not silently accept misaligned choices. Tell the evidence in the words above, let
+the user decide, and record their decision. Put the citation [Alignment-1] [T5] in
+the Evidence cell of the row, not in the chat.
 
 ---
 
@@ -580,22 +780,9 @@ and derived from the ILO — not generic templates.
 - **Weighting:** Proportional to ILO importance. If one ILO is central to the course,
   its assessment criteria carry more weight.
 
-Present each rubric as a table for review:
+**Step review:** do the Step Review in the preamble. Section: `## Rubric: <A-n> <title>`. Columns: `ID | Criterion | Exceeds (4) | Meets (3) | Approaching (2) | Below (1) | Weight | Justification | Evidence`.
 
-"**Rubric: A-X — [assessment title]**
-Aligned to: ILO-X
-
-| Criteria | Exceeds (4) | Meets (3) | Approaching (2) | Below (1) | Weight |
-|----------|-------------|-----------|------------------|-----------|--------|
-| [from ILO] | [specific] | [specific] | [specific] | [specific] | X% |
-| ... | ... | ... | ... | ... | X% |
-
-**Total points:** [calculated]
-
-Does this rubric capture the right criteria? Want to adjust any descriptors or
-add/remove criteria?"
-
-Use one AskUserQuestion per rubric.
+Do one Step Review for each rubric, with the assessment ID and title in the heading. Use row IDs like `A-1-C1`, so that each ID is different in all rubrics. In the Justification cell, tell which part of the ILO the criterion measures.
 
 ---
 
@@ -644,15 +831,9 @@ For each assessment, identify which of Nicol's 7 principles are actively applied
 7. **Inform teaching** — Does assessment data feed back to the instructor for
    course improvement?
 
-Present the feedback strategy for each assessment:
+**Step review:** do the Step Review in the preamble. Section: `## Feedback strategy`. Columns: `ID | Assessment | Type | Timing | Nicol principles | Justification | Evidence`.
 
-"**Feedback strategy for A-X: [title]**
-- Type: [elaborated/correctness/peer/self-assessment]
-- Timing: [immediate/delayed/iterative]
-- Nicol principles applied: [list by number]
-- Implementation: [how this works in practice — 2-3 sentences]
-
-Principles NOT applied and why: [explain any omissions]"
+Make one row for each assessment. Use the IDs `FS-1`, `FS-2` and so on. In the Nicol principles cell, write the numbers of the principles that the strategy applies. Put the principles that the strategy does not apply, and the reason, in the Limitations section.
 
 ---
 
@@ -680,114 +861,41 @@ Where possible, design checkpoints that students can initiate on their own (prac
 quizzes, self-assessment checklists, peer study groups). Evidence shows student-initiated
 formative assessment produces the largest learning effects [Assessment-2] [T1].
 
-For each summative assessment, present checkpoints:
+**Step review:** do the Step Review in the preamble. Section: `## Formative checkpoints`. Columns: `ID | Before | Checkpoint | Timing | Format | Feedback | Justification | Evidence`.
 
-"**Formative checkpoints for A-X: [summative title]**
-
-| # | Checkpoint | Timing | Format | Feedback | Purpose |
-|---|-----------|--------|--------|----------|---------|
-| 1 | [activity] | Week X | [format] | [type, timing] | [what gap it closes] |
-| 2 | [activity] | Week X | [format] | [type, timing] | [what gap it closes] |
-| 3 | [activity] | Week X | [format] | [type, timing] | [what gap it closes] |
-
-These checkpoints give students [X] opportunities to practice and receive feedback
-before the summative assessment. Does this sequence make sense for your course
-timeline?"
+Make one row for each checkpoint, with the IDs `FC-1`, `FC-2` and so on. In the Before cell, write the ID of the summative assessment. In the Justification cell, tell which performance gap the checkpoint closes.
 
 ---
 
-## Output Summary
+### Step 5: Alignment Verification
 
-After completing the full workflow, present a consolidated summary.
+Compare the Bloom's level of each ILO with the level that its assessment measures. Use only the approved rows of the Assessment plan and of the rubrics.
 
-```
-## Assessment Design Summary
+**Step review:** do the Step Review in the preamble. Section: `## Alignment verification`. Columns: `ID | Objective | Bloom's | Assessment | Assessment level | Status | Justification | Evidence`.
 
-### Assessment Plan
-| ID | Assessment | Type | Format | Aligned ILOs | Feedback | Points |
-|----|-----------|------|--------|--------------|----------|--------|
-| A-1 | ... | project | summative | ILO-1, ILO-2 | elaborated | 100 |
-| A-2 | ... | peer-review | summative | ILO-3 | peer | 50 |
-| A-3 | ... | quiz | formative | ILO-1 | correctness | 10 |
-
-### Rubric: A-1 [title]
-| Criteria | Exceeds (4) | Meets (3) | Approaching (2) | Below (1) | Weight |
-|----------|-------------|-----------|------------------|-----------|--------|
-| [criterion from ILO] | [specific descriptor] | ... | ... | ... | X% |
-
-### Rubric: A-2 [title]
-| Criteria | Exceeds (4) | Meets (3) | Approaching (2) | Below (1) | Weight |
-|----------|-------------|-----------|------------------|-----------|--------|
-| [criterion from ILO] | [specific descriptor] | ... | ... | ... | X% |
-
-### Feedback Strategy
-| Assessment | Type | Timing | Nicol Principles Applied |
-|-----------|------|--------|--------------------------|
-| A-1 | elaborated | iterative (draft > feedback > final) | 1, 2, 3, 5, 6 |
-| A-2 | peer | delayed (self-assess first, then peer) | 1, 2, 3, 4, 5 |
-| A-3 | correctness + elaborated | immediate | 1, 3, 6 |
-
-### Formative Checkpoints
-| Checkpoint | Before | Format | Feedback |
-|-----------|--------|--------|----------|
-| Practice quiz on Module 3 concepts | A-1 Midterm | auto-graded, elaborated | immediate |
-| Draft outline peer review | A-2 Final project | peer, structured | delayed |
-| Self-assessment checklist | A-1 Midterm | self-check against rubric | student-led |
-
-### Alignment Verification
-| ILO | Bloom's Level | Assessment | Assessment Level | Status |
-|-----|---------------|-----------|------------------|--------|
-| ILO-1 | analyze | A-1 data analysis | analyze | ALIGNED |
-| ILO-2 | create | A-2 project | create | ALIGNED |
-| ILO-3 | evaluate | A-3 quiz | remember | MISMATCH |
-```
-
-Flag any remaining alignment issues. If the user accepted a misalignment in Step 1,
-note it here: "ILO-3 / A-3: The user accepted the misalignment (quiz for evaluate-level ILO).
-idstack recommends a formative peer review checkpoint to make the gap smaller."
+Make one row for each ILO, with the ILO IDs. If the user kept a misaligned assessment in Step 1, write `MISMATCH` and make an `assess-` finding for it. In that finding, idstack recommends a formative peer review checkpoint to make the gap smaller.
 
 ---
 
 ## Generate Report
 
-Before writing the manifest, generate an HTML report so the designer has a single document to read. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
+The report follows the **structure** in `templates/report.md.tmpl` and the **content contract** in `templates/report-format.md`. The "Start the Report" block started the report. The approved sections of the steps are in it.
 
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-# Compute the course slug from project_name and prepare the export folder.
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
-_EXPORT_DIR=".idstack/exports/$_SLUG"
-_REPORT_PATH="$_EXPORT_DIR/assessment-design.html"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Report template: $_IDSTACK/templates/report.html.tmpl"
-echo "Report rules: $_IDSTACK/templates/report-format.md"
-echo "Report path: $_REPORT_PATH"
-echo "Report link: $(pwd -P)/$_REPORT_PATH"
-```
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
 
-Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/assessment-design.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+Use the IDs `assess-1`, `rubric-1`, `feedback-1` and so on. Make findings from alignment mismatches, missing rubrics and correctness-only feedback at apply level or higher. Also make findings from summative assessments with no formative checkpoint and from strategies with fewer than 5 of the 7 Nicol principles.
 
-- **`{{skill_title}}`:** "Assessment Design Report"
-- **`{{skill_name}}`:** `assessment-design`
-- **`{{mode}}`:** `Mode 1`, `Mode 2`, or `Mode 3` (include the optional mode segment in the header `meta` line).
-- **Summary:** 2–3 sentences. Lead with the `feedback_quality_score`, the biggest alignment risk, and one headline observation about elaborated feedback or rubric coverage. Include the optional one-line scoreboard ("Feedback quality XX/100").
-- **Skill-specific section before Findings** — add a `<section class="assessment-plan">` with `<h2>Assessment plan</h2>` and an HTML `<table>` (columns: ID, Assessment, Type, Format, Aligned ILOs, Feedback, Points).
-- **Finding ids:** `assess-1`, `rubric-1`, `feedback-1`, etc. Findings come from alignment mismatches, correctness-only feedback at apply+ Bloom's levels, missing rubrics, missing formative checkpoints before high-stakes summatives, and fewer than 5 of Nicol's 7 feedback principles.
-- **Optional skill-specific section** (Mode 3 only, after Top recommendations, before Limitations): `<section class="mode3-audit-notes">` with `<h2>Mode 3 audit notes</h2>` listing the existing assessments audited, the Bloom's level each rubric criterion targets, where the gap is, and which gaps the designer chose to act on vs. defer.
-- **Limitations:** The report reads rubric criteria as the manifest records them, not as instructors apply them to student work. `feedback_quality_score` is a heuristic, not a validated instrument. Mode 3 does not recommend new assessments.
-- **Next steps:** Run `/idstack:course-builder` to generate the full course content, with assessment documents, rubric handouts, and assignment instructions. (For imported courses in gap-fill mode, course-builder will only generate the missing artifacts that this report found.)
+In Mode 3, each finding names the audited rubric criterion or assessment and tells the gap. It does not recommend a full redesign.
 
-In Mode 3 (audit-existing), every finding should reference the audited rubric criterion or assessment item and explicitly state the gap, not propose a wholesale redesign.
+Before the closing Step Review, calculate the `feedback_quality_score` from the approved rows. Use the rules in the "Write Manifest" section.
+
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns of Top recommendations: `ID | Action | Justification | Evidence`.
+
+- **Summary:** 2 or 3 sentences. Start with "Feedback quality XX/100". Then give the largest alignment risk and one observation about elaborated feedback or rubric coverage.
+- **Limitations:** The report reads the rubric criteria from the manifest. It does not read how instructors use them on student work. The `feedback_quality_score` is a heuristic. It is not a validated instrument. Mode 3 does not recommend new assessments.
+- **Next steps:** Run `/idstack:course-builder` to make the full course content, with assessment documents, rubric handouts and assignment instructions. For an imported course in gap-fill mode, course-builder makes only the missing artifacts that this report found.
+
+Run the finish command of the Step Review.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
@@ -820,7 +928,9 @@ top-level sections** — `assessments` and `learning_objectives` — in one atom
 `alignment_matrix.gaps` array as well). Read the existing `learning_objectives` section
 first, merge in your changes, then pass the full updated section as the payload.
 
-The `assessments` payload must include `report_path` set to the value of `$_REPORT_PATH` from the bash block above (e.g., `.idstack/exports/<course-slug>/assessment-design.html`).
+The `assessments` payload must include `report_path` set to the path from the "Report path:" line of the "Start the Report" block (e.g., `.idstack/exports/<course-slug>/assessment-design.md`).
+
+Use only the approved rows in the payloads: the items, the rubric criteria, the feedback strategies, the formative checkpoints, the `gaps[]` entries and the `audit_notes`. Calculate the `feedback_quality_score` from the approved rows.
 
 Write each payload with the Write tool first: `.idstack/.assessments-payload.json` (the
 assessments section, field shape below) and `.idstack/.learning_objectives-payload.json`
@@ -928,7 +1038,7 @@ Write the manifest, then confirm to the user:
 
 "I saved your assessment designs in two files:
 
-- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the assessment
+- **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the assessment
   plan, the feedback-quality score with evidence-backed findings, and per-rubric
   alignment notes. Click the link to open it. The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).

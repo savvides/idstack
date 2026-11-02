@@ -44,7 +44,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 ## Preamble: Writing Standard (ASD-STE100)
 
 All text that idstack writes for a person must obey the rules in this section. This
-includes chat text, AskUserQuestion questions and options, HTML reports, the course
+includes chat text, AskUserQuestion questions and options, reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
 reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
@@ -246,8 +246,8 @@ except: pass
 fi
 ```
 
-**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
-(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:concise:** Keep explanations brief. Do not cite evidence in chat prose.
+Always cite evidence in Step Review tables and in reports.
 **If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
 considered, and rationale for each recommendation.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
@@ -278,21 +278,189 @@ with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Report Links
 
-A skill that writes a report runs a block that prints a `Report link:` line.
-The line gives the full path of the report. `/idstack:pipeline` and
-`/idstack:start` print a `Dashboard link:` line for the course dashboard.
+A skill that writes a report runs a block that prints a `Report path:` line.
+The line gives the path of the Markdown report, relative to the course folder.
+`/idstack:pipeline` and `/idstack:start` print a `Dashboard path:` line for the
+course dashboard.
 
 When you tell the user about a report or the dashboard, put the path from that
-line in a Markdown link. Put angle brackets around the path, because a folder
-name can have a space. Use link text that names the file, for example "Open
-the report" or "Open the course dashboard". For example:
+line in a Markdown link. Use the same path as the link text. For example:
 
-[Open the report](</Users/ana/Courses/BIO 101/.idstack/exports/bio-101/course-import.html>)
+[.idstack/exports/bio-101/course-import.md](.idstack/exports/bio-101/course-import.md)
 
-In the Claude desktop app, the user clicks the link to open the file. Give only
-a path from a `Report link:` or `Dashboard link:` line, or a link that a
-sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+Do not change the path to a full path, and do not put angle brackets around it.
+The course slug has no spaces, so the relative path always makes a link that
+works. In the Claude desktop app, the user clicks the link to open the report.
+Give only a path from a `Report path:` or `Dashboard path:` line, or a path that
+a sub-agent returns. Do not make up a path. If the skill stopped before it wrote
 the report, do not give the path.
+
+## Preamble: Step Review
+
+Only the skills that write a report do a Step Review. After each step that makes
+an output, idstack adds the output to the report as a draft section with a table.
+The user reads the section in the report file, not in the chat. The user approves
+the section, and idstack removes the draft mark. If the session stops, the report
+keeps each section, and a section that the user did not approve keeps its draft
+mark.
+
+The skill tells you where to do a Step Review with a `**Step review:**` line.
+That line gives the section heading and the table columns.
+
+**The shape of a section**
+
+- Start the section with a `## <Heading>` line. Then write the table.
+- The first column is `ID`. Give each row an ID that does not change, for
+  example `T-1` or `ILO-2`.
+- The last two columns are `Justification` and `Evidence`.
+- In the Justification cell, write one sentence. Tell why the row is correct for
+  this course. Use the evidence from the research.
+- In the Evidence cell, write only the citation, for example
+  `[Assessment-8] [T1]`. Use a code from the "Evidence list:" file. Use the tier
+  that the file gives for that code.
+- If you cannot cite a row, do not put it in the table. Put the text in the
+  Limitations section.
+- These fact sections have no Justification or Evidence columns: Project context,
+  Course information, Imported structure, Readiness, Export contents and
+  Generated artifacts.
+- A findings table has these columns:
+  `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+  Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
+  first, then `warning`, then `info`. Do not write `### Finding` blocks.
+  idstack writes them from the approved rows.
+
+**The procedure**
+
+1. Write the section to `.idstack/.report-section.md` with the Write tool.
+2. Run the check command:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+```
+
+3. If the output shows problems, correct the draft. Then do step 2 again. Do the
+   check a maximum of three times. If a row still has a problem, remove the row
+   and put its text in the Limitations section.
+4. Run the append command. It adds the section to the report as a draft. In
+   this command, replace `<path>` with the path from the "Report path:" line.
+   Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+```
+
+5. Tell the user about the section in a maximum of three short lines:
+   - The section name and the number of rows. For findings, give the number of
+     each severity.
+   - The most important row, in one sentence.
+   - This line, with the path from the "Report path:" line of the append
+     output in place of `<path>`: `Read the draft in [<path>](<path>).` Write
+     the link exactly in this form. Do not write the name of the report as
+     text only. The user clicks the link to open the report.
+   Do not show the table in the chat. Do not put the table, a row or a citation
+   in the question or in its options.
+6. Ask with AskUserQuestion: "Do you approve the <section name> section?" Give
+   these three options. Each option must have its description. Do not add a
+   preview.
+   - "Approve", with the description "Keep this section as it is."
+   - "Change a row", with the description "Tell me the row ID and the change."
+   - "Remove a row", with the description "Tell me the row ID to remove."
+7. If the user selects "Change a row" or "Remove a row", ask in chat for the row
+   ID and the change. Change the draft file. Then go to step 2. The append
+   command replaces the section in the report.
+8. If the user selects "Approve", run the approve command. In this command,
+   replace `<path>` with the path from the "Report path:" line. Then run the
+   command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+```
+
+9. Go to the next step only if the output starts with `SECTION_APPROVED`.
+
+**Rules**
+
+- Ask one question for each Step Review. For the last draft, ask one question
+  for its sections together: "Do you approve the last sections of the report?"
+  This question replaces the old approval question of the step. Questions that collect data from the user stay.
+- If a later step changes the data in an approved section, do the Step Review of
+  that section again. Use the same heading. idstack replaces the old section.
+- Use only the approved rows in the manifest. Calculate each score from the
+  approved rows.
+- If a step has no rows, do not do its Step Review. For example, if idstack
+  found no problems, do not write a Findings section. Tell the result in the
+  Summary. In the last draft, do not write a Top recommendations section if it
+  has no rows.
+- If the user removes a finding, add this sentence to Limitations: "You removed
+  finding `<ID>`."
+- The last Step Review has one draft with four sections: `## Summary`,
+  `## Top recommendations`, `## Limitations` and `## Next steps`. The Summary,
+  Limitations and Next steps sections are text, with no table. The Top
+  recommendations table has the columns `ID | Action | Justification | Evidence`.
+- After the user approves the last section, run the finish command. In this
+  command, replace `<path>` with the path from the "Report path:" line. Then run
+  the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+```
+
+- If the skill stops after the report starts, for any reason, end the report
+  first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
+  not write a Top recommendations section. Then run the finish command. This
+  includes an error, a missing file, and a user who stops the skill.
+- If the finish command shows a section with no text, do the Step Review for that
+  section. If it shows a draft section, ask the user to approve that section.
+  Then run the finish command again.
+- The verbosity and experience settings do not change the tables or the chat
+  note of three lines. Each table always has its citations.
+- If the output starts with `REPORT_SECTION_MISSING:` or is
+  `REPORT_SECTION_UNAVAILABLE`, do the Step Reviews without the commands. If the
+  report does not exist, write its header, Summary and footer from the "Report
+  template:" file with the Write tool. Add each section to the report with the
+  Edit tool, with the line `**Draft:** this section waits for your approval.`
+  under its heading. Remove that line when the user approves the section. Tell the user one time that idstack did not check the
+  citations.
 
 ## Preamble: Context Recovery
 

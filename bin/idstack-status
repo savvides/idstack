@@ -170,31 +170,13 @@ if [ "$READINESS_ONLY" -eq 0 ]; then
   echo ""
 fi
 
-if [ ! -f "$TIMELINE" ]; then
-  if [ "$READINESS_ONLY" -eq 1 ]; then
-    echo "No timeline data. Run the pipeline skills first."
-  else
-    echo "There is no course data."
-    echo "To start a new course, run /idstack:needs-analysis."
-    echo "To import a course that you have, run /idstack:course-import."
-  fi
-  exit 0
-fi
-
-if [ "$READINESS_ONLY" -eq 0 ]; then
-  timeline_summary dashboard || echo "Error: idstack cannot read the timeline."
-fi
-
-# Learnings count
-if [ -f "$LEARNINGS" ] && [ "$READINESS_ONLY" -eq 0 ]; then
-  LEARN_COUNT=$(wc -l < "$LEARNINGS" 2>/dev/null | tr -d ' ')
-  [ "$LEARN_COUNT" -gt 0 ] 2>/dev/null && echo "Learnings: $LEARN_COUNT entries"
-fi
-
-# Reports — list every per-skill HTML report present under the course's export
-# folder, plus the index.html dashboard. The dashboard is what the designer
-# opens in a browser; the manifest is for the system.
-if [ -d ".idstack/exports" ] && [ "$READINESS_ONLY" -eq 0 ]; then
+# Reports — list every per-skill Markdown report present under the course's
+# export folder, plus the index.md dashboard. The dashboard is what the
+# designer reads; the manifest is for the system. A first skill has no
+# timeline until it completes, so the no-timeline branch calls this too: a
+# report that is in progress still shows.
+list_reports() {
+[ -d ".idstack/exports" ] && [ "$READINESS_ONLY" -eq 0 ] || return 0
   # Find the course folder. Prefer the slug the skills write to (the rule
   # lives in idstack-slugify --from-manifest); fall back to the only subfolder
   # if exactly one exists (handles legacy folders left behind after a course
@@ -212,16 +194,22 @@ if [ -d ".idstack/exports" ] && [ "$READINESS_ONLY" -eq 0 ]; then
   fi
 
   if [ -n "$COURSE_DIR" ]; then
-    REPORT_COUNT=$(find "$COURSE_DIR" -maxdepth 1 -name '*.html' -type f 2>/dev/null | wc -l | tr -d ' ')
+    REPORT_COUNT=$(find "$COURSE_DIR" -maxdepth 1 -name '*.md' -type f 2>/dev/null | wc -l | tr -d ' ')
     if [ "$REPORT_COUNT" -gt 0 ] 2>/dev/null; then
       echo ""
-      echo "Reports (open these files in a browser):"
-      if [ -f "$COURSE_DIR/index.html" ]; then
-        echo "  $COURSE_DIR/index.html  <-- course dashboard, start here"
+      echo "Reports (read these files):"
+      if [ -f "$COURSE_DIR/index.md" ]; then
+        echo "  $COURSE_DIR/index.md  <-- course dashboard, start here"
       fi
-      for f in "$COURSE_DIR"/*.html; do
-        [ "$f" = "$COURSE_DIR/index.html" ] && continue
-        [ -f "$f" ] && echo "  $f"
+      for f in "$COURSE_DIR"/*.md; do
+        [ "$f" = "$COURSE_DIR/index.md" ] && continue
+        [ -f "$f" ] || continue
+        # A report that still has the init status line is not finished.
+        if grep -qxF '**Status:** in progress. A section with a draft mark waits for your approval.' "$f" 2>/dev/null; then
+          echo "  $f (in progress)"
+        else
+          echo "  $f"
+        fi
       done
       # LMS packages
       for f in "$COURSE_DIR"/course-export.imscc "$COURSE_DIR"/scorm-export.zip; do
@@ -229,7 +217,31 @@ if [ -d ".idstack/exports" ] && [ "$READINESS_ONLY" -eq 0 ]; then
       done
     fi
   fi
+}
+
+if [ ! -f "$TIMELINE" ]; then
+  if [ "$READINESS_ONLY" -eq 1 ]; then
+    echo "No timeline data. Run the pipeline skills first."
+  else
+    echo "There is no course data."
+    echo "To start a new course, run /idstack:needs-analysis."
+    echo "To import a course that you have, run /idstack:course-import."
+    list_reports
+  fi
+  exit 0
 fi
+
+if [ "$READINESS_ONLY" -eq 0 ]; then
+  timeline_summary dashboard || echo "Error: idstack cannot read the timeline."
+fi
+
+# Learnings count
+if [ -f "$LEARNINGS" ] && [ "$READINESS_ONLY" -eq 0 ]; then
+  LEARN_COUNT=$(wc -l < "$LEARNINGS" 2>/dev/null | tr -d ' ')
+  [ "$LEARN_COUNT" -gt 0 ] 2>/dev/null && echo "Learnings: $LEARN_COUNT entries"
+fi
+
+list_reports
 
 # Readiness table (shown with --readiness flag or appended to full output)
 if [ "$READINESS_ONLY" -eq 1 ] || [ -f "$MANIFEST" ]; then

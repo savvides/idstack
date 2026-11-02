@@ -53,17 +53,16 @@ if [ ! -f "$RESOLVE_SNIPPET" ]; then
   exit 1
 fi
 
-# HTML report assets — skills read these at runtime to write branded reports
+# Report assets — skills read these at runtime to write Markdown reports
 # into .idstack/exports/<course-slug>/. report-format.md is the content
-# contract the report-producing skills read alongside the visual template.
+# contract the report-producing skills read alongside the report templates.
 # Missing files would silently break every skill that produces a report, so
 # fail loud here.
-REPORT_HTML_TMPL="$IDSTACK_DIR/templates/report.html.tmpl"
-INDEX_HTML_TMPL="$IDSTACK_DIR/templates/index.html.tmpl"
-REPORT_CSS="$IDSTACK_DIR/templates/assets/idstack.css"
+REPORT_MD_TMPL="$IDSTACK_DIR/templates/report.md.tmpl"
+INDEX_MD_TMPL="$IDSTACK_DIR/templates/index.md.tmpl"
 REPORT_FORMAT="$IDSTACK_DIR/templates/report-format.md"
 
-for f in "$REPORT_HTML_TMPL" "$INDEX_HTML_TMPL" "$REPORT_CSS" "$REPORT_FORMAT"; do
+for f in "$REPORT_MD_TMPL" "$INDEX_MD_TMPL" "$REPORT_FORMAT"; do
   if [ ! -f "$f" ]; then
     echo "ERROR: the report asset ${f#$IDSTACK_DIR/} is missing" >&2
     exit 1

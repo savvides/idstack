@@ -49,7 +49,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 ## Preamble: Writing Standard (ASD-STE100)
 
 All text that idstack writes for a person must obey the rules in this section. This
-includes chat text, AskUserQuestion questions and options, HTML reports, the course
+includes chat text, AskUserQuestion questions and options, reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
 reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
@@ -251,8 +251,8 @@ except: pass
 fi
 ```
 
-**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
-(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:concise:** Keep explanations brief. Do not cite evidence in chat prose.
+Always cite evidence in Step Review tables and in reports.
 **If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
 considered, and rationale for each recommendation.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
@@ -283,21 +283,189 @@ with `experience_level: novice|intermediate|expert`."
 
 ## Preamble: Report Links
 
-A skill that writes a report runs a block that prints a `Report link:` line.
-The line gives the full path of the report. `/idstack:pipeline` and
-`/idstack:start` print a `Dashboard link:` line for the course dashboard.
+A skill that writes a report runs a block that prints a `Report path:` line.
+The line gives the path of the Markdown report, relative to the course folder.
+`/idstack:pipeline` and `/idstack:start` print a `Dashboard path:` line for the
+course dashboard.
 
 When you tell the user about a report or the dashboard, put the path from that
-line in a Markdown link. Put angle brackets around the path, because a folder
-name can have a space. Use link text that names the file, for example "Open
-the report" or "Open the course dashboard". For example:
+line in a Markdown link. Use the same path as the link text. For example:
 
-[Open the report](</Users/ana/Courses/BIO 101/.idstack/exports/bio-101/course-import.html>)
+[.idstack/exports/bio-101/course-import.md](.idstack/exports/bio-101/course-import.md)
 
-In the Claude desktop app, the user clicks the link to open the file. Give only
-a path from a `Report link:` or `Dashboard link:` line, or a link that a
-sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+Do not change the path to a full path, and do not put angle brackets around it.
+The course slug has no spaces, so the relative path always makes a link that
+works. In the Claude desktop app, the user clicks the link to open the report.
+Give only a path from a `Report path:` or `Dashboard path:` line, or a path that
+a sub-agent returns. Do not make up a path. If the skill stopped before it wrote
 the report, do not give the path.
+
+## Preamble: Step Review
+
+Only the skills that write a report do a Step Review. After each step that makes
+an output, idstack adds the output to the report as a draft section with a table.
+The user reads the section in the report file, not in the chat. The user approves
+the section, and idstack removes the draft mark. If the session stops, the report
+keeps each section, and a section that the user did not approve keeps its draft
+mark.
+
+The skill tells you where to do a Step Review with a `**Step review:**` line.
+That line gives the section heading and the table columns.
+
+**The shape of a section**
+
+- Start the section with a `## <Heading>` line. Then write the table.
+- The first column is `ID`. Give each row an ID that does not change, for
+  example `T-1` or `ILO-2`.
+- The last two columns are `Justification` and `Evidence`.
+- In the Justification cell, write one sentence. Tell why the row is correct for
+  this course. Use the evidence from the research.
+- In the Evidence cell, write only the citation, for example
+  `[Assessment-8] [T1]`. Use a code from the "Evidence list:" file. Use the tier
+  that the file gives for that code.
+- If you cannot cite a row, do not put it in the table. Put the text in the
+  Limitations section.
+- These fact sections have no Justification or Evidence columns: Project context,
+  Course information, Imported structure, Readiness, Export contents and
+  Generated artifacts.
+- A findings table has these columns:
+  `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+  Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
+  first, then `warning`, then `info`. Do not write `### Finding` blocks.
+  idstack writes them from the approved rows.
+
+**The procedure**
+
+1. Write the section to `.idstack/.report-section.md` with the Write tool.
+2. Run the check command:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+```
+
+3. If the output shows problems, correct the draft. Then do step 2 again. Do the
+   check a maximum of three times. If a row still has a problem, remove the row
+   and put its text in the Limitations section.
+4. Run the append command. It adds the section to the report as a draft. In
+   this command, replace `<path>` with the path from the "Report path:" line.
+   Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+```
+
+5. Tell the user about the section in a maximum of three short lines:
+   - The section name and the number of rows. For findings, give the number of
+     each severity.
+   - The most important row, in one sentence.
+   - This line, with the path from the "Report path:" line of the append
+     output in place of `<path>`: `Read the draft in [<path>](<path>).` Write
+     the link exactly in this form. Do not write the name of the report as
+     text only. The user clicks the link to open the report.
+   Do not show the table in the chat. Do not put the table, a row or a citation
+   in the question or in its options.
+6. Ask with AskUserQuestion: "Do you approve the <section name> section?" Give
+   these three options. Each option must have its description. Do not add a
+   preview.
+   - "Approve", with the description "Keep this section as it is."
+   - "Change a row", with the description "Tell me the row ID and the change."
+   - "Remove a row", with the description "Tell me the row ID to remove."
+7. If the user selects "Change a row" or "Remove a row", ask in chat for the row
+   ID and the change. Change the draft file. Then go to step 2. The append
+   command replaces the section in the report.
+8. If the user selects "Approve", run the approve command. In this command,
+   replace `<path>` with the path from the "Report path:" line. Then run the
+   command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+```
+
+9. Go to the next step only if the output starts with `SECTION_APPROVED`.
+
+**Rules**
+
+- Ask one question for each Step Review. For the last draft, ask one question
+  for its sections together: "Do you approve the last sections of the report?"
+  This question replaces the old approval question of the step. Questions that collect data from the user stay.
+- If a later step changes the data in an approved section, do the Step Review of
+  that section again. Use the same heading. idstack replaces the old section.
+- Use only the approved rows in the manifest. Calculate each score from the
+  approved rows.
+- If a step has no rows, do not do its Step Review. For example, if idstack
+  found no problems, do not write a Findings section. Tell the result in the
+  Summary. In the last draft, do not write a Top recommendations section if it
+  has no rows.
+- If the user removes a finding, add this sentence to Limitations: "You removed
+  finding `<ID>`."
+- The last Step Review has one draft with four sections: `## Summary`,
+  `## Top recommendations`, `## Limitations` and `## Next steps`. The Summary,
+  Limitations and Next steps sections are text, with no table. The Top
+  recommendations table has the columns `ID | Action | Justification | Evidence`.
+- After the user approves the last section, run the finish command. In this
+  command, replace `<path>` with the path from the "Report path:" line. Then run
+  the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+```
+
+- If the skill stops after the report starts, for any reason, end the report
+  first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
+  not write a Top recommendations section. Then run the finish command. This
+  includes an error, a missing file, and a user who stops the skill.
+- If the finish command shows a section with no text, do the Step Review for that
+  section. If it shows a draft section, ask the user to approve that section.
+  Then run the finish command again.
+- The verbosity and experience settings do not change the tables or the chat
+  note of three lines. Each table always has its citations.
+- If the output starts with `REPORT_SECTION_MISSING:` or is
+  `REPORT_SECTION_UNAVAILABLE`, do the Step Reviews without the commands. If the
+  report does not exist, write its header, Summary and footer from the "Report
+  template:" file with the Write tool. Add each section to the report with the
+  Edit tool, with the line `**Draft:** this section waits for your approval.`
+  under its heading. Remove that line when the user approves the section. Tell the user one time that idstack did not check the
+  citations.
 
 ## Preamble: Context Recovery
 
@@ -467,6 +635,40 @@ If nothing is available, use AskUserQuestion to gather information iteratively.
 
 ---
 
+## Prepare the Report
+
+idstack builds the report one approved section at a time. Start it now. In the
+command, replace `<mode>` with the review mode: `Full manifest`, `Partial manifest`
+or `No manifest`.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+# Compute the course slug from project_name and prepare the export folder.
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/course-quality-review.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
+echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill course-quality-review --title "Course Quality Review" --mode "<mode>" --reserve "Score breakdown"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+```
+
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines.
+The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
+
+---
+
 ## Parallel Dispatch
 
 Use the **Agent tool** to dispatch the three major review frameworks as parallel
@@ -474,15 +676,17 @@ subagents after gathering course information (Mode 1/2/3 above).
 
 **Launch 3 agents in a single message:**
 
-1. **QM Structural Review** — "You are a Quality Matters reviewer. Given this course data: [paste manifest/course info]. Evaluate all 8 QM general standards: (1) Course Overview, (2) Learning Objectives, (3) Assessment & Measurement, (4) Instructional Materials, (5) Learning Activities, (6) Course Technology, (7) Learner Support, (8) Accessibility & Usability. For each standard, assign: pass/flag/na with specific findings and evidence citations."
+1. **QM Structural Review** — "You are a Quality Matters reviewer. Given this course data: [paste manifest/course info]. Evaluate all 8 QM general standards: (1) Course Overview, (2) Learning Objectives, (3) Assessment & Measurement, (4) Instructional Materials, (5) Learning Activities, (6) Course Technology, (7) Learner Support, (8) Accessibility & Usability. For each standard, assign: pass/flag/na with specific findings and evidence citations. Return one table with the columns `ID | Standard | Status | Key finding | Justification | Evidence` and one row for each standard (IDs `STD-1` to `STD-8`)."
 
-2. **CoI Presence Analysis** — "You are a Community of Inquiry analyst. Given this course data: [paste manifest/course info]. Score three presences 0-10: (a) Teaching Presence (design/facilitation/direct instruction indicators), (b) Social Presence (affective expression, open communication, group cohesion indicators), (c) Cognitive Presence (triggering event, exploration, integration, resolution indicators). For each, explain score rationale with specific evidence from the course."
+2. **CoI Presence Analysis** — "You are a Community of Inquiry analyst. Given this course data: [paste manifest/course info]. Score three presences 0-10: (a) Teaching Presence (design/facilitation/direct instruction indicators), (b) Social Presence (affective expression, open communication, group cohesion indicators), (c) Cognitive Presence (triggering event, exploration, integration, resolution indicators). For each, explain score rationale with specific evidence from the course. Return one table with the columns `ID | Presence | Score | Key finding | Justification | Evidence` and one row for each presence (IDs `PR-1` to `PR-3`)."
 
-3. **Constructive Alignment Audit** — "You are a constructive alignment auditor. Given this course data: [paste objectives, assessments, activities]. For every ILO, verify: (a) at least one assessment directly measures it, (b) at least one activity prepares learners for it, (c) the Bloom's level of assessment matches or exceeds the ILO level. Report gaps, orphaned activities, and level mismatches."
+3. **Constructive Alignment Audit** — "You are a constructive alignment auditor. Given this course data: [paste objectives, assessments, activities]. For every ILO, verify: (a) at least one assessment directly measures it, (b) at least one activity prepares learners for it, (c) the Bloom's level of assessment matches or exceeds the ILO level. Report gaps, orphaned activities, and level mismatches. Return one table with the columns `ID | Assessment | Activity | Level match | Status | Justification | Evidence` and one row for each ILO (IDs `AL-1`, `AL-2` and so on)."
+
+Put this text in each agent prompt, with the path from the "Evidence list:" line: "Read the evidence list at `<path>`. In the Justification cell, write one sentence that tells why the row is correct for this course. In the Evidence cell, write only the citation, for example `[Online-15] [T4]`. Use only a code from the evidence list, with the tier that the list gives. If you cannot cite a row, do not put it in the table. Tell the text of that row after the table."
 
 Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in each agent prompt. The agents cannot see the preamble.
 
-**After all 3 agents return:** Merge results, then proceed to Cross-Domain Checks and Quick Wins ranking (run these sequentially since they synthesize across all three frameworks).
+**After all 3 agents return:** Merge the results. Then do the Step Reviews at the end of the QM, CoI and alignment sections below, in that order. Then do the Cross-Domain Checks and the Quick Wins ranking. These synthesize across all three frameworks, so do them one after the other.
 
 **If an agent fails or returns nothing:** Run its framework yourself, as written below.
 
@@ -610,6 +814,9 @@ Check for:
 - Materials available in multiple formats where feasible
 - Navigation consistency across modules
 
+**Step review:** do the Step Review in the preamble. Section: `## QM structural review`. Columns: `ID | Standard | Status | Key finding | Justification | Evidence`.
+Write one row for each of the 8 standards, with the IDs `STD-1` to `STD-8`. Write the status as `pass`, `flag` or `na`. For the Justification, cite the evidence of the standard, for example `[Online-1] [T4]` or `[Assessment-8] [T1]` for feedback in Standard 3.
+
 ---
 
 ## CoI Presence Layer — Three Dimensions
@@ -672,7 +879,7 @@ no problem-solving or application tasks; discussions stay at surface level
 
 ### The Critical Insight
 
-After scoring all three dimensions, present this synthesis:
+After scoring all three dimensions, write this synthesis. It goes in the report, in the rows and the Summary. In the chat note, use only its first sentence, with no citation:
 
 "This course [meets/does not meet] QM structural requirements but scores
 [high/low] on [weakest presence dimension] ([score]/10). Courses with low
@@ -681,6 +888,9 @@ A structurally compliant course is not automatically an effective course."
 
 This is the core value proposition of the two-layer approach. QM tells you the
 course is built correctly. CoI tells you it will actually work.
+
+**Step review:** do the Step Review in the preamble. Section: `## Community of Inquiry presence`. Columns: `ID | Presence | Score | Key finding | Justification | Evidence`.
+Write one row for each presence, with the IDs `PR-1` (teaching), `PR-2` (social) and `PR-3` (cognitive). Write the score as `X/10`. In the chat note, use the synthesis of "The Critical Insight" as the sentence about the most important row.
 
 ---
 
@@ -729,6 +939,11 @@ Ask the user targeted questions:
 
 Build a rough alignment map from the answers and check for the same
 misalignment patterns listed above.
+
+**Step review:** do the Step Review in the preamble. Section: `## Constructive alignment audit`. Columns: `ID | Assessment | Activity | Level match | Status | Justification | Evidence`.
+Write one row for each ILO, with the IDs `AL-1`, `AL-2` and so on, and start the Assessment cell with the ILO ID. Write the status as `aligned`, `gap` or `mismatch`. Write each orphan activity as a row with `none` in the Assessment cell.
+
+If no ILOs are available, write one row that tells that the audit could not run.
 
 ---
 
@@ -848,6 +1063,9 @@ a warning and recommend running /idstack:needs-analysis.
   Undocumented mismatches are flags. Flag as info.
   Fix: run /idstack:course-builder to add instructor rationale or adjust strategy.
 
+**Step review:** do the Step Review in the preamble. Section: `## Cross-domain evidence checks`. Columns: `ID | Check | Flags | Severity | Fix | Justification | Evidence`.
+Write one row for each check: `CD-1` cognitive load, `CD-2` multimedia principles, `CD-3` feedback quality and `CD-4` expertise reversal. In the Flags cell, write the flags or "No flags", and in the Severity cell, write the highest severity or `info`. Cite the evidence line of the check.
+
 ---
 
 ## Quick Wins
@@ -863,85 +1081,34 @@ and Cross-Domain Evidence), rank every finding by impact using this formula:
 | Severity | critical=3, warning=2, info=1 |
 | Ease of fix | S (small, <1 hour)=3, M (medium, 1-4 hours)=2, L (large, >4 hours)=1 |
 
-Present the **Top 3 fixes for maximum impact**:
-
-```
-### Top 3 Quick Wins
-| # | Finding | Impact | Skill to Run |
-|---|---------|--------|--------------|
-| 1 | [finding] | [score] (T?/sev/ease) | /idstack:<skill-name> |
-| 2 | [finding] | [score] (T?/sev/ease) | /idstack:<skill-name> |
-| 3 | [finding] | [score] (T?/sev/ease) | /idstack:<skill-name> |
-```
+Use the impact scores to rank the Top recommendations in the last Step Review.
+Rank only the approved rows of the `## Findings` section. If the user removed a
+finding, remove it from the ranking. The three highest impact scores are the top 3
+quick wins.
 
 Estimate the ease of fix based on: S = a single skill run fixes it, M = requires
 reworking one module or assessment, L = requires rethinking course structure.
 
 ---
 
-## Output Format
+## Report Sections
 
-Present your review in this exact structure. Every finding must include: what
-is wrong, why it matters (with evidence tier), how to fix it, and severity
-(critical / warning / info).
+The Step Reviews above added the QM, CoI, alignment and cross-domain sections to
+the report. Do the Step Reviews of this part next, in this order.
 
-```
-## Course Quality Review Summary
+### Findings
 
-## Quality Score: XX/100
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+Write one row for each flagged QM standard, low presence, alignment gap and cross-domain flag in the approved rows of the earlier sections. Use stable IDs with the prefix of the dimension: `qm-1`, `coi-1`, `align-1`, `cogload-1`, `multimedia-1`, `feedback-1`, `expertise-1` and so on. In the Recommendation cell, name the idstack skill that repairs the problem, as "Cross-Referencing Other idstack Skills" below tells.
 
-| Category | Score | Status |
-|----------|-------|--------|
-| QM Structural | XX/40 | N flags |
-| CoI Presence | XX/25 | [weakest dimension note] |
-| Constructive Alignment | XX/15 | [alignment status] |
-| Cross-Domain Evidence | XX/20 | N flags |
-```
+### Score breakdown
 
-If previous review scores exist in `.idstack/timeline.jsonl`, show:
-```
-Previous score: X/100 (reviewed YYYY-MM-DD). Current score: Y/100. Delta: +/-Z.
-```
+Calculate the scores with the Scoring Rubric below. Use only the approved rows. A QM standard that the user removed counts as `na`. A finding that the user removed does not cause a deduction.
 
-Then present the detailed findings:
+**Step review:** do the Step Review in the preamble. Section: `## Score breakdown`. Columns: `ID | Category | Score | Status | Justification | Evidence`.
+Write four rows: `SC-1` QM Structural `XX/40`, `SC-2` CoI Presence `XX/25`, `SC-3` Constructive Alignment `XX/15` and `SC-4` Cross-Domain Evidence `XX/20`. In the Status cell, write the number of flags, the weakest presence or the alignment status. This section replaces the placeholder that the init command wrote.
 
-```
-### QM Structural Review (XX/40)
-| Standard | Status | Key Finding |
-|----------|--------|-------------|
-| 1. Course Overview | pass/flag/na | [one-line finding] |
-| 2. Learning Objectives | pass/flag/na | [one-line finding] |
-| 3. Assessment & Measurement | pass/flag/na | [one-line finding] |
-| 4. Instructional Materials | pass/flag/na | [one-line finding] |
-| 5. Learning Activities | pass/flag/na | [one-line finding] |
-| 6. Course Technology | pass/flag/na | [one-line finding] |
-| 7. Learner Support | pass/flag/na | [one-line finding] |
-| 8. Accessibility & Usability | pass/flag/na | [one-line finding] |
-
-### Community of Inquiry Presence (XX/25)
-- Teaching Presence: X/10 — [one-line finding]
-- Social Presence: X/10 — [one-line finding]
-- Cognitive Presence: X/10 — [one-line finding]
-(Scores summed and scaled: raw X/30 -> XX/25)
-
-### Constructive Alignment Audit (XX/15)
-[findings or "All ILOs are fully aligned"]
-
-### Cross-Domain Evidence Checks (XX/20)
-| Check | Flags | Severity | Fix |
-|-------|-------|----------|-----|
-| Cognitive Load | [findings or "No flags"] | [level] | [skill] |
-| Multimedia Principles | [findings or "No flags"] | [level] | [skill] |
-| Feedback Quality | [findings or "No flags"] | [level] | [skill] |
-| Expertise Reversal | [findings or "No flags"] | [level] | [skill] |
-
-### Top 3 Quick Wins
-| # | Finding | Impact | Skill to Run |
-|---|---------|--------|--------------|
-| 1 | [finding] | [score] (T?/sev/ease) | /idstack:<skill-name> |
-| 2 | [finding] | [score] (T?/sev/ease) | /idstack:<skill-name> |
-| 3 | [finding] | [score] (T?/sev/ease) | /idstack:<skill-name> |
-```
+In the chat note, write the overall score on the first line: "Quality score: XX/100". If `.idstack/timeline.jsonl` has a previous course-quality-review score, add "Previous score: X/100 (reviewed YYYY-MM-DD). Delta: +/-Z." to that line.
 
 ### Scoring Rubric
 
@@ -971,11 +1138,41 @@ When recommending fixes, point users to the appropriate idstack skill:
 - Weak alignment chain: "Run `/idstack:learning-objectives` to rebuild the alignment
   matrix from your task analysis."
 
+### Summary, Top recommendations, Limitations and Next steps
+
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`. Columns: `ID | Action | Justification | Evidence`.
+This is the last Step Review. Write the four sections in one draft. Only Top recommendations has a table.
+
+- **Summary:** 2 or 3 sentences. Start with the overall score and the most important finding. Add the line "Quality XX/100 · Teaching XX/10 · Social XX/10 · Cognitive XX/10". If the timeline has a previous score, add "Previous: X/100 (YYYY-MM-DD), delta +/-Z".
+- **Top recommendations:** 3 to 5 rows. Put the top 3 quick wins from the Quick Wins ranking first. Use the finding ID as the row ID. In the Action cell, write one command that names the skill to run.
+- **Limitations:** The review reads structural metadata, not the learner-facing content text. The cognitive-load assessments are heuristic. The CoI presence scores come from manifest signals, not from a survey.
+- **Next steps:** 1–3 specific next actions referencing other idstack skills. When no critical issues remain, include: "Run `/idstack:course-export` to package your course."
+
+Run the finish command of the Step Review.
+
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+
 ---
 
 ## Write Manifest
 
-After completing the review, save results via the section-scoped merge tool — it
+After the finish command and the writing standard check, save the results via the section-scoped merge tool. It
 validates the section name against the canonical schema, preserves every other
 section verbatim, bumps the top-level `updated` timestamp, and writes atomically:
 
@@ -1008,7 +1205,7 @@ Payload shape — the file contains ONLY the section object, no `"quality_review
 
 ```json
 {
-    "report_path": "<set to $_REPORT_PATH from the Generate Quality Report block below — e.g. .idstack/exports/<course-slug>/course-quality-review.html>",
+    "report_path": "<set to $_REPORT_PATH from the Prepare the Report block above — e.g. .idstack/exports/<course-slug>/course-quality-review.md>",
     "last_reviewed": "ISO-8601 timestamp",
     "qm_standards": {
       "course_overview": {"status": "pass|flag|na", "findings": ["..."]},
@@ -1061,7 +1258,10 @@ Payload shape — the file contains ONLY the section object, no `"quality_review
 ```
 
 When building the payload:
-- Populate ALL fields in the `quality_review` section from the analysis above.
+- Populate ALL fields in the `quality_review` section from the approved rows of the report.
+  Use only the approved rows. Fill `recommendations` from the approved Findings rows. Fill `quick_wins` from the
+  approved Top recommendations rows that are quick wins. Take `impact_score`, `ease` and
+  `evidence_tier` from the Quick Wins ranking. Use the scores of the Score breakdown section.
 - The merge tool updates the top-level `updated` timestamp automatically.
 
 ### Score Trending Display
@@ -1077,75 +1277,14 @@ display should also appear in the completion message.
 The manifest stores the current overall_score. The timeline stores historical scores.
 One source of truth per data point.
 
-### Generate Quality Report
-
-After writing the manifest, generate a shareable HTML report. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-# Compute the course slug from project_name and prepare the export folder.
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
-_EXPORT_DIR=".idstack/exports/$_SLUG"
-_REPORT_PATH="$_EXPORT_DIR/course-quality-review.html"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Report template: $_IDSTACK/templates/report.html.tmpl"
-echo "Report rules: $_IDSTACK/templates/report-format.md"
-echo "Report path: $_REPORT_PATH"
-echo "Report link: $(pwd -P)/$_REPORT_PATH"
-```
-
-Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-quality-review.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
-
-- **`{{skill_title}}`:** "Course Quality Review"
-- **`{{skill_name}}`:** `course-quality-review`
-- **Summary:** 2–3 sentences. Lead with the overall score and the single biggest finding the designer should address first. Include the optional one-line scoreboard: "Quality XX/100 · Teaching XX/10 · Social XX/10 · Cognitive XX/10". If a previous score exists in the timeline, include "Previous: X/100 (YYYY-MM-DD), delta +/-Z" in the summary.
-- **Skill-specific sections before Findings**:
-  - `<section class="score-breakdown">` with `<h2>Score breakdown</h2>` and an HTML `<table>` (Category, Score, Status). Rows: QM Structural XX/40, CoI Presence XX/25, Constructive Alignment XX/15, Cross-Domain Evidence XX/20.
-- **Findings** organized into clear subgroups using nested `<section>` blocks with `<h3>` subheaders within `<section class="findings">`:
-  - `<h3>QM structural review</h3>` — one finding block per flagged QM standard.
-  - `<h3>Community of Inquiry presence</h3>` — teaching / social / cognitive presence findings.
-  - `<h3>Constructive alignment audit</h3>` — alignment findings.
-  - `<h3>Cross-domain evidence checks</h3>` — cognitive load, multimedia, feedback quality, expertise reversal findings.
-  Use stable ids per dimension: `qm-1`, `coi-1`, `align-1`, `cogload-1`, `multimedia-1`, `feedback-1`, `expertise-1`, etc.
-- **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="quick-wins">` with `<h2>Top 3 quick wins</h2>` and an HTML `<table>` (#, Finding, Impact, Skill to Run).
-- **Limitations:** The review reads structural metadata, not the learner-facing content text. The cognitive-load assessments are heuristic. The CoI presence scores come from manifest signals, not from a survey.
-- **Next steps:** 1–3 specific next actions referencing other idstack skills. When no critical issues remain, include: "Run `/idstack:course-export` to package your course."
-
-**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
-```
-
-For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+### Closing Message
 
 After writing both the manifest and the quality report, confirm to the user:
 
-"I saved your quality review to `.idstack/project.json`. I also wrote a shareable HTML
-report: <the Report link, written as the Report Links section of the preamble tells you>. The
+"I saved your quality review to `.idstack/project.json`. I also wrote a shareable
+report: <the Report path, written as a link as the Report Links section of the preamble tells you>. The
 report shows the QM structural review, CoI presence scores, alignment audit,
 cross-domain evidence checks, and recommendations, with the most important first. Click the link to open it.
-The folder also contains the CSS file.
 
 **Score: XX/100** [If previous: "Previous: X/100 (DATE). Delta: +/-Z."]
 
