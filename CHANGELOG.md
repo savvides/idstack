@@ -2,13 +2,30 @@
 
 ## Unreleased
 
+Reports and the course dashboard are now Markdown files. Each skill gives a report link that opens in the Claude desktop app. Each skill now adds the output of each step to the report as a draft table, and you approve each section.
+
+### Changed — Markdown reports
+
+- **Each skill writes its report as Markdown.** The report is at `.idstack/exports/<course-slug>/<skill>.md`. `/idstack:pipeline` writes the course dashboard at `.idstack/exports/<course-slug>/index.md`. Markdown has fewer parts than HTML, so a skill makes fewer errors when it writes a report.
+- **Each skill gives the report as a relative-path link.** The link was a full path. When the folder path had a space, the link did not open in the Claude desktop app. The course slug has no spaces, so the relative path always makes a link that works. The `Report link:` line is removed, and the skill links the `Report path:` line. The pipeline and `/idstack:start` link the `Dashboard path:` line.
+- **The HTML templates and the stylesheet are removed.** `templates/report.html.tmpl`, `templates/index.html.tmpl` and `templates/assets/idstack.css` are replaced by `templates/report.md.tmpl` and `templates/index.md.tmpl`. Skills do not copy a stylesheet into the export folder.
+- **Reports from earlier runs stay on disk.** idstack does not delete the `.html` reports, but `bin/idstack-status` no longer lists them. Run a skill again to make its `.md` report.
+
+### Changed — step tables and approval
+
+- **Each report skill adds the output of each step to the report as a table.** You read the table in the report file, where it shows as a draft. Each row has a one-sentence justification and a citation from `evidence/references.md`. Sections that give only facts, for example Project context, have no justification.
+- **idstack adds each section to the Markdown report at once, and you approve it.** The report grows one section at a time. When you approve a section, idstack removes its draft mark. If a session stops, the report keeps each section, and a section that you did not approve keeps its draft mark. The project manifest gets only the rows that you approved.
+- **A skill asks more approval questions.** The chat shows a short note of a maximum of three lines and the question. It does not show the table. A skill asks one question for each section. You can approve the section, change a row or remove a row.
+- **`bin/idstack-report-section` checks each section before idstack adds it.** It finds each citation in `evidence/references.md`. If the tier is not the same, it refuses the section. It also writes the findings blocks from the findings table. `approve` removes the draft marks, and `finish` refuses a report that has a draft section.
+- **`bin/idstack-status` shows "(in progress)" for a report that is not complete.**
+
 ### Fixed
 
 - **`/idstack:start` stops in a temporary folder of the Claude desktop app.** The app can start a session in a folder under `~/Library/Application Support/Claude/scratch-workspaces/`. That folder is hidden, and the app can delete it. Before, `/idstack:start` let the session continue there, and the next skill wrote the course data in that folder.
 
 ### Tests
 
-- `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61g.
+- `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61i.
 
 ## v3.10.0.0 (2026-11-01)
 

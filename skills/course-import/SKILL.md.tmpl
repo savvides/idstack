@@ -213,7 +213,7 @@ IMPORT_DIR=<IMPORT_DIR printed above>
 rm -rf "$IMPORT_DIR"
 ```
 
-Continue to Step 2 (Quality Flags).
+Continue to Step 1b (Prepare the report).
 
 ---
 
@@ -240,32 +240,7 @@ From the pasted text, identify and extract:
 5. **Learning activities** — discussions, labs, group work, case studies
 6. **Course logistics** — modality, duration, class size if mentioned
 
-### B3. Confirm extracted structure
-
-Present the extracted structure for confirmation:
-
-```
-## Extracted Course Structure
-
-**Title:** [extracted title]
-**Modules found:** [count]
-
-| # | Module | Items | Objectives | Assessments |
-|---|--------|-------|------------|-------------|
-| 1 | [name] | [count] | [count] | [count] |
-| 2 | [name] | [count] | [count] | [count] |
-...
-
-**Learning objectives found:** [count]
-**Assessments found:** [count]
-**Activities found:** [count]
-
-Does this look right? If I missed anything or got something wrong, let me know.
-```
-
-If the user corrects something, incorporate the corrections.
-
-Continue to Step 2 (Quality Flags).
+Continue to Step 1b (Prepare the report).
 
 ---
 
@@ -343,13 +318,7 @@ From the PDF content, identify and extract the same elements as Path B:
 the PDF content appears incomplete or shows placeholder text for interactive blocks.
 Flag these as "interactive element not captured in PDF" in the import quality triage.
 
-### D4. Confirm extracted structure
-
-Present the extracted structure for confirmation (same format as Path B, Step B3).
-
-If the user corrects something, incorporate the corrections.
-
-Continue to Step 2 (Quality Flags).
+Continue to Step 1b (Prepare the report).
 
 ---
 
@@ -496,7 +465,7 @@ From the API responses, extract:
 - **Discussions:** title, assignment_id (graded discussions)
 - **Outcomes:** title, description, mastery_points, ratings
 
-Continue to Step 2 (Quality Flags).
+Continue to Step 1b (Prepare the report).
 
 ---
 
@@ -614,40 +583,51 @@ metadata or resource identifiers, note the authoring tool. Articulate packages o
 structure content as: one SCO per lesson, with a `story.html` or `index.html` launch
 file. Rise packages use a flat structure with a single SCO.
 
-### E7. Confirm extracted structure
-
-Present the extracted structure for confirmation:
-
-```
-## Extracted Course Structure (SCORM [version])
-
-**Title:** [extracted title]
-**Authoring tool:** [detected or unknown]
-**Modules found:** [count]
-**SCOs:** [count] | **Assets:** [count]
-
-| # | Module | Items | Objectives | Assessments |
-|---|--------|-------|------------|-------------|
-| 1 | [name] | [count] | [count] | [count] |
-| 2 | [name] | [count] | [count] | [count] |
-...
-
-**Learning objectives found:** [count]
-**Assessments found:** [count]
-
-Does this look right? If I missed anything or got something wrong, let me know.
-```
-
-If the user corrects something, incorporate the corrections.
-
-### E8. Cleanup
+### E7. Cleanup
 
 ```bash
 IMPORT_DIR=<IMPORT_DIR printed above>
 rm -rf "$IMPORT_DIR"
 ```
 
-Continue to Step 2 (Quality Flags).
+Continue to Step 1b (Prepare the report).
+
+---
+
+## Step 1b: Prepare the report
+
+All of the input paths come to this step after they extract the course structure.
+idstack adds each section to the import report as a draft. The user approves each section.
+
+**Start the report.** In this command, replace `<project name>` with the course title from the import. Replace `<mode>` with the source and the source LMS, for example `cartridge from canvas`. The source is one of `cartridge`, `paste`, `canvas-api`, `pdf` or `scorm`. The source LMS is one of `canvas`, `blackboard`, `moodle`, `d2l`, `rise`, `storyline` or `unknown`. Then run the command.
+
+```bash
+{{IDSTACK_RESOLVE}}
+# Compute the course slug from this session's course title and prepare the export folder.
+# Do not read project_name from the manifest here. Step 6 writes it, so on a first import
+# the manifest has no name yet and the report lands in exports/untitled-course/.
+IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
+<project name>
+IDSTACK_PROJECT_NAME
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+[ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."; exit 1; }
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/course-import.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
+echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill course-import --title "Course Import Report" --project "$_PROJECT_NAME" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+```
+
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
+
+**Step review:** do the Step Review in the preamble. Section: `## Imported structure`. Columns: `ID | Module | Items | Objectives | Assessments | Activities | Pages | Rubrics`.
+
+Write one row for each module, with the IDs `M-1`, `M-2` and so on. Write the number of items, objectives, assessments, activities and discussions, content pages and rubrics in each module. Put a page or a rubric that is in no module in a row with the ID `M-0` and the module name `No module`.
+
+Write a last row with the ID `TOTAL` and the totals. In the Module cell of that row, write the number of modules. For a SCORM package, write one sentence above the table with the SCORM version, the authoring tool and the number of SCOs and assets. If the user selects "Change a row", put the corrections of the user in the extracted structure. The next steps use the corrected structure.
 
 ---
 
@@ -659,20 +639,22 @@ flags problems visible in the structural data alone.
 
 **Structural flags:**
 - Count modules vs modules with stated objectives. Flag if < 50% have objectives:
-  "⚠ {X} of {Y} modules have no stated learning objectives"
+  "⚠ {X} of {Y} modules have no stated learning objectives [Alignment-1] [T5]"
 - Count assessments with rubrics vs without. Flag if < 25% have rubrics:
   "⚠ {X} of {Y} assessments have no rubric [Assessment-8] [T1]"
 - Check for discussion/collaborative activities. Flag if zero:
   "⚠ No discussion or collaborative activities found — social presence gap risk
   [Online-15] [T4]"
 - Check for accessibility info. Flag if none:
-  "⚠ No accessibility information found for course materials"
+  "⚠ No accessibility information found for course materials [Access-1] [T5]"
 - Check for learner support resources. Flag if none:
-  "⚠ idstack found no learner support section (tutoring, office hours, tech support)"
+  "⚠ idstack found no learner support section (tutoring, office hours, tech support)
+  [Online-3] [T5]"
 
 **Alignment flags:**
 - If objectives exist AND assessments exist but no clear mapping between them:
-  "⚠ The course has objectives and assessments, but idstack found no alignment matrix between them"
+  "⚠ The course has objectives and assessments, but idstack found no alignment matrix between them
+  [Alignment-1] [T5]"
 - If all assessments are the same type (e.g., all quizzes):
   "⚠ All {X} assessments are {type}. idstack recommends different assessment types for different
   Bloom's levels [Assessment-10] [T1]"
@@ -682,20 +664,12 @@ flags problems visible in the structural data alone.
   "⚠ idstack found auto-graded assessments. Elaborated feedback (that explains WHY) increases
   learning more than correctness-only feedback [Assessment-8] [T1]"
 
-Present the flags:
+**Step review:** do the Step Review in the preamble. Section: `## Import quality triage`. Columns: `ID | Flag | Severity | Justification | Evidence`.
 
-```
-## Import Quality Triage
+Write one row for each flag, with the IDs `Q-1`, `Q-2` and so on. Write the Severity as `critical`, `warning` or `info`. Use the citation that the list above gives for the flag. A flag with no citation, for example "interactive element not captured in PDF", goes in the Limitations section. Before the table, write one sentence: these flags are quick observations from the course structure, not a full review.
 
-Found {N} flags during import:
-{list each flag with ⚠ prefix}
-
-These are quick observations from the course structure, not a full review.
-Run /idstack:course-quality-review for an evidence-based audit with specific recommendations.
-```
-
-If zero flags: "idstack found no structural problems in the import. Run
-/idstack:course-quality-review for a deeper analysis."
+If idstack found zero flags, do not do this Step Review. Tell the user: "idstack found no structural problems in the import. Run
+/idstack:course-quality-review for a deeper analysis." Write this result in the Summary.
 
 ---
 
@@ -728,23 +702,11 @@ For each module:
 
 Assign task IDs: T-1, T-2, T-3, etc.
 
-Present for user review:
+**Step review:** do the Step Review in the preamble. Section: `## Inferred task analysis`. Columns: `ID | Task | Source module | Frequency | Criticality | Difficulty | Justification | Evidence`.
 
-```
-## Inferred Task Analysis
+Write one row for each task. In the Source module cell, write the module ID from the Imported structure section. Cite `[Needs-8] [T3]` for the task analysis.
 
-I mapped your {N} modules to task analysis entries. Review and adjust them:
-
-| ID | Task | Frequency | Criticality | Difficulty |
-|----|------|-----------|-------------|------------|
-| T-1 | [performance statement] | [est.] | [est.] | [est.] |
-...
-
-These estimates come from the module structure. Edit each estimate that is not correct for your
-course context.
-```
-
-Ask the user to confirm or edit via AskUserQuestion.
+Before the table, write two sentences. The estimates come from the module structure. The user can change each estimate that is not correct for the course. If the user selects "Change a row", use the new estimate of the user.
 
 ---
 
@@ -780,64 +742,28 @@ For each objective:
 
 Assign ILO IDs: ILO-1, ILO-2, etc.
 
-Present for review:
+**Step review:** do the Step Review in the preamble. Section: `## Bloom's classification`. Columns: `ID | Objective | Knowledge | Process | Confidence | Justification | Evidence`.
 
-```
-## Imported Learning Objectives (Bloom's pre-classification)
+Write one row for each objective. Write the Confidence as `high` or `ambiguous`. Cite `[Alignment-7] [T4]` for a high-confidence row and `[Alignment-12] [T4]` for an ambiguous row. Before the table, write one sentence: all classifications have the status "imported-unverified", and `/idstack:learning-objectives` checks the Bloom's levels and the alignment with activities and assessments.
 
-| ID | Objective | Knowledge | Process | Status |
-|----|-----------|-----------|---------|--------|
-| ILO-1 | [text] | [dim] | [proc] | high confidence |
-| ILO-2 | [text] | [dim] | [proc] | ambiguous — check |
-...
-
-All classifications have the status "imported-unverified." Run /idstack:learning-objectives
-to check the Bloom's levels and the alignment with activities and assessments.
-```
+If the import found no objectives, do not do this Step Review. Write this result in the Limitations section.
 
 ---
 
-## Step 5: Generate Import Report
+## Step 5: Findings and Report
 
-Before writing the manifest, generate an HTML report so the designer has a single document about what came in and where the quality flags are. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
 
-In this command, replace `<project name>` with the course title from the import. Then run the command.
+Use the finding IDs `import-1`, `quality-1`, `bloom-1` and so on. The findings come from the approved import quality flags, missing rubrics, missing objectives, alignment that is broken on arrival, and ambiguous Bloom's classifications.
 
-```bash
-{{IDSTACK_RESOLVE}}
-# Compute the course slug from this session's course title and prepare the export folder.
-# Do not read project_name from the manifest here. Step 6 writes it, so on a first import
-# the manifest has no name yet and the report lands in exports/untitled-course/.
-IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
-<project name>
-IDSTACK_PROJECT_NAME
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
-[ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."; exit 1; }
-_EXPORT_DIR=".idstack/exports/$_SLUG"
-_REPORT_PATH="$_EXPORT_DIR/course-import.html"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Report template: $_IDSTACK/templates/report.html.tmpl"
-echo "Report rules: $_IDSTACK/templates/report-format.md"
-echo "Report path: $_REPORT_PATH"
-echo "Report link: $(pwd -P)/$_REPORT_PATH"
-```
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns: `ID | Action | Justification | Evidence` for Top recommendations.
 
-Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-import.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+- **Top recommendations:** three to five actions from the approved findings, with the IDs `R-1`, `R-2` and so on. Put the action with the most effect first.
+- **Summary:** two or three sentences. Tell what came in: the number of modules, objectives, assessments, activities and discussions, pages and rubrics. Tell the number of quality flags. Then tell the most important thing for the designer, for example "The structure of the import is clean, but the course has few objectives." or "8 of 12 modules have no rubric."
+- **Limitations:** the import reads structural metadata only. Interactive elements (Storyline, flashcards) do not show in a PDF. The Canvas token stays in `.idstack/canvas.env` on the user's computer. idstack does not write it to the manifest or the report. The import can miss data in SCORM packages that have non-standard manifest extensions. Add each flag that has no citation.
+- **Next steps:** run `/idstack:course-quality-review` for the full evidence-based audit. Run `/idstack:learning-objectives` to check the Bloom's classification and the alignment in the two directions. Run `/idstack:needs-analysis` in audit-existing mode to add the organizational context and the learner profile that idstack cannot get from the course structure.
 
-- **`{{skill_title}}`:** "Course Import Report"
-- **`{{skill_name}}`:** `course-import`
-- **`{{mode}}`:** include `source: cartridge|paste|canvas-api|pdf|scorm` and `source LMS: canvas|blackboard|moodle|d2l|rise|storyline|unknown` in the header `meta` line.
-- **Summary:** 2–3 sentences. What came in (N modules, M objectives, P assessments), how many quality flags were raised, and the single most important thing the designer should know — e.g., "Import is structurally clean but objectives are sparse." or "Cartridge schema is valid but 8/12 modules have no rubric."
-- **Skill-specific sections before Findings**:
-  - `<section class="imported">` with `<h2>Imported</h2>` and an HTML `<table>` (Item, Count). Rows: Modules, Objectives, Assessments, Activities/discussions, Pages, Rubrics.
-- **Finding ids:** `import-1`, `quality-1`, `bloom-1`, etc. Findings come from import quality flags, missing rubrics, missing objectives, alignment-already-broken-on-arrival, and Bloom's-inference low-confidence classifications.
-- **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="blooms-classification">` with `<h2>Bloom's classification</h2>` and an HTML `<table>` (ILO ID, Statement (truncated), Bloom's level, Confidence). Note any low-confidence classifications the designer should verify.
-- **Limitations:** The import reads structural metadata only. Interactive elements (Storyline, flashcards) do not show in a PDF. The Canvas token stays in `.idstack/canvas.env` on the user's computer. idstack does not write it to the manifest or the report. The import can miss data in SCORM packages that have non-standard manifest extensions.
-- **Next steps** (use an `<ol>`):
-  1. Run `/idstack:course-quality-review` for the full evidence-based audit.
-  2. Run `/idstack:learning-objectives` to check the Bloom's inference and the bidirectional alignment.
-  3. Run `/idstack:needs-analysis` (in audit-existing mode) to add the organizational context and learner profile that idstack cannot get from the cartridge.
+Run the finish command of the Step Review.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
@@ -889,20 +815,23 @@ writes nothing.
 
 **Fields populated by /idstack:course-import:**
 
-- `project_name` — from course title. Use the text that you put in place of `<project name>` in Step 5.
+- `project_name` — from course title. Use the text that you put in place of `<project name>` in Step 1b.
 - `context.modality` — inferred from course structure (async=online, sync sessions=hybrid)
 - `context.timeline` — from term/date info if available
 - `context.available_tech` — from detected resource types (LMS, video, discussions, etc.)
 - `needs_analysis.task_analysis.job_tasks` — from module-to-task mapping (Step 3)
 - `learning_objectives.ilos` — from Bloom's inference (Step 4)
+
 - `learning_objectives.alignment_matrix` — partial, from detected objective-assessment links
+
+Use only the approved rows of the report. `job_tasks` has the approved `T-` rows. `ilos` has the approved `ILO-` rows, with the status "imported-unverified". The `items_imported` counts come from the `TOTAL` row of the approved Imported structure section. `quality_flags` is the number of approved rows in the Import quality triage section.
 
 **Import metadata:** The `import_metadata` payload (flat, with no enclosing `import_metadata` key):
 
 ```json
 {
   "source": "cartridge|paste|canvas-api",
-  "report_path": "<set to $_REPORT_PATH from the Step 5 bash block — e.g. .idstack/exports/<course-slug>/course-import.html>",
+  "report_path": "<set to $_REPORT_PATH from the Step 1b bash block — e.g. .idstack/exports/<course-slug>/course-import.md>",
   "imported_at": "ISO-8601",
   "source_lms": "canvas|blackboard|moodle|d2l|unknown",
   "items_imported": {
@@ -934,7 +863,7 @@ Write the manifest, then confirm. Write the message as Markdown text, not in a c
 **Quality triage:** {F} flags found
 
 **Two artifacts:**
-- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the import report
+- **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the import report
   with evidence-backed quality flags, the Bloom's classification table, and recommended
   next steps tied to specific findings. Click the link to open it. The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).

@@ -1,0 +1,459 @@
+#!/usr/bin/env python3
+"""Build an idstack Markdown report one approved section at a time.
+
+Usage:
+  idstack-report-section init REPORT --skill NAME --title TITLE [--project NAME]
+                         [--mode MODE] [--run-id ID] [--reserve HEADING]...
+  idstack-report-section check DRAFT
+  idstack-report-section append REPORT DRAFT
+  idstack-report-section approve REPORT [--draft DRAFT]
+  idstack-report-section finish REPORT
+
+init    writes the report header, an in-progress status line, a Summary
+        placeholder, one placeholder for each --reserve heading, and the footer.
+        It replaces a report from an earlier run.
+check   examines a draft section (the Step Review in templates/preamble.md):
+        each "## " section has a table, the first column is ID, a cited table
+        ends with Justification and Evidence, each Evidence cell has only
+        citations whose tiers agree with evidence/references.md, a findings
+        table is in severity order, and the text obeys bin/idstack-ste-check.
+append  runs check, then puts each section of the draft in the report, marked as a
+        draft that waits for approval. A section with the same heading is
+        replaced in place. A new section goes before the footer. A findings table
+        also gets one "### Finding" block for each row. The write is atomic. The
+        draft file stays, so that the user can change a row. The user reads the
+        section in the report file.
+approve removes the draft mark from each section that has one. With --draft,
+        it also deletes the draft file.
+finish  makes sure that no placeholder and no draft section remain, and removes
+        the status line.
+
+Exit codes: 0 OK; 1 problems (the report did not change); 2 an error in the
+command, or a missing file that the script needs; 3 the report does not exist.
+Runs on Python 3.9.
+"""
+
+import argparse
+import datetime
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, os.path.join(HERE, 'lib'))
+from citations import check_evidence, load_refs  # noqa: E402
+
+REFERENCES = os.path.join(HERE, '..', 'evidence', 'references.md')
+STE_CHECK = os.path.join(HERE, 'idstack-ste-check')
+VERSION_FILE = os.path.join(HERE, '..', 'VERSION')
+
+STATUS_LINE = '**Status:** in progress. A section with a draft mark waits for your approval.'
+DRAFT_LINE = '**Draft:** this section waits for your approval.'
+PLACEHOLDER = '_idstack writes this section at the end of the skill._'
+PROSE_SECTIONS = ('Summary', 'Limitations', 'Next steps')
+FACT_SECTIONS = ('Project context', 'Course information', 'Imported structure',
+                 'Readiness', 'Export contents', 'Generated artifacts')
+FINDING_COLUMNS = ['ID', 'Severity', 'What we saw', 'Recommendation', 'Justification', 'Evidence']
+SEVERITY_RANK = {'critical': 0, 'warning': 1, 'info': 2}
+CELL_SPLIT_RE = re.compile(r'(?<!\\)\|')
+SEPARATOR_RE = re.compile(r'^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$')
+
+
+class Problems(Exception):
+    pass
+
+
+# ---------------------------------------------------------------------------
+# Markdown structure
+# ---------------------------------------------------------------------------
+
+def split_sections(lines):
+    """Return (head, [(heading, lines)], footer) for a report or a draft."""
+    footer_at = len(lines)
+    for i in range(len(lines) - 1, -1, -1):
+        if lines[i].strip() == '---':
+            footer_at = i
+            break
+    head, sections = [], []
+    for line in lines[:footer_at]:
+        if line.startswith('## '):
+            sections.append((line[3:].strip(), [line]))
+        elif sections:
+            sections[-1][1].append(line)
+        else:
+            head.append(line)
+    return head, sections, lines[footer_at:]
+
+
+def cells(line):
+    text = line.strip()
+    if text.startswith('|'):
+        text = text[1:]
+    if text.endswith('|') and not text.endswith('\\|'):
+        text = text[:-1]
+    return [c.strip() for c in CELL_SPLIT_RE.split(text)]
+
+
+def tables(section_lines, first_number):
+    """Return [(line_number, header, [(line_number, cells)])] for each pipe table."""
+    found = []
+    i = 0
+    while i < len(section_lines):
+        line = section_lines[i]
+        if line.strip().startswith('|') and i + 1 < len(section_lines) \
+                and SEPARATOR_RE.match(section_lines[i + 1].strip()):
+            header = cells(line)
+            rows = []
+            j = i + 2
+            while j < len(section_lines) and section_lines[j].strip().startswith('|'):
+                rows.append((first_number + j, cells(section_lines[j])))
+                j += 1
+            found.append((first_number + i, header, rows))
+            i = j
+        else:
+            i += 1
+    return found
+
+
+# ---------------------------------------------------------------------------
+# check
+# ---------------------------------------------------------------------------
+
+def check_table(heading, number, header, rows, refs, problems):
+    if not header or header[0] != 'ID':
+        problems.append((number, 'the first column of the table in "%s" must be ID' % heading))
+        return
+    cited = header[-2:] == ['Justification', 'Evidence']
+    if heading not in FACT_SECTIONS and not cited:
+        problems.append((number, 'the last two columns of the table in "%s" must be Justification '
+                                 'and Evidence' % heading))
+        return
+    findings = header == FINDING_COLUMNS
+    seen = set()
+    last_rank = -1
+    if not rows:
+        problems.append((number, 'the table in "%s" has no rows. If the step has no rows, do not '
+                                 'write the section.' % heading))
+    for row_number, row in rows:
+        if len(row) != len(header):
+            problems.append((row_number, 'the row has %d cells. The table has %d columns.'
+                             % (len(row), len(header))))
+            continue
+        row_id = row[0]
+        if not row_id:
+            problems.append((row_number, 'the row has no ID'))
+        elif row_id in seen:
+            problems.append((row_number, 'the ID "%s" is in the table two times' % row_id))
+        seen.add(row_id)
+        if cited:
+            if not row[-2].strip(' -'):
+                problems.append((row_number, 'the row "%s" has no justification' % row_id))
+            evidence_problems, _ = check_evidence(row[-1], refs)
+            for message in evidence_problems:
+                problems.append((row_number, 'row "%s": %s If you cannot cite the row, put the '
+                                             'text in Limitations.' % (row_id, message)))
+        if findings:
+            severity = row[1].strip().lower()
+            if severity not in SEVERITY_RANK:
+                problems.append((row_number, 'the severity of "%s" must be critical, warning or info'
+                                 % row_id))
+            elif SEVERITY_RANK[severity] < last_rank:
+                problems.append((row_number, 'put the critical rows first, then warning, then info'))
+            else:
+                last_rank = SEVERITY_RANK[severity]
+
+
+def check_draft(path, refs):
+    """Return the draft sections. Raise Problems with each problem."""
+    with open(path, encoding='utf-8') as handle:
+        lines = handle.read().split('\n')
+    problems = []
+    for number, line in enumerate(lines, 1):
+        if line.startswith('# '):
+            problems.append((number, 'a draft has no "# " title. Start each section with "## ".'))
+        if line.startswith('### Finding'):
+            problems.append((number, 'do not write "### Finding" blocks. The script writes them '
+                                     'from the findings table.'))
+        if line.strip() in (STATUS_LINE, PLACEHOLDER, DRAFT_LINE):
+            problems.append((number, 'the draft has text that only the script writes'))
+    head, sections, footer = split_sections(lines)
+    if any(line.strip() for line in head + footer):
+        problems.append((1, 'put all of the text in "## " sections, with no text before the first '
+                            'section and no "---" line'))
+    if not sections:
+        problems.append((1, 'the draft has no "## " section'))
+    number = len(head) + 1
+    for heading, section_lines in sections:
+        found = tables(section_lines, number)
+        if not found and heading not in PROSE_SECTIONS:
+            problems.append((number, 'the section "%s" has no table' % heading))
+        if not any(line.strip() for line in section_lines[1:]):
+            problems.append((number, 'the section "%s" is empty' % heading))
+        for table_number, header, rows in found:
+            check_table(heading, table_number, header, rows, refs, problems)
+        number += len(section_lines)
+    problems.extend(ste_problems(path))
+    if problems:
+        raise Problems(['%s:%d: %s' % (path, n, m) for n, m in sorted(problems, key=lambda p: p[0])])
+    return sections
+
+
+def ste_problems(path):
+    try:
+        result = subprocess.run([sys.executable, STE_CHECK, '--format', 'markdown', path],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+    except OSError as exc:
+        raise SystemExit(fail(2, 'cannot run %s: %s' % (STE_CHECK, exc)))
+    if result.returncode == 2:
+        raise SystemExit(fail(2, 'idstack-ste-check did not run: %s' % result.stderr.strip()))
+    found = []
+    for line in result.stdout.splitlines():
+        m = re.match(r'^.*:(\d+): (.*)$', line)
+        if m:
+            found.append((int(m.group(1)), 'writing standard: ' + m.group(2)))
+    return found
+
+
+# ---------------------------------------------------------------------------
+# append
+# ---------------------------------------------------------------------------
+
+def finding_blocks(section_lines, refs):
+    blocks = []
+    for _, header, rows in tables(section_lines, 1):
+        if header != FINDING_COLUMNS:
+            continue
+        for _, row in rows:
+            row_id, severity, saw, recommendation, justification, evidence = row
+            _, tier = check_evidence(evidence, refs)
+            blocks += ['', '### Finding %s' % row_id, '',
+                       '**Severity:** %s · **Evidence tier:** %s' % (severity.strip().lower(), tier), '',
+                       '**What we saw:** %s' % saw, '',
+                       '**Why it matters:** %s %s' % (justification, evidence), '',
+                       '**Recommendation:** %s' % recommendation]
+    return blocks
+
+
+def trim(section_lines):
+    while section_lines and not section_lines[-1].strip():
+        section_lines = section_lines[:-1]
+    return section_lines
+
+
+def write_atomic(path, text):
+    folder = os.path.dirname(os.path.abspath(path))
+    fd, tmp = tempfile.mkstemp(dir=folder, prefix='.report-section-', suffix='.tmp')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as handle:
+            handle.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
+
+
+def render(head, sections, footer):
+    lines = trim(head)
+    for _, section_lines in sections:
+        lines += [''] + trim(section_lines)
+    lines += [''] + footer
+    text = '\n'.join(lines)
+    return text if text.endswith('\n') else text + '\n'
+
+
+def cmd_append(report, draft, refs):
+    if not os.path.isfile(report):
+        return fail(3, 'the report %s does not exist. Run "init" first.' % report)
+    new_sections = check_draft(draft, refs)
+    with open(report, encoding='utf-8') as handle:
+        head, sections, footer = split_sections(handle.read().split('\n'))
+    if not footer:
+        return fail(1, 'the report %s has no footer ("---" line). Run "init" again.' % report)
+    messages = []
+    for heading, section_lines in new_sections:
+        section_lines = trim(section_lines) + finding_blocks(section_lines, refs)
+        section_lines = [section_lines[0], '', DRAFT_LINE] + section_lines[1:]
+        for index, (existing, _) in enumerate(sections):
+            if existing == heading:
+                sections[index] = (heading, section_lines)
+                messages.append('SECTION_REPLACED: %s' % heading)
+                break
+        else:
+            sections.append((heading, section_lines))
+            messages.append('SECTION_ADDED: %s' % heading)
+    write_atomic(report, render(head, sections, footer))
+    # The model writes the chat link from this line, so the path is close at hand.
+    messages.append('Report path: %s' % report)
+    print('\n'.join(messages))
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# init and finish
+# ---------------------------------------------------------------------------
+
+def project_name():
+    try:
+        with open(os.path.join('.idstack', 'project.json'), encoding='utf-8') as handle:
+            name = json.load(handle).get('project_name') or ''
+    except (OSError, ValueError, AttributeError):
+        name = ''
+    return name.strip() or 'Untitled course'
+
+
+PLACEHOLDER_ARG_RE = re.compile(r'<[a-z][a-z -]*>')
+
+
+def cmd_init(args):
+    for name in ('title', 'project', 'mode'):
+        value = getattr(args, name) or ''
+        if PLACEHOLDER_ARG_RE.search(value):
+            return fail(2, 'replace %s in --%s with its value. Then run the command again.'
+                        % (PLACEHOLDER_ARG_RE.search(value).group(0), name))
+    try:
+        with open(VERSION_FILE, encoding='utf-8') as handle:
+            version = handle.read().strip()
+    except OSError:
+        version = 'unknown'
+    today = datetime.date.today()
+    meta = ['idstack', '`/idstack:%s`' % args.skill, args.project or project_name(),
+            '%d %s %d' % (today.day, today.strftime('%B'), today.year),
+            'run %s' % (args.run_id or os.urandom(3).hex())]
+    if args.mode:
+        meta.append('mode: %s' % args.mode)
+    lines = ['# %s' % args.title, '', ' · '.join(meta), '', STATUS_LINE, '']
+    for heading in ['Summary'] + args.reserve:
+        lines += ['## %s' % heading, '', PLACEHOLDER, '']
+    lines += ['---', '', 'Generated by `/idstack:%s` · idstack v%s · [Course dashboard](index.md)'
+              % (args.skill, version)]
+    folder = os.path.dirname(os.path.abspath(args.report))
+    os.makedirs(folder, exist_ok=True)
+    write_atomic(args.report, '\n'.join(lines) + '\n')
+    print('REPORT_STARTED: %s' % args.report)
+    return 0
+
+
+def drop_marks(lines, mark):
+    """Remove each mark line and the blank line after it. Return (lines, count)."""
+    out = []
+    count = 0
+    skip_blank = False
+    for line in lines:
+        if line.strip() == mark:
+            count += 1
+            skip_blank = True
+            continue
+        if skip_blank and not line.strip():
+            skip_blank = False
+            continue
+        skip_blank = False
+        out.append(line)
+    return out, count
+
+
+def cmd_approve(report, draft=None):
+    if not os.path.isfile(report):
+        return fail(3, 'the report %s does not exist. Run "init" first.' % report)
+    with open(report, encoding='utf-8') as handle:
+        lines = handle.read().split('\n')
+    _, sections, _ = split_sections(lines)
+    drafts = [heading for heading, section_lines in sections
+              if any(line.strip() == DRAFT_LINE for line in section_lines)]
+    if not drafts:
+        print('%s: no section waits for approval. Run "append" first.' % report)
+        return 1
+    lines, _ = drop_marks(lines, DRAFT_LINE)
+    write_atomic(report, '\n'.join(lines))
+    if draft and os.path.isfile(draft):
+        os.remove(draft)
+    print('\n'.join('SECTION_APPROVED: %s' % heading for heading in drafts))
+    return 0
+
+
+def cmd_finish(report):
+    if not os.path.isfile(report):
+        return fail(3, 'the report %s does not exist. Run "init" first.' % report)
+    with open(report, encoding='utf-8') as handle:
+        lines = handle.read().split('\n')
+    _, sections, _ = split_sections(lines)
+    empty = [heading for heading, section_lines in sections
+             if any(line.strip() == PLACEHOLDER for line in section_lines)]
+    drafts = [heading for heading, section_lines in sections
+              if any(line.strip() == DRAFT_LINE for line in section_lines)]
+    for heading in empty:
+        print('%s: the section "%s" has no text. Do the Step Review for it.' % (report, heading))
+    for heading in drafts:
+        print('%s: the section "%s" is a draft. Ask the user to approve it.' % (report, heading))
+    if empty or drafts:
+        return 1
+    out, _ = drop_marks(lines, STATUS_LINE)
+    write_atomic(report, '\n'.join(out))
+    print('REPORT_COMPLETE: %s' % report)
+    return 0
+
+
+def fail(code, message):
+    print('idstack-report-section: %s' % message, file=sys.stderr)
+    return code
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog='idstack-report-section',
+                                     description='Build an idstack report one approved section at a time.')
+    sub = parser.add_subparsers(dest='command')
+    p_init = sub.add_parser('init')
+    p_init.add_argument('report')
+    p_init.add_argument('--skill', required=True)
+    p_init.add_argument('--title', required=True)
+    p_init.add_argument('--project')
+    p_init.add_argument('--mode')
+    p_init.add_argument('--run-id')
+    p_init.add_argument('--reserve', action='append', default=[])
+    p_check = sub.add_parser('check')
+    p_check.add_argument('draft')
+    p_append = sub.add_parser('append')
+    p_append.add_argument('report')
+    p_append.add_argument('draft')
+    p_approve = sub.add_parser('approve')
+    p_approve.add_argument('report')
+    p_approve.add_argument('--draft')
+    p_finish = sub.add_parser('finish')
+    p_finish.add_argument('report')
+    args = parser.parse_args(argv)
+    if not args.command:
+        parser.print_usage(sys.stderr)
+        return 2
+
+    if args.command == 'init':
+        return cmd_init(args)
+    if args.command == 'finish':
+        return cmd_finish(args.report)
+    if args.command == 'approve':
+        return cmd_approve(args.report, args.draft)
+
+    if not os.path.isfile(REFERENCES):
+        return fail(2, 'the evidence list %s does not exist' % REFERENCES)
+    refs = load_refs(REFERENCES)
+    if not refs:
+        return fail(2, 'the evidence list %s has no "- [Code-N] ... Tn" lines' % REFERENCES)
+    if not os.path.isfile(args.draft):
+        return fail(2, 'the draft %s does not exist' % args.draft)
+    try:
+        if args.command == 'check':
+            check_draft(args.draft, refs)
+            print('CHECK_OK')
+            return 0
+        return cmd_append(args.report, args.draft, refs)
+    except Problems as exc:
+        print('\n'.join(exc.args[0]))
+        print('idstack-report-section: %d problem(s). The report did not change.' % len(exc.args[0]))
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

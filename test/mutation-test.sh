@@ -247,9 +247,17 @@ fresh
 echo 'drift' >> "$WORK/r/skills/red-team/SKILL.md"
 expect_fail "stale generated SKILL.md" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 10. missing Top recommendations -> smoke-test must fail
+# 10. missing Top recommendations -> smoke-test must fail. The closing Step
+# Review of each report skill names the section.
 fresh
-sed -i.bak '/\*\*Top recommendations:\*\*/d' "$WORK/r/skills/learning-objectives/SKILL.md.tmpl"
+python3 - "$WORK/r/skills/learning-objectives/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "Section: `## Summary`, `## Limitations` and `## Next steps`", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
 regen
 expect_fail "missing Top recommendations" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
@@ -1599,12 +1607,12 @@ expect_fail "a skill drops its writing standard check" "$WORK/r/test/smoke-test.
 # 48b. The report template labels a recommendation "Consider" again -> smoke-test
 # must fail. The template is not spliced into a skill, so no regen.
 fresh
-python3 - "$WORK/r/templates/report.html.tmpl" <<'PY'
+python3 - "$WORK/r/templates/report.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "          <dt>Recommendation</dt>\n"
+old = "**Recommendation:** {{suggestion}}\n"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "          <dt>Consider</dt>\n", 1)
+s = s.replace(old, "**Consider:** {{suggestion}}\n", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the report template labels a recommendation Consider" "$WORK/r/test/smoke-test.sh" "$WORK/r"
@@ -1947,11 +1955,12 @@ PY
 regen
 expect_fail "course-import makes a folder for an unreplaced course title" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 54c. The citation-tier checker matches only codes in one line with spaces between
+# 54c. The citation-tier parser matches only codes in one line with spaces between
 # them again -> test-citation-tiers must fail. Then a code before a comma, or a
-# citation that a line break splits, gets no check.
+# citation that a line break splits, gets no check. The parser is in
+# bin/lib/citations.py, which the checker and bin/idstack-report-section share.
 fresh
-python3 - "$WORK/r/test/check-citation-tiers.py" <<'PY'
+python3 - "$WORK/r/bin/lib/citations.py" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = 'SEP = r"[^\\S\\n]*(?:,[^\\S\\n]*)?(?:\\n[^\\S\\n]*)?"\n'
@@ -2003,7 +2012,7 @@ shell_mutation "a Canvas block forgets to load canvas.env" \
   skills/course-import/SKILL.md.tmpl ". ./.idstack/canvas.env || { echo \"CANVAS_ENV_MISSING\"; exit 1; }
 curl -s" 'curl -s'
 shell_mutation "a report block stops printing the plugin template path" \
-  skills/needs-analysis/SKILL.md.tmpl 'echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+  skills/needs-analysis/SKILL.md.tmpl 'echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 ' ''
 
 
@@ -2175,10 +2184,10 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "doctor --quick no longer reports the macOS stub" "$WORK/r/test/test-doctor.sh"
 
-# 61c. A report block stops printing its full report link -> smoke-test must
-# fail. The desktop user then has no link to click.
-shell_mutation "a report block stops printing its absolute report link" \
-  skills/learning-objectives/SKILL.md.tmpl 'echo "Report link: $(pwd -P)/$_REPORT_PATH"
+# 61c. A report block stops printing its relative report path -> smoke-test
+# must fail. The desktop user then has no link to click.
+shell_mutation "a report block stops printing its relative report path" \
+  skills/learning-objectives/SKILL.md.tmpl 'echo "Report path: $_REPORT_PATH"
 ' ''
 
 # 61d. A closing message sends the user to a web browser again -> smoke-test
@@ -2199,12 +2208,159 @@ shell_mutation "start does not release its limits at the handoff" \
   skills/start/SKILL.md.tmpl 'When Step 4 starts a different skill with the Skill tool, the limits of this
 skill stop.' ''
 
-# 61g. /idstack:start stops refusing a Claude app scratch workspace -> smoke-test
+# 61g. A report block prints an absolute report link again -> smoke-test must
+# fail. The full path had a space (Application Support), and the Claude desktop
+# app did not make it a link.
+shell_mutation "a report block prints an absolute report link again" \
+  skills/learning-objectives/SKILL.md.tmpl 'echo "Report path: $_REPORT_PATH"
+' 'echo "Report path: $_REPORT_PATH"
+echo "Report link: $(pwd -P)/$_REPORT_PATH"
+'
+
+# 61h. The preamble's link example puts the path in angle brackets again ->
+# smoke-test must fail. The model copies the example form.
+shell_mutation "the Report Links example uses an angle-bracket link again" \
+  templates/preamble.md '[.idstack/exports/bio-101/course-import.md](.idstack/exports/bio-101/course-import.md)' '[Open the report](</Users/x/Library/Application Support/c/.idstack/exports/bio-101/course-import.md>)'
+
+# 61i. /idstack:start stops refusing a Claude app scratch workspace -> smoke-test
 # must fail (through test-skill-shell-zsh). The desktop app can start a session
 # in a temporary folder, and the next skill would write .idstack/ there.
 shell_mutation "start no longer refuses a Claude app scratch workspace" \
   skills/start/SKILL.md.tmpl '  "$_HOME_DIR/Library/Application Support/Claude/scratch-workspaces/"*) echo "NOT_A_COURSE_FOLDER: $_HERE" ;;
 ' ''
+
+# 62a-62m. The Step Review. Each report skill shows each step as a table with a
+# citation in each row, the user approves it, and bin/idstack-report-section
+# adds it to the report.
+# 62a. The helper stops comparing a tier with evidence/references.md ->
+# test-report-section must fail. A row could then claim T1 for a T5 paper.
+fresh
+python3 - "$WORK/r/bin/lib/citations.py" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "            elif refs[code] != tier:\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "            elif False:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the report helper skips the tier comparison" python3 "$WORK/r/test/test-report-section.py"
+
+# 62b. The helper accepts a row with an empty Justification -> test-report-section
+# must fail. Each row must tell why it is correct for the course.
+fresh
+python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "            if not row[-2].strip(' -'):\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "            if False:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "the report helper accepts an empty Justification" python3 "$WORK/r/test/test-report-section.py"
+
+# 62c. append drops the footer when it replaces a section -> test-report-section
+# must fail. A second Step Review of one section would delete the footer.
+fresh
+python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "                sections[index] = (heading, section_lines)\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, old + "                footer = []\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "report append drops the footer on replace" python3 "$WORK/r/test/test-report-section.py"
+
+# 62d. A skill loses one Step review line -> smoke-test must fail. That step
+# then goes into the report with no approval.
+shell_mutation "a skill loses one Step review line" \
+  skills/learning-objectives/SKILL.md.tmpl '**Step review:** do the Step Review' 'Do the Step Review'
+
+# 62e. course-quality-review writes the manifest before the report is finished
+# -> smoke-test must fail. Its scores must come from the approved rows.
+fresh
+python3 - "$WORK/r/skills/course-quality-review/SKILL.md.tmpl" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "\n## Write Manifest\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "\n## Save the results\n", 1)
+old = "\n## Report Sections\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "\n## Write Manifest\n\nSave the scores now.\n" + old, 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+regen
+expect_fail "course-quality-review writes the manifest before the report" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 62f. The concise setting tells skills to skip citations again -> smoke-test
+# must fail. Each Step Review row needs its citation at every verbosity.
+shell_mutation "the preamble tells concise skills to skip citations again" \
+  templates/preamble.md 'Keep explanations brief. Do not cite evidence in chat prose.
+Always cite evidence in Step Review tables and in reports.' "Keep explanations brief. Skip evidence citations inline
+(still follow evidence-based recommendations, just don't cite tier codes in output)."
+
+# 62g. A skill init line loses its guard -> smoke-test must fail. An old
+# install with no helper would then stop with "No such file" and no
+# REPORT_SECTION_MISSING, so the skill could not use the fallback.
+shell_mutation "a skill init line loses its REPORT_SECTION_MISSING guard" \
+  skills/course-export/SKILL.md.tmpl 'if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill course-export --title "Course Export Report"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi' '"$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill course-export --title "Course Export Report"'
+
+# 62h. approve does not remove the draft mark -> test-report-section must fail.
+# The report would then show an approved section as a draft.
+fresh
+python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    lines, _ = drop_marks(lines, DRAFT_LINE)\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "report approve keeps the draft mark" python3 "$WORK/r/test/test-report-section.py"
+
+# 62i. finish accepts a draft section -> test-report-section must fail. A
+# section that the user did not approve would go into a complete report.
+fresh
+python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    if empty or drafts:\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    if empty:\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "report finish accepts a draft section" python3 "$WORK/r/test/test-report-section.py"
+
+# 62j. The preamble stops telling the model to keep the table out of the chat
+# -> smoke-test must fail. The model then pastes each table into the chat.
+shell_mutation "the preamble lets the model show the table in the chat" \
+  templates/preamble.md 'Do not show the table in the chat. ' ''
+
+# 62k. append deletes the draft file again -> test-report-section must fail.
+# The draft must stay until approve: if the user asks for a change, the model
+# edits the draft and appends it again.
+fresh
+python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    write_atomic(report, render(head, sections, footer))\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, old + "    os.remove(draft)\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "report append deletes the draft file" python3 "$WORK/r/test/test-report-section.py"
+
+# 62m. The Step Review chat note loses its exact link line -> smoke-test must
+# fail. The model then names the report as text, which is not a link in the app.
+shell_mutation "the Step Review chat note loses its exact link line" \
+  templates/preamble.md 'Read the draft in [<path>](<path>).' 'Read the draft in the report.'
+
+# 62l. The Step Review question loses its option descriptions -> smoke-test must
+# fail. AskUserQuestion refuses an option with no description, so every Step
+# Review question failed in the app.
+shell_mutation "the Step Review question loses its option descriptions" \
+  templates/preamble.md '   - "Approve", with the description "Keep this section as it is."' '   - "Approve"'
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

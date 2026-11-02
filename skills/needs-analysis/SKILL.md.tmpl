@@ -115,6 +115,34 @@ Don't re-ask the user for the course title — read it from `import_metadata` or
 
 Store these in the `context` section of the manifest.
 
+**Start the report.** In this command, replace `<project name>` with the course title from Step 1. Replace `<mode>` with the mode from Step 0.5: `design-new` or `audit-existing`. Then run the command.
+
+```bash
+{{IDSTACK_RESOLVE}}
+# Compute the course slug from this session's course title and prepare the export folder.
+# Do not read project_name from the manifest here. Step 7 writes it, so on a first run
+# the manifest has no name yet and the report lands in exports/untitled-course/.
+IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
+<project name>
+IDSTACK_PROJECT_NAME
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+[ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."; exit 1; }
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/needs-analysis.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
+echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill needs-analysis --title "Needs Analysis Report" --project "$_PROJECT_NAME" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+```
+
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
+
+**Step review:** do the Step Review in the preamble. Section: `## Project context`. Columns: `ID | Item | Value`.
+
+Write one row for each item: course title, subject area, requester, modality, timeline, class size, institution type and available technology. Use the IDs `C-1`, `C-2` and so on. In audit-existing mode, write the source of each value from the import in the Value cell, for example "online (from the Canvas import)".
+
 ---
 
 ### Step 2: Level 1 — Organizational/Context Analysis
@@ -127,7 +155,7 @@ Then capture stakeholders, current state, desired state, and performance gap as 
 ```json
 {"justified": true, "confidence": 10, "rationale": "This course is in use for credit. This skill does a design audit only. The decision about training occurred before this skill.", "alternatives_considered": []}
 ```
-Then proceed to Step 3.
+Then do the Step Review at the end of Step 2. Then proceed to Step 3.
 
 ---
 
@@ -178,10 +206,20 @@ Populate the `training_justification` object:
 - `rationale`: one paragraph explaining why
 - `alternatives_considered`: list of non-training interventions you evaluated
 
-**If training is NOT justified:** Present the finding clearly. Ask the user if they
+**If training is NOT justified:** Tell the finding in a maximum of two sentences, with no citation. Ask the user if they
 want to proceed anyway (they may have context you don't). If they proceed, note it
 in the rationale: "The user continued after idstack recommended against training.
 Reason: [user's reason]."
+
+If the user does not proceed, do the Step Review of this step. Then do the last Step Review (see Step 6). In the Summary, give the decision against training and the alternative intervention. Do not write a Top recommendations section.
+
+Then run the finish command of the Step Review. Then write the manifest as Step 7 tells, with `training_justification.justified` set to false. Then stop this skill.
+
+**Step review:** do the Step Review in the preamble. Section: `## Organizational analysis`. Columns: `ID | Item | Finding | Justification | Evidence`.
+
+Write one row for each item, with the IDs `O-1` to `O-7`: problem, stakeholders, current state, desired state, gap type, training decision (with the confidence, for example "Justified, confidence 8/10") and alternatives. Cite `[Needs-8] [T3]` for O-1, O-5 and O-6, or `[Needs-13] [T1]` for O-5 when the gap is environmental. Cite `[Needs-12] [T3]` for O-2 to O-4 and `[Needs-16] [T3]` for O-7.
+
+In audit-existing mode, do not write the training-decision and alternatives rows. The Limitations section tells that idstack did not use the decision gate. If the user continued after idstack recommended against training, write the reason of the user in the Finding cell of the training-decision row. In design-new mode, the manifest `training_justification` object uses the approved rows.
 
 ---
 
@@ -214,12 +252,9 @@ Assign task IDs: T-1, T-2, T-3, etc.
 the core curriculum. Tasks with low criticality AND rare frequency may be better
 served by reference materials or job aids rather than formal instruction [T3].
 
-Present the task analysis as a table:
+**Step review:** do the Step Review in the preamble. Section: `## Task analysis`. Columns: `ID | Task | Frequency | Criticality | Difficulty | Priority | Justification | Evidence`.
 
-| ID | Task | Frequency | Criticality | Difficulty | Priority |
-|----|------|-----------|-------------|------------|----------|
-| T-1 | ... | daily | high | medium | Core |
-| T-2 | ... | rare | low | low | Reference |
+Write one row for each task, with the task IDs. Write the Priority as `Core` or `Reference`, from the prioritization logic above, and cite `[Needs-8] [T3]` for it. In the same section, write a second table with the columns `ID | Item | Type | Justification | Evidence`. Write one row for each prerequisite and each tool, with the IDs `P-1`, `P-2` and so on. Write the Type as `prerequisite` or `tool`. Cite `[Learner-21] [T1]` for a prerequisite and `[Needs-13] [T1]` for a tool.
 
 ---
 
@@ -268,39 +303,15 @@ The `learning_preferences_note` field in the manifest is always populated with:
 "idstack does NOT use learning styles to differentiate instruction because the evidence does
 not support them. Prior knowledge is the primary differentiator."
 
+**Step review:** do the Step Review in the preamble. Section: `## Learner analysis`. Columns: `ID | Item | Finding | Justification | Evidence`.
+
+Write one row for each item, with the IDs `L-1` to `L-4`: prior knowledge, motivation, demographics and access constraints. Cite `[Learner-21] [T1]` for prior knowledge, `[CogLoad-9] [T4]` for motivation, `[Learner-16] [T1]` for demographics and `[Access-10] [T1]` for access constraints.
+
 ---
 
-### Step 5: Summary and Manifest Creation
+### Step 5: Expertise-Fit Read
 
-After completing all three levels, present a structured summary:
-
-```
-## Needs Analysis Summary
-
-### Project Context
-- Course: [title]
-- Modality: [modality] | Timeline: [timeline] | Class Size: [size]
-- Institution: [type] | Tech: [available tech]
-
-### Level 1: Organizational/Context Analysis
-- Problem Statement: [one sentence]
-- Performance Gap: [knowledge/skill/motivation/environment]
-- Training Justified: [Yes/No] (Confidence: X/10)
-- Rationale: [one paragraph]
-- Alternatives Evaluated: [list]
-
-### Level 2: Task Analysis
-[task table]
-- Core tasks (high priority): [count]
-- Reference tasks (low priority): [count]
-- Prerequisites: [list]
-
-### Level 3: Learner Analysis
-- Prior Knowledge: [level] ← This drives all downstream decisions
-- Motivation: [type]
-- Demographics: [summary]
-- Access Constraints: [list or "none identified"]
-```
+After all three levels, tell which instructional strategies fit the learner profile.
 
 **Expertise Reversal Check:**
 Based on the learner profile, note which instructional strategies are appropriate:
@@ -313,49 +324,26 @@ Based on the learner profile, note which instructional strategies are appropriat
 - **Mixed audience:** Adaptive approaches, tiered activities, or separate pathways
   [Learner-16] [T1]
 
+**Step review:** do the Step Review in the preamble. Section: `## Expertise-fit read`. Columns: `ID | Strategy | Use for this course | Justification | Evidence`.
+
+Write one row for each strategy that fits the prior knowledge level from Step 4, with the IDs `E-1`, `E-2` and so on. In the "Use for this course" cell, tell where the course uses the strategy. Use the citations in the list above, at the tier that the list gives.
+
 ---
 
-### Step 6: Generate Report
+### Step 6: Findings and Report
 
-Generate an HTML report so the designer has a single document to read. The report follows the **visual contract** in `templates/report.html.tmpl` (the skeleton) and the **content contract** in `templates/report-format.md` (severity ordering, citation format, what each placeholder must carry).
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
 
-In this command, replace `<project name>` with the course title from Step 1. Then run the command.
+Use the finding IDs `needs-1`, `needs-2` and so on. The findings come from the three levels: the organizational gap, the gaps in the task analysis and the risks in the learner profile. An example of a risk is an expertise mismatch with the planned design.
 
-```bash
-{{IDSTACK_RESOLVE}}
-# Compute the course slug from this session's course title and prepare the export folder.
-# Do not read project_name from the manifest here. Step 7 writes it, so on a first run
-# the manifest has no name yet and the report lands in exports/untitled-course/.
-IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
-<project name>
-IDSTACK_PROJECT_NAME
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
-[ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."; exit 1; }
-_EXPORT_DIR=".idstack/exports/$_SLUG"
-_REPORT_PATH="$_EXPORT_DIR/needs-analysis.html"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Report template: $_IDSTACK/templates/report.html.tmpl"
-echo "Report rules: $_IDSTACK/templates/report-format.md"
-echo "Report path: $_REPORT_PATH"
-echo "Report link: $(pwd -P)/$_REPORT_PATH"
-```
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns: `ID | Action | Justification | Evidence` for Top recommendations.
 
-Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/needs-analysis.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks so the stylesheet applies cleanly: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+- **Top recommendations:** three to five actions from the approved findings, with the IDs `R-1`, `R-2` and so on. Put the action with the most effect first.
+- **Summary:** two or three sentences. Start with the decision: training is justified or not. Then tell the largest risk in the learner profile and the most important finding from the task analysis.
+- **Limitations:** in audit-existing mode, idstack did not use the decision gate for training. The learner profile comes from registrar or syllabus data, not from a learner survey. The task analysis comes from lists of job tasks, not from observed performance.
+- **Next steps:** run `/idstack:learning-objectives` to write learning objectives from this analysis. That skill reads your task analysis and learner profile. It recommends Bloom's levels and alignment strategies.
 
-- **`{{skill_title}}`:** "Needs Analysis Report"
-- **`{{skill_name}}`:** `needs-analysis`
-- **`{{mode}}`:** `design-new` or `audit-existing` (include the optional mode segment in the header `meta` line).
-- **Summary:** 2–3 sentences. Lead with the verdict — training justified or not, the biggest risk in the learner profile, and the headline finding from the task analysis. Don't bury the lede.
-- **Skill-specific section before Findings** — add a `<section class="project-context">` with `<h2>Project context</h2>` and a `<dl>` listing modality, timeline, class size, institution type, and available tech.
-- **Finding ids:** `needs-1`, `needs-2`, etc. Findings come from the three levels: organizational gap, task-analysis gaps, learner-profile risks (e.g., expertise mismatch with the planned design).
-- **Optional skill-specific sections** (after Top recommendations, before Limitations):
-  - `<section class="training-justification">` with `<h2>Training justification</h2>` — show `Justified: Yes/No`, `Confidence: X/10`, the rationale paragraph, and alternatives evaluated (or "n/a — imported credit-bearing course" in audit-existing mode).
-  - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence at its references.md tier: `[CogLoad-4] [T5]` for novices, `[CogLoad-19] [T5]` for advanced and `[Learner-16] [T1]` for mixed audiences.
-- **Limitations:** In imported-course mode, idstack skips the training-decision gate. The learner profile comes from the registrar or syllabus data, not from a learner survey. The task analysis comes from job-task lists, not from observed performance.
-- **Next steps:** Run `/idstack:learning-objectives` to develop ILOs grounded in this analysis. The objectives skill reads your task analysis and learner profile to recommend appropriate Bloom's levels and alignment strategies.
-
-Every finding in the HTML must correspond to a finding the manifest's `needs_analysis` section can carry, so downstream skills and `bin/idstack-status` can refer to them programmatically.
+Run the finish command of the Step Review.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
@@ -391,18 +379,18 @@ exist yet (the standalone case). It never replaces a manifest that exists. The t
 1. Include the COMPLETE section structure from the schema below. Do not omit fields.
 2. Before writing, verify each payload is valid JSON: matching braces, proper commas,
    quoted strings, no trailing commas.
-3. Set `needs_analysis.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/needs-analysis.html`.
+3. Set `needs_analysis.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/needs-analysis.md`.
 4. Set `project_name` to the text that you put in place of `<project name>` in
-   Step 6. The next skills use `project_name` to find the report folder.
+   Step 1. The next skills use `project_name` to find the report folder.
+5. Use only the approved rows of the Step Reviews in the payloads.
 
 Write the manifest, then confirm to the user:
 
 "I saved your needs analysis in two files:
 
-- **Read this:** <the Report link, written as the Report Links section of the preamble tells you> — the branded HTML
+- **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the Markdown
   report with evidence-backed findings, the training-justification read, and a
-  learner-profile expertise check. Click the link to open it. The folder also contains
-  the CSS file. You can zip or email the folder.
+  learner-profile expertise check. Click the link to open it. You can zip or email the folder.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Next step:** Run `/idstack:learning-objectives` to develop learning objectives from
