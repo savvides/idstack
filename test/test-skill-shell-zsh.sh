@@ -256,6 +256,13 @@ MD
   out=$(run "$HOME/Documents" "$b")
   check "[$sh] start refuses Documents" \
     "printf '%s' \"\$out\" | grep -q '^NOT_A_COURSE_FOLDER: '"
+  # The Claude desktop app can start a session in a temporary folder that it
+  # made; course data there is hidden and can be deleted.
+  scratch="$HOME/Library/Application Support/Claude/scratch-workspaces/a1b2/scratch-2026-11-02-630f71"
+  mkdir -p "$scratch"
+  out=$(run "$scratch" "$b")
+  check "[$sh] start refuses a Claude app scratch workspace" \
+    "printf '%s' \"\$out\" | grep -q '^NOT_A_COURSE_FOLDER: '"
   out=$(run "$P/start" "$b")
   check "[$sh] start accepts a course folder" \
     "printf '%s' \"\$out\" | grep -q '^COURSE_FOLDER: '"

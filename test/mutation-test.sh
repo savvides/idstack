@@ -2222,6 +2222,13 @@ echo "Report link: $(pwd -P)/$_REPORT_PATH"
 shell_mutation "the Report Links example uses an angle-bracket link again" \
   templates/preamble.md '[.idstack/exports/bio-101/course-import.md](.idstack/exports/bio-101/course-import.md)' '[Open the report](</Users/x/Library/Application Support/c/.idstack/exports/bio-101/course-import.md>)'
 
+# 61i. /idstack:start stops refusing a Claude app scratch workspace -> smoke-test
+# must fail (through test-skill-shell-zsh). The desktop app can start a session
+# in a temporary folder, and the next skill would write .idstack/ there.
+shell_mutation "start no longer refuses a Claude app scratch workspace" \
+  skills/start/SKILL.md.tmpl '  "$_HOME_DIR/Library/Application Support/Claude/scratch-workspaces/"*) echo "NOT_A_COURSE_FOLDER: $_HERE" ;;
+' ''
+
 # 62a-62m. The Step Review. Each report skill shows each step as a table with a
 # citation in each row, the user approves it, and bin/idstack-report-section
 # adds it to the report.
