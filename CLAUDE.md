@@ -32,7 +32,7 @@ bin/package-extension.sh                   # Package Chrome extension into build
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash and node suites):
 
 ```bash
-./test/smoke-test.sh              # 473 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 474 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 52 behavioral tests across the bin/ scripts; also proves the suite

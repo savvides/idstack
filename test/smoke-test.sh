@@ -294,6 +294,7 @@ check "preamble free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK
 check "no '/idstack <skill>' space typos in templates" "! grep -rE '/idstack [a-z]' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
 check "pipeline status table uses /idstack: prefixes" "grep -qF '[done] /idstack:needs-analysis' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 check "pipeline invokes children with the idstack: namespace" "grep -qF 'skill: \"idstack:needs-analysis\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+check "course-import shows the task table with its question" "grep -qF 'Write the full table in the' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl'"
 check "start hands off with the idstack: namespace" "grep -qF 'skill: \"idstack:course-import\"' '$IDSTACK_DIR/skills/start/SKILL.md.tmpl'"
 # start runs before any course work. A timeline event from it would become
 # LAST_SKILL and spoil every welcome-back and next-step line.
