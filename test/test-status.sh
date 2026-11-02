@@ -50,6 +50,15 @@ check "no timeline shows the empty state" \
   "$STATUS | grep -q 'There is no course data'"
 ste_capture empty
 
+# A first skill writes the timeline only when it completes. Its report, still in
+# progress, must show before that.
+mkdir -p .idstack/exports/first-course
+printf '%s\n' '# Draft' '' '**Status:** in progress. A section with a draft mark waits for your approval.' \
+  > .idstack/exports/first-course/needs-analysis.md
+check "no timeline still lists a report in progress" \
+  "$STATUS | grep -qx '  .idstack/exports/first-course/needs-analysis.md (in progress)'"
+rm -rf .idstack
+
 mkdir -p .idstack
 printf '%s\n' '{"project_name": "Test Course 123"}' > .idstack/project.json
 printf '%s\n' '{"skill":"needs-analysis","event":"completed","training_justified":true}' > .idstack/timeline.jsonl
@@ -82,14 +91,20 @@ check "learnings are counted" \
   "$STATUS | grep -q 'Learnings: 2 entries'"
 
 mkdir -p .idstack/exports/test-course-123
-touch .idstack/exports/test-course-123/index.html
-touch .idstack/exports/test-course-123/other-report.html
+touch .idstack/exports/test-course-123/index.md
+touch .idstack/exports/test-course-123/other-report.md
 check "reports section is present" \
   "$STATUS | grep -q 'Reports'"
-check "dashboard index.html is listed" \
-  "$STATUS | grep -q 'test-course-123/index.html'"
+check "dashboard index.md is listed" \
+  "$STATUS | grep -q 'test-course-123/index.md'"
 check "per-skill report is listed" \
-  "$STATUS | grep -q 'test-course-123/other-report.html'"
+  "$STATUS | grep -q 'test-course-123/other-report.md'"
+check "a finished report has no in-progress mark" \
+  "$STATUS | grep -qx '  .idstack/exports/test-course-123/other-report.md'"
+printf '%s\n' '# Draft' '' '**Status:** in progress. A section with a draft mark waits for your approval.' '' \
+  > .idstack/exports/test-course-123/draft-report.md
+check "a report with the status line is marked in progress" \
+  "$STATUS | grep -qx '  .idstack/exports/test-course-123/draft-report.md (in progress)'"
 ste_capture partial
 
 echo ""

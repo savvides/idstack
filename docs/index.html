@@ -1224,12 +1224,12 @@
       <header class="section-header">
         <p class="eyebrow">Output</p>
         <h2 id="output-title">Each skill writes both a report and a manifest.</h2>
-        <p class="lede">Every analytical skill outputs two artifacts: a standalone HTML report formatted for faculty and stakeholders, and a structured JSON manifest consumed by downstream skills. Files are organized in <code>.idstack/exports/&lt;course-slug&gt;/</code>.</p>
+        <p class="lede">Every analytical skill outputs two artifacts: a Markdown report formatted for faculty and stakeholders, and a structured JSON manifest consumed by downstream skills. Files are organized in <code>.idstack/exports/&lt;course-slug&gt;/</code>.</p>
       </header>
 
       <div class="output-pair">
-        <article class="output-panel" aria-label="Sample HTML report excerpt">
-          <header class="output-header">HTML · .idstack/exports/&lt;course-slug&gt;/learning-objectives.html</header>
+        <article class="output-panel" aria-label="Sample Markdown report excerpt">
+          <header class="output-header">Markdown · .idstack/exports/&lt;course-slug&gt;/learning-objectives.md</header>
           <div class="output-body">
             <h3>
               Finding obj-3: Unassessed Intended Learning Objectives
@@ -1256,14 +1256,14 @@
         <span class="key">"consider"</span><span class="punct">:</span> <span class="str">"/idstack:assessment-design"</span>
       <span class="punct">}</span>
     <span class="punct">],</span>
-    <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/exports/&lt;course-slug&gt;/learning-objectives.html"</span><span class="punct">,</span>
+    <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/exports/&lt;course-slug&gt;/learning-objectives.md"</span><span class="punct">,</span>
     <span class="key">"updated"</span><span class="punct">:</span> <span class="str">"2026-05-13T14:32:18Z"</span>
   <span class="punct">}</span>
 <span class="punct">}</span></code></pre>
         </article>
       </div>
 
-      <p class="output-foot">HTML reports are self-contained with bundled assets for distribution to faculty and curriculum committees. JSON manifests preserve machine-readable state for downstream tools. The project timeline at <code>.idstack/timeline.jsonl</code> records audit history, and <code>/idstack:pipeline</code> compiles an aggregated <code>index.html</code> dashboard summarizing all findings.</p>
+      <p class="output-foot">Markdown reports are plain text files for distribution to faculty and curriculum committees. JSON manifests preserve machine-readable state for downstream tools. The project timeline at <code>.idstack/timeline.jsonl</code> records audit history, and <code>/idstack:pipeline</code> compiles an aggregated <code>index.md</code> dashboard summarizing all findings.</p>
     </section>
 
     <!-- ────────── Install ────────── -->
