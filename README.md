@@ -117,6 +117,7 @@ Claude clones the repo, runs setup, and confirms the skills are registered.
 ```bash
 ./setup                # Register the plugin with Claude Code at user scope
 ./setup --local        # Install at project scope (./.claude/) instead of user scope
+./setup --help         # Show the usage and exit (also -h)
 ```
 
 Setup is idempotent — re-run it any time.

@@ -365,7 +365,7 @@ expect_fail "tier-mix bar overstates a domain's T1 share" "$WORK/r/test/smoke-te
 
 # 19. a domain's study count drifts from the reference file -> smoke-test must
 # fail. The count and the tier range are separate assertions; a checker that
-# only compared tiers would let "108 peer-reviewed studies" rot silently.
+# only compared tiers would let a card's "12 studies" count rot silently.
 fresh
 python3 - "$WORK/r/evidence/references.md" <<'PY'
 import io, sys
@@ -2003,7 +2003,7 @@ PY
 expect_fail "the rendered landing test loses output that Chrome writes after it exits" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 
-# 55a-55f. Skill shell that breaks only in Claude Code's Bash tool (zsh, BSD
+# 63a-63f. Skill shell that breaks only in Claude Code's Bash tool (zsh, BSD
 # tools, a new shell for each call) comes back -> smoke-test must fail. Each
 # case puts back one form that the v3.7.0.1 fixes removed.
 shell_mutation() { # <name> <file> <old> <new>
@@ -2034,7 +2034,7 @@ shell_mutation "a report block stops printing the plugin template path" \
 ' ''
 
 
-# 56a-56c. Claude-Code-only guards (v3.8.0.0) -> smoke-test must fail.
+# 64a-64c. Claude-Code-only guards (v3.8.0.0) -> smoke-test must fail.
 shell_mutation "an untagged support claim for another agent enters the README" \
   README.md '**Requirements:** [Claude Code](https://claude.ai/code)' '**Requirements:** [Claude Code](https://claude.ai/code) or Antigravity'  # IDSTACK_CLI_LEAK_ALLOW
 shell_mutation "a skill description names a bare /skill again" \

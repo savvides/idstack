@@ -65,7 +65,7 @@ The shared preamble above already ran the manifest existence check
 (`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
 
 - If `needs_analysis` has data from /idstack:needs-analysis: note it. You will PRESERVE
-  this data. Import adds to task_analysis and learner_profile, does not replace.
+  this data. Import adds to task_analysis (job_tasks) and does not replace it.
 - If `learning_objectives` has data from /idstack:learning-objectives: ask the user
   "You already have learning objectives in your manifest. Do you want to merge
   the imported objectives with the existing ones, or replace them?"
@@ -444,9 +444,10 @@ curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/outcome_groups/$GROUP_ID/outcomes?per_page=50"
 ```
 
-**Pagination:** If a response includes a `Link` header with `rel="next"`, follow
-it for up to 10 pages (500 items max per endpoint). After 500 items, stop and note
-"Partial import: course has more items than the import limit."
+**Pagination:** Each call reads only the first page of results (a maximum of 50
+items for each endpoint). The commands do not show response headers, so idstack does
+not follow the `Link` header. If an endpoint sends exactly 50 items, note
+"Partial import: the course can have more items than the import reads."
 
 **Error handling for each call:**
 - 404: Skip this endpoint, note what's missing
@@ -824,7 +825,7 @@ writes nothing.
 
 - `learning_objectives.alignment_matrix` — partial, from detected objective-assessment links
 
-Use only the approved rows of the report. `job_tasks` has the approved `T-` rows. `ilos` has the approved `ILO-` rows, with the status "imported-unverified". The `items_imported` counts come from the `TOTAL` row of the approved Imported structure section. `quality_flags` is the number of approved rows in the Import quality triage section.
+Use only the approved rows of the report. `job_tasks` has the approved `T-` rows. `ilos` has the approved `ILO-` rows, with the status "imported-unverified". The `items_imported` counts come from the `TOTAL` row of the approved Imported structure section (`rubrics` from its Rubrics column). Write 0 for a count that the table does not have. `quality_flags` is the number of approved rows in the Import quality triage section.
 
 **Import metadata:** The `import_metadata` payload (flat, with no enclosing `import_metadata` key):
 
@@ -834,14 +835,22 @@ Use only the approved rows of the report. `job_tasks` has the approved `T-` rows
   "report_path": "<set to $_REPORT_PATH from the Step 1b bash block — e.g. .idstack/exports/<course-slug>/course-import.md>",
   "imported_at": "ISO-8601",
   "source_lms": "canvas|blackboard|moodle|d2l|rise|storyline|unknown",
+  "source_cartridge": "<file name of the cartridge or package, or empty>",
+  "source_size_bytes": 0,
+  "schema": "<cartridge or SCORM schema version, or empty>",
   "items_imported": {
     "modules": 0,
     "objectives": 0,
+    "module_objectives": 0,
     "assessments": 0,
     "activities": 0,
-    "pages": 0
+    "pages": 0,
+    "rubrics": 0,
+    "quizzes": 0,
+    "discussions": 0
   },
-  "quality_flags": 0
+  "quality_flags": 0,
+  "quality_flag_details": []
 }
 ```
 

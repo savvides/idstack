@@ -10,12 +10,15 @@ templates/preamble.md.
 
 Rules that this script examines:
   sentence-length    more than 20 words in a numbered step, more than 25 words in other text
+                     (headings, table headers and other labels are not examined)
   paragraph-length   more than 6 sentences in a paragraph
   semicolon          a semicolon in text
   contraction        a contraction, for example "don't"
   verb-form          "has been", "have been" or "had been", also with "not" or an adverb
   word               a word from the word list
-  html               an HTML element that has no end tag (the text after it is not examined)
+  html               an element whose text the checker skips (code, quotation, script, style,
+                     pre and similar) that has no end tag (the checker does not examine the
+                     text after it, or for an inline element the text to the end of its block)
 
 Text that the script does not examine: code, quotations, citations, URLs, placeholders,
 HTML script and style, Markdown block quotations and fenced code. Each code span,

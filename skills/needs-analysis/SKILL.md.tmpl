@@ -111,7 +111,7 @@ Then establish the delivery context. Ask about:
 - `context.institution_type` — usually inferable from `import_metadata.source_lms` (Canvas in higher-ed, etc.). Confirm with the user if ambiguous.
 - `context.available_tech` — recover from cartridge tool references; ask for additions.
 
-Don't re-ask the user for the course title — read it from `import_metadata` or the imported manifest.
+Don't re-ask the user for the course title — read it from the top-level `project_name` that `course-import` wrote.
 
 Store these in the `context` section of the manifest.
 

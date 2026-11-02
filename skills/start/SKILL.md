@@ -33,7 +33,10 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   starts one orchestrator, which runs its five dimensions in parallel. course-builder
   starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -561,8 +564,9 @@ esac
 
 - **COURSE_FOLDER:** Go to Step 3.
 - **NOT_A_COURSE_FOLDER:** Tell the user: "idstack keeps the files for one
-  course in one folder. This session is in your home folder, in Documents,
-  Desktop or Downloads, or in a temporary folder of the Claude app. Make a new
+  course in one folder. This session is in the top folder of the disk, your
+  home folder, Documents, Desktop or Downloads, or a temporary folder of the
+  Claude app. Make a new
   folder for the course, for example in Documents. Start a new session, and
   use the folder button below the message box to select the new folder. Then type `/idstack:start` again." STOP.
 

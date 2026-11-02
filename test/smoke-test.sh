@@ -703,8 +703,9 @@ check "retired-CLI references confined to CHANGELOG.md" \
 
 
 # Skill bash blocks run in Claude Code's Bash tool: in the user's shell (zsh on
-# macOS), with BSD tools, and in a new shell for each call. CI runs only bash,
-# so these patterns pass every other suite and fail for real users:
+# macOS), with BSD tools, and in a new shell for each call. CI runs only some
+# skill blocks in zsh and on macOS (test-skill-shell-zsh.sh and the macOS leg),
+# so these patterns can pass every other suite and still fail for real users:
 #   - `head -n -1` is GNU-only. BSD head rejects it, so the Canvas push read an
 #     empty body and posted every item to /modules//items.
 #   - `for x in $VAR` does not word-split in zsh, so it loops once.

@@ -49,7 +49,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. |
 | `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
-| `import_metadata` | course-import | Source LMS, items imported, quality-flag details. |
+| `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
 | `export_metadata` | course-export | Export destination, items exported, readiness check. |
 | `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
@@ -266,7 +266,7 @@ These document the **shape of array elements and dictionary values** that the ca
 { "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }
 ```
 
-**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape, values are arrays of assessment titles.
+**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape. `/idstack:learning-objectives` writes arrays of assessment titles. `/idstack:assessment-design` replaces them with arrays of assessment IDs (`"A-1"`). A skill that reads this map must accept both.
 
 **`learning_objectives.alignment_matrix.gaps[]`** — `/idstack:assessment-design` writes each item as the object below. `/idstack:learning-objectives` writes each item as a string that describes the gap. A skill that reads `gaps[]` must accept both forms.
 ```json
@@ -325,7 +325,7 @@ The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|mo
 }
 ```
 
-**`import_metadata.quality_flag_details[]`** — each item (replaces the legacy `_import_quality_flags` root field that sometimes appeared in the wild):
+**`import_metadata.quality_flag_details[]`** — each item. No skill writes this array. `bin/idstack-migrate` creates it empty, or fills it when it moves a legacy `_import_quality_flags` root field. `/idstack:course-import` writes only the `quality_flags` count. The flag details are in its report (Import quality triage section):
 ```json
 {
   "key": "orphan_module_8",
@@ -371,7 +371,7 @@ The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|mo
 
 ### Mode field — design-new vs audit-existing
 
-`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check). `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report status line (`idstack-report-section init --mode`).
+`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check). `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report's header metadata line under the title, as `mode: Mode N` (`idstack-report-section init --mode`).
 
 Allowed values per skill:
 - `needs_analysis.mode`: `"design-new"` or `"audit-existing"`

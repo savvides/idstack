@@ -37,7 +37,10 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   starts one orchestrator, which runs its five dimensions in parallel. course-builder
   starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -662,7 +665,7 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **Condition (BOTH must be true):**
 - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
-- `assessments.items` is non-empty (from an earlier assessment-design run; course-import does not write it) OR `course_content.assessments` is non-empty (cartridge has assessment artifacts)
+- `assessments.items` is non-empty (from an earlier assessment-design run; course-import does not write it) OR `course_content.assessments` is non-empty (from an earlier course-builder run; course-import does not write `course_content`)
 
 **Announce the chosen mode to the user as the first sentence:**
 
@@ -670,7 +673,7 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **What audit-existing does (and doesn't do):**
 
-- ✅ Reads existing rubrics from the manifest (`assessments.rubrics`) or from the cartridge files referenced by `course_content.rubrics`.
+- ✅ Reads existing rubrics from the manifest (`assessments.rubrics`) or from the rubric files that an earlier course-builder run listed in `course_content.rubrics` (under `course_content.content_dir`).
 - ✅ Classifies each rubric criterion on Bloom's level (same classification approach as Mode 2 and the `/idstack:learning-objectives` skill).
 - ✅ Compares to the course ILOs from `learning_objectives.ilos`. Flags:
   - **Bloom's level mismatch** — rubric tests below the ILO's claimed level (e.g., ILO says "analyze" but rubric criteria are "list/describe").
@@ -877,7 +880,7 @@ Before the closing Step Review, calculate the `feedback_quality_score` from the 
 **Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns of Top recommendations: `ID | Action | Justification | Evidence`.
 
 - **Summary:** 2 or 3 sentences. Start with "Feedback quality XX/100". Then give the largest alignment risk and one observation about elaborated feedback or rubric coverage.
-- **Limitations:** In Mode 3, the report reads the rubric criteria from the manifest or from the cartridge files. In Mode 1 and Mode 2, idstack wrote the rubrics in this session. The report does not read how instructors use the rubrics on student work. The `feedback_quality_score` is a heuristic. It is not a validated instrument. Mode 3 does not recommend new assessments.
+- **Limitations:** In Mode 3, the report reads the rubric criteria from the manifest or from the rubric files that course-builder wrote. In Mode 1 and Mode 2, idstack wrote the rubrics in this session. The report does not read how instructors use the rubrics on student work. The `feedback_quality_score` is a heuristic. It is not a validated instrument. Mode 3 does not recommend new assessments.
 - **Next steps:** Run `/idstack:course-builder` to make the full course content, with assessment documents, rubric handouts and assignment instructions. For an imported course in gap-fill mode, course-builder makes only the missing artifacts that `/idstack:red-team`, `/idstack:course-quality-review` or you identify.
 
 Run the finish command of the Step Review.
@@ -996,7 +999,7 @@ If `bin/idstack-manifest-merge` is unavailable: fall back to manual write (Read 
 }
 ```
 
-In Mode 3, also add `alignment_status` to each item and write `audit_notes` (shapes in the schema below).
+In Mode 3, also add `alignment_status` to each item and write `audit_notes` (for their shapes, Read `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`).
 
 **Calculate `feedback_quality_score`** (0-100):
 - 15 points per assessment using elaborated feedback (max 60)

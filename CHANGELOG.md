@@ -15,7 +15,7 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 
 - **Each report skill adds the output of each step to the report as a table.** You read the table in the report file, where it shows as a draft. Each row has a one-sentence justification and a citation from `evidence/references.md`. Sections that give only facts, for example Project context, have no justification.
 - **idstack adds each section to the Markdown report at once, and you approve it.** The report grows one section at a time. When you approve a section, idstack removes its draft mark. If a session stops, the report keeps each section, and a section that you did not approve keeps its draft mark. The project manifest gets only the rows that you approved.
-- **A skill asks more approval questions.** The chat shows a short note of a maximum of three lines and the question. It does not show the table. A skill asks one question for each section. You can approve the section, change a row or remove a row.
+- **A skill asks more approval questions.** The chat shows a short note of a maximum of three lines and the question. It does not show the table. A skill asks one question for each step. For the last draft, it asks one question for all of its sections. You can approve the section, change a row or remove a row.
 - **`bin/idstack-report-section` checks each section before idstack adds it.** It finds each citation in `evidence/references.md`. If the tier is not the same, it refuses the section. It also writes the findings blocks from the findings table. `approve` removes the draft marks, and `finish` refuses a report that has a draft section.
 - **`bin/idstack-status` shows "(in progress)" for a report that is not complete.**
 

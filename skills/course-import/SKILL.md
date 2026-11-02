@@ -37,7 +37,10 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   starts one orchestrator, which runs its five dimensions in parallel. course-builder
   starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -533,7 +536,7 @@ The shared preamble above already ran the manifest existence check
 (`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
 
 - If `needs_analysis` has data from /idstack:needs-analysis: note it. You will PRESERVE
-  this data. Import adds to task_analysis and learner_profile, does not replace.
+  this data. Import adds to task_analysis (job_tasks) and does not replace it.
 - If `learning_objectives` has data from /idstack:learning-objectives: ask the user
   "You already have learning objectives in your manifest. Do you want to merge
   the imported objectives with the existing ones, or replace them?"
@@ -912,9 +915,10 @@ curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/outcome_groups/$GROUP_ID/outcomes?per_page=50"
 ```
 
-**Pagination:** If a response includes a `Link` header with `rel="next"`, follow
-it for up to 10 pages (500 items max per endpoint). After 500 items, stop and note
-"Partial import: course has more items than the import limit."
+**Pagination:** Each call reads only the first page of results (a maximum of 50
+items for each endpoint). The commands do not show response headers, so idstack does
+not follow the `Link` header. If an endpoint sends exactly 50 items, note
+"Partial import: the course can have more items than the import reads."
 
 **Error handling for each call:**
 - 404: Skip this endpoint, note what's missing
@@ -1319,7 +1323,7 @@ writes nothing.
 
 - `learning_objectives.alignment_matrix` — partial, from detected objective-assessment links
 
-Use only the approved rows of the report. `job_tasks` has the approved `T-` rows. `ilos` has the approved `ILO-` rows, with the status "imported-unverified". The `items_imported` counts come from the `TOTAL` row of the approved Imported structure section. `quality_flags` is the number of approved rows in the Import quality triage section.
+Use only the approved rows of the report. `job_tasks` has the approved `T-` rows. `ilos` has the approved `ILO-` rows, with the status "imported-unverified". The `items_imported` counts come from the `TOTAL` row of the approved Imported structure section (`rubrics` from its Rubrics column). Write 0 for a count that the table does not have. `quality_flags` is the number of approved rows in the Import quality triage section.
 
 **Import metadata:** The `import_metadata` payload (flat, with no enclosing `import_metadata` key):
 
@@ -1329,14 +1333,22 @@ Use only the approved rows of the report. `job_tasks` has the approved `T-` rows
   "report_path": "<set to $_REPORT_PATH from the Step 1b bash block — e.g. .idstack/exports/<course-slug>/course-import.md>",
   "imported_at": "ISO-8601",
   "source_lms": "canvas|blackboard|moodle|d2l|rise|storyline|unknown",
+  "source_cartridge": "<file name of the cartridge or package, or empty>",
+  "source_size_bytes": 0,
+  "schema": "<cartridge or SCORM schema version, or empty>",
   "items_imported": {
     "modules": 0,
     "objectives": 0,
+    "module_objectives": 0,
     "assessments": 0,
     "activities": 0,
-    "pages": 0
+    "pages": 0,
+    "rubrics": 0,
+    "quizzes": 0,
+    "discussions": 0
   },
-  "quality_flags": 0
+  "quality_flags": 0,
+  "quality_flag_details": []
 }
 ```
 
@@ -1425,7 +1437,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. |
 | `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
-| `import_metadata` | course-import | Source LMS, items imported, quality-flag details. |
+| `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
 | `export_metadata` | course-export | Export destination, items exported, readiness check. |
 | `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
@@ -1642,7 +1654,7 @@ These document the **shape of array elements and dictionary values** that the ca
 { "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }
 ```
 
-**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape, values are arrays of assessment titles.
+**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape. `/idstack:learning-objectives` writes arrays of assessment titles. `/idstack:assessment-design` replaces them with arrays of assessment IDs (`"A-1"`). A skill that reads this map must accept both.
 
 **`learning_objectives.alignment_matrix.gaps[]`** — `/idstack:assessment-design` writes each item as the object below. `/idstack:learning-objectives` writes each item as a string that describes the gap. A skill that reads `gaps[]` must accept both forms.
 ```json
@@ -1701,7 +1713,7 @@ The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|mo
 }
 ```
 
-**`import_metadata.quality_flag_details[]`** — each item (replaces the legacy `_import_quality_flags` root field that sometimes appeared in the wild):
+**`import_metadata.quality_flag_details[]`** — each item. No skill writes this array. `bin/idstack-migrate` creates it empty, or fills it when it moves a legacy `_import_quality_flags` root field. `/idstack:course-import` writes only the `quality_flags` count. The flag details are in its report (Import quality triage section):
 ```json
 {
   "key": "orphan_module_8",
@@ -1747,7 +1759,7 @@ The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|mo
 
 ### Mode field — design-new vs audit-existing
 
-`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check). `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report status line (`idstack-report-section init --mode`).
+`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check). `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report's header metadata line under the title, as `mode: Mode N` (`idstack-report-section init --mode`).
 
 Allowed values per skill:
 - `needs_analysis.mode`: `"design-new"` or `"audit-existing"`

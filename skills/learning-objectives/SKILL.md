@@ -36,7 +36,10 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   starts one orchestrator, which runs its five dimensions in parallel. course-builder
   starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -892,8 +895,8 @@ the bash block above — i.e., `.idstack/exports/<course-slug>/learning-objectiv
   - `cognitive_process`: remember | understand | apply | analyze | evaluate | create
 
 - `alignment_matrix`:
-  - `ilo_to_activity`: Object mapping ILO IDs to activity descriptions
-  - `ilo_to_assessment`: Object mapping ILO IDs to assessment descriptions
+  - `ilo_to_activity`: Object that maps each ILO ID to an array of activity names (for example `{ "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }`)
+  - `ilo_to_assessment`: Same shape; each ILO ID maps to an array of assessment titles
   - `gaps`: Array of strings describing alignment gaps found
 
 - `expertise_reversal_flags`: Array of strings noting where objective sequencing may

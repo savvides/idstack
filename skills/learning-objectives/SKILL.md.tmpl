@@ -397,8 +397,8 @@ the bash block above — i.e., `.idstack/exports/<course-slug>/learning-objectiv
   - `cognitive_process`: remember | understand | apply | analyze | evaluate | create
 
 - `alignment_matrix`:
-  - `ilo_to_activity`: Object mapping ILO IDs to activity descriptions
-  - `ilo_to_assessment`: Object mapping ILO IDs to assessment descriptions
+  - `ilo_to_activity`: Object that maps each ILO ID to an array of activity names (for example `{ "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }`)
+  - `ilo_to_assessment`: Same shape; each ILO ID maps to an array of assessment titles
   - `gaps`: Array of strings describing alignment gaps found
 
 - `expertise_reversal_flags`: Array of strings noting where objective sequencing may
