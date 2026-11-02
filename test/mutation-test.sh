@@ -2199,6 +2199,13 @@ shell_mutation "start does not release its limits at the handoff" \
   skills/start/SKILL.md.tmpl 'When Step 4 starts a different skill with the Skill tool, the limits of this
 skill stop.' ''
 
+# 61g. /idstack:start stops refusing a Claude app scratch workspace -> smoke-test
+# must fail (through test-skill-shell-zsh). The desktop app can start a session
+# in a temporary folder, and the next skill would write .idstack/ there.
+shell_mutation "start no longer refuses a Claude app scratch workspace" \
+  skills/start/SKILL.md.tmpl '  "$_HOME_DIR/Library/Application Support/Claude/scratch-workspaces/"*) echo "NOT_A_COURSE_FOLDER: $_HERE" ;;
+' ''
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

@@ -403,16 +403,17 @@ _HERE=$(pwd -P)
 _HOME_DIR=$(cd "$HOME" 2>/dev/null && pwd -P)
 case "$_HERE" in
   /|"$_HOME_DIR"|"$_HOME_DIR/Documents"|"$_HOME_DIR/Desktop"|"$_HOME_DIR/Downloads") echo "NOT_A_COURSE_FOLDER: $_HERE" ;;
+  "$_HOME_DIR/Library/Application Support/Claude/scratch-workspaces/"*) echo "NOT_A_COURSE_FOLDER: $_HERE" ;;
   *) echo "COURSE_FOLDER: $_HERE" ;;
 esac
 ```
 
 - **COURSE_FOLDER:** Go to Step 3.
 - **NOT_A_COURSE_FOLDER:** Tell the user: "idstack keeps the files for one
-  course in one folder. This session is in your home folder, or in Documents,
-  Desktop or Downloads. Make a new folder for the course, for example
-  in Documents. Start a new session, and use the folder button below the
-  message box to select the new folder. Then type `/idstack:start` again." STOP.
+  course in one folder. This session is in your home folder, in Documents,
+  Desktop or Downloads, or in a temporary folder of the Claude app. Make a new
+  folder for the course, for example in Documents. Start a new session, and
+  use the folder button below the message box to select the new folder. Then type `/idstack:start` again." STOP.
 
 ## Step 3: Find the course
 

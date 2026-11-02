@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **`/idstack:start` stops in a temporary folder of the Claude desktop app.** The app can start a session in a folder under `~/Library/Application Support/Claude/scratch-workspaces/`. That folder is hidden, and the app can delete it. Before, `/idstack:start` let the session continue there, and the next skill wrote the course data in that folder.
+
+### Tests
+
+- `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61g.
+
 ## v3.10.0.0 (2026-11-01)
 
 This release lets you use idstack in the Claude desktop app with no terminal. A new skill, `/idstack:start`, checks your setup and starts the correct skill. Each skill gives you a link that opens its report in the app. The evidence base has 38 new references, and 27 references have a correct evidence tier.
