@@ -297,8 +297,9 @@ mkdir -p "$WORK/r/dist/skills"
 expect_fail "second-CLI dist/ bundle returns" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 16. an untagged reference inside a file that legitimately carries tagged lines
-# -> smoke-test must fail. docs/index.html holds two IDSTACK_CLI_LEAK_ALLOW
-# release-note lines. The tag has to exempt those *lines* and nothing else; the
+# -> smoke-test must fail. docs/index.html holds an IDSTACK_CLI_LEAK_ALLOW
+# line (the unsupported-fork pointer in Install). The tag has to exempt tagged
+# *lines* and nothing else; the
 # obvious "simplification" is to exclude the whole file, which would silently
 # reopen the landing page — the single most user-visible surface — to stale
 # capability claims. This is the mutation that catches that rewrite.
@@ -340,11 +341,25 @@ fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import io, sys
 p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
-old = '<span class="meta-tier">T2–T5</span>'
+old = '<span class="evidence-row-tiers">T2–T5</span>'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-io.open(p, 'w', encoding='utf-8').write(s.replace(old, '<span class="meta-tier">T1–T5</span>'))
+io.open(p, 'w', encoding='utf-8').write(s.replace(old, '<span class="evidence-row-tiers">T1–T5</span>'))
 PY
 expect_fail "evidence card overstates its tier range" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 18b. the tier-mix bar moves a study to a stronger tier while the count and the
+# range stay right -> smoke-test must fail. The bar is the one place a visitor
+# sees how much of a domain rests on trials, so it is checked per tier, not only
+# by its total.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import io, sys
+p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
+old = 'data-tiers="1,0,4,1,6"'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+io.open(p, 'w', encoding='utf-8').write(s.replace(old, 'data-tiers="2,0,3,1,6"'))
+PY
+expect_fail "tier-mix bar overstates a domain's T1 share" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 19. a domain's study count drifts from the reference file -> smoke-test must
 # fail. The count and the tier range are separate assertions; a checker that

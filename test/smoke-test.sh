@@ -92,16 +92,25 @@ for skill in $SKILLS; do
   check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
 
-# Landing page (docs/index.html) - dark-only revert invariants. Guards against
-# regressions: losing the dark theme, the toggle creeping back, or the stale
-# bare-clone install string returning (see dea7ebc).
+# Landing page (docs/index.html) - "Evidence Instrument" invariants (DESIGN.md,
+# 2026-11-01). The landing uses the report system's Proof tokens and fonts with a
+# prussian hero. Guards against regressions: the dark/indigo look or its gradients
+# coming back, a theme toggle creeping in (dark mode follows prefers-color-scheme),
+# the fonts drifting from the reports, or the stale bare-clone install string
+# returning (see dea7ebc).
 LANDING="$IDSTACK_DIR/docs/index.html"
 check "landing/index.html exists" "[ -f '$LANDING' ]"
-check "landing: dark background (#0a0a0f)" "grep -q -- '--bg: *#0a0a0f' '$LANDING'"
-check "landing: dark-only, no theme toggle" "! grep -q 'theme-toggle' '$LANDING'"
+check "landing: ivory Proof background (#faf8f3)" "grep -q -- '--bg: *#faf8f3' '$LANDING'"
+check "landing: prussian hero ground (#163a4a)" "grep -q -- '--hero-bg: *#163a4a' '$LANDING'"
+check "landing: no theme toggle" "! grep -q 'theme-toggle' '$LANDING'"
 check "landing: no data-theme attribute or blocks" "! grep -q 'data-theme' '$LANDING'"
-check "landing: no Google Fonts dependency" "! grep -q 'fonts.googleapis' '$LANDING'"
-check "landing: indigo gradient present" "grep -q 'linear-gradient' '$LANDING'"
+check "landing: dark mode follows prefers-color-scheme" "grep -q 'prefers-color-scheme: dark' '$LANDING'"
+# Read the URL from DESIGN.md so the two cannot drift; an empty match would make
+# grep -F pass vacuously, so the URL's presence is its own check.
+DESIGN_FONTS_URL="$(grep -o 'https://fonts.googleapis.com/css2[^`]*' "$IDSTACK_DIR/DESIGN.md" | head -1)"
+check "DESIGN.md carries a Google Fonts URL" "[ -n '$DESIGN_FONTS_URL' ]"
+check "landing: loads the Google Fonts URL from DESIGN.md" "grep -qF '$DESIGN_FONTS_URL' '$LANDING'"
+check "landing: no gradients" "! grep -q 'linear-gradient' '$LANDING'"
 # In HTML the '&&' is entity-escaped as '&amp;&amp;', so don't grep the literal '&&'.
 # Assert the repo clone + 'cd idstack' (current marketplace form); the legacy
 # ~/.claude/plugins/idstack form is caught by the next check. Escaping-independent.
@@ -110,10 +119,11 @@ check "landing: no legacy plugins-dir install string" "! grep -q '.claude/plugin
 check "landing: current version v$VER present" "grep -qF 'v$VER' '$LANDING'"
 check "landing: structured-data softwareVersion $VER" "grep -qF '\"softwareVersion\": \"$VER\"' '$LANDING'"
 check "landing: Output section present" "grep -q 'id=.output.' '$LANDING'"
-# Gradient-clipped text (hero h1, eyebrow) must keep a solid color fallback so it
-# stays visible where `background-clip: text` is unsupported. Guards against a bare
-# `color: transparent` (the leading [^-] excludes `-webkit-text-fill-color: transparent`).
-check "landing: gradient text keeps a color fallback (no bare 'color: transparent')" \
+# No transparent text. The landing once clipped gradients into its headings and
+# needed a solid fallback color; the gradients are gone, and this keeps a bare
+# `color: transparent` from returning (the leading [^-] excludes
+# `-webkit-text-fill-color: transparent`).
+check "landing: no transparent text (no bare 'color: transparent')" \
   "! grep -Eq '[^-]color: *transparent' '$LANDING'"
 
 # The landing page's evidence cards restate evidence/references.md: a study count
@@ -153,13 +163,14 @@ fi
 check "doc accuracy check passes" "python3 '$IDSTACK_DIR/test/check-doc-accuracy.py' '$IDSTACK_DIR'"
 
 
-# Open Graph card template (docs/og-template.html) - same gradient-text fallback rule.
+# Open Graph card template (docs/og-template.html) - same rules as the landing:
+# the prussian hero ground, no gradients, no transparent text.
 OG_TEMPLATE="$IDSTACK_DIR/docs/og-template.html"
 check "og-template.html exists" "[ -f '$OG_TEMPLATE' ]"
-check "og-template: gradient text keeps a color fallback (no bare 'color: transparent')" \
+check "og-template: prussian hero ground (#163a4a)" "grep -q -- '--hero-bg: *#163a4a' '$OG_TEMPLATE'"
+check "og-template: no transparent text (no bare 'color: transparent')" \
   "! grep -Eq '[^-]color: *transparent' '$OG_TEMPLATE'"
-check "og-template: gradient text uses -webkit-text-fill-color" \
-  "grep -q 'text-fill-color: transparent' '$OG_TEMPLATE'"
+check "og-template: no gradients" "! grep -q 'linear-gradient' '$OG_TEMPLATE'"
 
 # Slugify behavior — pinned cases protect the slug derivation rule that the manifest
 # schema and every skill's report-write block depend on.
@@ -659,8 +670,8 @@ check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_
 #      `superpowers`: it exempted the committed specs and plans under
 #      docs/superpowers/ and superpowers/.
 #   3. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Kinds of line that carry the tag
-#      include: this block's own patterns, the dated release note on the
-#      landing page, the comments crediting "Gemini Code Assist" — a PR-review bot  # IDSTACK_CLI_LEAK_ALLOW
+#      include: this block's own patterns, the unsupported-fork pointer on
+#      the landing page and in README.md, the comments crediting "Gemini Code Assist" — a PR-review bot  # IDSTACK_CLI_LEAK_ALLOW
 #      that flagged the version classifier four times, unrelated to the CLI and
 #      the reason those test cases exist — and mentions of the Gemini model API  # IDSTACK_CLI_LEAK_ALLOW
 #      the Chrome extension calls, which is an LLM endpoint, not a CLI.

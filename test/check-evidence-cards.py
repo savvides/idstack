@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Assert the landing page's evidence cards agree with evidence/references.md.
+"""Assert the landing page's evidence index agrees with evidence/references.md.
 
-docs/index.html carries one card per research domain, each restating two facts
-from evidence/references.md: how many studies the domain holds, and the span of
-evidence tiers across them. Both were hand-typed, and three had drifted by
-v3.4.0.0 — two cards advertised T2 for domains whose strongest reference is T3.
+docs/index.html carries one row per research domain, each restating three facts
+from evidence/references.md: how many studies the domain holds, how many sit at
+each tier (the data-tiers attribute that draws the tier-mix bar), and the span
+of evidence tiers across them. The earlier per-domain cards were hand-typed, and
+three had drifted by v3.4.0.0 — two advertised T2 for domains whose strongest
+reference is T3.
 
 Overstating tier strength is the one inaccuracy idstack cannot afford: the
 product's entire claim is that it labels evidence honestly. So the cards are
@@ -27,13 +29,14 @@ DOMAIN_RE = re.compile(r"^## Domain \d+: (.+?)\s*$")
 # A reference key: "[Alignment-14]" — one per study.
 CITATION_RE = re.compile(r"\[[A-Za-z][A-Za-z-]*-\d+\]")
 TIER_RE = re.compile(r"\bT([1-5])\b")
-# One card: title, study count, tier range. Order-independent; matched by title.
+# One index row: title, study count, per-tier counts, tier range. Order-independent;
+# matched by title. Each field is bounded by the row's own markup so a row missing a
+# field cannot borrow the next row's value.
 CARD_RE = re.compile(
-    r'evidence-card-title">(.*?)</h3>'
-    r".*?"
-    r'evidence-card-meta">(\d+)\s+studies'
-    r".*?"
-    r'meta-tier">(.*?)</span>',
+    r'evidence-row-title">([^<]*)</h3>'
+    r'[^<]*<span class="evidence-row-count">(\d+)\s+studies</span>'
+    r'[^<]*<span class="tier-mix"[^>]*data-tiers="([0-9,]*)"'
+    r'.*?evidence-row-tiers">([^<]*)</span>',
     re.S,
 )
 
@@ -61,7 +64,14 @@ def parse_domains(path):
         end = starts[k + 1][0]
         body = "\n".join(text[begin:end])
         tiers = sorted(set(int(t) for t in TIER_RE.findall(body)))
-        domains.append((name, len(CITATION_RE.findall(body)), tiers))
+        # Per-tier counts: each reference line ends with its tier ("... *Journal*. T3").
+        per_tier = [0] * 5
+        for ref in text[begin:end]:
+            if CITATION_RE.match(ref.lstrip("- ")):
+                found = TIER_RE.findall(ref)
+                if found:
+                    per_tier[int(found[-1]) - 1] += 1
+        domains.append((name, len(CITATION_RE.findall(body)), tiers, per_tier))
     return domains
 
 
@@ -85,25 +95,31 @@ def main():
 
     cards = CARD_RE.findall(io.open(landing, encoding="utf-8").read())
     by_title = {}
-    for raw_title, count, tier in cards:
-        by_title[html.unescape(raw_title).strip()] = (int(count), tier.strip())
+    for raw_title, count, mix, tier in cards:
+        by_title[html.unescape(raw_title).strip()] = (int(count), mix, tier.strip())
 
     problems = []
     if len(cards) != len(domains):
         problems.append(
-            "card count %d != domain count %d — a domain was added or removed "
+            "index row count %d != domain count %d — a domain was added or removed "
             "without updating docs/index.html" % (len(cards), len(domains))
         )
 
-    for name, count, tiers in domains:
+    for name, count, tiers, per_tier in domains:
         if name not in by_title:
-            problems.append("no evidence card for domain %r" % name)
+            problems.append("no evidence index row for domain %r" % name)
             continue
-        card_count, card_tier = by_title.pop(name)
+        card_count, card_mix, card_tier = by_title.pop(name)
         if card_count != count:
             problems.append(
-                "%s: card says %d studies, references.md has %d"
+                "%s: row says %d studies, references.md has %d"
                 % (name, card_count, count)
+            )
+        want_mix = ",".join(str(n) for n in per_tier)
+        if card_mix != want_mix:
+            problems.append(
+                "%s: tier-mix bar says %s (T1..T5), references.md has %s"
+                % (name, card_mix, want_mix)
             )
         if not tiers:
             problems.append("%s: references.md lists no evidence tiers" % name)
@@ -115,12 +131,12 @@ def main():
             if card_tiers and card_tiers[0] < tiers[0]:
                 note = "  <- OVERSTATES: claims stronger evidence than the domain holds"
             problems.append(
-                "%s: card says %s, references.md spans %s%s"
+                "%s: row says %s, references.md spans %s%s"
                 % (name, card_tier, want, note)
             )
 
     for leftover in sorted(by_title):
-        problems.append("evidence card %r matches no domain in references.md" % leftover)
+        problems.append("evidence index row %r matches no domain in references.md" % leftover)
 
     for line in problems:
         print(line)
