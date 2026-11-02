@@ -418,7 +418,7 @@ For each item, check whether the course addresses it and flag violations.
   have synchronized captions? [Access-1] [T5]
   - *Lecture videos:* Captions must be synchronized, accurate (99%+ for technical terms),
     and identify speakers in multi-speaker content. Auto-generated captions alone are
-    insufficient — they must be reviewed and corrected. [Multimedia-6] [T3]
+    insufficient — they must be reviewed and corrected. [Multimedia-6] [T5]
   - *Discussion forums with video replies:* If the platform supports video posts, caption
     requirements apply to those as well.
 - **1.2.5 Audio Descriptions (Prerecorded) (Level AA):** Do videos with significant visual
@@ -490,7 +490,7 @@ For each item, check whether the course addresses it and flag violations.
 - **Readability:** What is the reading level? (Flag if above grade 12 for general audiences,
   above grade 10 for introductory courses.) Use Flesch-Kincaid or similar readability
   measure. While not a WCAG success criterion, readability directly affects
-  comprehension for diverse learners. [Access-4] [T3]
+  comprehension for diverse learners. [Access-4] [T4]
 
 **Robust:**
 - **4.1.2 Name, Role, Value (Level A):** Do all user interface components (form elements,
@@ -507,7 +507,7 @@ Use this checklist to audit each content type present in the course:
 
 | Content Type | Key WCAG Criteria | What to Check |
 |---|---|---|
-| **Lecture videos** | 1.2.2, 1.2.5 | Synchronized captions (reviewed, not auto-only); audio descriptions for visual-only content; transcript available for download [Multimedia-6] [T3] |
+| **Lecture videos** | 1.2.2, 1.2.5 | Synchronized captions (reviewed, not auto-only); audio descriptions for visual-only content; transcript available for download [Multimedia-6] [T5] |
 | **Discussion forums** | 2.1.1, 2.4.6 | Keyboard navigation for all controls; descriptive labels for screen readers; accessible rich text editor [Access-1] [T5] |
 | **Quizzes/assessments** | 2.2.1, 3.3.1, 3.3.2, 3.3.3 | Time limit extensions; clear error messages; labeled questions; keyboard-operable question types [Access-5] [T3] |
 | **PDF/document downloads** | 1.3.1, 1.3.2 | Tagged PDF with heading structure; correct reading order; table headers; no image-only scans [Access-1] [T5] |
@@ -530,7 +530,7 @@ evaluate whether the course addresses it and recommend improvements.
 
 | Checkpoint | Question | Evidence | Status |
 |------------|----------|----------|--------|
-| Recruiting interest | Are learners offered choices in how they engage? (e.g., choice of discussion topic, project format) | [Access-6] [T2] | |
+| Recruiting interest | Are learners offered choices in how they engage? (e.g., choice of discussion topic, project format) | [Access-6] [T3] | |
 | Sustaining effort | Are there varied levels of challenge? Are goals clear with scaffolded difficulty? | [Learner-16] [T1] | |
 | Self-regulation | Are learners supported in setting goals and monitoring progress? (e.g., progress dashboards, self-assessment checklists) | [Assessment-9] [T5] | |
 
@@ -539,8 +539,8 @@ evaluate whether the course addresses it and recommend improvements.
 | Checkpoint | Question | Evidence | Status |
 |------------|----------|----------|--------|
 | Perception | Is content available in multiple sensory modalities? (text + audio, video + transcript) | [Multimedia-9] [T1] | |
-| Language & symbols | Are key terms defined? Are notations explained? Are glossaries or vocabulary supports provided? | [Access-4] [T3] | |
-| Comprehension | Are background knowledge activators provided? Are big ideas highlighted? Are worked examples or graphic organizers used? | [CogLoad-13] [T3] | |
+| Language & symbols | Are key terms defined? Are notations explained? Are glossaries or vocabulary supports provided? | [Access-4] [T4] | |
+| Comprehension | Are background knowledge activators provided? Are big ideas highlighted? Are worked examples or graphic organizers used? | [CogLoad-13] [T5] | |
 
 **Principle 3: Multiple Means of Action & Expression** [Access-3] [T5]
 
@@ -557,8 +557,8 @@ For each checkpoint not met, provide:
 - Why this matters for specific learner populations (not just compliance)
 
 **Key UDL evidence base:**
-- [Access-4] [T3] — UDL in online courses improves outcomes across diverse learner populations.
-- [Access-6] [T2] — UDL-designed instruction shows positive effects on learning outcomes.
+- [Access-4] [T4] — UDL in online courses improves outcomes across diverse learner populations.
+- [Access-6] [T3] — UDL-designed instruction shows positive effects on learning outcomes.
 - [Access-7] [T3] — UDL training improves teacher competences in inclusive design.
 - [Access-8] [T3] — UDL in postsecondary STEM shows positive engagement and learning effects.
 - [Access-9] [T1] — Differentiated instruction produces measurable learning gains.

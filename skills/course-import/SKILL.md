@@ -334,14 +334,14 @@ manifest ready for evidence-based review" in under 5 minutes.
 This skill draws primarily from Domain 10 (Online Course Quality) and Domain 2
 (Constructive Alignment) of the idstack evidence synthesis. Key principles:
 
-- Well-planned, well-designed courses enhance learning outcomes [Online-13] [T1].
+- Well-planned, well-designed courses enhance learning outcomes [Online-13] [T3].
   Quality review starts at import, not after. Detecting structural gaps early
   saves redesign time later.
 - Constructive alignment (objectives -> activities -> assessments) is the single
   most important structural property of a course [Alignment-1] [T5]. The import
   should detect alignment (or its absence) from the source data.
 - The revised Bloom's taxonomy (Anderson & Krathwohl) classifies objectives on
-  two dimensions: knowledge type and cognitive process [Alignment-7] [T3].
+  two dimensions: knowledge type and cognitive process [Alignment-7] [T4].
   Pre-classification during import saves time for /idstack:learning-objectives.
 
 ## Evidence Tier Key
@@ -960,7 +960,7 @@ flags problems visible in the structural data alone.
   "⚠ {X} of {Y} assessments have no rubric [Assessment-8] [T1]"
 - Check for discussion/collaborative activities. Flag if zero:
   "⚠ No discussion or collaborative activities found — social presence gap risk
-  [Online-15] [T2]"
+  [Online-15] [T4]"
 - Check for accessibility info. Flag if none:
   "⚠ No accessibility information found for course materials"
 - Check for learner support resources. Flag if none:
@@ -1069,7 +1069,7 @@ For each objective:
 4. **Confidence level:**
    - High: verb maps clearly to one Bloom's level
    - Ambiguous: verb could map to multiple levels (e.g., "analyze", "demonstrate")
-     Mark as "check with /idstack:learning-objectives" [Alignment-12] [T2]
+     Mark as "check with /idstack:learning-objectives" [Alignment-12] [T4]
 
 5. **Set alignment_status to "imported-unverified"** — the user should run
    /idstack:learning-objectives to verify and check bidirectional alignment

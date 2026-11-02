@@ -440,8 +440,8 @@ For every learning objective and assessment pair, challenge the alignment.
 - Does the assessment actually measure the stated objective, or does it test something adjacent?
 - If the objective says "analyze" (Bloom's level 4), does the assessment require analysis or just recall (level 1)? Flag Bloom's level mismatches.
   [Alignment-14] [T1] — retrieval practice and Bloom's levels interact.
-  [Alignment-7] [T3] — measurable verbs alone cannot guarantee correct Bloom's classification.
-  [Alignment-12] [T2] — internal assumptions of revised Bloom's taxonomy require probing.
+  [Alignment-7] [T4] — measurable verbs alone cannot guarantee correct Bloom's classification.
+  [Alignment-12] [T4] — internal assumptions of revised Bloom's taxonomy require probing.
 - Flag any objective with no matching assessment (untested objective).
   [Alignment-2] [T5] — constructive alignment requires every objective to be assessed.
 - Flag any assessment with no matching objective (orphaned assessment).
@@ -482,19 +482,19 @@ Estimate cognitive load per module using proxy measures.
 - Number of new concepts introduced per module (flag if >7).
   [CogLoad-4] [T5] — intrinsic load increases with element interactivity.
   [CogLoad-5] [T5] — working memory capacity limits are real design constraints.
-  [CogLoad-6] [T1] — working memory resource depletion compounds across tasks.
+  [CogLoad-6] [T2] — working memory resource depletion compounds across tasks.
 - Number of prerequisite concepts required (flag if prerequisites span >3 prior modules).
   [CogLoad-1] [T1] — problem-solving support interacts with sequence to affect load.
 - Assessment complexity relative to objective Bloom's level.
   [CogLoad-16] [T1] — format affects cognitive load independently of content.
 - Module sequencing: are related concepts spaced or massed?
-  [CogLoad-17] [T1] — sequencing significantly affects learning outcomes.
-  [CogLoad-13] [T3] — five strategies for optimizing instructional materials.
+  [CogLoad-17] [T2] — sequencing significantly affects learning outcomes.
+  [CogLoad-13] [T5] — five strategies for optimizing instructional materials.
 
 **Expertise reversal check:**
 - Are scaffolds present that would hurt expert learners?
   [CogLoad-19] [T5] — expertise reversal effect.
-  [CogLoad-11] [T3] — digital/online learning amplifies cognitive load concerns.
+  [CogLoad-11] [T5] — digital/online learning amplifies cognitive load concerns.
 - Are there adaptive elements that adjust based on learner expertise?
   [Learner-16] [T1] — differentiated instruction produces measurable gains.
   [Learner-18] [T5] — personalized adaptive learning framework.
@@ -519,22 +519,22 @@ Simulate 4 learner personas walking through the course.
 - Can experts skip introductory content or are they forced through it?
   [Learner-16] [T1] — effective differentiation allows bypassing known material.
 - Does the course adapt to prior knowledge or treat everyone as novice?
-  [Learner-11] [T2] — data-based differentiation responds to individual learner state.
+  [Learner-11] [T4] — data-based differentiation responds to individual learner state.
 
 **Persona C — ESL Learner** (language complexity, cultural references)
 - Are key terms defined when first introduced?
-  [Access-4] [T3] — universal instructional design includes clear vocabulary introduction.
+  [Access-4] [T4] — universal instructional design includes clear vocabulary introduction.
 - Are instructions clear without idiomatic expressions?
-  [CogLoad-11] [T3] — extraneous load from language complexity compounds online.
+  [CogLoad-11] [T5] — extraneous load from language complexity compounds online.
 - Are cultural references universal or region-specific?
   [Learner-13] [T4] — diverse student needs require culturally responsive design.
 - Is reading level appropriate? (Flag if above Flesch-Kincaid grade 10 for ESL audiences.)
-  [Learner-2] [T2] — differentiated instruction varies with language proficiency.
+  [Learner-2] [T4] — differentiated instruction varies with language proficiency.
 
 **Persona D — Learner with Accessibility Needs**
 - Do assessments offer alternative formats (extended time, alternative submission)?
   [Access-3] [T5] — UDL 3.0 requires multiple means of action and expression.
-  [Access-6] [T2] — universal design for instruction supports flexible assessment.
+  [Access-6] [T3] — universal design for instruction supports flexible assessment.
 - Are multimedia elements accessible (captions, transcripts, alt text)?
   [Access-1] [T5] — WCAG 2.1 requires text alternatives for non-text content.
   [Access-5] [T3] — universal design includes multimedia accessibility.
@@ -543,7 +543,7 @@ Simulate 4 learner personas walking through the course.
   [Access-2] [T5] — WCAG 2.2 extends keyboard navigation standards.
 
 **Per-persona checklist (evaluate for every module):**
-1. Can this persona access the content? [Access-4] [T3]
+1. Can this persona access the content? [Access-4] [T4]
 2. Does this persona have the prerequisite knowledge? [CogLoad-1] [T1]
 3. Is the cognitive load appropriate for this persona's expertise level? [CogLoad-19] [T5]
 4. Does the assessment format work for this persona? [Assessment-8] [T1]
@@ -555,14 +555,14 @@ Trace prerequisite dependencies across all modules.
 
 **Check for:**
 - Circular dependencies (A requires B requires A).
-  [CogLoad-17] [T1] — circular paths make valid sequencing impossible.
+  [CogLoad-17] [T2] — circular paths make valid sequencing impossible.
 - Missing prerequisites (module assumes knowledge not taught earlier).
   [CogLoad-1] [T1] — problem-solving support must match prerequisite state.
-  [Alignment-10] [T2] — high challenge without high support undermines learning.
+  [Alignment-10] [T4] — high challenge without high support undermines learning.
 - Orphaned content (nothing depends on it, no prerequisites).
   [Alignment-1] [T5] — every component must serve the objective chain.
 - Ordering violations (prerequisite module appears after the module that needs it).
-  [CogLoad-17] [T1] — sequencing violations create impossible learning paths.
+  [CogLoad-17] [T2] — sequencing violations create impossible learning paths.
   [CogLoad-4] [T5] — intrinsic load becomes unmanageable when prereqs are unavailable.
 
 ---
@@ -578,7 +578,7 @@ After all dimensions return, compute the confidence score:
   - Info = -1
 - Floor at 0
 
-Severity weights reflect that structural misalignment and cognitive overload are the strongest predictors of learner failure: [Alignment-14] [T1], [CogLoad-6] [T1].
+Severity weights reflect that structural misalignment and cognitive overload are the strongest predictors of learner failure: [Alignment-14] [T1], [CogLoad-6] [T2].
 
 Contextualize:
 - 80+ "High confidence" — minor issues only
