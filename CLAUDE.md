@@ -54,6 +54,7 @@ python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, 
 python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
 python3 test/check-doc-accuracy.py .   # Verifies documentation accuracy across version strings, binaries, flags, and links
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails.
+                                  # Takes more than 10 minutes: run it in the background.
                                   # A case whose anchor text no longer matches prints ERROR, and no result counts until
                                   # it is fixed. When you rename or move text, grep this file for it and update the anchor
 ```
@@ -69,6 +70,8 @@ No build step for users. No dependencies beyond bash and python3 3.9 or later; `
 ### Releasing
 
 `VERSION` is the source of truth. A bump must also update `.claude-plugin/plugin.json`, a `## vX.Y.Z.W` entry in `CHANGELOG.md`, `README.md`, and `docs/index.html` (`vX.Y.Z.W` plus a 3-part `softwareVersion`). smoke-test and `check-doc-accuracy.py` fail on any mismatch. Pushing a `v*` tag runs `release.yml`, which checks the tag against these files and then creates the GitHub release.
+
+Changes that are not released yet go under `## Unreleased` at the top of `CHANGELOG.md`. The version checks look only for `## vX.Y.Z.W`.
 
 Two versions move on their own schedule. The Chrome extension has its own version in `extension/manifest.json`, and `bin/package-extension.sh` names the zip from it. The manifest schema version (`1.4`) is hard-coded in `templates/manifest-schema.md` and in `check-doc-accuracy.py`, so a schema bump also needs a `bin/idstack-migrate` step.
 
@@ -185,6 +188,14 @@ Every recommendation in a skill must cite its evidence tier using domain codes f
 `test/test-evidence-labels.mjs` parses this table and asserts the extension's `TIER_METADATA` labels match the Meaning column. Change the two together, and keep the `| Tn | text |` row format.
 
 Format: `[DomainCode-Number] [Tier]` (e.g., `[Alignment-14] [T1]`). Stronger evidence takes precedence when tiers conflict.
+
+Editing `evidence/references.md`:
+- Add each new reference with the next free number in its domain. Never renumber or reuse a number.
+- When a tier changes, update every `[Code-N] [Tn]` that cites it, then run `bin/idstack-gen-skills`. If a grouped citation (`[A] [B] [T1]`) now has mixed tiers, split it (`[A] [T1] [B] [T2]`).
+- `check-citation-tiers.py` does not scan `extension/`. Grep `extension/background/parser-helper.js` (the demo findings) yourself.
+- The total study count is hand-typed: 5 places in `docs/index.html`, plus `DESIGN.md` and `docs/og-template.html`. `check-evidence-cards.py` checks only the per-domain cards.
+- `test/mutation-test.sh` quotes literal citation lines and needs one card tier range that is unique on the page (case 18). After changing tiers, grep it for the old strings.
+- The Consensus MCP server, if connected, can verify references and find newer ones. Run at most 3 searches at a time. idstack itself has no Consensus integration since v3.9.0.0.
 
 ### Interaction pattern
 
