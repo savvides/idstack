@@ -353,19 +353,19 @@ Key findings encoded as decision rules in this skill:
 - **Constructive alignment improves student outcomes.** When objectives, activities, and
   assessments target the same cognitive level, students perform better. Misalignment is
   one of the most common and most fixable problems in course design [Alignment-1] [T5]
-  [Alignment-10] [T2].
+  [Alignment-10] [T4].
 
 - **Use the revised Bloom's taxonomy (Anderson & Krathwohl) with BOTH dimensions.**
   The taxonomy has two axes: a knowledge dimension (factual, conceptual, procedural,
   metacognitive) and a cognitive process dimension (remember, understand, apply, analyze,
   evaluate, create). Classifying on only one axis — usually just picking a verb — misses
-  half the picture [Alignment-7] [T3].
+  half the picture [Alignment-7] [T4].
 
 - **Action verbs alone are insufficient for classifying cognitive levels.** The same verb
   can map to multiple Bloom's levels depending on context. "Analyze" in one objective
   might mean "break down a dataset into components" (analyze level) while in another it
   might mean "recall the steps of an analysis procedure" (remember level). Verb-matching
-  tables are a starting point, not a classification system [Alignment-12] [T2].
+  tables are a starting point, not a classification system [Alignment-12] [T4].
 
 - **Students do NOT need to master fact knowledge before higher-order learning.** The
   assumption that learners must climb Bloom's from the bottom is not supported by
@@ -449,7 +449,7 @@ For each outcome the user provides:
    and measurable. "Understand the importance of ethics" is not measurable. "Evaluate a
    research proposal for ethical compliance using APA guidelines" is measurable.
 
-2. **Classify on BOTH dimensions of revised Bloom's taxonomy** [Alignment-7] [T3]:
+2. **Classify on BOTH dimensions of revised Bloom's taxonomy** [Alignment-7] [T4]:
 
    **Knowledge dimension:**
    - Factual — terminology, specific details, elements
@@ -498,7 +498,7 @@ this objective, do students:
 Which level do you want?"
 
 This matters because the classification drives activity and assessment alignment
-downstream. Getting it wrong here cascades [Alignment-12] [T2].
+downstream. Getting it wrong here cascades [Alignment-12] [T4].
 
 ---
 
@@ -541,7 +541,7 @@ Record any flags in the `expertise_reversal_flags` array for the manifest.
 
 This is the core value of this skill. Constructive alignment means every ILO connects to
 both a learning activity AND an assessment, and all three target the same cognitive level
-[Alignment-1] [T5] [Alignment-10] [T2].
+[Alignment-1] [T5] [Alignment-10] [T4].
 
 ### Forward Pass: ILO to Activity
 

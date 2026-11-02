@@ -371,13 +371,13 @@ cognitive load, and constructive alignment domains. Key findings:
   [Online-2] [T4].
 - Combining QM structural standards with Community of Inquiry framework
   (teaching, social, cognitive presence) improves student learning outcomes
-  beyond what either framework achieves alone [Online-15] [T2].
+  beyond what either framework achieves alone [Online-15] [T4].
 - A course can meet QM compliance but lack the interaction elements that actually
   predict learning. Structural quality is necessary but not sufficient
   [Online-17] [T4].
 - Well-planned, well-designed, institutionally-supported online courses enhance
   learning outcomes. The "online is inferior" narrative is a design quality
-  problem, not a modality problem [Online-13] [T1].
+  problem, not a modality problem [Online-13] [T3].
 - Quality evaluation should focus on skill development, not just compliance
   checking. Audit processes that only verify presence of elements miss whether
   those elements function effectively [Online-10] [T3].
@@ -676,7 +676,7 @@ After scoring all three dimensions, present this synthesis:
 
 "This course [meets/does not meet] QM structural requirements but scores
 [high/low] on [weakest presence dimension] ([score]/10). Courses with low
-social presence show weaker learning outcomes in online settings [Online-15] [T2].
+social presence show weaker learning outcomes in online settings [Online-15] [T4].
 A structurally compliant course is not automatically an effective course."
 
 This is the core value proposition of the two-layer approach. QM tells you the
@@ -740,7 +740,7 @@ resolves the issue. When a check has no findings, record "No flags."
 
 ### Check 1: Cognitive Load Flags
 
-**Evidence:** [CogLoad-1] [CogLoad-16] [CogLoad-17] [T1]
+**Evidence:** [CogLoad-1] [CogLoad-16] [T1] [CogLoad-17] [T2]
 
 Scan the course design for these cognitive load violations:
 

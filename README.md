@@ -42,7 +42,7 @@ idstack: Connected. Pulling course data...
            [Assessment-8] [T1] — elaborated feedback produces larger
            learning gains than correctness-only
          ⚠ No collaborative activities beyond discussion forums
-           [Online-15] [T2] — low social presence predicts weaker outcomes
+           [Online-15] [T4] — low social presence predicts weaker outcomes
          ⚠ No accessibility information for video content
 
          6 objectives pre-classified with Bloom's taxonomy.
@@ -79,13 +79,13 @@ idstack: Reading your manifest... I have 12 modules, 6 objectives,
 
          This course meets 3 of 8 QM standards but scores 3/10 on social
          presence. Courses with low social presence show weaker learning
-         outcomes in online settings [Online-15] [T2].
+         outcomes in online settings [Online-15] [T4].
 
          ### Top 3 Recommendations
          1. Add rubrics to all assessments with elaborated feedback
             [Assessment-8] [T1] — Run /idstack:learning-objectives
          2. Design collaborative activities for at least 4 modules
-            [Online-15] [T2]
+            [Online-15] [T4]
          3. Add learner support section with office hours, tutoring,
             and technical help resources
 ```
@@ -421,7 +421,7 @@ Every recommendation includes an evidence tier so you know how strong the backin
 | Tier | What it means | Example |
 |------|--------------|---------|
 | **T1** | Meta-analyses and randomized controlled trials | "Elaborated feedback improves learning" (Wisniewski et al., 2020) |
-| **T2** | Quasi-experimental studies with controls | "QM + CoI combination improves outcomes" (Swan et al., 2012) |
+| **T2** | Quasi-experimental studies with controls | "Spaced practice beats massed practice" (Chen et al., 2018) |
 | **T3** | Systematic reviews of mixed evidence | "Multi-level needs analysis is necessary" (Ferreira & Abbad, 2013) |
 | **T4** | Observational studies without comparison groups | "QM peer review improves course quality" (Zimmerman et al., 2020) |
 | **T5** | Expert opinion and theoretical frameworks | "Constructive alignment improves learning" (Biggs, 1996) |
