@@ -169,7 +169,7 @@ check "rejects a bad payload"  "$MERGE --section bogus"  3  # must exit 3
 check "names the failing skill" "$STATUS --readiness"    0  "INCOMPLETE"
 ```
 
-Arguments 3 and 4 are optional: an expected exit code, and an ERE the output must match. On failure the first five lines of output are printed. Do not add a private counter block (`PASS=0`, `FAIL=0`, `TOTAL=0`) or your own `check()` to a suite. For each bash suite that it lists, smoke-test asserts that the suite sources `test-helper.sh` and sets no local counters, and a mutation proves that guard works. Nine suites each had their own copy once and they drifted: two spelled it `assert`, and one swallowed failure output entirely, so CI reported a bare `FAIL` with nothing to act on.
+Arguments 3 and 4 are optional: an expected exit code, and an ERE the output must match. On failure the first five lines of output are printed locally. When `CI` is set, all of the output is printed, because CI runs most suites only through smoke-test. Do not add a private counter block (`PASS=0`, `FAIL=0`, `TOTAL=0`) or your own `check()` to a suite. For each bash suite that it lists, smoke-test asserts that the suite sources `test-helper.sh` and sets no local counters, and a mutation proves that guard works. Nine suites each had their own copy once and they drifted: two spelled it `assert`, and one swallowed failure output entirely, so CI reported a bare `FAIL` with nothing to act on.
 
 One suite keeps a differently-shaped wrapper because its assertion is not "run a command": `check_listing` in `test/test-plugin-status.sh` feeds a `claude plugin list` listing to `plugin_is_enabled`. It is named so it cannot shadow `check`.
 

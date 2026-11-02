@@ -9,8 +9,9 @@
 # CI tells you something broke and not what.
 #
 # Suites with a genuinely different assertion shape keep their own wrapper and
-# use only the counters from here: test-version-classifier.sh compares a
-# version string to an expected classification rather than running a command.
+# use only the counters from here: test-plugin-status.sh's check_listing feeds a
+# `claude plugin list` listing to plugin_is_enabled and compares the result to
+# an expected enabled/disabled value rather than running a command.
 
 PASS=0
 FAIL=0

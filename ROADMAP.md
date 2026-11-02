@@ -34,8 +34,8 @@ _The Consensus integration and the neuromyth correction were removed in v3.9.0.0
 
 ### Chrome Extension, Course Dossier & Robustness (v3.5.0.0)
 - **Native Chrome Side Panel extension for Canvas LMS & Google Docs.** Officially published on the [Chrome Web Store](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). Audits course content and assignments with cognitive demand classification (Bloom's Revised Taxonomy) and empirical evidence citations directly in the browser.
-- **Automated background Canvas course crawler.** Audits entire Canvas courses in the background via active session cookies without requiring developer API keys.
-- **Course Dossier multi-page compiler & Markdown exporter.** Compiles multi-page course findings into unified structured markdown dossiers with TOC, reading time estimates, and metadata sidecars.
+- **Automated background Canvas course crawler.** Audits a Canvas course's syllabus and assignments in the background, with your existing Canvas login, without requiring developer API keys.
+- **Course Dossier multi-page compiler & Markdown exporter.** Compiles the audits of several pages into one Markdown dossier, with a table of the audited materials and one section for each page.
 - **Automated Web Store packaging.** Added `bin/package-extension.sh` to package clean `.zip` bundles for the Chrome Web Store Developer Console.
 - **Atomic learnings deletion with permission preservation (#60).** Replaced destructive file truncation in `bin/lib/idstack-learnings-delete` (now part of `bin/idstack-learnings`) with an atomic tempfile-and-rename pattern that preserves POSIX permissions.
 - **Cross-project local-over-global search precedence (#61).** Enforces project-local learnings priority over global store records during cross-project searches in `bin/idstack-learnings-search` (now `bin/idstack-learnings search`).
@@ -43,7 +43,7 @@ _The Consensus integration and the neuromyth correction were removed in v3.9.0.0
 
 ### Documentation accuracy & automated verification (v3.4.0.1)
 - **Evidence cards derived from research references.** `test/check-evidence-cards.py` verifies landing page cards against `evidence/references.md` in `smoke-test.sh` so study counts and tier spans match.
-- **Privacy policy disclosures updated.** `PRIVACY.md` discloses outbound Canvas API uploads in `/idstack:course-export` and `git fetch` operations in `bin/idstack-update-check`.
+- **Privacy policy disclosures updated.** `PRIVACY.md` discloses outbound Canvas API uploads in `/idstack:course-export` and `git fetch` operations in `bin/idstack-update-check` (since removed; idstack no longer checks for updates).
 - **Windows setup instructions fixed.** `README.md` specifies WSL or Git Bash for Windows installs (PowerShell does not run extensionless bash scripts).
 
 ### Single-host Claude Code plugin architecture (v3.4.0.0)
@@ -127,6 +127,7 @@ _Reports and the dashboard are Markdown again after v3.10.0.0 (`<skill>.md`, `in
 - Template system for contributors: shared preamble maintained in one place.
 
 ### Landing page and update check (v1.4.1)
+_The update check is removed after v3.10.0.0. It did not run for plugin installs. To update, use the steps in the README._
 - [idstack.org](https://idstack.org) — landing page with getting started guide, evidence grid, and SEO
 - Skills check for updates and notify when a new version is available.
 
