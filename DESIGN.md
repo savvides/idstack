@@ -1,16 +1,16 @@
 # Design System — idstack
 
-This file is the source of truth for idstack's visual system. Any visual or UI decision (font, color, spacing, radius, motion) must be grounded here. The canonical implementation is `templates/assets/idstack.css` (per-skill HTML reports + course dashboard); when this file changes, that implementation updates in the same PR. The idstack.org landing page (`docs/index.html`) is an intentional separate dark/indigo surface that no longer tracks this report token system (see Decisions log, 2026-06-12).
+This file is the source of truth for idstack's visual system. Any visual or UI decision (font, color, spacing, radius, motion) must be grounded here. Per-skill reports and the course dashboard are plain Markdown and carry no styling (see Decisions log, 2026-11-02), so this system has no report stylesheet to keep in sync. The token, type and report-layout sections below record the report identity that the retired HTML reports used. The idstack.org landing page (`docs/index.html`) is an intentional separate dark/indigo surface that no longer tracks this report token system (see Decisions log, 2026-06-12).
 
 ## Product context
 
 - **What this is:** Open-source set of skills for evidence-based instructional design. Runs in Claude Code. 12 skills, 146 peer-reviewed studies across 11 research domains, every recommendation tagged with its evidence tier T1–T5.
-- **Who it's for:** Instructional designers (university, K-12, corporate L&D), faculty doing their own course design, course-design teams. **Downstream stakeholders:** deans, faculty senates, accreditation reviewers — they read the HTML reports the designer hands them.
+- **Who it's for:** Instructional designers (university, K-12, corporate L&D), faculty doing their own course design, course-design teams. **Downstream stakeholders:** deans, faculty senates, accreditation reviewers — they read the Markdown reports the designer hands them.
 - **Space:** Edtech / instructional design. Adjacent inspiration: open-access academic publishing (eLife), evidence-based-medicine reference (UpToDate, Cochrane), modern dev tools (Linear, Cursor).
 - **Project type:** Hybrid — three surfaces share one system:
   1. Marketing landing (`idstack.org`) — drives discovery + install. Uses a distinct dark/indigo aesthetic, separate from the report system.
   2. CLI tool — terminal interaction, text-only, design-irrelevant.
-  3. Stakeholder deliverables — branded HTML reports + `index.html` course dashboard under `.idstack/exports/<course-slug>/`. Audience: designer + their stakeholders.
+  3. Stakeholder deliverables — plain Markdown reports + `index.md` course dashboard under `.idstack/exports/<course-slug>/`. Audience: designer + their stakeholders. No visual system: the content contract in `templates/report-format.md` sets their structure.
 
 ## Memorable thing
 
@@ -28,7 +28,7 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
 - **Display + body:** **Source Serif 4** (Adobe / open source). Body-serif is the deliberate commitment — every paragraph reinforces the publication mood. Source Serif 4 has multiple optical sizes (`opsz` axis) so the same family handles 13px captions through 65px hero headlines without going off-design.
 - **UI / labels / badges / table cells:** **Public Sans** (USWDS / open source). Designed for US-government documents; reads as "official record" rather than "SaaS chrome." Anti-Inter.
 - **Citations / IDs / code / file paths:** **JetBrains Mono** (open source). Citations like `[Alignment-14] [T1]` are the academic-paper convention rendered in mono: functional reference notation, not decorative.
-- **Loading:** Google Fonts via one `<link>` in each HTML surface (`docs/index.html`, `templates/report.html.tmpl`, `templates/index.html.tmpl`). System-font fallbacks are preserved in `--font-*` tokens so the page is legible even when the network is unavailable. Total weight ~120kb woff2 for the variable axes used.
+- **Loading:** Google Fonts via one `<link>` in each HTML surface (`docs/index.html`). System-font fallbacks are preserved in `--font-*` tokens so the page is legible even when the network is unavailable. Total weight ~120kb woff2 for the variable axes used.
 - **Scale (modular, ratio 1.250 — major third), base 1rem = 17px:**
 
   | Token | rem | px | Role |
@@ -92,7 +92,7 @@ Restrained. Two-color annotation set (rust + prussian blue) for primary marks; t
 | warning | `#7a4f0c` | `#fbf0d9` | Likely problem worth addressing. |
 | info | `#344566` | `#e7eaf1` | Worth knowing, not blocking. |
 
-**Dark mode strategy:** Auto via `prefers-color-scheme: dark` (the report stylesheet). Surfaces redesigned (not just inverted): inky-dark background `#16140f`, warm-cream text `#ebe7dd`, terracotta accent `#d97461` replaces oxblood (oxblood loses too much chroma when inverted). All tier and severity tokens redefined with 10–20% saturation drop and adjusted backgrounds. The light theme is canonical; dark mode is a courtesy. The landing page is now dark-only (not a toggle), with its own indigo palette (`#0a0a0f` background, `#6366f1`→`#a855f7` gradient accents), distinct from the report stylesheet dark mode described here.
+**Dark mode strategy:** Auto via `prefers-color-scheme: dark` (the retired report stylesheet). Surfaces redesigned (not just inverted): inky-dark background `#16140f`, warm-cream text `#ebe7dd`, terracotta accent `#d97461` replaces oxblood (oxblood loses too much chroma when inverted). All tier and severity tokens redefined with 10–20% saturation drop and adjusted backgrounds. The light theme is canonical; dark mode is a courtesy. The landing page is now dark-only (not a toggle), with its own indigo palette (`#0a0a0f` background, `#6366f1`→`#a855f7` gradient accents), distinct from the retired report stylesheet dark mode described here.
 
 ## Spacing
 
@@ -177,3 +177,4 @@ No medium / long durations. No scroll-driven animations. No parallax. No entranc
 | 2026-06-12 | Landing reverted to original dark/indigo aesthetic, separate from the report system (owner request) | Reports retain scholarly ivory "Proof" identity. Landing uses indigo→purple gradient accents — a scoped exception to the no-gradient anti-pattern, which still binds reports. |
 | 2026-08-29 | Fluid `clamp()` type reserved for sizes that span ≥1.5px | The responsive pass put `clamp()` on 19 landing-page font sizes; 12 of them varied by at most 1.12px across their whole range, i.e. a fixed value written in three terms. Those 12 reverted to fixed rem. Cost: type on phones is up to 1.1px larger than the clamp gave; accepted, it reads slightly better. |
 | 2026-08-29 | Minimum interactive target fixed at 44px (`--tap-min`) | The landing page had grown three ad-hoc floors (36/40/42px), and the footer controls applied theirs only below 480px, leaving every width above 480px (desktop included) at 36.6px. One token, applied at every width. Cost: slightly taller controls on desktop; accepted in a product that ships a WCAG review skill. |
+| 2026-11-02 | Reports and the course dashboard moved from branded HTML (an HTML skeleton plus the idstack.css stylesheet) to plain Markdown (`templates/report.md.tmpl`, `templates/index.md.tmpl`) (owner request) | Fewer moving parts means fewer errors: no stylesheet copy, no HTML to get wrong. A relative `.md` path has no spaces, so the report link opens in the Claude desktop app; the old absolute HTML path did not when the folder path had a space. Cost: reports lose the "Proof" visual identity (tier-color borders, severity chips, serif type); accepted. |
