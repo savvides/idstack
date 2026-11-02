@@ -174,7 +174,7 @@ Also read `.idstack/project.json` for project_name, scores (`quality_review.over
 - **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: "This folder has no LMS packages. To make them, run `/idstack:course-export`."
 - **Where to start** — one paragraph. The single change (or 2–3 changes) that would address the largest number of cross-cutting concerns. Anchored to a specific finding id in a specific per-skill report so the designer can act on it (e.g., "Address `assess-1` in `assessment-design.md` first…").
 
-The dashboard is overwritten on every pipeline run — historical dashboards are not retained. The timeline at `.idstack/timeline.jsonl` carries the run history.
+Each time this step runs, it overwrites the dashboard — historical dashboards are not retained. The timeline at `.idstack/timeline.jsonl` carries the run history.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Dashboard path:" line. Then run the command.
 
@@ -191,7 +191,7 @@ When all remaining skills have been executed:
 - Announce: "The pipeline is completed. Your course went through all of the pipeline stages."
 - Confirm the dashboard path: "The course dashboard is at <the Dashboard path, written as a link as the Report Links section of the preamble tells you>. Click it to see the cross-cutting view. The per-skill reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
 - If `/idstack:course-quality-review` produced a score, show it.
-- Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.
+- Remind the user they can re-run any skill individually if needed. To regenerate the course dashboard, they can run `/idstack:pipeline` again and select "Regenerate the course dashboard".
 - Log the pipeline run so "the pipeline was run" is recoverable from the timeline:
 
 ```bash

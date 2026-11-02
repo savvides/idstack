@@ -19,7 +19,10 @@ allowed-tools:
 {{PREAMBLE}}
 
 **Skill-specific manifest check:** If the manifest `needs_analysis` section already has data,
-ask the user: "You ran this skill previously. Do you want to update the results or start again?"
+ask the user: "The manifest has needs analysis data. Do you want to update the results or start again?"
+
+This data can come from an earlier run of this skill or from /idstack:course-import, which
+writes `needs_analysis.task_analysis.job_tasks`.
 
 # Needs Analysis — Three-Level Assessment Protocol
 

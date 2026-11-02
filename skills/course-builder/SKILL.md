@@ -671,13 +671,13 @@ Before the first Step Review, use the Read tool on the files from the "Report ru
 
 In gap-fill mode, **skip Steps 1–5** (scope, instructor info, syllabus, module pages, assessments, rubrics). Instead:
 
-**Identify gaps.** Read `red_team_audit.top_actions` and `quality_review.recommendations` from the manifest (if those skills already ran) plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
+**Identify gaps.** Read the findings in `red_team_audit.dimensions.<dimension>.findings[]` and the items in `quality_review.recommendations[]` from the manifest (if those skills already ran), plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
 
 **Review the targets.** This section is the approval of the targets.
 
 **Step review:** do the Step Review in the preamble. Section: `## Generation targets`. Columns: `ID | Target | Source finding | Status | Justification | Evidence`.
 
-Use the IDs `GT-1`, `GT-2` and so on, with the Status `generate` and the upstream finding ID, for example `red-team:alignment-3`. If the user selects "Change a row", the user can set the Status to `deferred` or `declined`.
+Use the IDs `GT-1`, `GT-2` and so on, with the Status `generate`. In Source finding, put the red-team finding `id` with the prefix `red-team:`, for example `red-team:alignment-3`. A `quality_review.recommendations[]` item has no ID, so for it put `quality-review:` and a short form of its `finding` text. For a request from the user, put `user request`. If the user selects "Change a row", the user can set the Status to `deferred` or `declined`.
 
 **Generate only what's missing.** For each target with the Status `generate`, follow the relevant sub-step from Steps 4–5 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration. After you generate each artifact, review it.
 

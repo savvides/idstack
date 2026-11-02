@@ -53,7 +53,7 @@ _The Consensus integration and the neuromyth correction were removed in v3.9.0.0
 ### Follow-up fixes to the v3.3.0.0 audit (v3.3.0.1–v3.3.0.4)
 - **Skills stopped suggesting commands that don't exist.** Welcome-back and next-step messages named things like `/assessment-design`, which does not resolve in Claude Code. It landed inside the context-recovery message v3.3.0.0 had just repaired, so it was the first thing you saw once those messages started working again (v3.3.0.1).
 - **Searching your learnings for a word with an apostrophe returned the wrong answer.** `Bloom's` or `learner's` made the search code a syntax error, which was swallowed, and the fallback that took over ignores the `--type` filter — so it answered with a record of the wrong type instead of failing. Those are ordinary search terms in this tool (v3.3.0.2).
-- Smaller: a malformed payload can no longer corrupt the manifest, and on machines without python3 the search fallback's `--type` filter works at all (it had never matched anything idstack wrote).
+- Smaller: a malformed payload can no longer corrupt the manifest, and on machines without python3 the search fallback's `--type` filter matched records (before, it had never matched anything idstack wrote). v3.9.0.0 removed that fallback: idstack now needs python3, and `bin/idstack-learnings` says so instead of searching.
 
 ### Course memory, pipeline orchestration, and re-run detection fixed (v3.3.0.0)
 - **Welcome-back messages work on stock macOS.** The session-memory code embedded in every skill contained an f-string that is a SyntaxError on any Python below 3.12 — including the 3.9 macOS ships. It failed silently, so context recovery, quality-score trends, and next-step suggestions produced nothing. Fixed, and now exercised on 3.9 in CI so the class of bug can't ship again.
@@ -64,7 +64,7 @@ _The Consensus integration and the neuromyth correction were removed in v3.9.0.0
 - **Standalone runs persist.** `bin/idstack-migrate --init` creates a canonical manifest, so a skill run outside the pipeline has something to write into instead of silently discarding its results.
 
 ### Test infrastructure and CI (v3.3.0.0–v3.3.0.4, for contributors)
-- The suite had never run automatically. GitHub Actions runs every suite on each push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, and more since; `CONTRIBUTING.md` lists the current set.
+- The suite had never run automatically. GitHub Actions runs every suite on each pull request and each push to main, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, and more since; `CONTRIBUTING.md` lists the current set.
 - `./setup` — the primary deliverable — went from zero coverage to 17 behavioral tests.
 - `bin/idstack-doctor` and `bin/idstack-status --readiness` gained their first execution coverage in v3.3.0.4. Both are what a user reaches for when something has already gone wrong, and neither had any.
 - `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught. Every mutation in it is guarded; the suite prints the current count when you run it.

@@ -558,7 +558,7 @@ done
 "$_IDSTACK/bin/idstack-learnings" search --keyword KEYWORD --cross-project --limit 10
 ```
 
-If results include global learnings (tagged with `_source`), show their source project.
+If results include global learnings (tagged `"_source": "global"`), show the project name from their `_source_project` field.
 
 ### delete <key>
 

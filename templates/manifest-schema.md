@@ -47,7 +47,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |
 | `needs_analysis` | needs-analysis, course-import | Org context, task analysis, learner profile, training justification. |
 | `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. |
-| `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
+| `assessments` | assessment-design | Items (each with its rubric and feedback strategy), formative checkpoints, the feedback quality score and, in Mode 3, audit notes. No skill writes `assessment_strategy`, `feedback_plan` or the top-level `rubrics[]`. Mode 3 reads `assessments.rubrics` if it exists. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
 | `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
 | `export_metadata` | course-export | Export destination, items exported, readiness check. |
@@ -325,7 +325,7 @@ The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|mo
 }
 ```
 
-**`import_metadata.quality_flag_details[]`** — each item. No skill writes this array. `bin/idstack-migrate` creates it empty, or fills it when it moves a legacy `_import_quality_flags` root field. `/idstack:course-import` writes only the `quality_flags` count. The flag details are in its report (Import quality triage section):
+**`import_metadata.quality_flag_details[]`** — each item. No skill fills this array. `bin/idstack-migrate` creates it empty, or fills it when it moves a legacy `_import_quality_flags` root field. `/idstack:course-import` writes it as an empty array, which replaces any details that `bin/idstack-migrate` moved there, and writes the count in `quality_flags`. The flag details are in its report (Import quality triage section):
 ```json
 {
   "key": "orphan_module_8",

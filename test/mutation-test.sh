@@ -1051,13 +1051,14 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "HTML sign-in page audited as the Google Doc" "$WORK/r/test/test-extension.sh"
 
-# 30a-30l. The side panel labelled a result with whatever tab was active when
+# 30a-30m. The side panel labelled a result with whatever tab was active when
 # the reply landed, let a slow tab refresh overwrite a newer one, left the last
 # result behind Add to Dossier after an error, retried the single-page audit
 # whatever had failed, wiped Audit a Different Page on a vote, and said "Copied!"
 # when the clipboard write failed. The renderer threw on malformed findings,
 # inside the sendMessage callback, so the spinner stayed up.
-# test-sidepanel-state.mjs drives the shipped sidepanel.js through each case.
+# test-sidepanel-state.mjs drives the shipped sidepanel.js through 30a-30h and 30m;
+# test-renderer-helper.mjs covers the renderer cases, 30i-30l.
 
 # 30a. a page audit is labelled with the tab active when the reply lands ->
 # test-sidepanel-state must fail.
@@ -1232,7 +1233,7 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "renderer calls toLowerCase on a non-string tier" node "$WORK/r/test/test-renderer-helper.mjs"
 
-# 31a-31i. The docs made promises the code did not keep. The side panel said
+# 31a-31j. The docs made promises the code did not keep. The side panel said
 # no student data was "ever collected, retained, or used for model training"
 # while the extractor read whole Canvas pages and the panel pointed at a free
 # API tier whose terms allow that use. The settings called canned demo output
@@ -1596,7 +1597,7 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the checker misses an inline element that has no end tag" python3 "$WORK/r/test/test-ste-check.py"
 
-# 48a-48b. The writing standard reaches a report only through the skill steps and
+# 48a-48c. The writing standard reaches a report only through the skill steps and
 # the report template. A skill without the check step ships text that no check
 # has seen, and a bad template label goes into every report.
 # 48a. A skill loses its writing standard check step -> smoke-test must fail.
@@ -1736,7 +1737,7 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "course prompt drops the STE rules" "$WORK/r/test/test-extension.sh"
 
-# 46a-46c. The extension's fixed text obeys ASD-STE100. smoke-test sends the printed
+# 46a-46d. The extension's fixed text obeys ASD-STE100. smoke-test sends the printed
 # extension output and the side-panel page through bin/idstack-ste-check. Only the
 # STE checks catch 46a and 46b: every other suite still passes.
 # 46a. The Markdown export labels a recommendation in non-STE text again -> smoke-test must fail.
