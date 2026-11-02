@@ -37,8 +37,9 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
-- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
-  child skill in-process via the `Skill` tool.
+- **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
+  child skill in-process through the `Skill` tool. `/idstack:start` also uses it to start
+  the first skill for the user.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as
   `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
   command. This applies in reports, manifests, and AskUserQuestion options as much as in
@@ -47,7 +48,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 ## Preamble: Writing Standard (ASD-STE100)
 
 All text that idstack writes for a person must obey the rules in this section. This
-includes chat text, AskUserQuestion questions and options, HTML reports, the course
+includes chat text, AskUserQuestion questions and options, reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
 reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
@@ -249,8 +250,8 @@ except: pass
 fi
 ```
 
-**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
-(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:concise:** Keep explanations brief. Do not cite evidence in chat prose.
+Always cite evidence in Step Review tables and in reports.
 **If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
 considered, and rationale for each recommendation.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
@@ -278,6 +279,192 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
+
+## Preamble: Report Links
+
+A skill that writes a report runs a block that prints a `Report path:` line.
+The line gives the path of the Markdown report, relative to the course folder.
+`/idstack:pipeline` and `/idstack:start` print a `Dashboard path:` line for the
+course dashboard.
+
+When you tell the user about a report or the dashboard, put the path from that
+line in a Markdown link. Use the same path as the link text. For example:
+
+[.idstack/exports/bio-101/course-import.md](.idstack/exports/bio-101/course-import.md)
+
+Do not change the path to a full path, and do not put angle brackets around it.
+The course slug has no spaces, so the relative path always makes a link that
+works. In the Claude desktop app, the user clicks the link to open the report.
+Give only a path from a `Report path:` or `Dashboard path:` line, or a path that
+a sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+the report, do not give the path.
+
+## Preamble: Step Review
+
+Only the skills that write a report do a Step Review. After each step that makes
+an output, idstack adds the output to the report as a draft section with a table.
+The user reads the section in the report file, not in the chat. The user approves
+the section, and idstack removes the draft mark. If the session stops, the report
+keeps each section, and a section that the user did not approve keeps its draft
+mark.
+
+The skill tells you where to do a Step Review with a `**Step review:**` line.
+That line gives the section heading and the table columns.
+
+**The shape of a section**
+
+- Start the section with a `## <Heading>` line. Then write the table.
+- The first column is `ID`. Give each row an ID that does not change, for
+  example `T-1` or `ILO-2`.
+- The last two columns are `Justification` and `Evidence`.
+- In the Justification cell, write one sentence. Tell why the row is correct for
+  this course. Use the evidence from the research.
+- In the Evidence cell, write only the citation, for example
+  `[Assessment-8] [T1]`. Use a code from the "Evidence list:" file. Use the tier
+  that the file gives for that code.
+- If you cannot cite a row, do not put it in the table. Put the text in the
+  Limitations section.
+- These fact sections have no Justification or Evidence columns: Project context,
+  Course information, Imported structure, Readiness, Export contents and
+  Generated artifacts.
+- A findings table has these columns:
+  `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+  Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
+  first, then `warning`, then `info`. Do not write `### Finding` blocks.
+  idstack writes them from the approved rows.
+
+**The procedure**
+
+1. Write the section to `.idstack/.report-section.md` with the Write tool.
+2. Run the check command:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+```
+
+3. If the output shows problems, correct the draft. Then do step 2 again. Do the
+   check a maximum of three times. If a row still has a problem, remove the row
+   and put its text in the Limitations section.
+4. Run the append command. It adds the section to the report as a draft. In
+   this command, replace `<path>` with the path from the "Report path:" line.
+   Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+```
+
+5. Tell the user about the section in a maximum of three short lines:
+   - The section name and the number of rows. For findings, give the number of
+     each severity.
+   - The most important row, in one sentence.
+   - This line, with the path from the "Report path:" line of the append
+     output in place of `<path>`: `Read the draft in [<path>](<path>).` Write
+     the link exactly in this form. Do not write the name of the report as
+     text only. The user clicks the link to open the report.
+   Do not show the table in the chat. Do not put the table, a row or a citation
+   in the question or in its options.
+6. Ask with AskUserQuestion: "Do you approve the <section name> section?" Give
+   these three options. Each option must have its description. Do not add a
+   preview.
+   - "Approve", with the description "Keep this section as it is."
+   - "Change a row", with the description "Tell me the row ID and the change."
+   - "Remove a row", with the description "Tell me the row ID to remove."
+7. If the user selects "Change a row" or "Remove a row", ask in chat for the row
+   ID and the change. Change the draft file. Then go to step 2. The append
+   command replaces the section in the report.
+8. If the user selects "Approve", run the approve command. In this command,
+   replace `<path>` with the path from the "Report path:" line. Then run the
+   command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+```
+
+9. Go to the next step only if the output starts with `SECTION_APPROVED`.
+
+**Rules**
+
+- Ask one question for each Step Review. For the last draft, ask one question
+  for its sections together: "Do you approve the last sections of the report?"
+  This question replaces the old approval question of the step. Questions that collect data from the user stay.
+- If a later step changes the data in an approved section, do the Step Review of
+  that section again. Use the same heading. idstack replaces the old section.
+- Use only the approved rows in the manifest. Calculate each score from the
+  approved rows.
+- If a step has no rows, do not do its Step Review. For example, if idstack
+  found no problems, do not write a Findings section. Tell the result in the
+  Summary. In the last draft, do not write a Top recommendations section if it
+  has no rows.
+- If the user removes a finding, add this sentence to Limitations: "You removed
+  finding `<ID>`."
+- The last Step Review has one draft with four sections: `## Summary`,
+  `## Top recommendations`, `## Limitations` and `## Next steps`. The Summary,
+  Limitations and Next steps sections are text, with no table. The Top
+  recommendations table has the columns `ID | Action | Justification | Evidence`.
+- After the user approves the last section, run the finish command. In this
+  command, replace `<path>` with the path from the "Report path:" line. Then run
+  the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+```
+
+- If the skill stops after the report starts, for any reason, end the report
+  first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
+  not write a Top recommendations section. Then run the finish command. This
+  includes an error, a missing file, and a user who stops the skill.
+- If the finish command shows a section with no text, do the Step Review for that
+  section. If it shows a draft section, ask the user to approve that section.
+  Then run the finish command again.
+- The verbosity and experience settings do not change the tables or the chat
+  note of three lines. Each table always has its citations.
+- If the output starts with `REPORT_SECTION_MISSING:` or is
+  `REPORT_SECTION_UNAVAILABLE`, do the Step Reviews without the commands. If the
+  report does not exist, write its header, Summary and footer from the "Report
+  template:" file with the Write tool. Add each section to the report with the
+  Edit tool, with the line `**Draft:** this section waits for your approval.`
+  under its heading. Remove that line when the user approves the section. Tell the user one time that idstack did not check the
+  citations.
 
 ## Preamble: Context Recovery
 
@@ -411,6 +598,43 @@ Don't re-ask the user for the course title — read it from `import_metadata` or
 
 Store these in the `context` section of the manifest.
 
+**Start the report.** In this command, replace `<project name>` with the course title from Step 1. Replace `<mode>` with the mode from Step 0.5: `design-new` or `audit-existing`. Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+# Compute the course slug from this session's course title and prepare the export folder.
+# Do not read project_name from the manifest here. Step 7 writes it, so on a first run
+# the manifest has no name yet and the report lands in exports/untitled-course/.
+IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
+<project name>
+IDSTACK_PROJECT_NAME
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+[ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."; exit 1; }
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/needs-analysis.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
+echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill needs-analysis --title "Needs Analysis Report" --project "$_PROJECT_NAME" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+```
+
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
+
+**Step review:** do the Step Review in the preamble. Section: `## Project context`. Columns: `ID | Item | Value`.
+
+Write one row for each item: course title, subject area, requester, modality, timeline, class size, institution type and available technology. Use the IDs `C-1`, `C-2` and so on. In audit-existing mode, write the source of each value from the import in the Value cell, for example "online (from the Canvas import)".
+
 ---
 
 ### Step 2: Level 1 — Organizational/Context Analysis
@@ -423,7 +647,7 @@ Then capture stakeholders, current state, desired state, and performance gap as 
 ```json
 {"justified": true, "confidence": 10, "rationale": "This course is in use for credit. This skill does a design audit only. The decision about training occurred before this skill.", "alternatives_considered": []}
 ```
-Then proceed to Step 3.
+Then do the Step Review at the end of Step 2. Then proceed to Step 3.
 
 ---
 
@@ -474,10 +698,20 @@ Populate the `training_justification` object:
 - `rationale`: one paragraph explaining why
 - `alternatives_considered`: list of non-training interventions you evaluated
 
-**If training is NOT justified:** Present the finding clearly. Ask the user if they
+**If training is NOT justified:** Tell the finding in a maximum of two sentences, with no citation. Ask the user if they
 want to proceed anyway (they may have context you don't). If they proceed, note it
 in the rationale: "The user continued after idstack recommended against training.
 Reason: [user's reason]."
+
+If the user does not proceed, do the Step Review of this step. Then do the last Step Review (see Step 6). In the Summary, give the decision against training and the alternative intervention. Do not write a Top recommendations section.
+
+Then run the finish command of the Step Review. Then write the manifest as Step 7 tells, with `training_justification.justified` set to false. Then stop this skill.
+
+**Step review:** do the Step Review in the preamble. Section: `## Organizational analysis`. Columns: `ID | Item | Finding | Justification | Evidence`.
+
+Write one row for each item, with the IDs `O-1` to `O-7`: problem, stakeholders, current state, desired state, gap type, training decision (with the confidence, for example "Justified, confidence 8/10") and alternatives. Cite `[Needs-8] [T3]` for O-1, O-5 and O-6, or `[Needs-13] [T1]` for O-5 when the gap is environmental. Cite `[Needs-12] [T3]` for O-2 to O-4 and `[Needs-16] [T3]` for O-7.
+
+In audit-existing mode, do not write the training-decision and alternatives rows. The Limitations section tells that idstack did not use the decision gate. If the user continued after idstack recommended against training, write the reason of the user in the Finding cell of the training-decision row. In design-new mode, the manifest `training_justification` object uses the approved rows.
 
 ---
 
@@ -510,12 +744,9 @@ Assign task IDs: T-1, T-2, T-3, etc.
 the core curriculum. Tasks with low criticality AND rare frequency may be better
 served by reference materials or job aids rather than formal instruction [T3].
 
-Present the task analysis as a table:
+**Step review:** do the Step Review in the preamble. Section: `## Task analysis`. Columns: `ID | Task | Frequency | Criticality | Difficulty | Priority | Justification | Evidence`.
 
-| ID | Task | Frequency | Criticality | Difficulty | Priority |
-|----|------|-----------|-------------|------------|----------|
-| T-1 | ... | daily | high | medium | Core |
-| T-2 | ... | rare | low | low | Reference |
+Write one row for each task, with the task IDs. Write the Priority as `Core` or `Reference`, from the prioritization logic above, and cite `[Needs-8] [T3]` for it. In the same section, write a second table with the columns `ID | Item | Type | Justification | Evidence`. Write one row for each prerequisite and each tool, with the IDs `P-1`, `P-2` and so on. Write the Type as `prerequisite` or `tool`. Cite `[Learner-21] [T1]` for a prerequisite and `[Needs-13] [T1]` for a tool.
 
 ---
 
@@ -564,39 +795,15 @@ The `learning_preferences_note` field in the manifest is always populated with:
 "idstack does NOT use learning styles to differentiate instruction because the evidence does
 not support them. Prior knowledge is the primary differentiator."
 
+**Step review:** do the Step Review in the preamble. Section: `## Learner analysis`. Columns: `ID | Item | Finding | Justification | Evidence`.
+
+Write one row for each item, with the IDs `L-1` to `L-4`: prior knowledge, motivation, demographics and access constraints. Cite `[Learner-21] [T1]` for prior knowledge, `[CogLoad-9] [T4]` for motivation, `[Learner-16] [T1]` for demographics and `[Access-10] [T1]` for access constraints.
+
 ---
 
-### Step 5: Summary and Manifest Creation
+### Step 5: Expertise-Fit Read
 
-After completing all three levels, present a structured summary:
-
-```
-## Needs Analysis Summary
-
-### Project Context
-- Course: [title]
-- Modality: [modality] | Timeline: [timeline] | Class Size: [size]
-- Institution: [type] | Tech: [available tech]
-
-### Level 1: Organizational/Context Analysis
-- Problem Statement: [one sentence]
-- Performance Gap: [knowledge/skill/motivation/environment]
-- Training Justified: [Yes/No] (Confidence: X/10)
-- Rationale: [one paragraph]
-- Alternatives Evaluated: [list]
-
-### Level 2: Task Analysis
-[task table]
-- Core tasks (high priority): [count]
-- Reference tasks (low priority): [count]
-- Prerequisites: [list]
-
-### Level 3: Learner Analysis
-- Prior Knowledge: [level] ← This drives all downstream decisions
-- Motivation: [type]
-- Demographics: [summary]
-- Access Constraints: [list or "none identified"]
-```
+After all three levels, tell which instructional strategies fit the learner profile.
 
 **Expertise Reversal Check:**
 Based on the learner profile, note which instructional strategies are appropriate:
@@ -609,57 +816,26 @@ Based on the learner profile, note which instructional strategies are appropriat
 - **Mixed audience:** Adaptive approaches, tiered activities, or separate pathways
   [Learner-16] [T1]
 
+**Step review:** do the Step Review in the preamble. Section: `## Expertise-fit read`. Columns: `ID | Strategy | Use for this course | Justification | Evidence`.
+
+Write one row for each strategy that fits the prior knowledge level from Step 4, with the IDs `E-1`, `E-2` and so on. In the "Use for this course" cell, tell where the course uses the strategy. Use the citations in the list above, at the tier that the list gives.
+
 ---
 
-### Step 6: Generate Report
+### Step 6: Findings and Report
 
-Generate an HTML report so the designer has a single document to read. The report follows the **visual contract** in `templates/report.html.tmpl` (the skeleton) and the **content contract** in `templates/report-format.md` (severity ordering, citation format, what each placeholder must carry).
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
 
-In this command, replace `<project name>` with the course title from Step 1. Then run the command.
+Use the finding IDs `needs-1`, `needs-2` and so on. The findings come from the three levels: the organizational gap, the gaps in the task analysis and the risks in the learner profile. An example of a risk is an expertise mismatch with the planned design.
 
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-# Compute the course slug from this session's course title and prepare the export folder.
-# Do not read project_name from the manifest here. Step 7 writes it, so on a first run
-# the manifest has no name yet and the report lands in exports/untitled-course/.
-IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
-<project name>
-IDSTACK_PROJECT_NAME
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
-[ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."; exit 1; }
-_EXPORT_DIR=".idstack/exports/$_SLUG"
-_REPORT_PATH="$_EXPORT_DIR/needs-analysis.html"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Report template: $_IDSTACK/templates/report.html.tmpl"
-echo "Report rules: $_IDSTACK/templates/report-format.md"
-echo "Report path: $_REPORT_PATH"
-```
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns: `ID | Action | Justification | Evidence` for Top recommendations.
 
-Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/needs-analysis.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks so the stylesheet applies cleanly: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+- **Top recommendations:** three to five actions from the approved findings, with the IDs `R-1`, `R-2` and so on. Put the action with the most effect first.
+- **Summary:** two or three sentences. Start with the decision: training is justified or not. Then tell the largest risk in the learner profile and the most important finding from the task analysis.
+- **Limitations:** in audit-existing mode, idstack did not use the decision gate for training. The learner profile comes from registrar or syllabus data, not from a learner survey. The task analysis comes from lists of job tasks, not from observed performance.
+- **Next steps:** run `/idstack:learning-objectives` to write learning objectives from this analysis. That skill reads your task analysis and learner profile. It recommends Bloom's levels and alignment strategies.
 
-- **`{{skill_title}}`:** "Needs Analysis Report"
-- **`{{skill_name}}`:** `needs-analysis`
-- **`{{mode}}`:** `design-new` or `audit-existing` (include the optional mode segment in the header `meta` line).
-- **Summary:** 2–3 sentences. Lead with the verdict — training justified or not, the biggest risk in the learner profile, and the headline finding from the task analysis. Don't bury the lede.
-- **Skill-specific section before Findings** — add a `<section class="project-context">` with `<h2>Project context</h2>` and a `<dl>` listing modality, timeline, class size, institution type, and available tech.
-- **Finding ids:** `needs-1`, `needs-2`, etc. Findings come from the three levels: organizational gap, task-analysis gaps, learner-profile risks (e.g., expertise mismatch with the planned design).
-- **Optional skill-specific sections** (after Top recommendations, before Limitations):
-  - `<section class="training-justification">` with `<h2>Training justification</h2>` — show `Justified: Yes/No`, `Confidence: X/10`, the rationale paragraph, and alternatives evaluated (or "n/a — imported credit-bearing course" in audit-existing mode).
-  - `<section class="expertise-fit">` with `<h2>Expertise-fit read</h2>` — which instructional strategies are appropriate given the learner profile. Cite the expertise-reversal evidence at its references.md tier: `[CogLoad-4] [T5]` for novices, `[CogLoad-19] [T5]` for advanced and `[Learner-16] [T1]` for mixed audiences.
-- **Limitations:** In imported-course mode, idstack skips the training-decision gate. The learner profile comes from the registrar or syllabus data, not from a learner survey. The task analysis comes from job-task lists, not from observed performance.
-- **Next steps:** Run `/idstack:learning-objectives` to develop ILOs grounded in this analysis. The objectives skill reads your task analysis and learner profile to recommend appropriate Bloom's levels and alignment strategies.
-
-Every finding in the HTML must correspond to a finding the manifest's `needs_analysis` section can carry, so downstream skills and `bin/idstack-status` can refer to them programmatically.
+Run the finish command of the Step Review.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
@@ -713,18 +889,18 @@ exist yet (the standalone case). It never replaces a manifest that exists. The t
 1. Include the COMPLETE section structure from the schema below. Do not omit fields.
 2. Before writing, verify each payload is valid JSON: matching braces, proper commas,
    quoted strings, no trailing commas.
-3. Set `needs_analysis.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/needs-analysis.html`.
+3. Set `needs_analysis.report_path` to the value of `$_REPORT_PATH` from the bash block above — i.e., `.idstack/exports/<course-slug>/needs-analysis.md`.
 4. Set `project_name` to the text that you put in place of `<project name>` in
-   Step 6. The next skills use `project_name` to find the report folder.
+   Step 1. The next skills use `project_name` to find the report folder.
+5. Use only the approved rows of the Step Reviews in the payloads.
 
 Write the manifest, then confirm to the user:
 
 "I saved your needs analysis in two files:
 
-- **Read this:** `.idstack/exports/<course-slug>/needs-analysis.html` — the branded HTML
+- **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the Markdown
   report with evidence-backed findings, the training-justification read, and a
-  learner-profile expertise check. Open it in a web browser. The folder also contains
-  the CSS file. You can zip or email the folder.
+  learner-profile expertise check. Click the link to open it. You can zip or email the folder.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Next step:** Run `/idstack:learning-objectives` to develop learning objectives from
@@ -739,18 +915,18 @@ The idstack manifest lives at `.idstack/project.json`. Schema version: **1.4**.
 
 This is the canonical schema. Every skill writes to its own section using the shapes documented here; **all other sections must be preserved verbatim**. There is one source of truth — this file. If the schema ever needs to change, edit `templates/manifest-schema.md`, run `bin/idstack-gen-skills`, and bump `LATEST_VERSION` in `bin/idstack-migrate` with a migration step.
 
-### Two outputs per skill: JSON manifest + HTML report
+### Two outputs per skill: JSON manifest + Markdown report
 
 Every skill that produces findings emits **both**:
 
 - a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
-- an **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` (the human view — read by the instructional designer).
+- a **Markdown report** at `.idstack/exports/<course-slug>/<skill>.md` (the human view — read by the instructional designer).
 
-The HTML report follows the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → recommendation, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.html`, so the dashboard survives a stale `report_path`.)
+The Markdown report follows the skeleton in `templates/report.md.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → recommendation, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.md`, so the dashboard survives a stale `report_path`.)
 
-`<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill HTML reports, the pipeline dashboard at `index.html`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
+`<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill Markdown reports, the pipeline dashboard at `index.md`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
 
-`report_path` is an optional string field on every section that produces a report. It is a path relative to the project root (typically `.idstack/exports/<course-slug>/<skill>.html`). Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report. Renaming a course's `project_name` changes the slug, which moves future exports to a new folder; older folders are left in place.
+`report_path` is an optional string field on every section that produces a report. It is a path relative to the project root (typically `.idstack/exports/<course-slug>/<skill>.md`). Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report. Renaming a course's `project_name` changes the slug, which moves future exports to a new folder; older folders are left in place.
 
 ### Two ways to write to the manifest
 

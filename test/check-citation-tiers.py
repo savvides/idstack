@@ -31,25 +31,12 @@ import os
 import re
 import sys
 
-# "- [CogLoad-4] Sweller, J. (1994). ... *Learning and Instruction*. T5"
-REF_RE = re.compile(r"^- \[([A-Za-z]+-\d+)\] .* (T[1-5])\s*$")
-CODE_RE = re.compile(r"\[([A-Z][A-Za-z]*-\d+)\]")
-# Between two items: spaces of any kind, an optional comma, and at most one line break.
-SEP = r"[^\S\n]*(?:,[^\S\n]*)?(?:\n[^\S\n]*)?"
-# One or more codes, then one or more tiers.
-GROUP_RE = re.compile(r"((?:\[[A-Z][A-Za-z]*-\d+\]" + SEP + r")+)((?:\[T[1-5]\]" + SEP + r")+)")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "bin", "lib"))
+from citations import CODE_RE, GROUP_RE, load_refs  # noqa: E402  (the shipped parser)
+
 # The landing page shows a tier as <span class="tier tier-1">T1</span>.
 TIER_SPAN_RE = re.compile(r'<span class="tier tier-[1-5]">(T[1-5])</span>')
 TAG_RE = re.compile(r"<[^>]+>")
-
-
-def load_refs(path):
-    refs = {}
-    for line in io.open(path, encoding="utf-8"):
-        m = REF_RE.match(line)
-        if m:
-            refs[m.group(1)] = m.group(2)
-    return refs
 
 
 def sources(root):

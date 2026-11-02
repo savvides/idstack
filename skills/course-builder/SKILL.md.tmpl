@@ -67,13 +67,13 @@ Key findings encoded as decision rules in this skill:
   smaller, learner-paced segments reduces cognitive overload and improves transfer.
   This is the segmenting principle from multimedia learning research. Long,
   continuous presentations without natural breakpoints degrade learning, especially
-  for complex material with high element interactivity [Multimedia-6] [T3].
+  for complex material with high element interactivity [Multimedia-6] [T5].
 
 - **Spaced learning with temporal gaps is superior to massed learning.** Distributing
   practice and content exposure across time produces stronger long-term retention
   than concentrating the same content into a single session. Course modules should
   build in spaced retrieval opportunities — revisiting earlier concepts in later
-  modules, not just moving linearly through new content [CogLoad-6] [T1].
+  modules, not just moving linearly through new content [CogLoad-6] [T2].
 
 - **Active learning activities at appropriate cognitive levels improve outcomes.**
   Activities must match the cognitive level of the objective they serve. A module
@@ -93,7 +93,7 @@ Key findings encoded as decision rules in this skill:
   the organization and key concepts of material — headings, summaries, learning
   objectives at the start of each module — help learners build accurate mental
   models. Every module should open with a clear statement of what learners will
-  accomplish and close with a synthesis of key takeaways [Multimedia-6] [T3].
+  accomplish and close with a synthesis of key takeaways [Multimedia-6] [T5].
 
 ---
 
@@ -143,18 +143,7 @@ assessment type recommendations. Do you want to continue with the data that I ha
 
 If the manifest exists with upstream data, use it to inform content generation.
 
-**Summarize what you know:**
-"From your manifest, I can see:
-- **Learner profile:** [prior knowledge level, key characteristics]
-- **ILOs:** [count] objectives ranging from [lowest Bloom's] to [highest Bloom's]
-- **Assessments:** [count] assessments [or 'none — I will derive from alignment matrix']
-- **Modality:** [online/hybrid/face-to-face]
-- **Timeline:** [duration]
-- **Expertise reversal flags:** [any flags from /idstack:learning-objectives]
-
-Here is what I will generate:"
-
-Then present the scope (see Step 1 below).
+**Summarize what you know** in one sentence, for example: "Your manifest has [count] ILOs, [count] assessments and a [modality] course of [duration]." The `## Build scope` section of the report shows the details (see Step 1 below).
 
 **Use upstream data:**
 - `needs_analysis.organizational_context` — Course description and framing
@@ -182,14 +171,43 @@ Decide which mode this skill is operating in **before** running the content gene
 - "Mode: build-new. I will generate a new syllabus, new module pages, and new assessment documents."
 - "Mode: gap-fill (idstack found a cartridge import). The course is available. I will generate ONLY the missing artifacts that upstream skills found. I will not generate a new syllabus or new modules. To generate all of the course again, say 'rebuild'."
 
-In gap-fill mode, **skip Steps 2–7 entirely** (instructor info, syllabus, module pages, assessments, rubrics, content review). Instead:
+After you announce the mode, start the report. Run this block. In the `--mode` value, replace `<mode>` with `build-new` or `gap-fill`.
 
-1. **Identify gaps.** Read `red_team_audit.top_actions` and `quality_review.recommendations` from the manifest (if those skills already ran) plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
-2. **Confirm with user.** Show the list of generation targets ("I will generate: discussion rubric for Module 5, vision/mission framework module, formative practice quiz set"). Ask via `AskUserQuestion` which to generate (all / specific / skip).
-3. **Generate only what's missing.** For each confirmed target, follow the relevant sub-step from Steps 4–6 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration.
-4. **Record outputs.** Update `course_content.generated_files` (additive) and `course_content.recommended_generation_targets` (the list, with status `generated | deferred | declined`).
+```bash
+{{IDSTACK_RESOLVE}}
+# Compute the course slug from project_name and prepare the export folder.
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/course-builder.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
+echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill course-builder --title "Course Builder Report" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+```
 
-When done, do the writing standard check at the end of Step 6. In its command, replace `".idstack/course-content"` with the paths of the files that you generated. Put quotation marks around each path, for example `".idstack/course-content/rubrics/rubric-05-discussion.md" ".idstack/course-content/modules/module-05-vision.md"`. If you write the build report (Step 7), also do its check. Then write the manifest through `bin/idstack-manifest-merge` (see Write Manifest) and skip directly to the final summary.
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. These paths are in the idstack plugin folder, not in the course project.
+
+In gap-fill mode, **skip Steps 1–5** (scope, instructor info, syllabus, module pages, assessments, rubrics). Instead:
+
+**Identify gaps.** Read `red_team_audit.top_actions` and `quality_review.recommendations` from the manifest (if those skills already ran) plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
+
+**Review the targets.** This section is the approval of the targets.
+
+**Step review:** do the Step Review in the preamble. Section: `## Generation targets`. Columns: `ID | Target | Source finding | Status | Justification | Evidence`.
+
+Use the IDs `GT-1`, `GT-2` and so on, with the Status `generate` and the upstream finding ID, for example `red-team:alignment-3`. If the user selects "Change a row", the user can set the Status to `deferred` or `declined`.
+
+**Generate only what's missing.** For each target with the Status `generate`, follow the relevant sub-step from Steps 4–5 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration. After you generate each artifact, review it.
+
+**Step review:** do the Step Review in the preamble. Section: `## <GT-ID>: <target>`, for example `## GT-2: Module 5 discussion rubric`. Columns: `ID | Element | Decision | Justification | Evidence`.
+
+Write the artifact to its course file, with a file name from Step 6. Do not show the artifact text in the chat, and put only the table in the draft. In the chat note, give the link to the artifact file on the same line as the report link. Use the IDs `<GT-ID>-1`, `<GT-ID>-2` and so on. If the user selects "Change a row", change the artifact file too.
+
+**Record outputs.** Keep a list for the Step 8 payload: `course_content.generated_files` (additive) and `course_content.recommended_generation_targets` (the approved rows of `## Generation targets`, with status `generated | deferred | declined`). For a `generate` row whose file you wrote, use the status `generated`. Do not write the manifest before Step 8. Do not do the Step Review of `## Generation targets` again for this change.
+
+Then do Step 6 (save and the writing standard check). In the check command, replace `".idstack/course-content"` with the paths of the files that you generated. Put quotation marks around each path, for example `".idstack/course-content/rubrics/rubric-05-discussion.md" ".idstack/course-content/modules/module-05-vision.md"`. Then do Step 7 (generated artifacts, the alignment review, the findings and the last Step Review). Then write the manifest through `bin/idstack-manifest-merge` (see Step 8) and skip directly to the final summary.
 
 Save the chosen mode under `course_content.mode` (`"build-new"` or `"gap-fill"`).
 
@@ -204,19 +222,7 @@ Do not batch multiple questions.
 
 ### Step 1: Analyze Manifest and Determine Scope
 
-Read the full manifest. Present a summary of available data and proposed output:
-
-"I have [N] ILOs, [M] assessments, [P] task analysis entries. The learner profile
-says [expertise level]. Here is what I will generate:
-
-- **Syllabus** — 1 file
-- **Module pages** — [N] modules (derived from [task analysis / objective grouping])
-- **Assessment documents** — [M] assignment descriptions
-- **Rubric documents** — [M] rubrics (if rubric data exists in assessments section)
-
-Does this scope look right? Want to add or remove anything?"
-
-Wait for user confirmation before proceeding.
+Read the full manifest. Tell the user the proposed output in one sentence, for example: "I will make 1 syllabus, [N] module pages, [M] assessment documents and [M] rubrics." The `## Build scope` rows give the details. Make rubric documents only if the assessments section has rubric data.
 
 **Determining module count and structure:**
 - If `task_analysis.job_tasks` exists: map each high-priority task to a module.
@@ -231,6 +237,12 @@ Wait for user confirmation before proceeding.
   compressed pacing — flag this and recommend reducing scope or increasing
   activity density.
 
+**Step review:** do the Step Review in the preamble. Section: `## Build scope`. Columns: `ID | Artifact | Count | Source | Justification | Evidence`.
+
+Use the IDs `BS-1`, `BS-2` and so on, with one row for each artifact type. In the Source cell, write the manifest data that gives the count, for example `task_analysis.job_tasks`. If the user selects "Change a row", add or remove the artifacts that the user tells you. If the pacing is compressed, put the pacing flag in the Module pages row.
+
+Cite these codes in the Evidence cells. Syllabus: `[Online-2] [T4]`. Module pages: `[Alignment-1] [T5]`. Assessment and rubric documents: `[Assessment-19] [T1]`. Quizzes: `[Assessment-10] [T1]`.
+
 ### Step 2: Gather Instructor Information
 
 "Some information is not in the manifest. Give me this information:"
@@ -243,7 +255,7 @@ Ask in plain chat, not with AskUserQuestion, because the answers are free text:
 - Required textbook or materials (if any)
 
 Store these for syllabus generation. If the user says "skip" or "use placeholders,"
-use `[INSTRUCTOR NAME]`, `[EMAIL]`, etc. and note them in the output summary.
+use `[INSTRUCTOR NAME]`, `[EMAIL]`, etc. and note them in the Notes cell of the `## Generated artifacts` row.
 
 ### Step 3: Generate Syllabus
 
@@ -329,10 +341,13 @@ All of the materials are on the course site."]
   institution text. Put the institution's own words in a Markdown block quotation
   (lines that start with `> `). The writing check skips block quotations.
 - The schedule should show a clear progression. If spaced practice is built in,
-  note where earlier topics resurface [CogLoad-6] [T1].
+  note where earlier topics resurface [CogLoad-6] [T2].
 
-Present the syllabus to the user for review. Iterate if needed. Do not move to
-Step 4 until the user approves the syllabus.
+Write the syllabus to `.idstack/course-content/syllabus.md`. Do not show the syllabus text in the chat. Then review the design decisions of the syllabus.
+
+**Step review:** do the Step Review in the preamble. Section: `## Syllabus decisions`. Columns: `ID | Element | Decision | Justification | Evidence`.
+
+Put only the table in the draft, not the syllabus text. In the chat note, give the link to the syllabus file on the same line as the report link. Use the IDs `SY-1`, `SY-2` and so on, with one row for each design decision, for example the schedule or the spaced practice. If the user selects "Change a row", change the syllabus file too.
 
 ### Step 4: Generate Module Content
 
@@ -425,7 +440,7 @@ module will resurface later.]
 - Use pre-assessment or self-assessment to help learners choose their path
 - Ensure the core activity works at the median expertise level
 
-**Segmenting and spacing** [Multimedia-6] [T3] [CogLoad-6] [T1]:
+**Segmenting and spacing** [Multimedia-6] [T5] [CogLoad-6] [T2]:
 - No single content section should exceed what a learner can process in one
   sitting. For complex material, break into subsections with practice or
   reflection points between them.
@@ -434,14 +449,19 @@ module will resurface later.]
   is spaced practice, which is one of the strongest effects in learning
   science.
 
-**Signaling** [Multimedia-6] [T3]:
+**Signaling** [Multimedia-6] [T5]:
 - Every module opens with objectives (advance organizer)
 - Every module closes with a summary (consolidation)
 - Key terms and concepts are highlighted or called out
 - Transitions between topics are explicit ("Now that you understand X, we
   can examine how X connects to Y")
 
-**Present each module to the user for review before moving to the next.**
+Write each module page to its file in `.idstack/course-content/modules/`. Step 6 gives the file names. Do not show the module page in the chat. Then review it before you go to the next module.
+
+**Step review:** do the Step Review in the preamble. Section: `## Module <N>: <title>`. Columns: `ID | Element | Decision | Justification | Evidence`.
+
+Do one Step Review for each module, and put only the table in the draft. In the chat note, give the link to the module file on the same line as the report link. Use the IDs `M<N>-1`, `M<N>-2` and so on, for example for the sequence, the worked examples or the spaced retrieval. If the user selects "Change a row", change the module file too.
+
 This is collaborative. The user knows their content domain better than you do.
 Your job is structure, sequencing, and evidence-based activity design. Their
 job is accuracy, depth, and disciplinary nuance.
@@ -522,6 +542,12 @@ that can be imported into an LMS or printed for grading:
 | ... | ... | ... | ... | ... | ... |
 ```
 
+Write each assessment document and its rubric to their files in `.idstack/course-content/`. Step 6 gives the file names. Do not show them in the chat. Then review all of the assessment documents in one section.
+
+**Step review:** do the Step Review in the preamble. Section: `## Assessment documents`. Columns: `ID | Document | Rubric file | Decision | Justification | Evidence`.
+
+Use the IDs `AD-1`, `AD-2` and so on, with one row for each assessment and the rubric file name that Step 6 will use. In the Decision cell, write the main design decision, for example how the criteria agree with the ILO levels. If the user selects "Change a row", change the assessment document and its rubric too.
+
 ### Step 6: Save to Project Directory
 
 Create the directory structure and write all generated files.
@@ -552,36 +578,31 @@ continue with remaining files.
 if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; fi
 ```
 
-For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times. Show the user each sentence that you changed, before and after the change.
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times. Tell the user the number of sentences that you changed in each file. Do not show the sentences. The user reads the files.
 
-### Step 7: Generate Build Report
+### Step 7: Complete the Build Report
 
-Before updating the manifest, generate an HTML build report so the designer can see what was generated and why each design choice was made (or, in gap-fill mode, what was skipped and why). The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
+The report started after Mode detection, and it has the sections that the user approved. In this step, add the last sections. Do this in build-new mode and in gap-fill mode.
 
-```bash
-{{IDSTACK_RESOLVE}}
-# Compute the course slug from project_name and prepare the export folder.
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
-_EXPORT_DIR=".idstack/exports/$_SLUG"
-_REPORT_PATH="$_EXPORT_DIR/course-builder.html"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Report template: $_IDSTACK/templates/report.html.tmpl"
-echo "Report rules: $_IDSTACK/templates/report-format.md"
-echo "Report path: $_REPORT_PATH"
-```
+First, list the files that you wrote in this run.
 
-Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/course-builder.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+**Step review:** do the Step Review in the preamble. Section: `## Generated artifacts`. Columns: `ID | File | Purpose | Notes`.
 
-- **`{{skill_title}}`:** "Course Builder Report"
-- **`{{skill_name}}`:** `course-builder`
-- **`{{mode}}`:** `build-new` or `gap-fill` (include the optional mode segment in the header `meta` line; you may also append `· expertise: novice|intermediate|advanced|mixed`).
-- **Summary:** 2–3 sentences — what was generated, the biggest design choice, and any placeholders the designer needs to fill in before the course is ready for learners.
-- **Skill-specific section before Findings** — add a `<section class="generated-artifacts">` with `<h2>Generated artifacts</h2>` and an HTML `<table>` (columns: File, Purpose, Notes).
-- **Finding ids:** `cogload-1`, `multimedia-1`, `placeholder-1`, etc. Findings come from cognitive-load decisions made during generation, multimedia-principle applications and tradeoffs, places where placeholders were inserted, and expertise-reversal flags from the learner profile that shaped the build. In gap-fill mode, every finding should reference the upstream flag (e.g., `red-team:alignment-3`) that triggered the generation.
-- **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="placeholders-used">` with `<h2>Placeholders used</h2>` listing the placeholder fields the designer must fill in before the course is ready for learners.
-- **Limitations:** The content adaptation changes the structure, not the voice or style. The cognitive-load estimates are heuristic. The placeholder list comes from the template, not from the text around each placeholder.
-- **Next steps:** Review and edit the generated files to add your voice and institutional details. Then run `/idstack:course-quality-review` to audit the complete course against QM standards and CoI presence.
+Use the IDs `GA-1`, `GA-2` and so on, with one row for each file. In the Notes cell, write the placeholders that the file has, or "None".
+
+Then do the "Spec Review Loop" at the end of this skill. It adds the `## Alignment review` section. Do it before the findings, because idstack adds the sections to the report in the order that you approve them.
+
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+
+Use the IDs `cogload-1`, `multimedia-1`, `placeholder-1` and so on. The findings come from cognitive-load decisions, multimedia tradeoffs, placeholders and expertise-reversal flags that changed the build. In gap-fill mode, each finding gives the upstream flag that started the generation, for example `red-team:alignment-3`.
+
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`. Columns: `ID | Action | Justification | Evidence`.
+
+The Summary tells what you generated, the most important design decision and the placeholders to fill in. The Limitations tell that the adaptation changes the structure, not the voice or style, and that the cognitive-load estimates are heuristic. The Next steps tell the designer to add their voice and to run `/idstack:course-quality-review`.
+
+In the Next steps, also name each placeholder field that you used, for example `[INSTRUCTOR NAME]` and the due dates. In the Limitations, tell that the placeholder list comes from the template, not from the text around each placeholder.
+
+Run the finish command of the Step Review.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
@@ -600,7 +621,7 @@ Save the `course_content` section to `.idstack/project.json` via `bin/idstack-ma
 {{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-manifest-merge" --create --section course_content --payload - <<'PAYLOAD'
 {
-  "report_path": "<set to $_REPORT_PATH from the bash block above — e.g. .idstack/exports/<course-slug>/course-builder.html>",
+  "report_path": "<set to $_REPORT_PATH from the bash block above — e.g. .idstack/exports/<course-slug>/course-builder.md>",
   "mode": "build-new",
   "generated_at": "ISO-8601 timestamp",
   "expertise_adaptation": "novice|intermediate|advanced|mixed",
@@ -638,15 +659,17 @@ The payload is the **flat section contents** (no enclosing `course_content` key)
 
 The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. This helps downstream skills (like `/idstack:course-export`) know what still needs to be filled in.
 
+Use only the approved rows of the report. `generated_files` comes from the `## Generated artifacts` rows. `placeholders_used` comes from their Notes cells. `recommended_generation_targets` comes from the `## Generation targets` rows.
+
 **Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify only the `course_content` section, Write back. Preserve all other sections verbatim.
 
 After writing the manifest, confirm:
 
 "I generated your course content. You have three outputs:
 
-- **Read this:** `.idstack/exports/<course-slug>/course-builder.html` — the build report
+- **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the build report
   with evidence-backed design choices, cognitive-load notes, and a placeholders list.
-  Open it in a web browser. The folder has all of the files for the report.
+  Click the link to open it. The folder has all of the files for the report.
 - Course content: `.idstack/course-content/` (the course files — review them and add
   your voice and institutional details).
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
@@ -660,26 +683,7 @@ After writing the manifest, confirm:
 
 ## Output Format
 
-Present a summary after all content is generated:
-
-```
-## Course Content Generated
-
-| Type | Files | Location |
-|------|-------|----------|
-| Syllabus | 1 | .idstack/course-content/syllabus.md |
-| Modules | N | .idstack/course-content/modules/ |
-| Assessments | M | .idstack/course-content/assessments/ |
-| Rubrics | M | .idstack/course-content/rubrics/ |
-
-Total: X files generated.
-
-Expertise adaptation: [novice/intermediate/advanced/mixed]
-Placeholders remaining: [list or "none"]
-```
-
-If any files could not be generated (insufficient data, user skipped), list them
-under a "Not generated" section with the reason and what would be needed.
+Do not show a summary table in the chat. Use the closing message at the end of Step 8. The `## Generated artifacts` section of the report lists the files and their placeholders. If you could not make a file, put it in the `## Findings` section, with the reason and the data that is necessary.
 
 ---
 
@@ -696,12 +700,16 @@ Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in the
 
 **After the agent returns:**
 - If issues were found that can be auto-fixed (e.g., missing ILO reference, wrong Bloom's verb), fix them in the generated files.
-- Add a "Review: N issues found, M fixed" line to the output summary.
-- If critical issues remain that require user input, list them in the summary.
+- Put each issue in the `## Alignment review` section, with the Status `fixed` or `open`.
+- If an open issue is critical and needs the user, also put it in the `## Findings` section.
 
-If you or the agent changed course files in this step, do the writing standard check at the end of Step 6 again. Show the user each sentence that you changed, before and after the change.
+**Step review:** do the Step Review in the preamble. Section: `## Alignment review`. Columns: `ID | Issue | File | Fix | Status | Justification | Evidence`.
 
-**If the agent fails or returns nothing:** Skip this step. Add a note to the output:
+Use the IDs `AR-1`, `AR-2` and so on, with the Status `fixed` or `open`. If a fix changed a module page, do the Step Review of that module again before this section. Use the same `## Module <N>: <title>` heading.
+
+If you or the agent changed course files in this step, do the writing standard check at the end of Step 6 again. Tell the user the number of sentences that you changed in each file. Do not show the sentences.
+
+**If the agent fails or returns nothing:** Skip this step. Do not add the `## Alignment review` section. Add this sentence to the Limitations: "idstack did not do the alignment review." Add a note to the output:
 "Note: For a full alignment audit, run `/idstack:course-quality-review` next."
 
 For the full manifest schema (other sections you may need to read), Read

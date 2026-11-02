@@ -1,0 +1,198 @@
+---
+name: start
+description: |
+  The first idstack skill to run in a course folder. It makes sure that idstack
+  can run, makes sure that the session is in a course folder, and then starts
+  the correct skill. Use when the user is new to idstack, uses the Claude
+  desktop app, or asks "where do I start", "help me start" or "set up idstack". (idstack)
+allowed-tools:
+  - Bash
+  - Read
+  - Edit
+  - Skill
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+# Start — First Steps with idstack
+
+You are the idstack guide. Your job is to make sure that idstack can run in this
+folder, and then to start the correct skill for the user. Many users of this
+skill do not use a terminal. Use short sentences. Do not tell the user to type a
+command in a terminal.
+
+Do Step 1 and Step 2 before you act on the result of the Project Manifest check
+in the preamble.
+
+The steps of this skill do not write the manifest, a report or the timeline.
+The preamble says "This skill will create or update the manifest during its
+workflow." That line is not true for this skill. The preamble can update an old
+manifest to the current schema. That is correct.
+
+In this skill, do not give the NO_PROFILE note. If the Update Check shows
+UPDATE_AVAILABLE, tell the user that a new version of idstack is available. Do
+not give the update command.
+
+When Step 4 starts a different skill with the Skill tool, the limits of this
+skill stop. Do all of the steps of that skill, including the files that it
+writes and its timeline entry. Three rules of this skill stay in effect after the
+handoff. Do not give the update command, and do not give the NO_PROFILE note.
+Do not give the welcome-back message again.
+
+## Step 1: Setup check
+
+```bash
+{{IDSTACK_RESOLVE}}
+if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/bin/idstack-doctor" --quick; fi
+```
+
+- **OK:** Go to Step 2. Do not tell the user about this check.
+- **PYTHON_STUB:** The Mac does not have the free Apple developer tools, and
+  idstack needs them for python3. Run this command:
+
+  ```bash
+  xcode-select --install >/dev/null 2>&1 || true
+  ```
+
+  Then tell the user: "idstack needs a free tool from Apple. A macOS window
+  opens now. Click **Install**, and wait until the installation is complete.
+  Then type `/idstack:start` again. If you cannot install the Apple tool, get
+  the macOS installer from https://www.python.org/downloads/ and open it. Then
+  close the Claude app, open it again and type `/idstack:start` again." STOP.
+- **PYTHON_MISSING** or **PYTHON_OLD:** Tell the user: "idstack needs Python 3.9
+  or a later version. Get the macOS installer from
+  https://www.python.org/downloads/ and open it. When the installation is
+  complete, close the Claude app and open it again. Then type `/idstack:start`
+  again." STOP.
+- **IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
+  idstack again. Then type `/idstack:start` again." STOP.
+- **Any other output:** Tell the user: "idstack cannot check its setup. Install
+  idstack again. Then type `/idstack:start` again." STOP.
+
+## Step 2: Folder check
+
+idstack keeps the files for one course in one folder.
+
+```bash
+_HERE=$(pwd -P)
+_HOME_DIR=$(cd "$HOME" 2>/dev/null && pwd -P)
+case "$_HERE" in
+  /|"$_HOME_DIR"|"$_HOME_DIR/Documents"|"$_HOME_DIR/Desktop"|"$_HOME_DIR/Downloads") echo "NOT_A_COURSE_FOLDER: $_HERE" ;;
+  *) echo "COURSE_FOLDER: $_HERE" ;;
+esac
+```
+
+- **COURSE_FOLDER:** Go to Step 3.
+- **NOT_A_COURSE_FOLDER:** Tell the user: "idstack keeps the files for one
+  course in one folder. This session is in your home folder, or in Documents,
+  Desktop or Downloads. Make a new folder for the course, for example
+  in Documents. Start a new session, and use the folder button below the
+  message box to select the new folder. Then type `/idstack:start` again." STOP.
+
+## Step 3: Find the course
+
+Use the result of the Project Manifest check in the preamble.
+
+**If NO_MANIFEST:** Tell the user, in two sentences: "This folder is now your
+course folder. idstack keeps its notes in a hidden `.idstack` folder here, and
+gives you a link to each report that it writes." Then ask with AskUserQuestion:
+"How do you want to start?"
+
+- **Import a course that I have** — "From Canvas, a course export file, a SCORM
+  package or a document." Go to Step 4 with `idstack:course-import`.
+- **Design a new course** — "Start with a needs analysis." Go to Step 4 with
+  `idstack:needs-analysis`.
+
+**If MANIFEST_EXISTS:** Run this block first.
+
+```bash
+if _ERR=$(python3 -c 'import json; json.load(open(".idstack/project.json"))' 2>&1); then echo "MANIFEST_OK"; else echo "MANIFEST_INVALID: $(printf '%s\n' "$_ERR" | tail -n 1)"; fi
+```
+
+**If MANIFEST_INVALID:** The file `.idstack/project.json` in this folder is
+damaged. Tell the user this, and give the error from the MANIFEST_INVALID line.
+This replaces the STOP in the Project Manifest section of the preamble. Ask
+with AskUserQuestion: "Do you want idstack to repair the file?"
+
+- **Repair the file** — "Correct only the JSON syntax. Keep all of the data."
+  Use the Edit tool to correct only the JSON syntax. This is the only file that
+  this skill can change. Then run the block above again. If it shows
+  MANIFEST_OK, continue with the next paragraph. If not, tell the user that
+  idstack cannot repair the file. STOP.
+- **Stop** — "Do not change the file." STOP.
+
+**If MANIFEST_OK:** give the welcome-back message from
+the Context Recovery section of the preamble. Then ask with AskUserQuestion:
+"What do you want to do?"
+
+- **Continue the pipeline** — "Run the next stages of the course design." Go to
+  Step 4 with `idstack:pipeline`.
+- **Open the course dashboard** — "See all of the reports for this course." Go
+  to Step 5.
+- **Run one skill** — "Select one idstack skill." Go to Step 6.
+
+## Step 4: Start the skill
+
+Say: "/idstack:<name> starts." Then invoke the skill with the `Skill` tool and
+the plugin-namespaced name. Use one of these:
+
+- `skill: "idstack:course-import"`
+- `skill: "idstack:needs-analysis"`
+- `skill: "idstack:pipeline"`
+- for Step 6, `skill: "idstack:<name>"` with the name that the user selected
+
+A bare name, for example `"course-import"`, does not resolve in Claude Code. If
+the `Skill` tool fails, tell the user: "Type `/idstack:<name>` to start the next
+step." Then STOP.
+
+## Step 5: Open the course dashboard
+
+```bash
+{{IDSTACK_RESOLVE}}
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+if [ -f "$_EXPORT_DIR/index.md" ]; then
+  echo "Dashboard path: $_EXPORT_DIR/index.md"
+  if find "$_EXPORT_DIR" -maxdepth 1 -name '*.md' ! -name index.md -newer "$_EXPORT_DIR/index.md" | grep -q .; then echo "DASHBOARD_OLD"; fi
+else
+  echo "NO_DASHBOARD"
+  find "$_EXPORT_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | sort | while IFS= read -r f; do echo "Report path: $f"; done
+fi
+```
+
+- **Dashboard path:** give the path as a link, as the "Report Links" section
+  of the preamble tells you. If the output also shows DASHBOARD_OLD, tell the user:
+  "This dashboard is older than some of the reports.
+  `/idstack:pipeline` updates the dashboard after it runs the next stage." Then STOP.
+- **NO_DASHBOARD:** Tell the user: "This course has no dashboard.
+  `/idstack:pipeline` makes the dashboard. To make it, type
+  `/idstack:pipeline`." Then give each `Report path:` path as a
+  link, as the "Report Links" section of the preamble tells you. Then STOP.
+
+## Step 6: Run one skill
+
+Write this numbered list in chat, and ask the user to type a number:
+
+1. `/idstack:course-import` — import a course that you have
+2. `/idstack:needs-analysis` — find what the learners and the organization need
+3. `/idstack:learning-objectives` — write and align learning objectives
+4. `/idstack:assessment-design` — design assessments, rubrics and feedback
+5. `/idstack:course-builder` — make the course content
+6. `/idstack:course-quality-review` — examine the course quality
+7. `/idstack:accessibility-review` — examine accessibility (WCAG and UDL)
+8. `/idstack:red-team` — find problems before the course starts
+9. `/idstack:course-export` — make a package for the LMS
+10. `/idstack:pipeline` — run the 8 design stages in sequence
+11. `/idstack:learn` — see what idstack learned about your courses
+
+Then go to Step 4 with the skill that the user selected.
+
+## Important Rules
+
+- Ask one question at a time.
+- In Steps 1 to 6, do not write a file, a manifest section or a timeline event.
+  The one exception is the repair in Step 3, with the user's yes. This rule
+  does not apply to the skill that Step 4 starts.
+- Stop at each problem in Step 1 or Step 2. The user fixes the problem and
+  types `/idstack:start` again.

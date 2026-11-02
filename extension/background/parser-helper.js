@@ -86,10 +86,10 @@ export function getDemoCourseAuditResult(payload = {}) {
       },
       {
         severity: 'warning',
-        tier: 'T1',
+        tier: 'T2',
         citation: '[CogLoad-6] Cognitive Load & Spaced Practice',
         observation: 'The deadlines for the primary assignments are together in weeks 14-15. The course has no spaced formative checkpoints.',
-        evidence: 'Chen et al. (2018) [T1]: Distributed practice gives better long-term retention than massed practice of the same content in one session.',
+        evidence: 'Chen et al. (2018) [T2]: Distributed practice gives better long-term retention than massed practice of the same content in one session.',
         recommendation: 'idstack recommends that you divide the submissions into 3 deliverables in weeks 6, 10 and 14. Each deliverable adds to the one before it.'
       },
       {

@@ -39,8 +39,9 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
-- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
-  child skill in-process via the `Skill` tool.
+- **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
+  child skill in-process through the `Skill` tool. `/idstack:start` also uses it to start
+  the first skill for the user.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as
   `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
   command. This applies in reports, manifests, and AskUserQuestion options as much as in
@@ -49,7 +50,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 ## Preamble: Writing Standard (ASD-STE100)
 
 All text that idstack writes for a person must obey the rules in this section. This
-includes chat text, AskUserQuestion questions and options, HTML reports, the course
+includes chat text, AskUserQuestion questions and options, reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
 reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
@@ -251,8 +252,8 @@ except: pass
 fi
 ```
 
-**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
-(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:concise:** Keep explanations brief. Do not cite evidence in chat prose.
+Always cite evidence in Step Review tables and in reports.
 **If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
 considered, and rationale for each recommendation.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
@@ -280,6 +281,192 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
+
+## Preamble: Report Links
+
+A skill that writes a report runs a block that prints a `Report path:` line.
+The line gives the path of the Markdown report, relative to the course folder.
+`/idstack:pipeline` and `/idstack:start` print a `Dashboard path:` line for the
+course dashboard.
+
+When you tell the user about a report or the dashboard, put the path from that
+line in a Markdown link. Use the same path as the link text. For example:
+
+[.idstack/exports/bio-101/course-import.md](.idstack/exports/bio-101/course-import.md)
+
+Do not change the path to a full path, and do not put angle brackets around it.
+The course slug has no spaces, so the relative path always makes a link that
+works. In the Claude desktop app, the user clicks the link to open the report.
+Give only a path from a `Report path:` or `Dashboard path:` line, or a path that
+a sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+the report, do not give the path.
+
+## Preamble: Step Review
+
+Only the skills that write a report do a Step Review. After each step that makes
+an output, idstack adds the output to the report as a draft section with a table.
+The user reads the section in the report file, not in the chat. The user approves
+the section, and idstack removes the draft mark. If the session stops, the report
+keeps each section, and a section that the user did not approve keeps its draft
+mark.
+
+The skill tells you where to do a Step Review with a `**Step review:**` line.
+That line gives the section heading and the table columns.
+
+**The shape of a section**
+
+- Start the section with a `## <Heading>` line. Then write the table.
+- The first column is `ID`. Give each row an ID that does not change, for
+  example `T-1` or `ILO-2`.
+- The last two columns are `Justification` and `Evidence`.
+- In the Justification cell, write one sentence. Tell why the row is correct for
+  this course. Use the evidence from the research.
+- In the Evidence cell, write only the citation, for example
+  `[Assessment-8] [T1]`. Use a code from the "Evidence list:" file. Use the tier
+  that the file gives for that code.
+- If you cannot cite a row, do not put it in the table. Put the text in the
+  Limitations section.
+- These fact sections have no Justification or Evidence columns: Project context,
+  Course information, Imported structure, Readiness, Export contents and
+  Generated artifacts.
+- A findings table has these columns:
+  `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+  Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
+  first, then `warning`, then `info`. Do not write `### Finding` blocks.
+  idstack writes them from the approved rows.
+
+**The procedure**
+
+1. Write the section to `.idstack/.report-section.md` with the Write tool.
+2. Run the check command:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+```
+
+3. If the output shows problems, correct the draft. Then do step 2 again. Do the
+   check a maximum of three times. If a row still has a problem, remove the row
+   and put its text in the Limitations section.
+4. Run the append command. It adds the section to the report as a draft. In
+   this command, replace `<path>` with the path from the "Report path:" line.
+   Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+```
+
+5. Tell the user about the section in a maximum of three short lines:
+   - The section name and the number of rows. For findings, give the number of
+     each severity.
+   - The most important row, in one sentence.
+   - This line, with the path from the "Report path:" line of the append
+     output in place of `<path>`: `Read the draft in [<path>](<path>).` Write
+     the link exactly in this form. Do not write the name of the report as
+     text only. The user clicks the link to open the report.
+   Do not show the table in the chat. Do not put the table, a row or a citation
+   in the question or in its options.
+6. Ask with AskUserQuestion: "Do you approve the <section name> section?" Give
+   these three options. Each option must have its description. Do not add a
+   preview.
+   - "Approve", with the description "Keep this section as it is."
+   - "Change a row", with the description "Tell me the row ID and the change."
+   - "Remove a row", with the description "Tell me the row ID to remove."
+7. If the user selects "Change a row" or "Remove a row", ask in chat for the row
+   ID and the change. Change the draft file. Then go to step 2. The append
+   command replaces the section in the report.
+8. If the user selects "Approve", run the approve command. In this command,
+   replace `<path>` with the path from the "Report path:" line. Then run the
+   command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+```
+
+9. Go to the next step only if the output starts with `SECTION_APPROVED`.
+
+**Rules**
+
+- Ask one question for each Step Review. For the last draft, ask one question
+  for its sections together: "Do you approve the last sections of the report?"
+  This question replaces the old approval question of the step. Questions that collect data from the user stay.
+- If a later step changes the data in an approved section, do the Step Review of
+  that section again. Use the same heading. idstack replaces the old section.
+- Use only the approved rows in the manifest. Calculate each score from the
+  approved rows.
+- If a step has no rows, do not do its Step Review. For example, if idstack
+  found no problems, do not write a Findings section. Tell the result in the
+  Summary. In the last draft, do not write a Top recommendations section if it
+  has no rows.
+- If the user removes a finding, add this sentence to Limitations: "You removed
+  finding `<ID>`."
+- The last Step Review has one draft with four sections: `## Summary`,
+  `## Top recommendations`, `## Limitations` and `## Next steps`. The Summary,
+  Limitations and Next steps sections are text, with no table. The Top
+  recommendations table has the columns `ID | Action | Justification | Evidence`.
+- After the user approves the last section, run the finish command. In this
+  command, replace `<path>` with the path from the "Report path:" line. Then run
+  the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+```
+
+- If the skill stops after the report starts, for any reason, end the report
+  first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
+  not write a Top recommendations section. Then run the finish command. This
+  includes an error, a missing file, and a user who stops the skill.
+- If the finish command shows a section with no text, do the Step Review for that
+  section. If it shows a draft section, ask the user to approve that section.
+  Then run the finish command again.
+- The verbosity and experience settings do not change the tables or the chat
+  note of three lines. Each table always has its citations.
+- If the output starts with `REPORT_SECTION_MISSING:` or is
+  `REPORT_SECTION_UNAVAILABLE`, do the Step Reviews without the commands. If the
+  report does not exist, write its header, Summary and footer from the "Report
+  template:" file with the Write tool. Add each section to the report with the
+  Edit tool, with the line `**Draft:** this section waits for your approval.`
+  under its heading. Remove that line when the user approves the section. Tell the user one time that idstack did not check the
+  citations.
 
 ## Preamble: Context Recovery
 
@@ -338,18 +525,19 @@ The output is a confidence score (0-100): "How confident are we this course work
 
 If the same Claude session helped build the course, it has sunk-cost bias toward its own design choices. Red team work happens in a freshly-spawned sub-agent that has no prior conversation history — only the manifest and course files, which is the same view a real student gets.
 
-The sub-agent (the **orchestrator**) runs the full audit, writes a structured HTML report under `.idstack/exports/<course-slug>/red-team.html`, and returns a short executive summary including the report path. The parent (this skill) then offers to apply fixes in-context, since the parent already knows the course structure and is good at editing.
+The sub-agent (the **orchestrator**) does the full audit. It writes the findings to `.idstack/.red-team-findings.json` and returns a short summary. The parent (this skill) adds each findings table to the report at `.idstack/exports/<course-slug>/red-team.md` as a draft. The user reads each table in the report and approves it. The parent also applies fixes, because it knows the course structure.
 
 ---
 
 ## Workflow
 
 1. **Pre-flight**: confirm scope and focus
-2. **Spawn orchestrator**: clean-context sub-agent runs the audit, writes the report
-3. **Surface summary**: parent shows score + severity counts + top critical finding
+2. **Spawn orchestrator**: clean-context sub-agent does the audit and writes the findings file
+3. **Review the findings**: the user approves each findings table, the per-dimension summary and the confidence score
 4. **Triage**: ask which severity bucket to address
-5. **Apply fixes**: parent edits course files in-context
-6. **Update manifest**: parent writes `red_team_audit` section from the report file
+5. **Apply fixes**: parent edits course files in-context, then the user approves the fixes table
+6. **Complete the report**: the closing Step Review, then the finish command
+7. **Update manifest**: parent writes `red_team_audit` section from the approved rows
 
 No automatic re-verification. If the user wants to confirm fixes hold, they re-run `/idstack:red-team`.
 
@@ -406,6 +594,24 @@ This is a stress test, not a quality review. Assume the course is broken until p
 
 ## Evidence Tiers
 
+Run this command. It prints the path of the evidence list.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+echo "Evidence list: $_IDSTACK/evidence/references.md"
+```
+
+Use the Read tool on the file from the "Evidence list:" line. Use only the codes in that file, with the tier that the file gives for each code.
+
 Every challenge cites its evidence tier:
 - [T1] RCTs, meta-analyses with learning outcome measures
 - [T2] Quasi-experimental with appropriate controls
@@ -440,8 +646,8 @@ For every learning objective and assessment pair, challenge the alignment.
 - Does the assessment actually measure the stated objective, or does it test something adjacent?
 - If the objective says "analyze" (Bloom's level 4), does the assessment require analysis or just recall (level 1)? Flag Bloom's level mismatches.
   [Alignment-14] [T1] — retrieval practice and Bloom's levels interact.
-  [Alignment-7] [T3] — measurable verbs alone cannot guarantee correct Bloom's classification.
-  [Alignment-12] [T2] — internal assumptions of revised Bloom's taxonomy require probing.
+  [Alignment-7] [T4] — measurable verbs alone cannot guarantee correct Bloom's classification.
+  [Alignment-12] [T4] — internal assumptions of revised Bloom's taxonomy require probing.
 - Flag any objective with no matching assessment (untested objective).
   [Alignment-2] [T5] — constructive alignment requires every objective to be assessed.
 - Flag any assessment with no matching objective (orphaned assessment).
@@ -470,31 +676,31 @@ Check every evidence citation in the manifest or course design for accuracy.
   [Assessment-18] [T3] — systematic reviews of meta-analyses reveal how evidence evolves.
 - Only flag contradictions from clearly relevant papers. Ignore tangential matches.
 - Check for retractions of cited papers.
-- If WebSearch is unavailable, set `mode: limited` in the report and note: "the currency check must have internet access."
+- If WebSearch is unavailable, set `"mode": "limited"` in the findings file and add this text to `limitations`: "the currency check must have internet access."
 
 ### Dimension 3 — Cognitive Load Analysis
 
 Estimate cognitive load per module using proxy measures.
 
-**Limitation:** the manifest contains structure, not the actual content learners see. These are proxies based on structural indicators. Note this limitation in the report.
+**Limitation:** the manifest contains structure, not the actual content learners see. These are proxies based on structural indicators. Add this limitation to `limitations`.
 
 **Proxy indicators:**
 - Number of new concepts introduced per module (flag if >7).
   [CogLoad-4] [T5] — intrinsic load increases with element interactivity.
   [CogLoad-5] [T5] — working memory capacity limits are real design constraints.
-  [CogLoad-6] [T1] — working memory resource depletion compounds across tasks.
+  [CogLoad-6] [T2] — working memory resource depletion compounds across tasks.
 - Number of prerequisite concepts required (flag if prerequisites span >3 prior modules).
   [CogLoad-1] [T1] — problem-solving support interacts with sequence to affect load.
 - Assessment complexity relative to objective Bloom's level.
   [CogLoad-16] [T1] — format affects cognitive load independently of content.
 - Module sequencing: are related concepts spaced or massed?
-  [CogLoad-17] [T1] — sequencing significantly affects learning outcomes.
-  [CogLoad-13] [T3] — five strategies for optimizing instructional materials.
+  [CogLoad-17] [T2] — sequencing significantly affects learning outcomes.
+  [CogLoad-13] [T5] — five strategies for optimizing instructional materials.
 
 **Expertise reversal check:**
 - Are scaffolds present that would hurt expert learners?
   [CogLoad-19] [T5] — expertise reversal effect.
-  [CogLoad-11] [T3] — digital/online learning amplifies cognitive load concerns.
+  [CogLoad-11] [T5] — digital/online learning amplifies cognitive load concerns.
 - Are there adaptive elements that adjust based on learner expertise?
   [Learner-16] [T1] — differentiated instruction produces measurable gains.
   [Learner-18] [T5] — personalized adaptive learning framework.
@@ -503,7 +709,7 @@ Estimate cognitive load per module using proxy measures.
 
 Simulate 4 learner personas walking through the course.
 
-**Limitation:** simulation operates on structural/metadata signals, not actual content text. Content-level analysis (e.g., detecting idioms that challenge ESL learners) requires the actual course materials. Note this in the report.
+**Limitation:** simulation operates on structural/metadata signals, not actual content text. Content-level analysis (e.g., detecting idioms that challenge ESL learners) requires the actual course materials. Add this limitation to `limitations`.
 
 **Persona A — Complete Novice** (no prior knowledge in domain)
 - Can they access the content without assumed background?
@@ -519,22 +725,22 @@ Simulate 4 learner personas walking through the course.
 - Can experts skip introductory content or are they forced through it?
   [Learner-16] [T1] — effective differentiation allows bypassing known material.
 - Does the course adapt to prior knowledge or treat everyone as novice?
-  [Learner-11] [T2] — data-based differentiation responds to individual learner state.
+  [Learner-11] [T4] — data-based differentiation responds to individual learner state.
 
 **Persona C — ESL Learner** (language complexity, cultural references)
 - Are key terms defined when first introduced?
-  [Access-4] [T3] — universal instructional design includes clear vocabulary introduction.
+  [Access-4] [T4] — universal instructional design includes clear vocabulary introduction.
 - Are instructions clear without idiomatic expressions?
-  [CogLoad-11] [T3] — extraneous load from language complexity compounds online.
+  [CogLoad-11] [T5] — extraneous load from language complexity compounds online.
 - Are cultural references universal or region-specific?
   [Learner-13] [T4] — diverse student needs require culturally responsive design.
 - Is reading level appropriate? (Flag if above Flesch-Kincaid grade 10 for ESL audiences.)
-  [Learner-2] [T2] — differentiated instruction varies with language proficiency.
+  [Learner-2] [T4] — differentiated instruction varies with language proficiency.
 
 **Persona D — Learner with Accessibility Needs**
 - Do assessments offer alternative formats (extended time, alternative submission)?
   [Access-3] [T5] — UDL 3.0 requires multiple means of action and expression.
-  [Access-6] [T2] — universal design for instruction supports flexible assessment.
+  [Access-6] [T3] — universal design for instruction supports flexible assessment.
 - Are multimedia elements accessible (captions, transcripts, alt text)?
   [Access-1] [T5] — WCAG 2.1 requires text alternatives for non-text content.
   [Access-5] [T3] — universal design includes multimedia accessibility.
@@ -543,7 +749,7 @@ Simulate 4 learner personas walking through the course.
   [Access-2] [T5] — WCAG 2.2 extends keyboard navigation standards.
 
 **Per-persona checklist (evaluate for every module):**
-1. Can this persona access the content? [Access-4] [T3]
+1. Can this persona access the content? [Access-4] [T4]
 2. Does this persona have the prerequisite knowledge? [CogLoad-1] [T1]
 3. Is the cognitive load appropriate for this persona's expertise level? [CogLoad-19] [T5]
 4. Does the assessment format work for this persona? [Assessment-8] [T1]
@@ -555,42 +761,80 @@ Trace prerequisite dependencies across all modules.
 
 **Check for:**
 - Circular dependencies (A requires B requires A).
-  [CogLoad-17] [T1] — circular paths make valid sequencing impossible.
+  [CogLoad-17] [T2] — circular paths make valid sequencing impossible.
 - Missing prerequisites (module assumes knowledge not taught earlier).
   [CogLoad-1] [T1] — problem-solving support must match prerequisite state.
-  [Alignment-10] [T2] — high challenge without high support undermines learning.
+  [Alignment-10] [T4] — high challenge without high support undermines learning.
 - Orphaned content (nothing depends on it, no prerequisites).
   [Alignment-1] [T5] — every component must serve the objective chain.
 - Ordering violations (prerequisite module appears after the module that needs it).
-  [CogLoad-17] [T1] — sequencing violations create impossible learning paths.
+  [CogLoad-17] [T2] — sequencing violations create impossible learning paths.
   [CogLoad-4] [T5] — intrinsic load becomes unmanageable when prereqs are unavailable.
-
----
-
-## Confidence Score
-
-After all dimensions return, compute the confidence score:
-
-- Start at 100
-- Deduct per finding:
-  - Critical = -15
-  - Warning = -5
-  - Info = -1
-- Floor at 0
-
-Severity weights reflect that structural misalignment and cognitive overload are the strongest predictors of learner failure: [Alignment-14] [T1], [CogLoad-6] [T1].
-
-Contextualize:
-- 80+ "High confidence" — minor issues only
-- 60-79 "Moderate confidence, changes necessary" — several design gaps
-- 40-59 "Low confidence, important gaps" — multiple problem dimensions
-- <40 "New design necessary" — structural issues across most dimensions
 
 ---
 
 ## Output
 
-The orchestrator emits an HTML report. Follow the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
+Do not write the report. The parent writes it.
+
+Write the findings to `.idstack/.red-team-findings.json` with the Write tool. Use this shape:
+
+```json
+{
+  "mode": "full|limited",
+  "dimensions": [
+    {
+      "dimension": "Alignment",
+      "score": "pass|warning|critical",
+      "rows": [
+        {
+          "id": "alignment-1",
+          "severity": "critical|warning|info",
+          "what_we_saw": "Objective 3 has no assessment.",
+          "recommendation": "idstack recommends that you add an assessment for Objective 3.",
+          "justification": "Each objective must have an assessment that measures it.",
+          "evidence": "[Alignment-2] [T5]"
+        }
+      ]
+    }
+  ],
+  "limitations": []
+}
+```
+
+Obey these rules for the file:
+
+- Write one item in `dimensions` for each of the five dimensions, in this order: `Alignment`, `Evidence`, `Cognitive load`, `Personas`, `Prerequisites`.
+- The score of a dimension is `critical` if it has a critical row. It is `warning` if it has a warning row. Else it is `pass`.
+- Give each row a stable id of the form `<dimension>-<n>`. Use these prefixes: `alignment`, `evidence`, `cogload`, `persona`, `prereq`. The parent uses the ids when it applies fixes.
+- Put the critical rows first, then the warning rows, then the info rows.
+- Write the severity in lowercase: `critical`, `warning` or `info`.
+- In `what_we_saw`, name the module, objective or assessment.
+- Write the recommendation as "idstack recommends that you ..." or "You can ...".
+- Write the justification as one sentence. Tell why the finding is important for the learners of this course.
+- In `evidence`, write only the citation, for example `[Alignment-14] [T1]`. Use a code from the "Evidence list:" file, with the tier that the file gives. When more than one tier applies, cite the strongest.
+- If you cannot cite a finding, do not put it in `rows`. Put its text in `limitations`.
+- In `limitations`, write what this audit could not examine. Examples are the text of the content, the behavior of real learners and the settings of the LMS.
+- Write all text in the file as the "Writing Standard (ASD-STE100)" section at the end of this prompt tells you.
+
+## Return value
+
+After you write the file, return ONLY a short executive summary (≤200 words) to the parent:
+- Severity counts
+- Top 1 critical finding (one line)
+- JSON path: `.idstack/.red-team-findings.json`
+
+Do NOT return the findings inline. The parent reads the file.
+
+</orchestrator-brief>
+
+### Step 3: Review the findings
+
+After the orchestrator returns:
+
+1. Read the file at the JSON path that the orchestrator returned. If the file does not exist or is not valid JSON, tell the user and stop.
+2. Show the user the executive summary in your own words: severity counts and the top critical finding.
+3. Run this command. It starts the report.
 
 ```bash
 _IDSTACK=""
@@ -606,64 +850,59 @@ done
 # Compute the course slug from project_name and prepare the export folder.
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
-_REPORT_PATH="$_EXPORT_DIR/red-team.html"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+_REPORT_PATH="$_EXPORT_DIR/red-team.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill red-team --title "Red Team Audit" --mode "<mode>" --reserve "Confidence score"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
-Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/red-team.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+In the command, replace `<mode>` with the `mode` value from the JSON file, then ` · focus: `, then the FOCUS value. An example is `full · focus: Full sweep`.
 
-- **`{{skill_title}}`:** "Red Team Audit"
-- **`{{skill_name}}`:** `red-team`
-- **`{{mode}}`:** `full` or `limited` (include the optional mode segment in the header `meta` line; you may also append `· focus: {{FOCUS}}`).
-- **Summary:** 2–3 sentences. Lead with the confidence score (0–100) and the band ("High confidence" / "Moderate confidence, changes necessary" / "Low confidence, important gaps" / "New design necessary"). Include the optional one-line scoreboard: "Confidence XX/100 · Critical N · Warning N · Info N".
-- **Findings** ordered by severity (`sev-critical` → `sev-warning` → `sev-info`) inside a single `<section class="findings">`. Stable ids of the form `<dimension>-<n>` (e.g., `alignment-1`, `cogload-3`) so the parent can reference findings when applying fixes. Each `<article class="finding sev-...">` should include the affected module/objective/assessment in the "What we saw" `<dd>`.
-- **Skill-specific section before Findings** — add a `<section class="dimension-summary">` with `<h2>Per-dimension summary</h2>` and an HTML `<table>` with a row for each dimension (Alignment, Evidence, Cognitive Load, Personas, Prerequisites) showing the per-dimension `pass | warning | critical` score and a one-line summary.
-- **Top recommendations:** the 3 changes that would most improve the score. Reference finding ids.
-- **Limitations:** what this audit could not assess (content-level analysis, actual learner behavior, LMS-specific implementation, etc.).
-- **Next steps:** If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines.
 
-Each finding **must** have a stable id of the form `<dimension>-<n>` (e.g., `alignment-1`, `cogload-3`) so the parent can reference findings when applying fixes.
+Do one Step Review for each dimension, in the order of the JSON file. Use the rows of that dimension. If a dimension has no rows, do not do its Step Review. The Per-dimension summary shows the score `pass` for it.
 
-**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+**Step review:** do the Step Review in the preamble. Section: `## Dimension: Alignment`. Columns: `ID | Severity | Issue | Fix | Justification | Evidence`.
 
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
-```
+**Step review:** do the Step Review in the preamble. Section: `## Dimension: Evidence`. Columns: `ID | Severity | Issue | Fix | Justification | Evidence`.
 
-For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section at the end of this prompt. Do the check a maximum of three times. If these steps tell you to tell the user something, put it in your executive summary.
+**Step review:** do the Step Review in the preamble. Section: `## Dimension: Cognitive load`. Columns: `ID | Severity | Issue | Fix | Justification | Evidence`.
 
-## Return value
+**Step review:** do the Step Review in the preamble. Section: `## Dimension: Personas`. Columns: `ID | Severity | Issue | Fix | Justification | Evidence`.
 
-After writing the report, return ONLY a short executive summary (≤200 words) to the parent:
-- Confidence score and band ("Moderate confidence, changes necessary")
-- Severity counts
-- Top 1 critical finding (one line)
-- Path: the value of `$_REPORT_PATH` (e.g., `.idstack/exports/<course-slug>/red-team.html`)
+**Step review:** do the Step Review in the preamble. Section: `## Dimension: Prerequisites`. Columns: `ID | Severity | Issue | Fix | Justification | Evidence`.
 
-Do NOT return the full report inline. The parent will read the file.
+Copy the cells from the JSON rows: `what_we_saw` goes in Issue and `recommendation` goes in Fix. When the user selects "Change a row", change only the cells that the user names. The `## Findings` section in Step 6 collects the approved rows of all five dimensions.
 
-</orchestrator-brief>
+**Step review:** do the Step Review in the preamble. Section: `## Per-dimension summary`. Columns: `ID | Dimension | Score | Top issue | Justification | Evidence`.
 
-### Step 3: Surface the summary
+Write one row for each of the five dimensions, with the IDs `D-1` to `D-5`. Calculate the score from the approved rows of the dimension. The score is `critical` if the dimension has an approved critical row. It is `warning` if it has an approved warning row. Else it is `pass`.
 
-After the orchestrator returns:
-1. Read the HTML report file at the path the orchestrator returned (e.g., `.idstack/exports/<course-slug>/red-team.html`). HTML is fine to Read — extract the content sections by tag.
-2. Show the user the executive summary in your own words: confidence score, severity counts, top critical finding, and the report path.
-3. Mention: "The full HTML report is at the path above. Open it in a web browser to see all of the findings."
+In the Top issue cell, write the first approved row of the dimension, or "No problem found". In the Evidence cell, use the citation of that row. For a dimension with no rows, cite the first code in the brief of that dimension.
+
+**Step review:** do the Step Review in the preamble. Section: `## Confidence score`. Columns: `ID | Component | Score | Justification | Evidence`.
+
+Calculate the confidence score from the approved findings only:
+
+- Start at 100
+- Deduct per finding:
+  - Critical = -15
+  - Warning = -5
+  - Info = -1
+- Floor at 0
+
+Severity weights reflect that structural misalignment and cognitive overload are the strongest predictors of learner failure: [Alignment-14] [T1], [CogLoad-6] [T2].
+
+Contextualize:
+- 80+ "High confidence" — minor issues only
+- 60-79 "Moderate confidence, changes necessary" — several design gaps
+- 40-59 "Low confidence, important gaps" — multiple problem dimensions
+- <40 "New design necessary" — structural issues across most dimensions
+
+Write one row for each severity, with the count and the deduction, for example `Critical findings: 2 x -15`. Then write one row for the confidence score and its band. Cite `[Alignment-14] [T1] [CogLoad-6] [T2]` in each row. This section replaces the "Confidence score" placeholder of the report.
 
 ### Step 4: Triage — choose fix scope
 
@@ -681,16 +920,15 @@ If the user chooses **Skip**, jump straight to Step 6.
 
 ### Step 5: Apply fixes in-context
 
-For each finding in the chosen severity bucket, in order of severity:
+For each approved finding in the chosen severity bucket, in order of severity:
 
 1. Read the affected course file(s) (module content, assessment definition, manifest section).
-2. Propose the fix in 1-2 sentences. State which file and which finding id you're addressing.
-3. Apply via Edit.
-4. Track the finding id in `fixes_applied`. If you decide a finding is not applicable in context (e.g., requires re-running `/idstack:assessment-design`), record it in `fixes_deferred` with a one-line reason.
+2. Apply the fix via Edit. Do not tell the user about each fix in the chat. The user examines all the fixes in the `## Fixes applied` section.
+3. Track the finding id in `fixes_applied`. If you decide a finding is not applicable in context (e.g., requires re-running `/idstack:assessment-design`), record it in `fixes_deferred` with a one-line reason.
 
 Do not spawn additional sub-agents for fixes. The parent has the relevant context to edit course files directly.
 
-If the user pushes back on any specific fix, mark it deferred and continue.
+If the user selects "Change a row" or "Remove a row" in the Step Review of the `## Fixes applied` section, remove that change from the course file. Then write the Status of the row as `deferred`, and move the finding id from `fixes_applied` to `fixes_deferred`.
 
 **Writing standard check.** Run this command one time for each course file that you edited in this step. Replace `<path>` with the path of the file. Do not run it on `.idstack/project.json`.
 
@@ -710,13 +948,50 @@ if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_I
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Change only the sentences that you wrote or changed in this step. Do not change the other text in the file. Do the check a maximum of three times. If the checker shows problems only in sentences that you did not write or change, the check of that file is complete. Tell the user one time that these lines had problems before your changes.
 
-### Step 6: Update manifest
+**Step review:** do the Step Review in the preamble. Section: `## Fixes applied`. Columns: `ID | Change | File | Status | Justification | Evidence`.
+
+Write one row for each finding in `fixes_applied` and `fixes_deferred`. Use the finding id as the ID. Write the Status as `applied` or `deferred`. For a deferred row, write the reason in the Change cell. Copy the Justification and Evidence cells from the approved finding row. If the user selected **Skip**, or if no finding was in the selected bucket, do not do this Step Review.
+
+### Step 6: Complete the report
+
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+
+Put the approved rows of the five Dimension sections in one table. Put the `critical` rows first, then `warning`, then `info`. Copy Issue to What we saw and Fix to Recommendation. Do not change the other cells. If no dimension has an approved row, do not do this Step Review.
+
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns of Top recommendations: `ID | Action | Justification | Evidence`.
+
+- **Summary:** 2–3 sentences. Lead with the confidence score (0–100) and the band ("High confidence" / "Moderate confidence, changes necessary" / "Low confidence, important gaps" / "New design necessary"). Include the one-line scoreboard: "Confidence XX/100 · Critical N · Warning N · Info N". Use the counts of the approved findings.
+- **Top recommendations:** the 3 changes that would most improve the score. Give each row the ID `R-1` to `R-3`. Name the finding id in the Action cell. Use the citation of that finding.
+- **Limitations:** the `limitations` text from the JSON file. Add the text that you put in Limitations during the Step Reviews.
+- **Next steps:** If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
+
+Run the finish command of the Step Review.
+
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+
+### Step 7: Update manifest
 
 Save results to `.idstack/project.json` via `bin/idstack-manifest-merge`, which replaces only
 the `red_team_audit` section, preserves every other section verbatim, validates JSON, and
-atomically updates the top-level `updated` timestamp. Pull the score and findings from
-the orchestrator's HTML report at `$_REPORT_PATH` (the report is the source of truth — do
-not re-derive from the orchestrator's return summary, which is lossy).
+atomically updates the top-level `updated` timestamp. Use only the approved rows of the
+report. Calculate `confidence_score`, `findings_summary` and each dimension `score` from the
+approved findings. Set `report_path` to the path from the "Report path:" line.
 
 ```bash
 _IDSTACK=""
@@ -734,7 +1009,7 @@ done
   "updated": "<ISO-8601 timestamp>",
   "confidence_score": 0,
   "focus": "Full sweep",
-  "report_path": "<set to the orchestrator-returned path — e.g. .idstack/exports/<course-slug>/red-team.html>",
+  "report_path": "<set to the path from the Report path: line — e.g. .idstack/exports/<course-slug>/red-team.md>",
   "findings_summary": {"critical": 0, "warning": 0, "info": 0},
   "dimensions": {
     "alignment":      {"score": "pass|warning|critical", "findings": []},
@@ -766,10 +1041,16 @@ exist yet (the standalone case). It never replaces a manifest that exists.
 only the `red_team_audit` section, Write back. Preserve all other sections verbatim. The
 canonical schema for reference is in `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
-### Step 7: Final summary to user
+After the manifest write, delete the findings file:
+
+```bash
+rm -f .idstack/.red-team-findings.json
+```
+
+### Step 8: Final summary to user
 
 Two sentences:
-- "Confidence: X/100. I made N changes and deferred M changes. The report is at `.idstack/exports/<course-slug>/red-team.html`."
+- "Confidence: X/100. I made N changes and deferred M changes. The report is at <the Report path, written as a link as the Report Links section of the preamble tells you>."
 - If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
 
 If the user wants to verify fixes hold, they can re-run `/idstack:red-team` — that's deliberately manual to avoid token costs of automatic re-verification.

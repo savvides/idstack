@@ -86,7 +86,9 @@ Point the test at the shipped file, never at a copy of the logic. The version cl
 Every skill that produces findings writes **both**:
 
 1. **JSON section** in `.idstack/project.json` — system state for downstream skills, the pipeline orchestrator, and `bin/idstack-status`.
-2. **HTML report** at `.idstack/exports/<course-slug>/<skill>.html` — the branded, self-contained human view. Follow the visual contract in `templates/report.html.tmpl` and the content contract in `templates/report-format.md`: observation → evidence → why-it-matters → recommendation, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. The skill writes the relative path back into its section's `report_path` field, and copies `templates/assets/idstack.css` into the course folder so the deliverable is self-contained when zipped.
+2. **Markdown report** at `.idstack/exports/<course-slug>/<skill>.md` — the human view. Follow the skeleton in `templates/report.md.tmpl` and the content contract in `templates/report-format.md`: observation → evidence → why-it-matters → recommendation, with severity (`critical|warning|info`) and evidence tier (`T1`–`T5`) on every finding. The skill writes the relative path back into its section's `report_path` field and gives the user that relative path as the link to the report.
+
+Build the report one section at a time with the "Step Review" in `templates/preamble.md`. The skill shows each step as a table with `Justification | Evidence` columns, the user approves it, and `bin/idstack-report-section` adds it to the report. The manifest gets only the approved rows.
 
 Write report text in ASD-STE100 (see the "Writing Standard (ASD-STE100)" section of `templates/preamble.md`). Write a recommendation as "idstack recommends that you …" or "You can …". Do not use "consider", "may", "should" or "suggest". Cite every recommendation with `[DomainCode-N] [Tier]`; uncited claims belong in *Limitations* or *Notes*, not *Findings*.
 

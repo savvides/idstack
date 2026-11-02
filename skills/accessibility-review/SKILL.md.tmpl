@@ -86,6 +86,27 @@ because the answers are free text. Ask questions 4 and 5 with AskUserQuestion (o
 
 Skip any question already answered by the manifest or the user's initial prompt.
 
+**Prepare the report.** Run this block one time, after you have the course information.
+
+```bash
+{{IDSTACK_RESOLVE}}
+# Compute the course slug from project_name and prepare the export folder.
+_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/accessibility-review.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
+echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill accessibility-review --title "Accessibility Review" --reserve "Accessibility score"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+```
+
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines.
+
+**Step review:** do the Step Review in the preamble. Section: `## Course information`. Columns: `ID | Item | Value`.
+Write one row for each fact from the manifest or from the answers: subject, modules, audience, assessment types, media formats, timed activities and stated objectives.
+
 ### Step 1b: Parallel Dispatch
 
 Use the **Agent tool** to dispatch the WCAG audit and UDL review as 2 parallel
@@ -99,7 +120,7 @@ subagents instead of running Steps 2-3 sequentially.
 
 Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in each agent prompt. The agents cannot see the preamble.
 
-**After both agents return:** Merge results into the unified report format (Step 4), with WCAG violations as "Necessary changes" and UDL gaps as "Recommended changes".
+**After both agents return:** Use the WCAG result for the Step Review of Step 2. Use the UDL result for the Step Review of Step 3.
 
 **If an agent fails or returns nothing:** Run its step (Step 2 or Step 3) yourself as written below.
 
@@ -122,7 +143,7 @@ For each item, check whether the course addresses it and flag violations.
   have synchronized captions? [Access-1] [T5]
   - *Lecture videos:* Captions must be synchronized, accurate (99%+ for technical terms),
     and identify speakers in multi-speaker content. Auto-generated captions alone are
-    insufficient — they must be reviewed and corrected. [Multimedia-6] [T3]
+    insufficient — they must be reviewed and corrected. [Multimedia-6] [T5]
   - *Discussion forums with video replies:* If the platform supports video posts, caption
     requirements apply to those as well.
 - **1.2.5 Audio Descriptions (Prerecorded) (Level AA):** Do videos with significant visual
@@ -194,7 +215,7 @@ For each item, check whether the course addresses it and flag violations.
 - **Readability:** What is the reading level? (Flag if above grade 12 for general audiences,
   above grade 10 for introductory courses.) Use Flesch-Kincaid or similar readability
   measure. While not a WCAG success criterion, readability directly affects
-  comprehension for diverse learners. [Access-4] [T3]
+  comprehension for diverse learners. [Access-4] [T4]
 
 **Robust:**
 - **4.1.2 Name, Role, Value (Level A):** Do all user interface components (form elements,
@@ -211,7 +232,7 @@ Use this checklist to audit each content type present in the course:
 
 | Content Type | Key WCAG Criteria | What to Check |
 |---|---|---|
-| **Lecture videos** | 1.2.2, 1.2.5 | Synchronized captions (reviewed, not auto-only); audio descriptions for visual-only content; transcript available for download [Multimedia-6] [T3] |
+| **Lecture videos** | 1.2.2, 1.2.5 | Synchronized captions (reviewed, not auto-only); audio descriptions for visual-only content; transcript available for download [Multimedia-6] [T5] |
 | **Discussion forums** | 2.1.1, 2.4.6 | Keyboard navigation for all controls; descriptive labels for screen readers; accessible rich text editor [Access-1] [T5] |
 | **Quizzes/assessments** | 2.2.1, 3.3.1, 3.3.2, 3.3.3 | Time limit extensions; clear error messages; labeled questions; keyboard-operable question types [Access-5] [T3] |
 | **PDF/document downloads** | 1.3.1, 1.3.2 | Tagged PDF with heading structure; correct reading order; table headers; no image-only scans [Access-1] [T5] |
@@ -225,6 +246,9 @@ For each violation found, provide:
 - Specific remediation with an example
 - Evidence citation
 
+**Step review:** do the Step Review in the preamble. Section: `## WCAG 2.1 AA audit`. Columns: `ID | Guideline | Level | Status | What we saw | Justification | Evidence`.
+Write one row for each criterion that applies to the course. Write the Status as `Met` or `Not met`. In the Evidence cell, use the citation that this step gives for the criterion.
+
 ### Step 3: UDL Guidelines 3.0 Enhancement Review (Tier 2: Recommended changes)
 
 Review the course design against the three UDL principles. For each checkpoint,
@@ -234,7 +258,7 @@ evaluate whether the course addresses it and recommend improvements.
 
 | Checkpoint | Question | Evidence | Status |
 |------------|----------|----------|--------|
-| Recruiting interest | Are learners offered choices in how they engage? (e.g., choice of discussion topic, project format) | [Access-6] [T2] | |
+| Recruiting interest | Are learners offered choices in how they engage? (e.g., choice of discussion topic, project format) | [Access-6] [T3] | |
 | Sustaining effort | Are there varied levels of challenge? Are goals clear with scaffolded difficulty? | [Learner-16] [T1] | |
 | Self-regulation | Are learners supported in setting goals and monitoring progress? (e.g., progress dashboards, self-assessment checklists) | [Assessment-9] [T5] | |
 
@@ -243,8 +267,8 @@ evaluate whether the course addresses it and recommend improvements.
 | Checkpoint | Question | Evidence | Status |
 |------------|----------|----------|--------|
 | Perception | Is content available in multiple sensory modalities? (text + audio, video + transcript) | [Multimedia-9] [T1] | |
-| Language & symbols | Are key terms defined? Are notations explained? Are glossaries or vocabulary supports provided? | [Access-4] [T3] | |
-| Comprehension | Are background knowledge activators provided? Are big ideas highlighted? Are worked examples or graphic organizers used? | [CogLoad-13] [T3] | |
+| Language & symbols | Are key terms defined? Are notations explained? Are glossaries or vocabulary supports provided? | [Access-4] [T4] | |
+| Comprehension | Are background knowledge activators provided? Are big ideas highlighted? Are worked examples or graphic organizers used? | [CogLoad-13] [T5] | |
 
 **Principle 3: Multiple Means of Action & Expression** [Access-3] [T5]
 
@@ -261,17 +285,28 @@ For each checkpoint not met, provide:
 - Why this matters for specific learner populations (not just compliance)
 
 **Key UDL evidence base:**
-- [Access-4] [T3] — UDL in online courses improves outcomes across diverse learner populations.
-- [Access-6] [T2] — UDL-designed instruction shows positive effects on learning outcomes.
+- [Access-4] [T4] — UDL in online courses improves outcomes across diverse learner populations.
+- [Access-6] [T3] — UDL-designed instruction shows positive effects on learning outcomes.
 - [Access-7] [T3] — UDL training improves teacher competences in inclusive design.
 - [Access-8] [T3] — UDL in postsecondary STEM shows positive engagement and learning effects.
 - [Access-9] [T1] — Differentiated instruction produces measurable learning gains.
 - [Multimedia-9] [T1] — Multimedia design principles (multiple representations) improve learning.
 - [Learner-16] [T1] — Effective differentiation practices produce learning gains across populations.
 
+**Step review:** do the Step Review in the preamble. Section: `## UDL 3.0 review`. Columns: `ID | Principle | Checkpoint | Status | What we saw | Justification | Evidence`.
+Write one row for each of the 9 checkpoints. Write the Status as `Met`, `Partially met` or `Not met`. In the Evidence cell, use the citation from the Evidence column of the checkpoint tables.
+
+### Step 3b: Findings
+
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+
+Use only the approved rows of the WCAG and UDL sections. Write one row for each WCAG criterion with the status `Not met`, with the ID `wcag-1`, `wcag-2` and so on. A Level A violation is `critical`. A Level AA violation is `warning`.
+
+Then write one row for each UDL checkpoint with the status `Partially met` or `Not met`. Use the ID `udl-1`, `udl-2` and so on, and the severity `info`. Put the UDL rows in the order of the principles: Engagement, Representation, Action and Expression. Write a UDL recommendation as an improvement, not as a compliance problem.
+
 ### Step 4: Accessibility Score
 
-Calculate the accessibility score (0-100):
+Calculate the accessibility score (0-100) from the approved rows of the Findings and UDL sections:
 
 **WCAG Component (0-50):**
 - Start at 50
@@ -290,34 +325,19 @@ Calculate the accessibility score (0-100):
 - 40-59 "Important accessibility problems" — multiple compliance issues and limited UDL coverage
 - <40 "Many accessibility barriers" — course needs substantial redesign
 
-### Step 5: Generate Report
+**Step review:** do the Step Review in the preamble. Section: `## Accessibility score`. Columns: `ID | Component | Score | Justification | Evidence`.
+Write three rows: the WCAG component, the UDL component and the overall score. Cite [Access-1] [T5] for the WCAG component, [Access-3] [T5] for the UDL component and the two citations for the overall score. This section replaces the "Accessibility score" placeholder in the report.
 
-Generate an HTML report so the designer has a single document covering both compliance (WCAG, the Necessary changes layer) and inclusion (UDL, the Recommended changes layer). The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`.
+### Step 5: Close the Report
 
-```bash
-{{IDSTACK_RESOLVE}}
-# Compute the course slug from project_name and prepare the export folder.
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
-_EXPORT_DIR=".idstack/exports/$_SLUG"
-_REPORT_PATH="$_EXPORT_DIR/accessibility-review.html"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Report template: $_IDSTACK/templates/report.html.tmpl"
-echo "Report rules: $_IDSTACK/templates/report-format.md"
-echo "Report path: $_REPORT_PATH"
-```
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`. Columns: `ID | Action | Justification | Evidence`.
 
-Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. Write the HTML report at the path printed above (`.idstack/exports/<course-slug>/accessibility-review.html`), following the structure of `templates/report.html.tmpl`. Use these CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
-
-- **`{{skill_title}}`:** "Accessibility Review"
-- **`{{skill_name}}`:** `accessibility-review`
-- **Summary:** 2–3 sentences. Lead with the overall score, the number of necessary changes at WCAG Level A, and the biggest single barrier the designer should know about. Include the optional one-line scoreboard: "Overall XX/100 · WCAG XX/100 · UDL XX/100".
-- **Findings** organized into two clearly-labeled subgroups inside `<section class="findings">`:
-  - `<h3>Tier 1 — Necessary changes (WCAG 2.1 AA)</h3>` — one `<article class="finding sev-...">` per violation, stable ids `wcag-1`, `wcag-2`, etc. Order: Level A first (the floor), then AA; within level, by impact.
-  - `<h3>Tier 2 — Recommended changes (UDL 3.0)</h3>` — one `<article class="finding sev-info">` per UDL recommendation, stable ids `udl-1`, `udl-2`, etc. Group by principle (Engagement, Representation, Action & Expression). Write recommendations as enhancement, not compliance — UDL is enhancement.
-- **Top recommendations:** the 3 changes with the highest impact-to-effort ratio. Cite each.
+- **Summary:** 2 or 3 sentences. Start with the overall score, the number of WCAG Level A violations, and the largest barrier in the course. Add this line: "Overall XX/100 · WCAG XX/100 · UDL XX/100".
+- **Top recommendations:** the 3 changes that give the most improvement for the least work. Use the approved findings. Cite each row.
 - **Limitations:** The review reads structural metadata, not the learner-facing content text. The review checks that alt text is present, not that it is accurate. The UDL recommendations come from manifest signals, not from observed learner use.
-- **Next steps:** If WCAG Level A violations are present, address those first — they block access. Then run `/idstack:red-team` for an adversarial persona test (the persona dimension simulates learners who depend on the accommodations that this review audited).
+- **Next steps:** If the course has WCAG Level A violations, correct them first, because they stop access. Then run `/idstack:red-team` for an adversarial persona test. The persona dimension simulates learners who need the accommodations that this review audited.
+
+Run the finish command of the Step Review.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
 
@@ -335,14 +355,15 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 Save results to `.idstack/project.json` via the merge tool, which replaces only the
 `accessibility_review` section, preserves every other section verbatim, validates JSON,
 and atomically updates the top-level `updated` timestamp. The payload must include
-`report_path` set to the value of `$_REPORT_PATH` from the bash block above (e.g., `.idstack/exports/<course-slug>/accessibility-review.html`).
+`report_path` set to the value of `$_REPORT_PATH` from the bash block above (e.g., `.idstack/exports/<course-slug>/accessibility-review.md`).
+Use only the approved rows. Write one `wcag_violations` item for each approved `wcag-N` finding and one `udl_recommendations` item for each approved `udl-N` finding. Use the approved scores.
 
 ```bash
 {{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-manifest-merge" --create --section accessibility_review --payload - <<'PAYLOAD'
 {
   "updated": "<ISO-8601 timestamp>",
-  "report_path": "<set to $_REPORT_PATH — e.g. .idstack/exports/<course-slug>/accessibility-review.html>",
+  "report_path": "<set to $_REPORT_PATH — e.g. .idstack/exports/<course-slug>/accessibility-review.md>",
   "score": {"overall": 0, "wcag": 0, "udl": 0},
   "wcag_violations": [
     {
@@ -385,9 +406,9 @@ After writing the manifest, confirm to the user:
 
 "I saved your accessibility review in two files:
 
-- **Read this:** `.idstack/exports/<course-slug>/accessibility-review.html` — the report
+- **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the report
   with WCAG violations (Necessary changes), UDL recommendations (Recommended changes), evidence-backed
-  findings on every item, and the 3 highest-impact quick wins. Open it in a web browser.
+  findings on every item, and the 3 highest-impact quick wins. Click the link to open it.
   The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 

@@ -38,8 +38,9 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
-- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
-  child skill in-process via the `Skill` tool.
+- **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
+  child skill in-process through the `Skill` tool. `/idstack:start` also uses it to start
+  the first skill for the user.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as
   `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
   command. This applies in reports, manifests, and AskUserQuestion options as much as in
@@ -48,7 +49,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 ## Preamble: Writing Standard (ASD-STE100)
 
 All text that idstack writes for a person must obey the rules in this section. This
-includes chat text, AskUserQuestion questions and options, HTML reports, the course
+includes chat text, AskUserQuestion questions and options, reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
 reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
@@ -250,8 +251,8 @@ except: pass
 fi
 ```
 
-**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
-(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:concise:** Keep explanations brief. Do not cite evidence in chat prose.
+Always cite evidence in Step Review tables and in reports.
 **If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
 considered, and rationale for each recommendation.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
@@ -279,6 +280,192 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
+
+## Preamble: Report Links
+
+A skill that writes a report runs a block that prints a `Report path:` line.
+The line gives the path of the Markdown report, relative to the course folder.
+`/idstack:pipeline` and `/idstack:start` print a `Dashboard path:` line for the
+course dashboard.
+
+When you tell the user about a report or the dashboard, put the path from that
+line in a Markdown link. Use the same path as the link text. For example:
+
+[.idstack/exports/bio-101/course-import.md](.idstack/exports/bio-101/course-import.md)
+
+Do not change the path to a full path, and do not put angle brackets around it.
+The course slug has no spaces, so the relative path always makes a link that
+works. In the Claude desktop app, the user clicks the link to open the report.
+Give only a path from a `Report path:` or `Dashboard path:` line, or a path that
+a sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+the report, do not give the path.
+
+## Preamble: Step Review
+
+Only the skills that write a report do a Step Review. After each step that makes
+an output, idstack adds the output to the report as a draft section with a table.
+The user reads the section in the report file, not in the chat. The user approves
+the section, and idstack removes the draft mark. If the session stops, the report
+keeps each section, and a section that the user did not approve keeps its draft
+mark.
+
+The skill tells you where to do a Step Review with a `**Step review:**` line.
+That line gives the section heading and the table columns.
+
+**The shape of a section**
+
+- Start the section with a `## <Heading>` line. Then write the table.
+- The first column is `ID`. Give each row an ID that does not change, for
+  example `T-1` or `ILO-2`.
+- The last two columns are `Justification` and `Evidence`.
+- In the Justification cell, write one sentence. Tell why the row is correct for
+  this course. Use the evidence from the research.
+- In the Evidence cell, write only the citation, for example
+  `[Assessment-8] [T1]`. Use a code from the "Evidence list:" file. Use the tier
+  that the file gives for that code.
+- If you cannot cite a row, do not put it in the table. Put the text in the
+  Limitations section.
+- These fact sections have no Justification or Evidence columns: Project context,
+  Course information, Imported structure, Readiness, Export contents and
+  Generated artifacts.
+- A findings table has these columns:
+  `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+  Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
+  first, then `warning`, then `info`. Do not write `### Finding` blocks.
+  idstack writes them from the approved rows.
+
+**The procedure**
+
+1. Write the section to `.idstack/.report-section.md` with the Write tool.
+2. Run the check command:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+```
+
+3. If the output shows problems, correct the draft. Then do step 2 again. Do the
+   check a maximum of three times. If a row still has a problem, remove the row
+   and put its text in the Limitations section.
+4. Run the append command. It adds the section to the report as a draft. In
+   this command, replace `<path>` with the path from the "Report path:" line.
+   Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+```
+
+5. Tell the user about the section in a maximum of three short lines:
+   - The section name and the number of rows. For findings, give the number of
+     each severity.
+   - The most important row, in one sentence.
+   - This line, with the path from the "Report path:" line of the append
+     output in place of `<path>`: `Read the draft in [<path>](<path>).` Write
+     the link exactly in this form. Do not write the name of the report as
+     text only. The user clicks the link to open the report.
+   Do not show the table in the chat. Do not put the table, a row or a citation
+   in the question or in its options.
+6. Ask with AskUserQuestion: "Do you approve the <section name> section?" Give
+   these three options. Each option must have its description. Do not add a
+   preview.
+   - "Approve", with the description "Keep this section as it is."
+   - "Change a row", with the description "Tell me the row ID and the change."
+   - "Remove a row", with the description "Tell me the row ID to remove."
+7. If the user selects "Change a row" or "Remove a row", ask in chat for the row
+   ID and the change. Change the draft file. Then go to step 2. The append
+   command replaces the section in the report.
+8. If the user selects "Approve", run the approve command. In this command,
+   replace `<path>` with the path from the "Report path:" line. Then run the
+   command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+```
+
+9. Go to the next step only if the output starts with `SECTION_APPROVED`.
+
+**Rules**
+
+- Ask one question for each Step Review. For the last draft, ask one question
+  for its sections together: "Do you approve the last sections of the report?"
+  This question replaces the old approval question of the step. Questions that collect data from the user stay.
+- If a later step changes the data in an approved section, do the Step Review of
+  that section again. Use the same heading. idstack replaces the old section.
+- Use only the approved rows in the manifest. Calculate each score from the
+  approved rows.
+- If a step has no rows, do not do its Step Review. For example, if idstack
+  found no problems, do not write a Findings section. Tell the result in the
+  Summary. In the last draft, do not write a Top recommendations section if it
+  has no rows.
+- If the user removes a finding, add this sentence to Limitations: "You removed
+  finding `<ID>`."
+- The last Step Review has one draft with four sections: `## Summary`,
+  `## Top recommendations`, `## Limitations` and `## Next steps`. The Summary,
+  Limitations and Next steps sections are text, with no table. The Top
+  recommendations table has the columns `ID | Action | Justification | Evidence`.
+- After the user approves the last section, run the finish command. In this
+  command, replace `<path>` with the path from the "Report path:" line. Then run
+  the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+```
+
+- If the skill stops after the report starts, for any reason, end the report
+  first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
+  not write a Top recommendations section. Then run the finish command. This
+  includes an error, a missing file, and a user who stops the skill.
+- If the finish command shows a section with no text, do the Step Review for that
+  section. If it shows a draft section, ask the user to approve that section.
+  Then run the finish command again.
+- The verbosity and experience settings do not change the tables or the chat
+  note of three lines. Each table always has its citations.
+- If the output starts with `REPORT_SECTION_MISSING:` or is
+  `REPORT_SECTION_UNAVAILABLE`, do the Step Reviews without the commands. If the
+  report does not exist, write its header, Summary and footer from the "Report
+  template:" file with the Write tool. Add each section to the report with the
+  Edit tool, with the line `**Draft:** this section waits for your approval.`
+  under its heading. Remove that line when the user approves the section. Tell the user one time that idstack did not check the
+  citations.
 
 ## Preamble: Context Recovery
 
@@ -379,7 +566,7 @@ starting point.
 - If `course-import` is completed but `needs-analysis` is not, skip `needs-analysis`
   (import provides equivalent manifest data).
 - If ALL skills are completed, tell the user via AskUserQuestion: "All pipeline skills are completed. What do you want to do?" Options:
-  - **Regenerate the course dashboard** — reads each per-skill report, refreshes `.idstack/exports/<course-slug>/index.html` with the latest cross-cutting view (no skills re-run). Recommended after editing per-skill outputs by hand.
+  - **Regenerate the course dashboard** — reads each per-skill report, refreshes `.idstack/exports/<course-slug>/index.md` with the latest cross-cutting view (no skills re-run). Recommended after editing per-skill outputs by hand.
   - **Re-run a specific skill** — e.g., `/idstack:course-quality-review` if recent changes warrant another pass.
   - **Exit** — leave everything as-is.
   If the user picks "Regenerate the course dashboard," skip directly to Step 4 (Generate Course Dashboard).
@@ -417,7 +604,7 @@ For each skill from the starting point onward:
    (e.g., `skill: "idstack:needs-analysis"`). Plugin skills are addressed as
    `plugin:skill` — a bare `"needs-analysis"` does not resolve in Claude Code.
 3. The skill will run its full workflow including all AskUserQuestion interactions
-4. When the skill completes (logs to timeline), **execute Step 4 (Generate Course Dashboard) inline** to refresh `.idstack/exports/<course-slug>/index.html` against the new per-skill report. This keeps the dashboard fresh if the designer pauses partway through.
+4. When the skill completes (logs to timeline), **execute Step 4 (Generate Course Dashboard) inline** to refresh `.idstack/exports/<course-slug>/index.md` against the new per-skill report. This keeps the dashboard fresh if the designer pauses partway through.
 5. Announce completion and move to next.
 
 **If the `Skill` invocation fails** (the tool is unavailable, or the child skill cannot be
@@ -429,16 +616,16 @@ the new starting point. Generate the course dashboard (Step 4) before stopping s
 partial-run dashboard is up to date.
 
 **Between skills**, briefly announce the transition:
-"[skill-name] is completed. I updated the course dashboard. The next skill is /idstack:<next-skill>."
+"[skill-name] is completed. I updated the course dashboard: <the Dashboard path, written as a link as the Report Links section of the preamble tells you>. The next skill is /idstack:<next-skill>."
 
 ### Step 4: Generate Course Dashboard
 
-After each skill completes (or after the orchestrator finishes the run, including partial runs), assemble the per-skill HTML reports and the manifest into a single `index.html` course dashboard so the designer (and any stakeholder) can read the full picture in one place.
+After each skill completes (or after the orchestrator finishes the run, including partial runs), assemble the per-skill reports and the manifest into a single `index.md` course dashboard so the designer (and any stakeholder) can read the full picture in one place.
 
 **When this step runs:**
 
 - Inline after each skill completes during the orchestrator's main loop (Step 3, item 4) — so a partial pipeline still leaves a useful dashboard behind if the designer pauses.
-- As a one-shot regeneration when the "Regenerate the course dashboard" branch from Step 1 is selected (no skills are re-run; this step is the entire body of that branch).
+- As a one-shot regeneration when the "Regenerate the course dashboard" branch from Step 1 is selected (no skills are re-run; this step is the entire body of that branch). At the end of that branch, give the Dashboard path as a link, as the Report Links section of the preamble tells you.
 
 **Prep.** Compute the course slug and prepare the export folder:
 
@@ -455,43 +642,42 @@ for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
 done
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Dashboard template: $_IDSTACK/templates/index.html.tmpl"
-echo "Dashboard: $_EXPORT_DIR/index.html"
+mkdir -p "$_EXPORT_DIR"
+echo "Dashboard template: $_IDSTACK/templates/index.md.tmpl"
+echo "Dashboard path: $_EXPORT_DIR/index.md"
 ```
 
-**Inputs.** Read each per-skill HTML report file if it exists (they're already in `$_EXPORT_DIR/`):
+**Inputs.** Read each per-skill report file if it exists (they're already in `$_EXPORT_DIR/`):
 
-- `$_EXPORT_DIR/needs-analysis.html`
-- `$_EXPORT_DIR/learning-objectives.html`
-- `$_EXPORT_DIR/assessment-design.html`
-- `$_EXPORT_DIR/course-builder.html`
-- `$_EXPORT_DIR/course-quality-review.html`
-- `$_EXPORT_DIR/accessibility-review.html`
-- `$_EXPORT_DIR/red-team.html`
-- `$_EXPORT_DIR/course-export.html` (if present)
-- `$_EXPORT_DIR/course-import.html` (if present)
+- `$_EXPORT_DIR/needs-analysis.md`
+- `$_EXPORT_DIR/learning-objectives.md`
+- `$_EXPORT_DIR/assessment-design.md`
+- `$_EXPORT_DIR/course-builder.md`
+- `$_EXPORT_DIR/course-quality-review.md`
+- `$_EXPORT_DIR/accessibility-review.md`
+- `$_EXPORT_DIR/red-team.md`
+- `$_EXPORT_DIR/course-export.md` (if present)
+- `$_EXPORT_DIR/course-import.md` (if present)
 
 Also read `.idstack/project.json` for project_name, scores (`quality_review.overall_score`, `accessibility_review.score.overall`, `red_team_audit.confidence_score`), and each section's `report_path`.
 
-**Output.** Before you write the dashboard, use the Read tool on the file from the "Dashboard template:" line. That file is in the idstack plugin folder, not in the course project. Write `$_EXPORT_DIR/index.html`, following the structure of `templates/index.html.tmpl`. Customize:
+**Output.** Before you write the dashboard, use the Read tool on the file from the "Dashboard template:" line. That file is in the idstack plugin folder, not in the course project. Write `$_EXPORT_DIR/index.md`, following the structure of `templates/index.md.tmpl`. Customize:
 
 - **`{{project_name}}`:** from the manifest top-level.
 - **`{{pipeline_run_status}}`:** e.g., "complete · 8 of 8 skills" or "partial · 4 of 8 skills".
-- **Cross-cutting summary** (replaces `{{cross_cutting_verdict_paragraph}}`, `{{cross_cutting_themes_paragraph}}` and `{{cross_cutting_start_paragraph}}`): two or three paragraphs of cross-cutting synthesis for a designer or stakeholder who did not open the per-skill reports. Put each paragraph in a different `<p>`, with a maximum of six sentences.
+- **Cross-cutting summary** (replaces `{{cross_cutting_verdict_paragraph}}`, `{{cross_cutting_themes_paragraph}}` and `{{cross_cutting_start_paragraph}}`): two or three paragraphs of cross-cutting synthesis for a designer or stakeholder who did not open the per-skill reports. Put a blank line between the paragraphs. Each paragraph has a maximum of six sentences.
   - The first paragraph gives the verdict.
   - The second paragraph gives the themes that occur in more than one skill.
-  - The third paragraph tells where to start. It is optional. If you do not use it, remove its `<p>`.
-- **Readiness scoreboard** — populate the four `<div class="score verdict-{verdict}">` cards (Quality, Accessibility, Red-team confidence, Overall verdict). Verdict values: `ready` (green border) / `issues` (amber) / `blocked` (red) / `pending` (grey, when skill hasn't run yet). Thresholds match `bin/idstack-status --readiness`.
-- **Pipeline status table** — one row per pipeline skill. `status-done` if the per-skill HTML report file exists, `status-pending` otherwise. `signal` column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). Link the report cell to the relative HTML filename (e.g., `<a href="needs-analysis.html">needs-analysis.html</a>`). Add an optional course-import row when that report is present.
-- **Top cross-cutting issues** (`<ol>` items): 3–5 highest-impact findings that appear in or affect multiple per-skill reports. Each item shows the source skill(s) and the evidence tier as a `<cite class="citation">` element.
-- **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: `<p>This folder has no LMS packages. To make them, run <code>/idstack:course-export</code>.</p>`.
-- **Where to start** — one paragraph. The single change (or 2–3 changes) that would address the largest number of cross-cutting concerns. Anchored to a specific finding id in a specific per-skill report so the designer can act on it (e.g., "Address `assess-1` in <code>assessment-design.html</code> first…").
+  - The third paragraph tells where to start. It is optional. If you do not use it, remove its placeholder.
+- **Readiness table** — fill the one row of the Readiness pipe table (Quality, Accessibility, Red-team confidence, Verdict). Write the verdict as a text label: `Ready`, `Issues`, `Blocked`, or `Pending` (when the skill has not run). If a score is not available, replace the full cell, `/100` included, with `not run`. Thresholds match `bin/idstack-status --readiness`.
+- **Skill reports table** — one pipe-table row per pipeline skill. In the Status column, write `Done` if the per-skill report file exists without the in-progress line `**Status:** in progress. A section with a draft mark waits for your approval.`, and `Pending` in all other conditions. The Signal column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). In the Report column, link the relative Markdown filename (e.g., `[needs-analysis.md](needs-analysis.md)`). If the report file is not in the folder, write `not run` in the Report column. Add the optional course-import row when that report is present.
+- **Top cross-cutting issues** (numbered list): 3–5 highest-impact findings that appear in or affect multiple per-skill reports. Each item shows the source skill(s) and the citation as plain text, for example `[Alignment-14] [T1]`.
+- **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: "This folder has no LMS packages. To make them, run `/idstack:course-export`."
+- **Where to start** — one paragraph. The single change (or 2–3 changes) that would address the largest number of cross-cutting concerns. Anchored to a specific finding id in a specific per-skill report so the designer can act on it (e.g., "Address `assess-1` in `assessment-design.md` first…").
 
 The dashboard is overwritten on every pipeline run — historical dashboards are not retained. The timeline at `.idstack/timeline.jsonl` carries the run history.
 
-**Writing standard check.** In this command, replace `<path>` with the path from the "Dashboard:" line. Then run the command.
+**Writing standard check.** In this command, replace `<path>` with the path from the "Dashboard path:" line. Then run the command.
 
 ```bash
 _IDSTACK=""
@@ -513,7 +699,7 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 When all remaining skills have been executed:
 - Announce: "The pipeline is completed. Your course went through all 8 stages."
-- Confirm the dashboard path: "The course dashboard is at `.idstack/exports/<course-slug>/index.html`. Open it in a web browser to see the cross-cutting view. The per-skill HTML reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
+- Confirm the dashboard path: "The course dashboard is at <the Dashboard path, written as a link as the Report Links section of the preamble tells you>. Click it to see the cross-cutting view. The per-skill reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
 - If `/idstack:course-quality-review` produced a score, show it.
 - Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.
 - Log the pipeline run so "the pipeline was run" is recoverable from the timeline:

@@ -38,8 +38,9 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
-- **Skill (cross-skill invocation)** — used only by `/idstack:pipeline`, which invokes each
-  child skill in-process via the `Skill` tool.
+- **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
+  child skill in-process through the `Skill` tool. `/idstack:start` also uses it to start
+  the first skill for the user.
 - **Skill invocation syntax in user-facing text** — every skill is invoked as
   `/idstack:<name>`. Always write the namespaced form: a bare `/<name>` is not a valid
   command. This applies in reports, manifests, and AskUserQuestion options as much as in
@@ -48,7 +49,7 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 ## Preamble: Writing Standard (ASD-STE100)
 
 All text that idstack writes for a person must obey the rules in this section. This
-includes chat text, AskUserQuestion questions and options, HTML reports, the course
+includes chat text, AskUserQuestion questions and options, reports, the course
 dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
 reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
@@ -250,8 +251,8 @@ except: pass
 fi
 ```
 
-**If VERBOSITY:concise:** Keep explanations brief. Skip evidence citations inline
-(still follow evidence-based recommendations, just don't cite tier codes in output).
+**If VERBOSITY:concise:** Keep explanations brief. Do not cite evidence in chat prose.
+Always cite evidence in Step Review tables and in reports.
 **If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
 considered, and rationale for each recommendation.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
@@ -279,6 +280,192 @@ tiers, edge cases, and advanced considerations. Trust the user's domain knowledg
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
 mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
 with `experience_level: novice|intermediate|expert`."
+
+## Preamble: Report Links
+
+A skill that writes a report runs a block that prints a `Report path:` line.
+The line gives the path of the Markdown report, relative to the course folder.
+`/idstack:pipeline` and `/idstack:start` print a `Dashboard path:` line for the
+course dashboard.
+
+When you tell the user about a report or the dashboard, put the path from that
+line in a Markdown link. Use the same path as the link text. For example:
+
+[.idstack/exports/bio-101/course-import.md](.idstack/exports/bio-101/course-import.md)
+
+Do not change the path to a full path, and do not put angle brackets around it.
+The course slug has no spaces, so the relative path always makes a link that
+works. In the Claude desktop app, the user clicks the link to open the report.
+Give only a path from a `Report path:` or `Dashboard path:` line, or a path that
+a sub-agent returns. Do not make up a path. If the skill stopped before it wrote
+the report, do not give the path.
+
+## Preamble: Step Review
+
+Only the skills that write a report do a Step Review. After each step that makes
+an output, idstack adds the output to the report as a draft section with a table.
+The user reads the section in the report file, not in the chat. The user approves
+the section, and idstack removes the draft mark. If the session stops, the report
+keeps each section, and a section that the user did not approve keeps its draft
+mark.
+
+The skill tells you where to do a Step Review with a `**Step review:**` line.
+That line gives the section heading and the table columns.
+
+**The shape of a section**
+
+- Start the section with a `## <Heading>` line. Then write the table.
+- The first column is `ID`. Give each row an ID that does not change, for
+  example `T-1` or `ILO-2`.
+- The last two columns are `Justification` and `Evidence`.
+- In the Justification cell, write one sentence. Tell why the row is correct for
+  this course. Use the evidence from the research.
+- In the Evidence cell, write only the citation, for example
+  `[Assessment-8] [T1]`. Use a code from the "Evidence list:" file. Use the tier
+  that the file gives for that code.
+- If you cannot cite a row, do not put it in the table. Put the text in the
+  Limitations section.
+- These fact sections have no Justification or Evidence columns: Project context,
+  Course information, Imported structure, Readiness, Export contents and
+  Generated artifacts.
+- A findings table has these columns:
+  `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+  Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
+  first, then `warning`, then `info`. Do not write `### Finding` blocks.
+  idstack writes them from the approved rows.
+
+**The procedure**
+
+1. Write the section to `.idstack/.report-section.md` with the Write tool.
+2. Run the check command:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+```
+
+3. If the output shows problems, correct the draft. Then do step 2 again. Do the
+   check a maximum of three times. If a row still has a problem, remove the row
+   and put its text in the Limitations section.
+4. Run the append command. It adds the section to the report as a draft. In
+   this command, replace `<path>` with the path from the "Report path:" line.
+   Then run the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+```
+
+5. Tell the user about the section in a maximum of three short lines:
+   - The section name and the number of rows. For findings, give the number of
+     each severity.
+   - The most important row, in one sentence.
+   - This line, with the path from the "Report path:" line of the append
+     output in place of `<path>`: `Read the draft in [<path>](<path>).` Write
+     the link exactly in this form. Do not write the name of the report as
+     text only. The user clicks the link to open the report.
+   Do not show the table in the chat. Do not put the table, a row or a citation
+   in the question or in its options.
+6. Ask with AskUserQuestion: "Do you approve the <section name> section?" Give
+   these three options. Each option must have its description. Do not add a
+   preview.
+   - "Approve", with the description "Keep this section as it is."
+   - "Change a row", with the description "Tell me the row ID and the change."
+   - "Remove a row", with the description "Tell me the row ID to remove."
+7. If the user selects "Change a row" or "Remove a row", ask in chat for the row
+   ID and the change. Change the draft file. Then go to step 2. The append
+   command replaces the section in the report.
+8. If the user selects "Approve", run the approve command. In this command,
+   replace `<path>` with the path from the "Report path:" line. Then run the
+   command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+```
+
+9. Go to the next step only if the output starts with `SECTION_APPROVED`.
+
+**Rules**
+
+- Ask one question for each Step Review. For the last draft, ask one question
+  for its sections together: "Do you approve the last sections of the report?"
+  This question replaces the old approval question of the step. Questions that collect data from the user stay.
+- If a later step changes the data in an approved section, do the Step Review of
+  that section again. Use the same heading. idstack replaces the old section.
+- Use only the approved rows in the manifest. Calculate each score from the
+  approved rows.
+- If a step has no rows, do not do its Step Review. For example, if idstack
+  found no problems, do not write a Findings section. Tell the result in the
+  Summary. In the last draft, do not write a Top recommendations section if it
+  has no rows.
+- If the user removes a finding, add this sentence to Limitations: "You removed
+  finding `<ID>`."
+- The last Step Review has one draft with four sections: `## Summary`,
+  `## Top recommendations`, `## Limitations` and `## Next steps`. The Summary,
+  Limitations and Next steps sections are text, with no table. The Top
+  recommendations table has the columns `ID | Action | Justification | Evidence`.
+- After the user approves the last section, run the finish command. In this
+  command, replace `<path>` with the path from the "Report path:" line. Then run
+  the command.
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+```
+
+- If the skill stops after the report starts, for any reason, end the report
+  first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
+  not write a Top recommendations section. Then run the finish command. This
+  includes an error, a missing file, and a user who stops the skill.
+- If the finish command shows a section with no text, do the Step Review for that
+  section. If it shows a draft section, ask the user to approve that section.
+  Then run the finish command again.
+- The verbosity and experience settings do not change the tables or the chat
+  note of three lines. Each table always has its citations.
+- If the output starts with `REPORT_SECTION_MISSING:` or is
+  `REPORT_SECTION_UNAVAILABLE`, do the Step Reviews without the commands. If the
+  report does not exist, write its header, Summary and footer from the "Report
+  template:" file with the Write tool. Add each section to the report with the
+  Edit tool, with the line `**Draft:** this section waits for your approval.`
+  under its heading. Remove that line when the user approves the section. Tell the user one time that idstack did not check the
+  citations.
 
 ## Preamble: Context Recovery
 
@@ -317,31 +504,6 @@ Example: "Note: this Canvas instance uses a custom rubric format (idstack found 
 
 **Skill-specific manifest check:** If the manifest `export_metadata` section already has data,
 ask the user: "You ran this skill previously. Do you want to update the results or start again?"
-
-## Pre-Export Readiness Check
-
-Before starting the export workflow, run the readiness dashboard:
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-"$_IDSTACK/bin/idstack-status" --readiness
-```
-
-Show the readiness table to the user. If the verdict is:
-- **READY TO EXPORT:** Proceed normally.
-- **NOT-READY:** Show the problems and ask: "The readiness check found problems. Do you want to export the course, or correct the problems first?"
-- **INCOMPLETE:** Show what's missing and ask: "Some review skills did not run. Do you want to export the course, or run those skills first?"
-
-This is advisory — the user can always choose to export regardless.
 
 # Course Export — IMS Common Cartridge & Canvas API
 
@@ -413,8 +575,8 @@ the files directly. If not, nudge for /idstack:course-builder.
 
 ## Prepare Course Export Folder
 
-Every artifact this skill produces — the HTML report, the LMS package — lands
-under `.idstack/exports/<course-slug>/`, alongside the per-skill HTML reports
+Every artifact this skill produces — the Markdown report, the LMS package — lands
+under `.idstack/exports/<course-slug>/`, alongside the per-skill reports
 produced by the rest of the pipeline. Compute the slug and prepare the folder
 now, then reuse `$_EXPORT_DIR` throughout the workflow:
 
@@ -432,18 +594,56 @@ done
 # Course-slug-based export folder. Required before any artifact write.
 _SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
-_REPORT_PATH="$_EXPORT_DIR/course-export.html"
-mkdir -p "$_EXPORT_DIR/assets"
-cp -f "$_IDSTACK/templates/assets/idstack.css" "$_EXPORT_DIR/assets/idstack.css"
-echo "Report template: $_IDSTACK/templates/report.html.tmpl"
+_REPORT_PATH="$_EXPORT_DIR/course-export.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Course export folder: $_EXPORT_DIR"
+echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill course-export --title "Course Export Report"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
-All subsequent paths (`.imscc`, SCORM `.zip`, HTML report) write into
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines.
+
+All subsequent paths (`.imscc`, SCORM `.zip`, Markdown report) write into
 `$_EXPORT_DIR`, never directly into `.idstack/`. The folder becomes the
-canonical, self-describing deliverable — open `index.html` to navigate, or
+canonical, self-describing deliverable — open `index.md` to navigate, or
 zip the whole folder to hand to a stakeholder.
+
+---
+
+## Pre-Export Readiness Check
+
+Before you start the export, run the readiness dashboard:
+
+```bash
+_IDSTACK=""
+_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
+_idstack_cache=""
+if [ -d "$_idstack_cache_root" ]; then
+  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
+  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
+fi
+for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
+done
+"$_IDSTACK/bin/idstack-status" --readiness
+```
+
+**Step review:** do the Step Review in the preamble. Section: `## Readiness`. Columns: `ID | Check | Value | Threshold | Status`.
+
+Write one row for each line of the readiness output. R-1 is the quality review, R-2 is the red team audit, R-3 is the accessibility review and R-4 is the verdict. Copy the values, the thresholds and the status from the output.
+
+The verdict changes the question of the Step Review:
+
+- **READY TO EXPORT:** Ask the usual question of the Step Review.
+- **NOT-READY or INCOMPLETE:** After the append command (step 4 of the Step Review), the Readiness section is in the report as a draft. Ask one question with AskUserQuestion. This question replaces the usual question. Ask: "The readiness check found problems. Do you approve this section and export the course?" The options and their descriptions are "Approve and export" ("Keep this section and make the package"), "Correct the problems first" ("Stop the export now") and "Change a row" ("Tell me the row ID and the change"). If the verdict is INCOMPLETE, write the second option as "Run those skills first".
+- If the user selects "Approve and export", run the approve command (step 8 of the Step Review). Continue the export only if the output starts with `SECTION_APPROVED`.
+- If the user selects "Change a row", do step 7 of the Step Review. Then ask this question again.
+- If the user selects "Correct the problems first" or "Run those skills first", run the approve command of the Step Review for the Readiness section. Then do the last Step Review (see "Generate Export Report"), with its append and approve commands. In the Summary, tell that the export stopped before the package and give the verdict. Do not write a Top recommendations section. Then run the finish command and stop this skill. Tell the user which skills to run, from the verdict line.
+
+The readiness check gives advice only. The user can always export the course.
 
 ---
 
@@ -467,8 +667,8 @@ if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_I
 
 1. If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do step 5 or step 6 of "How to use the standard" in the preamble. Continue the export.
 2. If the checker shows no problems, continue the export.
-3. If the checker shows problems, show them to the user. Then use AskUserQuestion with two alternatives: "Continue the export" and "Stop the export to correct the content".
-4. If the user selects "Stop the export to correct the content", stop this skill. Tell the user to correct the files in `.idstack/course-content/` and then run `/idstack:course-export` again.
+3. If the checker shows problems, tell the user only the number of problems and the files with problems. Then use AskUserQuestion with two alternatives: "Continue the export" and "Stop the export to correct the content".
+4. If the user selects "Stop the export to correct the content", do the last Step Review (see "Generate Export Report"), with its append and approve commands. In the Summary, tell that the export stopped before the package because the course content has writing problems. Do not write a Top recommendations section. Then run the finish command and stop this skill. Tell the user to correct the files in `.idstack/course-content/` and then run `/idstack:course-export` again.
 5. If the checker shows an error, tell the user which files the checker did not read. Then continue with the steps above for the problems that it shows.
 
 The package files (HTML pages, XML files and quiz text) get no file check. When you write text for the package, for example quiz questions, quiz feedback or item titles, obey the "Writing Standard (ASD-STE100)" section of the preamble.
@@ -494,6 +694,20 @@ Options:
 
 ---
 
+## Export Plan
+
+Do this step after the path reads the course content (A1, B3 or C1). Do it before you write a package file or send a request that changes Canvas.
+
+**Step review:** do the Step Review in the preamble. Section: `## Export plan`. Columns: `ID | Item type | Count | Conversion | Justification | Evidence`.
+
+Write one row for each item type that the selected path exports, with IDs `EP-1`, `EP-2` and so on. In the Conversion cell, write what idstack makes from the Markdown, for example "HTML page", "QTI quiz with elaborated feedback" or "Canvas assignment, not published".
+
+Use these citations. For the syllabus, use `[Online-2] [T4]`. For module pages with their heading structure, use `[Access-1] [T5]`. For assignments with their rubric in the description, use `[Assessment-19] [T1]`. For quizzes with elaborated feedback, use `[Assessment-10] [T1]`. For discussions, use `[Online-18] [T1]`.
+
+Export only the item types in the approved rows. If the user removes a row, do not write files or send Canvas requests for that item type.
+
+---
+
 ## Path A: IMS Common Cartridge Export
 
 ### A1. Read Course Content Files
@@ -514,6 +728,8 @@ Read each file to understand the content structure. Expect files like:
 Also read the manifest to get the course title, module structure, and ILO
 alignment data. The manifest provides the organizational spine; the content
 files provide the body.
+
+Then do the "Export Plan" step. Go to A2 only after the user approves the plan.
 
 ### A2. Generate imsmanifest.xml
 
@@ -781,6 +997,9 @@ echo "Export saved to $_EXPORT_DIR/course-export.imscc"
 If the output starts with `PACKAGE_FAILED`, tell the user the error. Do not say
 that the export is complete.
 
+Do the Step Review of "Export Contents" with one row
+for `course-export.imscc` and the status "failed: <error>". Then do the last Step Review (see "Generate Export Report"), with its append and approve commands. In the Summary, tell that the export failed and give the error. Do not write a Top recommendations section. Then run the finish command and stop this skill.
+
 ### A6. Verify the Package
 
 Replace `<export folder>` with the folder from the "Course export folder:" line,
@@ -800,30 +1019,10 @@ echo "Quizzes: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'quizzes/' |
 echo "Discussions: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'discussions/' | wc -l)"
 ```
 
-Present verification to the user (substituting `$_EXPORT_DIR` in the file path):
-
-```
-## Common Cartridge Export Complete
-
-File: .idstack/exports/<course-slug>/course-export.imscc
-Size: {X} KB
-Contents:
-  - imsmanifest.xml
-  - {N} module pages (.html)
-  - {M} assignment documents (.xml)
-  - {P} quiz documents (.xml, QTI format)
-  - {Q} discussion topics (.xml)
-  - Syllabus (.html)
-
-idstack generated the quiz questions from your assessment specs. Review each
-question in your LMS before you publish the quiz to students.
-
-To import into your LMS:
-- **Canvas:** Settings > Import Course Content > Common Cartridge 1.x
-- **Blackboard:** Course Management > Import > IMS Common Cartridge
-- **Moodle:** Site Administration > Restore > Upload .imscc file
-- **D2L/Brightspace:** Course Admin > Import/Export/Copy > Import Components
-```
+Do not show this output in the chat. From it, collect the data for the rows of
+"Export Contents": the package size and the number of module pages,
+assignments, quizzes and discussions. Keep the package path
+`.idstack/exports/<course-slug>/course-export.imscc` for the closing message.
 
 ---
 
@@ -916,6 +1115,8 @@ report, or a different file.**
 Same as A1 — read all files in `.idstack/course-content/` and the manifest.
 Convert markdown content to HTML for the API calls (Canvas pages and assignments
 accept HTML in their body fields).
+
+Then do the "Export Plan" step. Go to B4 only after the user approves the plan.
 
 ### B4. Create Modules
 
@@ -1049,6 +1250,10 @@ Each API call is wrapped in error checking. Handle these cases:
 
 - **HTTP 401:** Token expired or invalid. Stop. Tell the user to put a new token in
   `.idstack/canvas.env`. Do not ask for the token in the chat.
+
+  Do the Step Review
+  of "Export Contents" with a row for each item that idstack created before the
+  error and one row with the status "failed: HTTP 401". Then do the last Step Review (see "Generate Export Report"), with its append and approve commands. In the Summary, tell that the export failed and give the error. Do not write a Top recommendations section. Then run the finish command and stop this skill.
 - **HTTP 403:** Insufficient permissions. Report which item failed and why.
 - **HTTP 404:** Course or resource not found. Report the specific endpoint.
 - **HTTP 422:** Validation error. Report the error message from Canvas.
@@ -1060,41 +1265,16 @@ Each API call is wrapped in error checking. Handle these cases:
 - **Timeout / network error:** Log the item as failed, continue with the rest.
 
 If any single API call fails, log it and continue with remaining items. Do NOT
-abort the entire export on a single failure. Present a summary at the end
-showing what succeeded and what failed.
+abort the entire export on a single failure. The Export contents section shows
+what succeeded and what failed.
 
-### B9. Present Summary
+### B9. Collect the Results
 
-```
-## Canvas Push Complete
-
-Course: {title}
-URL: {Canvas URL}/courses/{course_id}
-
-| Item Type    | Created | Failed | Skipped |
-|--------------|---------|--------|---------|
-| Modules      | {N}     | {0}    | {0}     |
-| Pages        | {M}     | {0}    | {0}     |
-| Assignments  | {P}     | {0}    | {0}     |
-| Discussions  | {Q}     | {0}    | {0}     |
-
-Assignments and discussions are not published. Review them in Canvas before
-you publish them to students.
-
-Open your course: {Canvas URL}/courses/{course_id}
-```
-
-If any items failed:
-```
-### Failed Items
-
-| Item | Type | Error |
-|------|------|-------|
-| {name} | {type} | {error message} |
-
-You can create these items manually in Canvas, or run `/idstack:course-export` again
-to retry the failed items.
-```
+Do not show a table or a list of items in the chat. Collect the data for the
+rows of "Export Contents". For each item type, count the items that idstack
+created, the items that failed and the items that it skipped. For each failed
+item, keep its name, its type and the error. Keep the Canvas course URL
+`{Canvas URL}/courses/{course_id}` for the closing message.
 
 ---
 
@@ -1110,6 +1290,8 @@ find .idstack/course-content/ -type f | sort
 
 If no course content files exist, tell the user: "No course content found in
 `.idstack/course-content/`. Run `/idstack:course-builder` first to generate content."
+
+If the files exist, read each file. Then do the "Export Plan" step. Go to C2 only after the user approves the plan.
 
 ### C2. Create SCORM package structure
 
@@ -1222,6 +1404,9 @@ echo "SCORM package saved to $_EXPORT_DIR/scorm-export.zip"
 If the output starts with `PACKAGE_FAILED`, tell the user the error. Do not say
 that the export is complete.
 
+Do the Step Review of "Export Contents" with one row
+for `scorm-export.zip` and the status "failed: <error>". Then do the last Step Review (see "Generate Export Report"), with its append and approve commands. In the Summary, tell that the export failed and give the error. Do not write a Top recommendations section. Then run the finish command and stop this skill.
+
 ### C6. Verify package
 
 Replace `<export folder>` again, then run the command:
@@ -1238,35 +1423,12 @@ Verify:
 - All `<file href>` references in the manifest have matching files in the ZIP
 - The ZIP is not empty
 
-### C7. Present export summary
+### C7. Collect the Results
 
-```
-## SCORM 1.2 Export Complete
-
-File: .idstack/exports/<course-slug>/scorm-export.zip
-Format: SCORM 1.2
-SCOs: [count] (one per module)
-Total files: [count]
-
-### How to import
-
-- **Any LMS:** Upload the .zip file through your LMS admin interface.
-  Most LMS platforms auto-detect SCORM packages.
-- **Canvas:** Settings > Import Course Content > SCORM package
-- **Moodle:** Add Activity > SCORM package > Upload
-- **Blackboard:** Content > Build Content > SCORM package
-- **Corporate LMS (for example, Cornerstone or SAP SuccessFactors):**
-  Upload through your content management interface
-
-### Limitations
-
-- This SCORM package contains static HTML content. idstack does not generate
-  interactive elements (drag-and-drop, branching scenarios).
-- The package does not include SCORM API tracking (completion, score reports).
-  The LMS marks the SCO as completed when the learner opens it.
-- For more interactivity, create the course in Articulate Rise or Storyline. Then
-  use /idstack:course-quality-review and /idstack:red-team on the exported package.
-```
+Do not show this output or a list in the chat. From the C6 output, collect the
+data for the rows of "Export Contents": the number of SCOs (one for each
+module) and the number of files. Keep the package path
+`.idstack/exports/<course-slug>/scorm-export.zip` for the closing message.
 
 ### C8. Cleanup
 
@@ -1278,21 +1440,40 @@ rm -rf "<export folder>/.scorm-staging"
 
 ---
 
+## Export Contents
+
+Do this step after A6, B9 or C7.
+
+**Step review:** do the Step Review in the preamble. Section: `## Export contents`. Columns: `ID | Item | Type | Status`.
+
+Write one row for each item that the path exported, with IDs `EC-1`, `EC-2` and so on. Also write one row for the package file (`course-export.imscc` or `scorm-export.zip`) or for the Canvas course URL. In the Status cell, write "exported", "created", "skipped" or "failed: <error>". Each failed item is a row.
+
+---
+
 ## Generate Export Report
 
-Before you write the report, use the Read tool on the files from the "Report template:" and "Report rules:" lines. The `templates/` paths in this section are in the idstack plugin folder, not in the course project. After the export completes (any path), write the HTML report at `$_REPORT_PATH` (from the Prepare Course Export Folder step) — i.e., `.idstack/exports/<course-slug>/course-export.html`. The report follows the **visual contract** in `templates/report.html.tmpl` and the **content contract** in `templates/report-format.md`. Use the standard CSS hooks: `<article class="finding sev-{severity}">`, `<span class="sev-badge sev-{severity}">`, `<span class="tier-badge tier-T{N}">`, `<cite class="citation">[Domain-N] [TN]</cite>`. Customize for this skill:
+The Step Reviews before this step added the Readiness, Export plan and Export contents sections to the report at the path from the "Report path:" line.
 
-- **`{{skill_title}}`:** "Course Export Report"
-- **`{{skill_name}}`:** `course-export`
-- **`{{mode}}`:** include `format: imscc|canvas-api|scorm` in the header `meta` line.
-- **Summary:** 2–3 sentences. What was exported, where it landed, and the readiness verdict (READY TO EXPORT / NOT-READY / INCOMPLETE) at the time of export. Include the optional one-line scoreboard: "Modules N · Pages M · Assignments P · Quizzes Q · Discussions R".
-- **Skill-specific section before Findings** — add a `<section class="export-manifest">` with `<h2>Export contents</h2>` and an HTML `<table>` (Item type, Count, Notes). For Canvas API: include Created / Failed / Skipped columns instead.
-- **Finding ids:** `export-1`, `readiness-1`, `qti-1`, etc. Findings come from auto-generated content the designer should review before publishing (quiz questions, rubric formatting, missing placeholders), readiness-check items at time of export, and items the API call failed on. If everything is clean, the Findings section can simply contain an `info` finding noting the clean state.
-- **Optional skill-specific section** (after Top recommendations, before Limitations): `<section class="failed-items">` with `<h2>Failed items</h2>` only when the Canvas API path produced failed items.
-- **Limitations:** SCORM and IMSCC packages contain static HTML only. They do not include interactive elements. The quiz questions come from the assessment specs, and the designer must review them. The Canvas token stays in `.idstack/canvas.env` on the user's computer. idstack does not write it to the manifest or the report.
-- **Next steps:** Make sure that the LMS import kept all of the content correctly. Look carefully at quiz questions, assignment rubrics, discussion prompts, and the module sequence. If the readiness verdict was NOT-READY, correct the flagged findings before you publish the course.
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
 
-**Writing standard check.** In this command, replace `<path>` with the path of `course-export.html` in the folder from the "Course export folder:" line. Then run the command.
+Use the IDs `export-1`, `readiness-1`, `qti-1` and so on. Write a finding for generated content that the designer must examine, for example quiz questions, rubric format and missing placeholders. Also write a finding for each readiness problem and for each item that failed.
+
+Cite quiz findings with `[Assessment-10] [T1]` and rubric findings with `[Assessment-19] [T1]`. For a readiness finding, use the citation of the related finding in the report of that review skill. If all items are correct, write one `info` row with the ID `qti-1` and the citation `[Assessment-10] [T1]`. This row tells the designer to examine the generated quiz questions in the LMS.
+
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps` in one draft. Columns: `ID | Action | Justification | Evidence` (Top recommendations only).
+
+- **Summary:** two or three sentences. Tell what idstack exported, the format (IMSCC, Canvas API or SCORM), where the export is and the readiness verdict at the time of export. Add this line: "Modules N · Pages M · Assignments P · Quizzes Q · Discussions R".
+- **Top recommendations:** three to five rows, with IDs `rec-1`, `rec-2` and so on. Use the most important approved findings.
+- **Limitations:** SCORM and IMSCC packages contain static HTML only. They do not include interactive elements. The quiz questions come from the assessment specs, and the designer must examine them. The Canvas token stays in `.idstack/canvas.env` on the computer of the user. idstack does not write it to the manifest or the report.
+  - For SCORM, also write these limitations. The package does not include SCORM API tracking (completion, score reports). The LMS marks the SCO as completed when the learner opens it. For more interactivity, create the course in Articulate Rise or Storyline. Then use /idstack:course-quality-review and /idstack:red-team on the exported package.
+- **Next steps:** Make sure that the LMS import kept all of the content correctly. Look carefully at quiz questions, assignment rubrics, discussion prompts and the module sequence. If the readiness verdict was NOT-READY, correct the findings before you publish the course. Also write the import steps for the format:
+  - IMSCC: Canvas: Settings > Import Course Content > Common Cartridge 1.x. Blackboard: Course Management > Import > IMS Common Cartridge. Moodle: Site Administration > Restore > Upload .imscc file. D2L/Brightspace: Course Admin > Import/Export/Copy > Import Components.
+  - SCORM: Canvas: Settings > Import Course Content > SCORM package. Moodle: Add Activity > SCORM package > Upload. Blackboard: Content > Build Content > SCORM package. Other LMS: upload the .zip file through the content management interface. Most LMS platforms find SCORM packages automatically.
+  - Canvas API: examine the assignments and discussions in Canvas, and then publish them. idstack did not publish them. To try failed items again, run `/idstack:course-export` again, or make them manually in Canvas.
+
+Run the finish command of the Step Review.
+
+**Writing standard check.** In this command, replace `<path>` with the path of `course-export.md` in the folder from the "Course export folder:" line. Then run the command.
 
 ```bash
 _IDSTACK=""
@@ -1314,8 +1495,10 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 ## Manifest Write
 
-After export completes (any path) and the report is written, update the project
-manifest with export metadata.
+After the finish command of the Step Review, update the project manifest with
+export metadata. Use only the approved rows. Count `items_exported` and
+`failed_items` from the approved rows of the Export contents section. Write
+`readiness_check` from the approved rows of the Readiness section.
 
 Save results via the section-scoped merge tool — it validates the section name
 against the canonical schema, preserves every other section verbatim, bumps the
@@ -1346,23 +1529,6 @@ exist yet (the standalone case). It never replaces a manifest that exists.
 2. NEVER write secrets (Canvas tokens, credentials) to the manifest or the
    payload file.
 
-### Readiness Info
-
-Before starting the export, check the manifest for prior review data. If any of
-these sections exist, show a brief readiness summary as context (not a gate):
-
-```
-Export readiness:
-  Quality review:       78/100 ✓ (reviewed 2026-04-08)
-  Red-team audit:       2 critical, 3 warning
-  Accessibility review: WCAG score 70/100, 1 AA violation
-```
-
-If a section doesn't exist, show: "Not reviewed — run /idstack:<skill-name> for analysis."
-
-This is informational. Export proceeds regardless. The user can choose to address
-findings first or export now, no AskUserQuestion needed, just show the info and continue.
-
 ### Write Export Metadata
 
 The payload file holds the `export_metadata` section object (shown here wrapped
@@ -1371,7 +1537,7 @@ in its manifest key for context — the payload file contains only the inner obj
 ```json
 {
   "export_metadata": {
-    "report_path": "<set to $_REPORT_PATH from the Prepare Course Export Folder block — e.g. .idstack/exports/<course-slug>/course-export.html>",
+    "report_path": "<set to the relative path from the "Report path:" line of the Prepare Course Export Folder block — e.g. .idstack/exports/<course-slug>/course-export.md>",
     "exported_at": "ISO-8601 timestamp",
     "format": "imscc|canvas-api|scorm",
     "destination": "file path (.idstack/exports/<course-slug>/course-export.imscc) or Canvas URL",
@@ -1398,14 +1564,14 @@ in its manifest key for context — the payload file contains only the inner obj
 ```
 
 The `readiness_check` section captures the state of prior reviews at export time.
-Populate it by reading the `quality_review`, `red_team_audit`, and `accessibility_review`
-sections from the manifest (if they exist). The `verdict` is:
+Populate it from the approved Readiness rows. Those rows come from the `quality_review`,
+`red_team_audit`, and `accessibility_review` sections of the manifest (if they exist). The `verdict` is:
 - `export_clean`: all reviewed, no critical findings
 - `export_with_warnings`: reviewed but has critical/warning findings
 - `export_blocked`: not used (export never blocks, advisory only)
 - Empty string if no reviews exist
 
-Run the merge, then confirm:
+Run the merge, then confirm. Start the message with <the Report path, written as a link as the Report Links section of the preamble tells you>:
 
 "I saved your export metadata to `.idstack/project.json`.
 
@@ -1415,6 +1581,8 @@ all of the content correctly. Look carefully at:
 - Assignment rubrics (make sure that the format did not change in the transfer)
 - Discussion prompts (make sure that the instructions are clear)
 - Module sequence (make sure that the module sequence is correct)"
+
+After this message, give the package path or the Canvas course URL in one line.
 
 For the full manifest schema (other sections you may need to read), Read
 `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.

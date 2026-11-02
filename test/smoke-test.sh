@@ -34,7 +34,7 @@ check "plugin.json version matches VERSION ($VER)" "grep -qF '\"version\": \"$VE
 check "CHANGELOG.md has an entry for v$VER" "grep -qF '## v$VER' '$IDSTACK_DIR/CHANGELOG.md'"
 
 # Check all skill SKILL.md files are reachable under skills/
-SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn"
+SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn start"
 for skill in $SKILLS; do
   check "skills/$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md' ]"
 done
@@ -50,7 +50,7 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-ste-check; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-ste-check idstack-report-section; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
@@ -80,12 +80,14 @@ check "templates/report-format.md exists" "[ -f '$IDSTACK_DIR/templates/report-f
 check "templates/snippets/idstack-resolve.sh exists" "[ -f '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh' ]"
 check "templates/manifest-schema.md exists" "[ -f '$IDSTACK_DIR/templates/manifest-schema.md' ]"
 check "templates/manifest-schema.md is non-empty" "[ -s '$IDSTACK_DIR/templates/manifest-schema.md' ]"
-check "templates/report.html.tmpl exists" "[ -f '$IDSTACK_DIR/templates/report.html.tmpl' ]"
-check "templates/index.html.tmpl exists" "[ -f '$IDSTACK_DIR/templates/index.html.tmpl' ]"
-check "templates/assets/idstack.css exists" "[ -f '$IDSTACK_DIR/templates/assets/idstack.css' ]"
-check "templates/assets/idstack.css is non-empty" "[ -s '$IDSTACK_DIR/templates/assets/idstack.css' ]"
-check "templates/report.html.tmpl mentions {{skill_name}}" "grep -q '{{skill_name}}' '$IDSTACK_DIR/templates/report.html.tmpl'"
-check "templates/index.html.tmpl mentions {{project_name}}" "grep -q '{{project_name}}' '$IDSTACK_DIR/templates/index.html.tmpl'"
+check "templates/report.md.tmpl exists" "[ -f '$IDSTACK_DIR/templates/report.md.tmpl' ]"
+check "templates/index.md.tmpl exists" "[ -f '$IDSTACK_DIR/templates/index.md.tmpl' ]"
+check "templates/report.md.tmpl mentions {{skill_name}}" "grep -q '{{skill_name}}' '$IDSTACK_DIR/templates/report.md.tmpl'"
+check "templates/index.md.tmpl mentions {{project_name}}" "grep -q '{{project_name}}' '$IDSTACK_DIR/templates/index.md.tmpl'"
+# Reports are Markdown now. The HTML templates and their stylesheet are gone,
+# and nothing may bring them back.
+check "no HTML report template or report stylesheet in templates/" \
+  "[ ! -e '$IDSTACK_DIR/templates/report.html.tmpl' ] && [ ! -e '$IDSTACK_DIR/templates/index.html.tmpl' ] && [ ! -e '$IDSTACK_DIR/templates/assets/idstack.css' ]"
 for skill in $SKILLS; do
   check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
@@ -103,11 +105,11 @@ check "landing: prussian hero ground (#163a4a)" "grep -q -- '--hero-bg: *#163a4a
 check "landing: no theme toggle" "! grep -q 'theme-toggle' '$LANDING'"
 check "landing: no data-theme attribute or blocks" "! grep -q 'data-theme' '$LANDING'"
 check "landing: dark mode follows prefers-color-scheme" "grep -q 'prefers-color-scheme: dark' '$LANDING'"
-# Read the URL from the report template so the two cannot drift; an empty match
-# would make grep -F pass vacuously, so the URL's presence is its own check.
-REPORT_FONTS_URL="$(grep -o 'https://fonts.googleapis.com/css2[^"]*' "$IDSTACK_DIR/templates/report.html.tmpl" | head -1)"
-check "report template carries a Google Fonts URL" "[ -n '$REPORT_FONTS_URL' ]"
-check "landing: loads the same Google Fonts URL as the reports" "grep -qF '$REPORT_FONTS_URL' '$LANDING'"
+# Read the URL from DESIGN.md so the two cannot drift; an empty match would make
+# grep -F pass vacuously, so the URL's presence is its own check.
+DESIGN_FONTS_URL="$(grep -o 'https://fonts.googleapis.com/css2[^`]*' "$IDSTACK_DIR/DESIGN.md" | head -1)"
+check "DESIGN.md carries a Google Fonts URL" "[ -n '$DESIGN_FONTS_URL' ]"
+check "landing: loads the Google Fonts URL from DESIGN.md" "grep -qF '$DESIGN_FONTS_URL' '$LANDING'"
 check "landing: no gradients" "! grep -q 'linear-gradient' '$LANDING'"
 # In HTML the '&&' is entity-escaped as '&amp;&amp;', so don't grep the literal '&&'.
 # Assert the repo clone + 'cd idstack' (current marketplace form); the legacy
@@ -202,15 +204,16 @@ check "idstack-slugify: explicit dash stdin pipeline" \
 check "idstack-slugify: emoji and non-ASCII characters stripped" \
   "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Course 🚀 101: Intro to AI ✨')\" = 'course-101-intro-to-ai' ]"
 
-# Skills that write per-skill HTML reports must reference the new export folder pattern
+# Skills that write per-skill Markdown reports must reference the new export folder pattern
 # and use the slugify helper (not the legacy .idstack/reports/<skill>.md path).
 REPORT_PRODUCING_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review red-team"
 for skill in $REPORT_PRODUCING_SKILLS; do
   check "$skill SKILL.md.tmpl references .idstack/exports/" "grep -q '\.idstack/exports/' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl calls idstack-slugify" "grep -q 'idstack-slugify' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
-  check "$skill SKILL.md.tmpl copies templates/assets/idstack.css" "grep -q 'templates/assets/idstack.css' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl writes a .md report" "grep -qE '_REPORT_PATH=\"\\\$_EXPORT_DIR/$skill\.md\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   # report-format.md requires a "Top recommendations" section in every report.
-  check "$skill SKILL.md.tmpl includes Top recommendations" "grep -qi 'Top recommendations' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  # The closing Step Review writes it, so the match is that Step review line.
+  check "$skill SKILL.md.tmpl includes Top recommendations" "grep -qF 'Section: \`## Summary\`, \`## Top recommendations\`, \`## Limitations\` and \`## Next steps\`' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 
 # Manifest write-path contract: every manifest writer goes through the merge
@@ -291,10 +294,10 @@ done
 # model copied them and told users to run "/assessment-design", which does
 # nothing. The leading class covers a command position: line start, whitespace,
 # an opening quote/paren, or a backtick. It deliberately does NOT match a `/`
-# preceded by a path character, so `.idstack/exports/<slug>/red-team.html`
+# preceded by a path character, so `.idstack/exports/<slug>/red-team.md`
 # stays legal, and it can't match `/idstack:<skill>` because the skill name
 # there does not follow the slash.
-BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn)\b'
+BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn|start)\b'
 for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl (frontmatter and body) free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill description says when to use it" \
@@ -305,6 +308,11 @@ check "preamble free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK
 check "no '/idstack <skill>' space typos in templates" "! grep -rE '/idstack [a-z]' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
 check "pipeline status table uses /idstack: prefixes" "grep -qF '[done] /idstack:needs-analysis' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 check "pipeline invokes children with the idstack: namespace" "grep -qF 'skill: \"idstack:needs-analysis\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+check "start hands off with the idstack: namespace" "grep -qF 'skill: \"idstack:course-import\"' '$IDSTACK_DIR/skills/start/SKILL.md.tmpl'"
+# start runs before any course work. A timeline event from it would become
+# LAST_SKILL and spoil every welcome-back and next-step line.
+check "start does not log to the timeline" "[ -f '$IDSTACK_DIR/skills/start/SKILL.md.tmpl' ] && ! grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/start/SKILL.md.tmpl'"
+check "start releases its limits when it hands off" "grep -qF 'the limits of this' '$IDSTACK_DIR/skills/start/SKILL.md.tmpl'"
 
 # Canonical $_IDSTACK resolution: templates use the {{IDSTACK_RESOLVE}}
 # placeholder, never a hand-rolled derivation (two skills once drifted to a
@@ -338,10 +346,10 @@ check "the substituted plugin root wins over a stale cache install" "[ '$RESOLVE
 rm -rf "$RESOLVE_SIM"
 check "no resolve chain gives the plugin root a default" "! grep -rlF '\${CLAUDE_PLUGIN_ROOT:-' '$IDSTACK_DIR/templates' $IDSTACK_DIR/skills/*/SKILL.md.tmpl $IDSTACK_DIR/skills/*/SKILL.md"
 
-# Pipeline orchestrator must produce index.html under the course folder.
+# Pipeline orchestrator must produce index.md under the course folder.
 # Use -E (extended regex) so the `|` alternation works under BSD grep too;
 # in BRE, `\|` is a GNU extension and silently matches nothing on BSD.
-check "pipeline SKILL.md.tmpl produces index.html in exports/<slug>/" "grep -qE 'exports/.*index.html|\$_EXPORT_DIR/index.html' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+check "pipeline SKILL.md.tmpl produces index.md in exports/<slug>/" "grep -qE 'exports/.*index\.md|\$_EXPORT_DIR/index\.md' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 
 # Schema-drift regression: skills that share the canonical schema must use the
 # {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy. Only
@@ -408,7 +416,7 @@ fi
 # the bash call itself, not the prose around it, so a step that loses its
 # command fails here even when the text that names the check stays.
 for skill in $SKILLS; do
-  case "$skill" in course-builder|course-export|red-team) want=2 ;; *) want=1 ;; esac
+  case "$skill" in course-builder|course-export|red-team) want=2 ;; start) want=0 ;; *) want=1 ;; esac
   # grep -c exits 1 on zero matches; without "|| true", set -e ends the run with no FAIL line.
   got=$(grep -cF '"$_IDSTACK/bin/idstack-ste-check"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
   check "$skill SKILL.md.tmpl runs the ste checker at all $want check steps" "[ '$got' -eq $want ]"
@@ -423,11 +431,85 @@ for skill in $SKILLS; do
     "grep -F '\"\$_IDSTACK/bin/idstack-ste-check\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | while IFS= read -r l; do _IDSTACK='$STE_NOCHK' bash -c \"\$l\" | grep -qxF 'STE_CHECK_MISSING: $STE_NOCHK' || exit 1; done"
 done
 rm -rf "$STE_NOCHK"
+
+# The Step Review. Each report skill shows the output of each step in a table,
+# the user approves it, and bin/idstack-report-section adds it to the report.
+if command -v python3 &>/dev/null; then
+  check "report-section unit tests pass" "python3 '$IDSTACK_DIR/test/test-report-section.py'"
+fi
+check "preamble has the Step Review section" "grep -q '^## Preamble: Step Review' '$IDSTACK_DIR/templates/preamble.md'"
+# The concise setting once told skills to drop citations. Each table row now
+# needs its citation, so that text must not come back.
+check "preamble no longer tells skills to skip citations" "! grep -qF 'Skip evidence citations inline' '$IDSTACK_DIR/templates/preamble.md'"
+# One "**Step review:**" line for each review point. A lost line is a step that
+# goes into the report with no approval, so the counts are exact.
+for skill in $REPORT_PRODUCING_SKILLS; do
+  case "$skill" in
+    needs-analysis) want=7 ;; learning-objectives) want=5 ;; assessment-design) want=11 ;;
+    course-builder) want=10 ;; course-quality-review) want=7 ;; accessibility-review) want=6 ;;
+    red-team) want=10 ;; course-export) want=5 ;; course-import) want=6 ;;
+  esac
+  got=$(grep -c '^\*\*Step review:\*\*' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
+  check "$skill SKILL.md.tmpl has all $want Step review lines" "[ '$got' -eq $want ]"
+  got=$(grep -cF 'idstack-report-section" init "$_REPORT_PATH"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
+  check "$skill SKILL.md.tmpl starts the report with one init line" "[ '$got' -eq 1 ]"
+  check "$skill SKILL.md.tmpl prints the evidence list path" \
+    "grep -qF 'echo \"Evidence list: \$_IDSTACK/evidence/references.md\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill SKILL.md.tmpl does not write the report in one step" \
+    "! grep -qF 'Write the Markdown report at the path printed above' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+# An install with no helper must say so, as the ste-check steps do above. Each
+# init line and each Step Review block of the preamble runs with an empty plugin.
+RS_NOHELPER=$(mktemp -d)
+for skill in $REPORT_PRODUCING_SKILLS; do
+  check "$skill init line names an install that has no report helper" \
+    "grep -F 'idstack-report-section\" init' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | while IFS= read -r l; do _IDSTACK='$RS_NOHELPER' _REPORT_PATH=x.md bash -c \"\$l\" | grep -qxF 'REPORT_SECTION_MISSING: $RS_NOHELPER' || exit 1; done"
+done
+check "preamble has the four Step Review commands" \
+  "[ \"\$(grep -cF '\"\$_IDSTACK/bin/idstack-report-section\" ' '$IDSTACK_DIR/templates/preamble.md')\" -eq 4 ]"
+check "preamble Step Review has the approve command" \
+  "grep -qF 'idstack-report-section\" approve \"<path>\"' '$IDSTACK_DIR/templates/preamble.md'"
+check "preamble Step Review commands name an install that has no report helper" \
+  "grep -F '\"\$_IDSTACK/bin/idstack-report-section\" ' '$IDSTACK_DIR/templates/preamble.md' | while IFS= read -r l; do _IDSTACK='$RS_NOHELPER' bash -c \"\$l\" | grep -qxF 'REPORT_SECTION_MISSING: $RS_NOHELPER' || exit 1; done"
+rm -rf "$RS_NOHELPER"
+# The user reads each table in the report file. A table in the chat or in the
+# question card is too dense to read, so the preamble forbids both.
+SR_TEXT=$(awk '/^## Preamble: Step Review/{f=1;next} /^## Preamble: /{f=0} f' "$IDSTACK_DIR/templates/preamble.md")
+check "preamble Step Review keeps the table out of the chat" \
+  "printf '%s' \"\$SR_TEXT\" | grep -qF 'Do not show the table in the chat.'"
+check "preamble Step Review keeps the table out of the question" \
+  "printf '%s' \"\$SR_TEXT\" | grep -qF 'Do not put the table, a row or a citation'"
+# AskUserQuestion refuses an option with no description. A rule that removed
+# the descriptions made every Step Review question fail in the app.
+check "preamble Step Review gives each approval option its description" \
+  "printf '%s' \"\$SR_TEXT\" | grep -qF '\"Approve\", with the description' && printf '%s' \"\$SR_TEXT\" | grep -qF '\"Change a row\", with the description' && printf '%s' \"\$SR_TEXT\" | grep -qF '\"Remove a row\", with the description'"
+# In the app, a relative Markdown link opens the report. A report name written
+# as text is not a link, and the model wrote it that way when step 5 said only
+# "the report link".
+check "preamble Step Review gives the exact report link line" \
+  "printf '%s' \"\$SR_TEXT\" | grep -qF 'Read the draft in [<path>](<path>).'"
+check "no template tells the model to leave out the option descriptions" \
+  "! grep -iE 'do not add a description|without a description|no description' '$IDSTACK_DIR'/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
+check "no skill template tells the model to repeat a review table word for word" \
+  "! grep -iE 'word for word' '$IDSTACK_DIR'/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md' | grep -qiE 'table|row|section|review'"
+check "no skill template tells the model to show a review table in the chat" \
+  "! grep -iE '(show|paste|display|give)[^.]*(table|rows)[^.]*(in|to) (the )?(chat|user)' '$IDSTACK_DIR'/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md' | grep -viE 'do not (show|paste|display|give)' | grep -q ."
+# course-quality-review computes its scores from the approved rows, so the
+# manifest write comes after the report is finished.
+check "course-quality-review writes the manifest after the report finish" \
+  "awk '/^Run the finish command of the Step Review/{f=NR} /^## Write Manifest/{w=NR} END{exit !(f && w > f)}' '$IDSTACK_DIR/skills/course-quality-review/SKILL.md.tmpl'"
+# The red-team orchestrator writes only the findings file. The parent writes
+# the report after the user approves each table.
+RT_BRIEF=$(awk '/^<orchestrator-brief>/{f=1} f; /^<\/orchestrator-brief>/{exit}' "$IDSTACK_DIR/skills/red-team/SKILL.md.tmpl")
+check "red-team orchestrator brief writes .red-team-findings.json" \
+  "printf '%s' \"\$RT_BRIEF\" | grep -qF '.idstack/.red-team-findings.json'"
+check "red-team orchestrator brief does not write the report" \
+  "! printf '%s' \"\$RT_BRIEF\" | grep -qE '_REPORT_PATH|red-team\.md|idstack-report-section|Write the Markdown report'"
 # Every report and the course dashboard copy the fixed labels in these two
 # templates, so one bad label puts a problem in every report.
 if command -v python3 &>/dev/null; then
   check "report and dashboard templates pass the ste checker" \
-    "'$IDSTACK_DIR/bin/idstack-ste-check' --format html '$IDSTACK_DIR/templates/report.html.tmpl' '$IDSTACK_DIR/templates/index.html.tmpl'"
+    "'$IDSTACK_DIR/bin/idstack-ste-check' --format markdown '$IDSTACK_DIR/templates/report.md.tmpl' '$IDSTACK_DIR/templates/index.md.tmpl'"
 fi
 
 # ./setup is what a new user runs first; it is exercised against a repo copy
@@ -622,7 +704,7 @@ check "retired-CLI references confined to CHANGELOG.md" \
 #     even with 2>/dev/null.
 #   - A Canvas block that does not source .idstack/canvas.env has no token,
 #     because the variable from an earlier call is gone.
-#   - A relative `templates/report.html.tmpl` does not exist in a course
+#   - A relative `templates/report.md.tmpl` does not exist in a course
 #     project. The report block must print the plugin path for the Read tool.
 SHELL_SRC=$(ls "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl "$IDSTACK_DIR"/templates/*.md "$IDSTACK_DIR"/templates/snippets/*.sh)
 check "no GNU-only 'head -n -N' in skill shell" \
@@ -644,17 +726,41 @@ for f in sys.argv[1:]:
 print('\n'.join(bad))
 sys.exit(1 if bad else 0)
 PY"
-for tmpl in "$IDSTACK_DIR"/skills/*/SKILL.md.tmpl; do
-  name=$(basename "$(dirname "$tmpl")")
-  grep -q 'templates/assets/idstack.css' "$tmpl" || continue
+# The list is fixed. A gate on the "Report template:" text skipped a skill that
+# lost its only copy of that text, so the check never ran for it.
+for name in $REPORT_PRODUCING_SKILLS pipeline; do
+  tmpl="$IDSTACK_DIR/skills/$name/SKILL.md.tmpl"
   if [ "$name" = "pipeline" ]; then
     check "$name prints the plugin path of its dashboard template" \
-      "grep -qF 'echo \"Dashboard template: \$_IDSTACK/templates/index.html.tmpl\"' '$tmpl'"
+      "grep -qF 'echo \"Dashboard template: \$_IDSTACK/templates/index.md.tmpl\"' '$tmpl'"
   else
     check "$name prints the plugin path of its report template" \
-      "grep -qF 'echo \"Report template: \$_IDSTACK/templates/report.html.tmpl\"' '$tmpl'"
+      "grep -qF 'echo \"Report template: \$_IDSTACK/templates/report.md.tmpl\"' '$tmpl'"
   fi
 done
+
+# A desktop user opens a report by clicking a link in chat. Each report block
+# prints the relative path, and the closing message links it as the preamble
+# tells; the pipeline does the same for the dashboard.
+for skill in $REPORT_PRODUCING_SKILLS; do
+  check "$skill prints a relative report path" \
+    "grep -qF 'echo \"Report path: \$_REPORT_PATH\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+  check "$skill closing message points at the Report Links rule" \
+    "grep -qF 'as the Report Links section of the preamble tells you' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
+done
+check "pipeline prints a relative dashboard path" \
+  "grep -qF 'echo \"Dashboard path: \$_EXPORT_DIR/index.md\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+# Regression: skills gave the user an absolute path in angle brackets. The
+# path had a space (Application Support), and the Claude desktop app did not
+# make it a link. Only relative paths are printed now.
+check "no skill or preamble prints an absolute report or dashboard link" \
+  "! grep -nE 'pwd -P\)/\\\$_(REPORT_PATH|EXPORT_DIR)|Report link:|Dashboard link:' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
+check "preamble Report Links section has no angle-bracket link" \
+  "! awk '/^## Preamble: Report Links/{f=1; next} f && /^## /{exit} f' '$IDSTACK_DIR/templates/preamble.md' | grep -qF '](<'"
+check "preamble tells skills to give the report link" \
+  "grep -q '^## Preamble: Report Links' '$IDSTACK_DIR/templates/preamble.md'"
+check "no skill tells the user to open a report in a web browser" \
+  "! grep -l 'Open it in a web browser' $IDSTACK_DIR/skills/*/SKILL.md.tmpl"
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

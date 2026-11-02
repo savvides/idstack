@@ -1,16 +1,16 @@
 # Design System — idstack
 
-This file is the source of truth for idstack's visual system. Any visual or UI decision (font, color, spacing, radius, motion) must be grounded here. The canonical implementation is `templates/assets/idstack.css` (per-skill HTML reports + course dashboard); when this file changes, that implementation updates in the same PR. The idstack.org landing page (`docs/index.html`) uses the same tokens and fonts, with its own prussian hero; see § Landing page and the Decisions log, 2026-11-01.
+This file is the source of truth for idstack's visual system. Any visual or UI decision (font, color, spacing, radius, motion) must be grounded here. Per-skill reports and the course dashboard are plain Markdown and carry no styling (see Decisions log, 2026-11-02), so this system has no report stylesheet to keep in sync. The token, type and report-layout sections below record the report identity that the retired HTML reports used. The idstack.org landing page (`docs/index.html`) is now the only styled surface. It uses these tokens and fonts, with its own prussian hero; see § Landing page and the Decisions log, 2026-11-01.
 
 ## Product context
 
-- **What this is:** Open-source set of skills for evidence-based instructional design. Runs in Claude Code. 11 skills, 108 peer-reviewed studies across 11 research domains, every recommendation tagged with its evidence tier T1–T5.
-- **Who it's for:** Instructional designers (university, K-12, corporate L&D), faculty doing their own course design, course-design teams. **Downstream stakeholders:** deans, faculty senates, accreditation reviewers — they read the HTML reports the designer hands them.
+- **What this is:** Open-source set of skills for evidence-based instructional design. Runs in Claude Code. 12 skills, 146 peer-reviewed studies across 11 research domains, every recommendation tagged with its evidence tier T1–T5.
+- **Who it's for:** Instructional designers (university, K-12, corporate L&D), faculty doing their own course design, course-design teams. **Downstream stakeholders:** deans, faculty senates, accreditation reviewers — they read the Markdown reports the designer hands them.
 - **Space:** Edtech / instructional design. Adjacent inspiration: open-access academic publishing (eLife), evidence-based-medicine reference (UpToDate, Cochrane), modern dev tools (Linear, Cursor).
 - **Project type:** Hybrid — three surfaces share one system:
   1. Marketing landing (`idstack.org`) — drives discovery + install. Uses the Proof tokens with a prussian hero; see § Landing page.
   2. CLI tool — terminal interaction, text-only, design-irrelevant.
-  3. Stakeholder deliverables — branded HTML reports + `index.html` course dashboard under `.idstack/exports/<course-slug>/`. Audience: designer + their stakeholders.
+  3. Stakeholder deliverables — plain Markdown reports + `index.md` course dashboard under `.idstack/exports/<course-slug>/`. Audience: designer + their stakeholders. No visual system: the content contract in `templates/report-format.md` sets their structure.
 
 ## Memorable thing
 
@@ -29,7 +29,7 @@ This file is the source of truth for idstack's visual system. Any visual or UI d
 - **UI / labels / badges / table cells:** **Public Sans** (USWDS / open source). Designed for US-government documents; reads as "official record" rather than "SaaS chrome." Anti-Inter.
 - **Landing display voice:** on `docs/index.html` only, headings use **Public Sans 700** with tight tracking (−0.02 to −0.03em). Body text stays Source Serif 4. Headlines then read as an official record rather than an editorial essay; the May 2026 landing with serif headlines read as generic. Reports are unchanged.
 - **Citations / IDs / code / file paths:** **JetBrains Mono** (open source). Citations like `[Alignment-14] [T1]` are the academic-paper convention rendered in mono: functional reference notation, not decorative.
-- **Loading:** Google Fonts via one `<link>` in each HTML surface (`docs/index.html`, `templates/report.html.tmpl`, `templates/index.html.tmpl`). System-font fallbacks are preserved in `--font-*` tokens so the page is legible even when the network is unavailable. Total weight ~120kb woff2 for the variable axes used.
+- **Loading:** Google Fonts via one `<link>` in each HTML surface (`docs/index.html`). The URL is `https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap`; smoke-test checks that the landing loads this URL. System-font fallbacks are preserved in `--font-*` tokens so the page is legible even when the network is unavailable. Total weight ~120kb woff2 for the variable axes used.
 - **Scale (modular, ratio 1.250 — major third), base 1rem = 17px:**
 
   | Token | rem | px | Role |
@@ -103,14 +103,14 @@ Restrained. Two-color annotation set (rust + prussian blue) for primary marks; t
 | `--hero-panel` | `#0f2c39` | Session transcript and install command panels. |
 | `--hero-rule` | `#2b5263` | Borders on the hero. |
 
-**Dark mode strategy:** Auto via `prefers-color-scheme: dark` (the report stylesheet). Surfaces redesigned (not just inverted): inky-dark background `#16140f`, warm-cream text `#ebe7dd`, terracotta accent `#d97461` replaces oxblood (oxblood loses too much chroma when inverted). All tier and severity tokens redefined with 10–20% saturation drop and adjusted backgrounds. The light theme is canonical; dark mode is a courtesy. The landing page uses the same dark tokens through `prefers-color-scheme` (no toggle); its hero darkens to `#10232c`.
+**Dark mode strategy:** Auto via `prefers-color-scheme: dark` (the retired report stylesheet). Surfaces redesigned (not just inverted): inky-dark background `#16140f`, warm-cream text `#ebe7dd`, terracotta accent `#d97461` replaces oxblood (oxblood loses too much chroma when inverted). All tier and severity tokens redefined with 10–20% saturation drop and adjusted backgrounds. The light theme is canonical; dark mode is a courtesy. The landing page uses these dark tokens through `prefers-color-scheme` (no toggle); its hero darkens to `#10232c`.
 
 ## Landing page
 
-`docs/index.html` is a Persuade surface built from the report system, so a visitor sees the same fonts, tier colors and citation notation that the reports use.
+`docs/index.html` is a Persuade surface built from the Proof tokens: the fonts, tier colors and `[Code-N] [Tn]` citation notation that the skills write.
 
 - **Hero:** a full-width prussian band. On the left: the claim, the lede with filled T1 and T5 chips, the CTAs, the meta line. On the right: a static session transcript (`/idstack:course-import`) that ends in one ivory finding card with a severity chip, a tier chip and a `[Domain-N] [Tn]` citation. The visitor sees a cited finding before they install. No animation.
-- **Evidence index:** one row per research domain, ranked by study count. Each row has the study count and a stacked T1–T5 bar. The bar width scales to the count (15 studies = full width), and each segment is that domain's count at one tier. `data-tiers` holds the five counts; `test/check-evidence-cards.py` checks them, the count and the tier range against `evidence/references.md`. Never type these numbers by hand.
+- **Evidence index:** one row per research domain, ranked by study count. Each row has the study count and a stacked T1–T5 bar. The bar width scales to the count (the largest domain = full width), and each segment is that domain's count at one tier. `data-tiers` holds the five counts; `test/check-evidence-cards.py` checks them, the count and the tier range against `evidence/references.md`. Never type these numbers by hand.
 - **CTAs:** one solid color for each surface: ivory with prussian text on the hero, oxblood with ivory text on ivory sections. Name the outcome ("Add to Chrome", "Copy").
 - **Tier chips:** outlined, as in the reports. On the hero the outlined chip is too dark to read, so the hero fills it (white text on the light-mode tier color).
 - **OG card:** `docs/og-template.html` renders `docs/og-image.png` (1200×630) on the hero ground, with the whole corpus's tier mix as its bottom rail.
@@ -200,7 +200,8 @@ No medium / long durations. No scroll-driven animations. No parallax. No entranc
 | 2026-06-12 | Landing reverted to original dark/indigo aesthetic, separate from the report system (owner request) | Reports retain scholarly ivory "Proof" identity. Landing uses indigo→purple gradient accents — a scoped exception to the no-gradient anti-pattern, which still binds reports. |
 | 2026-08-29 | Fluid `clamp()` type reserved for sizes that span ≥1.5px | The responsive pass put `clamp()` on 19 landing-page font sizes; 12 of them varied by at most 1.12px across their whole range, i.e. a fixed value written in three terms. Those 12 reverted to fixed rem. Cost: type on phones is up to 1.1px larger than the clamp gave; accepted, it reads slightly better. |
 | 2026-08-29 | Minimum interactive target fixed at 44px (`--tap-min`) | The landing page had grown three ad-hoc floors (36/40/42px), and the footer controls applied theirs only below 480px, leaving every width above 480px (desktop included) at 36.6px. One token, applied at every width. Cost: slightly taller controls on desktop; accepted in a product that ships a WCAG review skill. |
-| 2026-11-01 | Landing rejoins the Proof tokens and fonts; supersedes 2026-06-12 | `/design-consultation`. One identity across the site and the reports a dean receives. The dark/indigo page looked like most AI dev tools. |
+| 2026-11-02 | Reports and the course dashboard moved from branded HTML (an HTML skeleton plus the idstack.css stylesheet) to plain Markdown (`templates/report.md.tmpl`, `templates/index.md.tmpl`) (owner request) | Fewer moving parts means fewer errors: no stylesheet copy, no HTML to get wrong. A relative `.md` path has no spaces, so the report link opens in the Claude desktop app; the old absolute HTML path did not when the folder path had a space. Cost: reports lose the "Proof" visual identity (tier-color borders, severity chips, serif type); accepted. |
+| 2026-11-01 | Landing rejoins the Proof tokens and fonts; supersedes 2026-06-12 | `/design-consultation`. The tier colors and citation notation match what the skills write. The dark/indigo page looked like most AI dev tools. Since 2026-11-02 the reports are plain Markdown, so the landing is the only surface that uses these tokens. |
 | 2026-11-01 | Prussian hero (`#163a4a`) + Public Sans headlines on the landing | The May 2026 ivory landing (PR #27) was reverted because it read as generic: ivory + serif display + oxblood is a common look. A prussian ground and sans headlines give the landing its own face from tokens the system already owns. Cost: the first screen differs from a report's first screen; accepted. |
-| 2026-11-01 | Ranked evidence index with tier-mix bars replaces 11 equal cards | Shows where each domain rests on trials and where it rests on reviews or expert opinion (needs analysis is 7 of 7 T3; formative feedback is 6 of 10 T1). Equal cards hid this. Checked against `references.md` per tier. |
+| 2026-11-01 | Ranked evidence index with tier-mix bars replaces 11 equal cards | Shows where each domain rests on trials and where it rests on reviews or expert opinion (needs analysis is 9 of 11 T3; formative feedback is 10 of 14 T1). Equal cards hid this. Checked against `references.md` per tier. |
 | 2026-11-01 | Static session transcript in the hero | Pre-install demo (issue #131): the visitor sees a cited finding before installing. Static, so the motion rules hold. |

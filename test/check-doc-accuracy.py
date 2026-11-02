@@ -189,10 +189,9 @@ def check_developer_surfaces(root, problems):
         with open(design_md, "r", encoding="utf-8") as f:
             content = f.read()
             required_paths = [
-                "templates/assets/idstack.css",
                 "docs/index.html",
-                "templates/report.html.tmpl",
-                "templates/index.html.tmpl",
+                "templates/report.md.tmpl",
+                "templates/index.md.tmpl",
             ]
             for path_ref in required_paths:
                 if path_ref not in content:

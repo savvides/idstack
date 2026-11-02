@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>idstack: Evidence-based instructional design with peer-reviewed citations</title>
-  <meta name="description" content="Open-source skills for evidence-based instructional design. 108 peer-reviewed studies across 11 research domains. Every recommendation cites its evidence tier, T1 (meta-analyses, RCTs) through T5 (expert opinion). Runs in Claude Code and Chrome.">
+  <meta name="description" content="Open-source skills for evidence-based instructional design. 146 peer-reviewed studies across 11 research domains. Every recommendation cites its evidence tier, T1 (meta-analyses, RCTs) through T5 (expert opinion). Runs in Claude Code and Chrome.">
   <meta name="keywords" content="instructional design, evidence-based, course design, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, WCAG, UDL, open source, Claude Code">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://idstack.org/">
@@ -13,14 +13,14 @@
   <link rel="apple-touch-icon" href="favicon.png">
   <link rel="alternate" type="application/rss+xml" title="idstack releases" href="https://github.com/savvides/idstack/releases.atom">
 
-  <!-- Same three families and URL as templates/report.html.tmpl, so the site and the reports match. -->
+  <!-- Font URL: DESIGN.md, Typography. smoke-test checks that the two agree. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
 
   <!-- Open Graph -->
   <meta property="og:title" content="idstack: Evidence-based instructional design with peer-reviewed citations">
-  <meta property="og:description" content="108 peer-reviewed studies across 11 research domains. Every recommendation cites its evidence tier. Open source, MIT-licensed. Runs in Claude Code and Chrome.">
+  <meta property="og:description" content="146 peer-reviewed studies across 11 research domains. Every recommendation cites its evidence tier. Open source, MIT-licensed. Runs in Claude Code and Chrome.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://idstack.org/">
   <meta property="og:site_name" content="idstack">
@@ -33,7 +33,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="idstack: Evidence-based instructional design with peer-reviewed citations">
-  <meta name="twitter:description" content="108 peer-reviewed studies, 11 research domains, evidence tiers on every recommendation. Open source. Runs in Claude Code and Chrome.">
+  <meta name="twitter:description" content="146 peer-reviewed studies, 11 research domains, evidence tiers on every recommendation. Open source. Runs in Claude Code and Chrome.">
   <meta name="twitter:image" content="https://idstack.org/og-image.png">
   <meta name="twitter:image:alt" content="idstack: Evidence-based instructional design with peer-reviewed citations.">
 
@@ -47,7 +47,7 @@
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
-    "softwareVersion": "3.9.0.0",
+    "softwareVersion": "3.10.0.0",
     "datePublished": "2026-04-20",
     "offers": {
       "@type": "Offer",
@@ -1087,7 +1087,7 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-text">
         <h1 id="hero-title">Course design advice that shows its sources.</h1>
-        <p class="lede">idstack reviews your course in Claude Code or Chrome. Each recommendation names the study behind it and how strong that evidence is, from <span class="tier tier-1">T1</span> meta-analyses and RCTs to <span class="tier tier-5">T5</span> expert opinion. 108 peer-reviewed studies across 11 research domains.</p>
+        <p class="lede">idstack reviews your course in Claude Code or Chrome. Each recommendation names the study behind it and how strong that evidence is, from <span class="tier tier-1">T1</span> meta-analyses and RCTs to <span class="tier tier-5">T5</span> expert opinion. 146 peer-reviewed studies across 11 research domains.</p>
 
         <div class="cta-row">
           <div class="cta-actions">
@@ -1109,7 +1109,7 @@
             <code id="install-cmd">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
             <button class="copy-btn" type="button" data-copy-target="install-cmd" aria-label="Copy install command">Copy</button>
           </div>
-          <a class="cta-secondary" href="#evidence">→&nbsp; See the 108 studies</a>
+          <a class="cta-secondary" href="#evidence">→&nbsp; See the 146 studies</a>
         </div>
 
         <p class="hero-meta">
@@ -1117,7 +1117,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span>MIT</span>
           <span class="dot" aria-hidden="true"></span>
-          <span>v3.9.0.0 · Claude Code &amp; Chrome Extension</span>
+          <span>v3.10.0.0 · Claude Code &amp; Chrome Extension</span>
         </p>
       </div>
 
@@ -1127,7 +1127,7 @@
           <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">/idstack:course-import</span></p>
           <p class="session-line"><span class="session-who">idstack</span><span class="session-said">How do you want to import your course? A) Common Cartridge B) Paste documents C) Canvas API D) PDF E) SCORM</span></p>
           <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">C. Here is my Canvas URL and access token.</span></p>
-          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">Connected. Found 12 modules, 8 assignments, 4 discussions, 6 outcomes. 4 flags:</span></p>
+          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">Connected. Found 12 modules, 8 assignments, 4 discussions, 6 outcomes. I added 4 flags to the report as a draft. Read the draft in <code>.idstack/exports/bio-101/course-import.md</code>. The first row:</span></p>
 
           <div class="session-finding">
             <p class="finding-tags"><span class="severity severity-warning">warning</span> <span class="tier tier-1">T1</span></p>
@@ -1146,7 +1146,7 @@
     <section class="section" id="evidence" aria-labelledby="evidence-title">
       <header class="section-header">
         <h2 id="evidence-title">Every recommendation cites its source.</h2>
-        <p class="lede">The 11 research domains below are ranked by study count. Each bar shows the tier mix of that domain's references. You can see where idstack rests on trials and where it rests on reviews or expert opinion. Stronger evidence tiers take precedence when findings conflict. All 108 references are listed in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a>. Every source is public, and every citation can be checked.</p>
+        <p class="lede">The 11 research domains below are ranked by study count. Each bar shows the tier mix of that domain's references. You can see where idstack rests on trials and where it rests on reviews or expert opinion. Stronger evidence tiers take precedence when findings conflict. All 146 references are listed in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a>. Every source is public, and every citation can be checked.</p>
       </header>
 
       <div class="evidence-legend" role="note" aria-label="Evidence tier legend">
@@ -1160,69 +1160,69 @@
       <ol class="evidence-index" aria-label="Research domains, ranked by study count">
         <li class="evidence-row">
           <h3 class="evidence-row-title">Cognitive Load Theory &amp; Instructional Sequencing</h3>
-          <span class="evidence-row-count">15 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 4 at T1, 1 at T2, 4 at T3, 6 at T5" data-tiers="4,1,4,0,6" style="width:100%"><span class="t1" style="width:26.67%"></span><span class="t2" style="width:6.67%"></span><span class="t3" style="width:26.67%"></span><span class="t5" style="width:40%"></span></span>
+          <span class="evidence-row-count">19 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 6 at T1, 2 at T2, 1 at T4, 10 at T5" data-tiers="6,2,0,1,10" style="width:100%"><span class="t1" style="width:31.58%"></span><span class="t2" style="width:10.53%"></span><span class="t4" style="width:5.26%"></span><span class="t5" style="width:52.63%"></span></span>
           <p class="evidence-row-body">Working memory limits the volume of novel information learners process simultaneously. Intrinsic and extraneous load principles determine when visual cues clarify concepts and when redundant explanations induce cognitive overload. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Instructional Design Models &amp; Frameworks</h3>
-          <span class="evidence-row-count">12 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T2, 10 at T3, 1 at T5" data-tiers="0,1,10,0,1" style="width:80%"><span class="t2" style="width:8.33%"></span><span class="t3" style="width:83.33%"></span><span class="t5" style="width:8.33%"></span></span>
-          <p class="evidence-row-body">ADDIE, ARCS, ASSURE, and UDL address distinct instructional contexts. A 2025 review <span class="cite-pill">[ID-7] [T3]</span> compares the strengths and limits of ADDIE, ARCS, and ASSURE. It proposes a framework that combines them. <span class="evidence-row-tiers">T2–T5</span></p>
-        </li>
-        <li class="evidence-row">
-          <h3 class="evidence-row-title">Constructive Alignment &amp; Learning Objectives</h3>
-          <span class="evidence-row-count">10 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T1, 3 at T2, 1 at T3, 2 at T4, 3 at T5" data-tiers="1,3,1,2,3" style="width:66.67%"><span class="t1" style="width:10%"></span><span class="t2" style="width:30%"></span><span class="t3" style="width:10%"></span><span class="t4" style="width:20%"></span><span class="t5" style="width:30%"></span></span>
-          <p class="evidence-row-body">Misalignment between objectives, activities, and assessments directly degrades learning retention. Revised Bloom's taxonomy provides measurable action verbs to align evaluation criteria with intended cognitive levels. <span class="evidence-row-tiers">T1–T5</span></p>
+          <span class="evidence-row-count">15 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 3 at T1, 11 at T3, 1 at T5" data-tiers="3,0,11,0,1" style="width:78.95%"><span class="t1" style="width:20%"></span><span class="t3" style="width:73.33%"></span><span class="t5" style="width:6.67%"></span></span>
+          <p class="evidence-row-body">ADDIE, ARCS, ASSURE, and UDL address distinct instructional contexts. A 2025 review <span class="cite-pill">[ID-7] [T3]</span> compares the strengths and limits of ADDIE, ARCS, and ASSURE. It proposes a framework that combines them. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Formative Assessment &amp; Feedback</h3>
-          <span class="evidence-row-count">10 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 6 at T1, 2 at T2, 1 at T3, 1 at T5" data-tiers="6,2,1,0,1" style="width:66.67%"><span class="t1" style="width:60%"></span><span class="t2" style="width:20%"></span><span class="t3" style="width:10%"></span><span class="t5" style="width:10%"></span></span>
+          <span class="evidence-row-count">14 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 10 at T1, 1 at T2, 1 at T3, 1 at T4, 1 at T5" data-tiers="10,1,1,1,1" style="width:73.68%"><span class="t1" style="width:71.43%"></span><span class="t2" style="width:7.14%"></span><span class="t3" style="width:7.14%"></span><span class="t4" style="width:7.14%"></span><span class="t5" style="width:7.14%"></span></span>
           <p class="evidence-row-body">Elaborated feedback that explains error patterns and corrective action yields significantly higher retention than simple correctness indicators. Nicol's principles structure criteria for rubrics, self-assessment, and peer review. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Multimedia Learning Principles</h3>
-          <span class="evidence-row-count">10 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 4 at T1, 1 at T2, 3 at T3, 1 at T4, 1 at T5" data-tiers="4,1,3,1,1" style="width:66.67%"><span class="t1" style="width:40%"></span><span class="t2" style="width:10%"></span><span class="t3" style="width:30%"></span><span class="t4" style="width:10%"></span><span class="t5" style="width:10%"></span></span>
+          <span class="evidence-row-count">14 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 7 at T1, 2 at T2, 2 at T3, 1 at T4, 2 at T5" data-tiers="7,2,2,1,2" style="width:73.68%"><span class="t1" style="width:50%"></span><span class="t2" style="width:14.29%"></span><span class="t3" style="width:14.29%"></span><span class="t4" style="width:7.14%"></span><span class="t5" style="width:14.29%"></span></span>
           <p class="evidence-row-body">Mayer's cognitive principles (coherence, signaling, segmenting, modality, redundancy) govern effective integration of text and graphics. Violations generate extraneous cognitive load and impair knowledge transfer. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Online Course Quality Frameworks</h3>
-          <span class="evidence-row-count">10 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T1, 1 at T2, 1 at T3, 7 at T4" data-tiers="1,1,1,7,0" style="width:66.67%"><span class="t1" style="width:10%"></span><span class="t2" style="width:10%"></span><span class="t3" style="width:10%"></span><span class="t4" style="width:70%"></span></span>
-          <p class="evidence-row-body">Quality Matters (QM) standards and the Community of Inquiry (CoI) model (teaching, social, and cognitive presence) are the most extensively validated rubrics for online course quality. idstack audits against both. <span class="evidence-row-tiers">T1–T4</span></p>
+          <span class="evidence-row-count">14 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 3 at T1, 2 at T3, 8 at T4, 1 at T5" data-tiers="3,0,2,8,1" style="width:73.68%"><span class="t1" style="width:21.43%"></span><span class="t3" style="width:14.29%"></span><span class="t4" style="width:57.14%"></span><span class="t5" style="width:7.14%"></span></span>
+          <p class="evidence-row-body">Quality Matters (QM) standards and the Community of Inquiry (CoI) model (teaching, social, and cognitive presence) are the most extensively validated rubrics for online course quality. idstack audits against both. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
-          <h3 class="evidence-row-title">Rapid Prototyping &amp; Design-Based Research</h3>
-          <span class="evidence-row-count">9 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T2, 2 at T3, 1 at T4, 4 at T5" data-tiers="0,2,2,1,4" style="width:60%"><span class="t2" style="width:22.22%"></span><span class="t3" style="width:22.22%"></span><span class="t4" style="width:11.11%"></span><span class="t5" style="width:44.44%"></span></span>
-          <p class="evidence-row-body">Formative pilot testing with representative cohorts surfaces usability and conceptual bottlenecks early. Design-based research frameworks ensure iterative revisions maintain methodological rigor. <span class="evidence-row-tiers">T2–T5</span></p>
+          <h3 class="evidence-row-title">Constructive Alignment &amp; Learning Objectives</h3>
+          <span class="evidence-row-count">13 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T1, 1 at T3, 6 at T4, 4 at T5" data-tiers="2,0,1,6,4" style="width:68.42%"><span class="t1" style="width:15.38%"></span><span class="t3" style="width:7.69%"></span><span class="t4" style="width:46.15%"></span><span class="t5" style="width:30.77%"></span></span>
+          <p class="evidence-row-body">Misalignment between objectives, activities, and assessments directly degrades learning retention. Revised Bloom's taxonomy provides measurable action verbs to align evaluation criteria with intended cognitive levels. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Accessibility &amp; Universal Design for Learning</h3>
-          <span class="evidence-row-count">9 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T1, 1 at T2, 4 at T3, 3 at T5" data-tiers="1,1,4,0,3" style="width:60%"><span class="t1" style="width:11.11%"></span><span class="t2" style="width:11.11%"></span><span class="t3" style="width:44.44%"></span><span class="t5" style="width:33.33%"></span></span>
+          <span class="evidence-row-count">13 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T1, 6 at T3, 1 at T4, 4 at T5" data-tiers="2,0,6,1,4" style="width:68.42%"><span class="t1" style="width:15.38%"></span><span class="t3" style="width:46.15%"></span><span class="t4" style="width:7.69%"></span><span class="t5" style="width:30.77%"></span></span>
           <p class="evidence-row-body">WCAG 2.1 AA establishes the legal baseline for digital accessibility. Universal Design for Learning (UDL 3.0) plans three pathways (engagement, representation, and action) from the start of design, to support diverse learners. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
+          <h3 class="evidence-row-title">Evaluation Models</h3>
+          <span class="evidence-row-count">12 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T1, 4 at T3, 1 at T4, 6 at T5" data-tiers="1,0,4,1,6" style="width:63.16%"><span class="t1" style="width:8.33%"></span><span class="t3" style="width:33.33%"></span><span class="t4" style="width:8.33%"></span><span class="t5" style="width:50%"></span></span>
+          <p class="evidence-row-body">Assessment strategies must be designed concurrently with course architecture. Kirkpatrick's four-level model structures evaluation across reaction, learning, behavior, and institutional results. <span class="evidence-row-tiers">T1–T5</span></p>
+        </li>
+        <li class="evidence-row">
           <h3 class="evidence-row-title">Learner Analysis &amp; Differentiation</h3>
-          <span class="evidence-row-count">8 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T1, 2 at T2, 2 at T4, 2 at T5" data-tiers="2,2,0,2,2" style="width:53.33%"><span class="t1" style="width:25%"></span><span class="t2" style="width:25%"></span><span class="t4" style="width:25%"></span><span class="t5" style="width:25%"></span></span>
+          <span class="evidence-row-count">11 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 5 at T1, 4 at T4, 2 at T5" data-tiers="5,0,0,4,2" style="width:57.89%"><span class="t1" style="width:45.45%"></span><span class="t4" style="width:36.36%"></span><span class="t5" style="width:18.18%"></span></span>
           <p class="evidence-row-body">Prior knowledge is the strongest predictor of instructional efficacy. Differentiated scaffolding supports novice skill acquisition while avoiding the expertise-reversal effect on advanced learners. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
-          <h3 class="evidence-row-title">Evaluation Models</h3>
-          <span class="evidence-row-count">8 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 3 at T3, 1 at T4, 4 at T5" data-tiers="0,0,3,1,4" style="width:53.33%"><span class="t3" style="width:37.5%"></span><span class="t4" style="width:12.5%"></span><span class="t5" style="width:50%"></span></span>
-          <p class="evidence-row-body">Assessment strategies must be designed concurrently with course architecture. Kirkpatrick's four-level model structures evaluation across reaction, learning, behavior, and institutional results. <span class="evidence-row-tiers">T3–T5</span></p>
+          <h3 class="evidence-row-title">Needs Analysis</h3>
+          <span class="evidence-row-count">11 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T1, 9 at T3" data-tiers="2,0,9,0,0" style="width:57.89%"><span class="t1" style="width:18.18%"></span><span class="t3" style="width:81.82%"></span></span>
+          <p class="evidence-row-body">Needs analysis evaluates three distinct levels (organizational, task, and learner) before content development begins. Systematic needs assessment prevents courses from addressing peripheral topics instead of core skill gaps. <span class="evidence-row-tiers">T1–T3</span></p>
         </li>
         <li class="evidence-row">
-          <h3 class="evidence-row-title">Needs Analysis</h3>
-          <span class="evidence-row-count">7 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 7 at T3" data-tiers="0,0,7,0,0" style="width:46.67%"><span class="t3" style="width:100%"></span></span>
-          <p class="evidence-row-body">Needs analysis evaluates three distinct levels (organizational, task, and learner) before content development begins. Systematic needs assessment prevents courses from addressing peripheral topics instead of core skill gaps. <span class="evidence-row-tiers">T3</span></p>
+          <h3 class="evidence-row-title">Rapid Prototyping &amp; Design-Based Research</h3>
+          <span class="evidence-row-count">10 studies</span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T2, 3 at T3, 2 at T4, 4 at T5" data-tiers="0,1,3,2,4" style="width:52.63%"><span class="t2" style="width:10%"></span><span class="t3" style="width:30%"></span><span class="t4" style="width:20%"></span><span class="t5" style="width:40%"></span></span>
+          <p class="evidence-row-body">Formative pilot testing with representative cohorts surfaces usability and conceptual bottlenecks early. Design-based research frameworks ensure iterative revisions maintain methodological rigor. <span class="evidence-row-tiers">T2–T5</span></p>
         </li>
       </ol>
 
@@ -1232,8 +1232,8 @@
     <!-- ────────── Pipeline ────────── -->
     <section class="section" id="pipeline" aria-labelledby="pipeline-title">
       <header class="section-header">
-        <h2 id="pipeline-title">Eleven skills. Pipeline optional.</h2>
-        <p class="lede">Eight skills execute sequentially through <code>/idstack:pipeline</code>, while two standalone skills handle course import and institutional memory. You can run any skill independently on existing course files without creating an upfront manifest.</p>
+        <h2 id="pipeline-title">Twelve skills. Pipeline optional.</h2>
+        <p class="lede">Eight skills execute sequentially through <code>/idstack:pipeline</code>, while standalone utilities handle first-run setup, course import and institutional memory. You can run any skill independently on existing course files without creating an upfront manifest.</p>
       </header>
 
       <div class="pipeline-canvas">
@@ -1283,6 +1283,10 @@
 
         <div class="pipeline-aside-row" aria-label="Skills outside the linear pipeline">
           <div class="pipeline-aside">
+            <span class="aside-tag">start</span>
+            <span>Checks that idstack can run in a course folder, then starts the correct skill. The first skill to run.</span>
+          </div>
+          <div class="pipeline-aside">
             <span class="aside-tag">course-import</span>
             <span>Extracts existing modules, assignments, and syllabi from Canvas API, IMSCC, or SCORM.</span>
           </div>
@@ -1300,12 +1304,12 @@
     <section class="section" id="output" aria-labelledby="output-title">
       <header class="section-header">
         <h2 id="output-title">Each skill writes both a report and a manifest.</h2>
-        <p class="lede">Every analytical skill outputs two artifacts: a standalone HTML report formatted for faculty and stakeholders, and a structured JSON manifest consumed by downstream skills. Files are organized in <code>.idstack/exports/&lt;course-slug&gt;/</code>.</p>
+        <p class="lede">Every analytical skill outputs two artifacts: a Markdown report formatted for faculty and stakeholders, and a structured JSON manifest consumed by downstream skills. Files are organized in <code>.idstack/exports/&lt;course-slug&gt;/</code>.</p>
       </header>
 
       <div class="output-pair">
-        <article class="output-panel" aria-label="Sample HTML report excerpt">
-          <header class="output-header">HTML · .idstack/exports/&lt;course-slug&gt;/learning-objectives.html</header>
+        <article class="output-panel" aria-label="Sample Markdown report excerpt">
+          <header class="output-header">Markdown · .idstack/exports/&lt;course-slug&gt;/learning-objectives.md</header>
           <div class="output-body">
             <h3>
               Finding obj-3: Unassessed Intended Learning Objectives
@@ -1332,14 +1336,14 @@
         <span class="key">"consider"</span><span class="punct">:</span> <span class="str">"/idstack:assessment-design"</span>
       <span class="punct">}</span>
     <span class="punct">],</span>
-    <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/exports/&lt;course-slug&gt;/learning-objectives.html"</span><span class="punct">,</span>
+    <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/exports/&lt;course-slug&gt;/learning-objectives.md"</span><span class="punct">,</span>
     <span class="key">"updated"</span><span class="punct">:</span> <span class="str">"2026-05-13T14:32:18Z"</span>
   <span class="punct">}</span>
 <span class="punct">}</span></code></pre>
         </article>
       </div>
 
-      <p class="output-foot">HTML reports are self-contained with bundled assets for distribution to faculty and curriculum committees. JSON manifests preserve machine-readable state for downstream tools. The project timeline at <code>.idstack/timeline.jsonl</code> records audit history, and <code>/idstack:pipeline</code> builds an <code>index.html</code> dashboard that summarizes all findings.</p>
+      <p class="output-foot">Markdown reports are plain text files for distribution to faculty and curriculum committees. JSON manifests preserve machine-readable state for downstream tools. The project timeline at <code>.idstack/timeline.jsonl</code> records audit history, and <code>/idstack:pipeline</code> compiles an aggregated <code>index.md</code> dashboard summarizing all findings.</p>
     </section>
 
     <!-- ────────── Install ────────── -->
@@ -1370,8 +1374,22 @@
 
         <div class="install-track-card">
           <div class="install-track-header">
+            <h3>Claude Desktop App</h3>
+            <span class="track-badge">No Terminal</span>
+          </div>
+          <p class="install-prose">In the Code tab of the Claude desktop app, select a folder for your course. Then paste this line in the message box:</p>
+          <div class="install-block" role="group" aria-label="Desktop install command">
+            <span class="prompt" aria-hidden="true">›</span>
+            <code id="install-cmd-3">/plugin marketplace add savvides/idstack</code>
+            <button class="copy-btn" type="button" data-copy-target="install-cmd-3" aria-label="Copy desktop install command">Copy</button>
+          </div>
+          <p class="install-prose">Click <strong>+</strong>, then <strong>Add plugins</strong>, and install idstack. Then start a new session and select the course folder again, because Claude Code loads a plugin only when a session starts. Type <code>/idstack:start</code>. Each skill gives you a link to open its report in the app.</p>
+        </div>
+
+        <div class="install-track-card">
+          <div class="install-track-header">
             <h3>Claude Code Plugin</h3>
-            <span class="track-badge">Full 11-Skill Pipeline</span>
+            <span class="track-badge">Full 12-Skill Pipeline</span>
           </div>
           <div class="install-block" role="group" aria-label="Install command">
             <span class="prompt" aria-hidden="true">$</span>
@@ -1379,13 +1397,13 @@
             <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
           </div>
 
-          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 11 skills. Re-run it after a <code>git pull</code> to update.</p>
+          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 12 skills. Re-run it after a <code>git pull</code> to update.</p>
 
           <p class="install-prose">Requires a bash shell (Terminal on macOS or Linux, WSL or Git Bash on Windows). <code>./setup</code> does not run in PowerShell or <code>cmd</code>. Requires Python 3.9 or later: the skills save their results with it. <code>bin/idstack-doctor</code> checks for it.</p>
 
           <p class="install-prose">To verify an installation, run <code>bin/idstack-doctor</code> to diagnose plugin registration or <code>bin/idstack-status</code> to view course health.</p>
 
-          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:pipeline</code>.</p>
+          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:start</code>.</p>
 
           <p class="install-prose">Not using Claude Code? The idstack skills run in Claude Code only. Use the Chrome extension, or fork the repo and adapt the skills for a different agent, for example Codex or Antigravity. idstack does not support or test those forks.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
         </div>

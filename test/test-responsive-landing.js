@@ -209,8 +209,8 @@ expect(
   `@media prelude names a breakpoint but does not scope to it: ${rejectedPreludes.join(' | ')}`
 );
 // One stylesheet, inline. An external sheet would carry rules this file never sees. The one
-// exception is the Google Fonts sheet, which holds only @font-face rules (the same URL the
-// reports load from templates/report.html.tmpl), so it cannot change layout.
+// exception is the Google Fonts sheet, which holds only @font-face rules (its URL is in
+// DESIGN.md, Typography), so it cannot change layout.
 const externalSheets = (html.match(/<link[^>]+rel=["']?stylesheet[^>]*>/gi) || [])
   .filter(tag => !/href=["']https:\/\/fonts\.googleapis\.com\/css2\?/i.test(tag));
 expect(externalSheets.length === 0, `page must not pull in an external stylesheet other than Google Fonts: ${externalSheets.join(' ')}`);
