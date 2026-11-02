@@ -1180,18 +1180,19 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "Retry audits the course or site now active, not the one that failed" node "$WORK/r/test/test-sidepanel-state.mjs"
 
-# 30i. a feedback vote rewrites the whole row -> test-sidepanel-state must fail.
-# The row also holds Audit a Different Page, the only way back to the ready state.
+# 30i. the vote buttons that send nothing come back -> test-renderer-helper must
+# fail. They said "Thank you for your feedback!", but the panel has no telemetry,
+# so no vote went anywhere (#152). Feedback goes to the form instead.
 fresh
-python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+python3 - "$WORK/r/extension/sidepanel/renderer-helper.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "if (prompt) prompt.innerHTML = '<em>Thank you for your feedback!</em>';"
+old = '>Tell us about this audit</a>'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "row.innerHTML = '<em>Thank you for your feedback!</em>';", 1)
+s = s.replace(old, old + '\n      <button class="feedback-btn" data-vote="up">Yes</button>', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "feedback vote wipes Audit a Different Page" node "$WORK/r/test/test-sidepanel-state.mjs"
+expect_fail "vote buttons that send nothing come back" node "$WORK/r/test/test-renderer-helper.mjs"
 
 # 30j. the renderer trusts a non-array findings value -> test-renderer-helper must fail.
 fresh
@@ -2365,6 +2366,20 @@ s = s.replace(old, old + "    os.remove(draft)\n", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "report append deletes the draft file" python3 "$WORK/r/test/test-report-section.py"
+
+# 62n. finish --stopped leaves the reserved placeholder -> test-report-section
+# must fail. A skill that stopped early could then never finish a report that
+# has a score section (accessibility-review, course-quality-review, red-team).
+fresh
+python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "                lines[i] = STOPPED_TEXT\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "                pass\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "finish --stopped leaves the reserved placeholder" python3 "$WORK/r/test/test-report-section.py"
 
 # 62m. The Step Review chat note loses its exact link line -> smoke-test must
 # fail. The model then names the report as text, which is not a link in the app.

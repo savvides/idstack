@@ -172,14 +172,14 @@ const scenarios = {
     assert.strictEqual(crawls[1].payload.courseId, '123');
   },
 
-  async 'a feedback vote keeps the Audit a Different Page button (F14)'() {
+  async 'the results row has the feedback form link and Audit a Different Page (F14)'() {
     const p = await loadPanel({ tab: { id: 1, url: A.url }, payloads: { 1: A } });
     await p.$('audit-btn').click();
     await p.reply({ success: true, data: RESULT });
-    await p.document.querySelector('.feedback-btn').click();
-    assert.ok(p.$('re-audit-btn'), '#re-audit-btn must survive a vote');
+    const row = p.document.querySelector('.feedback-row');
+    assert.ok(row.textContent.includes('Tell us about this audit'), 'feedback goes to the form');
     assert.strictEqual(p.document.querySelectorAll('.feedback-btn').length, 0);
-    assert.ok(p.document.querySelector('.feedback-row').textContent.includes('Thank you for your feedback!'));
+    assert.ok(p.$('re-audit-btn'), '#re-audit-btn stays in the row');
   },
 
   async 'Copy to Clipboard reports a rejected write (F14)'() {

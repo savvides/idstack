@@ -448,8 +448,10 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 - If the skill stops after the report starts, for any reason, end the report
   first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
-  not write a Top recommendations section. Then run the finish command. This
-  includes an error, a missing file, and a user who stops the skill.
+  not write a Top recommendations section. Then run the finish command with
+  `--stopped` after `finish "<path>"`. Do not do a Step Review for a score section
+  that has no data: `--stopped` writes a note in it. This includes an error, a
+  missing file, and a user who stops the skill.
 - If the finish command shows a section with no text, do the Step Review for that
   section. If it shows a draft section, ask the user to approve that section.
   Then run the finish command again.

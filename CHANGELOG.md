@@ -40,8 +40,14 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
   - The demo of a full-course audit in the Chrome extension says that it is a sample.
 - **CONTRIBUTING.md, CLAUDE.md, ROADMAP.md and `templates/manifest-schema.md` are correct.** They describe what `bin/idstack-manifest-merge` checks and which skills write each manifest section. They also list the test suites and mark the features that a later release removed.
 
+### Fixed — a stopped skill and the extension feedback
+
+- **A skill that stops early can finish its report.** `/idstack:accessibility-review`, `/idstack:course-quality-review` and `/idstack:red-team` keep a section for the score. When the skill stopped before the score, `bin/idstack-report-section finish` refused the report, and no Step Review could fill the section. Now the skill runs `finish --stopped`, which writes "idstack did not write this section because the skill stopped." in that section. The Summary still gets its Step Review. Closes #151.
+- **The Chrome extension (1.2.2) has a link to the feedback form in place of the vote buttons.** The buttons showed "Thank you for your feedback!", but the extension sends no telemetry, so no vote went anywhere. Closes #152.
+
 ### Tests
 
+- `test/test-report-section.py` has two tests for `finish --stopped`, and `test/mutation-test.sh` has case 62n. Case 30i now puts back the vote buttons.
 - `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61i.
 
 ## v3.10.0.0 (2026-11-01)

@@ -301,6 +301,25 @@ class ReportSectionTest(unittest.TestCase):
         self.assertIn('"Score breakdown" has no text', result.stdout)
         self.assertIn('**Status:** in progress', self.read(REPORT))
 
+    def test_finish_stopped_fills_a_reserved_section(self):
+        # A skill that stops early has no score for its reserved section.
+        self.init('--reserve', 'Score breakdown')
+        self.append(CLOSING)
+        self.run_helper('approve', REPORT)
+        result = self.run_helper('finish', REPORT, '--stopped')
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn('REPORT_COMPLETE', result.stdout)
+        text = self.read(REPORT)
+        self.assertIn('idstack did not write this section because the skill stopped.', text)
+        self.assertNotIn('_idstack writes this section', text)
+
+    def test_finish_stopped_still_needs_the_summary(self):
+        self.init('--reserve', 'Score breakdown')
+        result = self.run_helper('finish', REPORT, '--stopped')
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('"Summary" has no text', result.stdout)
+        self.assertNotIn('"Score breakdown" has no text', result.stdout)
+
     def test_finish_refuses_a_draft_section(self):
         # Only the draft is wrong here: the Summary has text and is approved.
         self.init()

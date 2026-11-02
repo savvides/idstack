@@ -184,17 +184,6 @@ function renderResults(data, source) {
     });
   }
 
-  container.querySelectorAll('.feedback-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const row = btn.parentElement;
-      if (!row) return;
-      // Replace only the vote controls; the row also holds #re-audit-btn.
-      row.querySelectorAll('.feedback-btn').forEach((b) => b.remove());
-      const prompt = row.querySelector('span');
-      if (prompt) prompt.innerHTML = '<em>Thank you for your feedback!</em>';
-    });
-  });
-
   showState('results');
 }
 

@@ -30,7 +30,8 @@ bin/idstack-report-section init <report> --skill <s> --title <t>   # Start a rep
 bin/idstack-report-section check <draft>   # Check a draft section: table shape, citation tiers, ASD-STE100
 bin/idstack-report-section append <report> <draft>   # Check, then add the section to the report as a draft (atomic)
 bin/idstack-report-section approve <report> [--draft <f>]  # Remove each draft mark; print SECTION_APPROVED: <heading>; delete the draft
-bin/idstack-report-section finish <report> # Fail on a placeholder or a draft that remains; remove the status line
+bin/idstack-report-section finish <report> # Fail on a placeholder or a draft that remains; remove the status line.
+                                           # --stopped (skill stopped early) fills each empty reserved section
 bin/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 bin/idstack-timeline-log '<json>'          # Append one event to .idstack/timeline.jsonl (adds "ts"; never fails the skill)
 bin/idstack-learnings log|search|delete|promote   # Project learnings in .idstack/learnings.jsonl; promote copies to ~/.idstack/global/
@@ -59,7 +60,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # bin/idstack-ste-check unit tests (smoke-test also runs them)
-python3 test/test-report-section.py     # 35 tests for bin/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
+python3 test/test-report-section.py     # 37 tests for bin/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
 python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
