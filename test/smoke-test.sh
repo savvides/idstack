@@ -595,9 +595,10 @@ done
 # gets it from the {{IDSTACK_RESOLVE}} expansion)
 check "every generated SKILL.md supports CLAUDE_PLUGIN_ROOT" "! grep -L 'CLAUDE_PLUGIN_ROOT' $IDSTACK_DIR/skills/*/SKILL.md | grep -q ."
 
-# The preamble's embedded python must run on the oldest supported interpreter
-# (macOS system python3 is 3.9) — a SyntaxError there dies silently behind
-# `2>/dev/null || true` in every generated skill.
+# The preamble's Context Recovery block runs bin/idstack-status --context, whose
+# Python must run on the oldest supported interpreter (macOS system python3 is
+# 3.9) — a SyntaxError there dies silently behind `2>/dev/null || true` in every
+# generated skill. (The Preferences block's inline python3 -c is not run here.)
 if [ -x "$IDSTACK_DIR/test/test-preamble-python.sh" ]; then
   check "preamble embedded-python tests pass" "'$IDSTACK_DIR/test/test-preamble-python.sh'"
 fi

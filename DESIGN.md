@@ -165,13 +165,13 @@ Restrained. Two-color annotation set (rust + prussian blue) for primary marks; t
 
 | Token | Curve | Use |
 |---|---|---|
-| `enter` | `cubic-bezier(0.2, 0, 0, 1)` | Hover, focus, theme toggle |
+| `enter` | `cubic-bezier(0.2, 0, 0, 1)` | Hover, focus |
 | `exit` | `cubic-bezier(0.4, 0, 1, 1)` | Dismissal |
 
 | Token | ms | Use |
 |---|---|---|
 | `micro` | 50–100 | Hover, focus rings |
-| `short` | 200 | Theme toggle, dropdown reveal |
+| `short` | 200 | Dropdown reveal (no surface uses it at present) |
 
 No medium / long durations. No scroll-driven animations. No parallax. No entrance animations on page load. `prefers-reduced-motion: reduce` disables all transitions.
 

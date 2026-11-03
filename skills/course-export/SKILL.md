@@ -1239,7 +1239,9 @@ curl -s -X POST \
 
 ### B8. Error Handling
 
-Each API call is wrapped in error checking. Handle these cases:
+Each call that creates a module, page, assignment or discussion prints `HTTP: <code>`.
+The calls that publish a module or add an item to a module do not print a code.
+Handle these cases for the calls that print a code:
 
 - **HTTP 401:** Token expired or invalid. Stop. Tell the user to put a new token in
   `.idstack/canvas.env`. Do not ask for the token in the chat.

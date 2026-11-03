@@ -824,7 +824,7 @@ Use the finding IDs `needs-1`, `needs-2` and so on. The findings come from the t
 
 - **Top recommendations:** three to five actions from the approved findings, with the IDs `R-1`, `R-2` and so on. Put the action with the most effect first.
 - **Summary:** two or three sentences. Start with the decision: training is justified or not. Then tell the largest risk in the learner profile and the most important finding from the task analysis.
-- **Limitations:** in audit-existing mode, idstack did not use the decision gate for training. The learner profile comes from registrar or syllabus data, not from a learner survey. The task analysis comes from lists of job tasks, not from observed performance.
+- **Limitations:** in audit-existing mode, idstack did not use the decision gate for training. The learner profile comes from your answers in this session, not from a learner survey. The task analysis does not come from observed performance.
 - **Next steps:** run `/idstack:learning-objectives` to write learning objectives from this analysis. That skill reads your task analysis and learner profile. It recommends Bloom's levels and alignment strategies.
 
 Run the finish command of the Step Review.

@@ -53,8 +53,9 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on the local python3; CI covers 3.9 and 3.12
 ./test/test-skill-shell-zsh.sh    # 83 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
-./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules via
-                                  # test/extension-harness.mjs (Node >= 20.19 or 22.7; never add .cjs twins)
+./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules directly
+                                  # (test/extension-harness.mjs stubs browser globals for the ones that need them)
+                                  # (Node >= 20.19 or 22.7; never add .cjs twins)
 ./test/test-responsive-landing.js # Responsive/mobile invariants for docs/index.html, as CSS text (node; via smoke-test)
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
