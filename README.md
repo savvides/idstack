@@ -62,7 +62,7 @@ idstack: QM structural review: 8 rows (3 pass, 5 flag).
 
 The chat shows a short note and one question for each section. The tables, scores and citations go into the Markdown report. For example, the report for this course has the finding "All 8 assessments are auto-graded quizzes with no rubrics", the citation `[Assessment-8] [T1]` and the recommendation to run `/idstack:assessment-design`.
 
-You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses, `learn` is a separate cross-project memory utility, and `start` is the first-run guide. These three sit outside the linear chain, which is why pipeline runs 8 of the 12 skills).
+You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses, `learn` is a separate cross-project memory utility, and `start` is the first-run guide. These three, and pipeline itself, sit outside the linear chain, which is why pipeline runs 8 of the 12 skills).
 
 ## Install (30 seconds)
 
