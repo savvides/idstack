@@ -710,9 +710,9 @@ Read the full manifest. Tell the user the proposed output in one sentence, for e
   material.
 - If no task analysis but ILOs exist: group ILOs by knowledge domain or cognitive
   level progression. Each group becomes a module.
-- If `import_metadata.source` is not empty (the course came from /idstack:course-import), the imported modules are in `task_analysis.job_tasks`,
-  one task for each imported module. Keep that module organization, one module for
-  each task, unless the user asks to restructure it.
+- If `import_metadata.source` is not empty (the course came from /idstack:course-import), course-import added one task to `task_analysis.job_tasks` for each imported
+  module. The list can also hold tasks from an earlier /idstack:needs-analysis run.
+  Keep the imported module organization unless the user asks to restructure it.
 - Map the module count to the `context.timeline`. A 16-week course with 5 modules
   means roughly 3 weeks per module. A 4-week intensive with 5 modules means
   compressed pacing — flag this and recommend reducing scope or increasing

@@ -39,8 +39,8 @@ DOCTOR_CMD="$MOCK_IDSTACK_DIR/bin/idstack-doctor"
 # (the mock repo has no templates/ word list), with the python3 found here.
 PYTHON="$(command -v python3)"
 
-# Pinned PATH: only what doctor and its libs actually invoke, plus whatever
-# mock we drop in. `claude` is absent unless a test installs it.
+# Pinned PATH: the commands that doctor, its libs and this harness run, plus
+# any mock that a test adds. `claude` is absent unless a test installs it.
 MOCK_BIN="$TEST_ROOT/bin"
 mkdir -p "$MOCK_BIN"
 for _c in bash sh env command dirname echo grep head python3 readlink sed tr awk cat ls rm mkdir ln chmod mktemp printf sort wc basename find touch cp cut; do
