@@ -13,7 +13,8 @@
  * Keep both. The text suite is fast, runs everywhere, and names the exact rule that regressed;
  * this one is slower, needs a browser, and cannot be evaded.
  *
- * Requires node 22.4+ for the global WebSocket (no npm dependency, but node 20 cannot run this).
+ * Requires node 22.0+ for the global WebSocket, which is on by default from 22.0 and stable from
+ * 22.4 (no npm dependency, but node 20 cannot run this).
  * Chrome is located via $CHROME_PATH, then the usual macOS and Linux paths. With no browser this
  * exits 0 after printing a SKIP line — a silent pass would be worse than no test, so the line is
  * deliberately loud.

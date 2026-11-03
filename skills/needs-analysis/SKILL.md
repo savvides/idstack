@@ -953,7 +953,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
 | `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
 | `export_metadata` | course-export | Export destination, items exported, readiness check. |
-| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
+| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. No skill writes `review_history`. `bin/idstack-migrate` adds it as `[]`, and a /idstack:course-quality-review write replaces the whole section, so the field and its contents are removed. The timeline (`.idstack/timeline.jsonl`) keeps the score of each review. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
 | `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
 | `preferences` | (user, by hand) | Verbosity, export format, preferred LMS, auto-advance. `bin/idstack-migrate` writes the defaults. No skill writes this section; the preamble reads `verbosity`. |

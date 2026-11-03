@@ -159,7 +159,7 @@ The CI matrix is ubuntu on Python 3.9 and 3.12, plus macOS on 3.12 for BSD `grep
 
 ### Writing a new assertion
 
-`test/test-helper.sh` is sourced by every bash suite that runs assertions itself and owns the counters and the assertion (`test-extension.sh` does not source it: apart from its Node version gate and its `.cjs` guard, it delegates the unit tests to node and keeps no `check()` counters; the node suites cannot source it and accumulate their own problems instead):
+`test/test-helper.sh` is sourced by every bash suite that runs assertions itself and owns the counters and the assertion (`test-extension.sh` does not source it: apart from its Node version gate and its `.cjs` guard, it delegates the unit tests to node and keeps no `check()` counters; the node suites cannot source it: the two landing-page suites (`test/test-responsive-landing.js` and `test/test-rendered-landing.js`) collect their problems and report a count, and the extension unit tests use `node:assert` and stop at the first failure, except `test-disclosures.mjs`, `test-evidence-labels.mjs` and `test-ste-rules.mjs`, which collect their problems first):
 
 ```bash
 . "$(dirname "$0")/test-helper.sh"
