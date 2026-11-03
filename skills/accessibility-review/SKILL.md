@@ -814,7 +814,7 @@ Write three rows: the WCAG component, the UDL component and the overall score. C
 
 - **Summary:** 2 or 3 sentences. Start with the overall score, the number of WCAG Level A violations, and the largest barrier in the course. Add this line: "Overall XX/100 · WCAG XX/50 · UDL XX/50".
 - **Top recommendations:** the 3 changes that give the most improvement for the least work. Use the approved findings. Cite each row.
-- **Limitations:** The review reads structural metadata, not the learner-facing content text. The review checks that alt text is present, not that it is accurate. The UDL recommendations come from manifest signals, not from observed learner use.
+- **Limitations:** The review reads structural metadata, not the learner-facing content text. The review checks that alt text is present, not that it is accurate. The UDL recommendations come from the manifest data or from your answers, not from observed learner use.
 - **Next steps:** If the course has WCAG Level A violations, correct them first, because they stop access. Then run `/idstack:red-team` for an adversarial persona test. The persona dimension simulates learners who need the accommodations that this review audited.
 
 Run the finish command of the Step Review.

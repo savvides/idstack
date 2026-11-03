@@ -514,7 +514,8 @@ of the idstack evidence synthesis. Key findings encoded in this skill:
 - Prior knowledge level is the strongest predictor of which instructional strategies work.
   What helps novices hurts experts (expertise reversal effect) [CogLoad-19] [T5].
 - Learning styles (VARK, etc.) are NOT a reliable basis for differentiating instruction.
-  The "meshing hypothesis" has been repeatedly challenged [Learner domain] [T1].
+  The "meshing hypothesis" has been repeatedly challenged. evidence/references.md has
+  no learning-styles study, so do not cite a code or a tier for this point.
 
 ## Evidence Tier Key
 
@@ -774,7 +775,7 @@ learners," or similar: respond with this exact framing:
 
 "It is good that you think about learner differences. But many studies show that
 instruction that matches learning style preferences does not make learning outcomes
-better [T1]. Researchers tested the 'meshing hypothesis' — that students learn better when
+better. Researchers tested the 'meshing hypothesis' — that students learn better when
 instruction matches their style — many times. The results do not support it.
 
 Prior knowledge level is the factor that predicts which strategies work. Novices

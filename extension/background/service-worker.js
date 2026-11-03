@@ -92,7 +92,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
           const wordCount = String(request.payload?.content || '').split(/\s+/).filter(Boolean).length;
           if (wordCount < MIN_AUDIT_WORDS) {
             // The extractor and side panel explain pages they could not or would not read.
-            throw new Error(request.payload?.emptyReason || `This page does not have sufficient text to audit. It has ${wordCount} words, and an audit must have ${MIN_AUDIT_WORDS} words or more. Browser pages, PDF viewers and image-only pages do not give text to idstack.`);
+            throw new Error(request.payload?.emptyReason || `This page does not have sufficient text to audit. It has ${wordCount} words, and an audit must have ${MIN_AUDIT_WORDS} words or more. Browser pages, PDF viewers and image-only pages do not give text to idstack. On Canvas, idstack reads only an assignment, a page, a syllabus, a rubric and the Modules view.`);
           }
           const auditResult = await runAudit(request.payload, buildAuditPrompt, getDemoAuditResult);
 
