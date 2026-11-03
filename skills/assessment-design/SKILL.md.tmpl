@@ -206,7 +206,7 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **Audit workflow steps (replaces Steps 1-5 of the design workflow below):**
 
-1. **Inventory.** List every assessment from `assessments.items` (or, if items is empty, from the assessment files that an earlier course-builder run listed in `course_content.assessments`. The files are in the `assessments/` subfolder of `course_content.content_dir`.) Note type, title, weight, ILOs claimed.
+1. **Inventory.** List every assessment from `assessments.items` (or, if items is empty, from the assessment files that an earlier course-builder run listed in `course_content.assessments`. The files are in the `assessments/` subfolder of `course_content.content_dir`.) Note type, title, weight and ILOs claimed. The manifest items have no weight field: get the weight from the `**Points:**` line of the assessment file, or ask the user. If neither gives a weight, write `unknown`.
 
 **Step review:** do the Step Review in the preamble. Section: `## Assessment inventory`. Columns: `ID | Assessment | Type | Weight | ILOs claimed | Justification | Evidence`.
 
