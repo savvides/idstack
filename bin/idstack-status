@@ -148,8 +148,8 @@ if next_skill:
 PY
 }
 
-# --context: the lines a skill's Context Recovery reads. Silent when there is
-# nothing to recover.
+# --context: the lines a skill's Context Recovery reads. Silent only when there
+# is no learnings file and the timeline is missing or has no readable entries.
 if [ "$CONTEXT_ONLY" -eq 1 ]; then
   if [ -f "$TIMELINE" ]; then
     timeline_summary context 2>/dev/null || true

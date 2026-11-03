@@ -438,7 +438,7 @@ The counts come from `evidence/references.md`. Most of the Constructive Alignmen
 ## FAQ
 
 **Do I need to know how to code?**
-No. You interact with idstack through conversation in Claude Code. It is a chat interface. In the [Claude desktop app](#claude-desktop-app-no-terminal) you do not need a terminal at all.
+No. You interact with idstack through conversation in Claude Code. It is a chat interface. In the [Claude desktop app](#claude-desktop-app-no-terminal) you do not need a terminal to install or use idstack. To update it, you run two commands in a terminal (see "How do I update idstack?").
 
 **What is Claude Code?**
 Claude Code is Anthropic's coding tool. It's available as a [desktop app, web app, and CLI](https://claude.ai/code). You type `/idstack:needs-analysis` and have a conversation. No programming required.

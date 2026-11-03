@@ -1435,7 +1435,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |
 | `needs_analysis` | needs-analysis, course-import | Org context, task analysis, learner profile, training justification. |
 | `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. |
-| `assessments` | assessment-design | Items (each with its rubric and feedback strategy), formative checkpoints, the feedback quality score and, in Mode 3, audit notes. No skill writes `assessment_strategy`, `feedback_plan` or the top-level `rubrics[]`. Mode 3 reads `assessments.rubrics` if it exists. |
+| `assessments` | assessment-design | Items (each with its rubric and, in Mode 1 and Mode 2, its feedback strategy), formative checkpoints and the feedback quality score (Mode 1 and Mode 2), and audit notes (Mode 3). No skill writes `assessment_strategy`, `feedback_plan` or the top-level `rubrics[]`. Mode 3 reads `assessments.rubrics` if it exists. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
 | `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
 | `export_metadata` | course-export | Export destination, items exported, readiness check. |
