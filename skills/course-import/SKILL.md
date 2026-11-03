@@ -1782,7 +1782,7 @@ Empty string means the skill hasn't run yet or didn't record the mode (legacy ma
 ```json
 {
   "description": "Discussion rubric for Module 5",
-  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
+  "source": "red-team:alignment-3 | quality-review:<short form of the recommendation's finding text> | user request",
   "status": "generated|deferred|declined",
   "output_path": "Optional — set when status=generated, points to the generated file."
 }

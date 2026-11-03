@@ -677,7 +677,7 @@ In gap-fill mode, **skip Steps 1–5** (scope, instructor info, syllabus, module
 
 **Step review:** do the Step Review in the preamble. Section: `## Generation targets`. Columns: `ID | Target | Source finding | Status | Justification | Evidence`.
 
-Use the IDs `GT-1`, `GT-2` and so on, with the Status `generate`. In Source finding, put the red-team finding `id` with the prefix `red-team:`, for example `red-team:alignment-3`. A `quality_review.recommendations[]` item has no ID, so for it put `quality-review:` and a short form of its `finding` text. For a request from the user, put `user request`. If the user selects "Change a row", the user can set the Status to `deferred` or `declined`.
+Use the IDs `GT-1`, `GT-2` and so on, with the Status `generate`. In Source finding, put the red-team finding `id` with the prefix `red-team:`, for example `red-team:alignment-3`. A `quality_review.recommendations[]` item has no ID, so for it put `quality-review:` and a short form of its `finding` text. For a request from the user, put `user-request`. If the user selects "Change a row", the user can set the Status to `deferred` or `declined`.
 
 **Generate only what's missing.** For each target with the Status `generate`, follow the relevant sub-step from Steps 4–5 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration. After you generate each artifact, review it.
 
@@ -702,7 +702,7 @@ Do not batch multiple questions.
 
 ### Step 1: Analyze Manifest and Determine Scope
 
-Read the full manifest. Tell the user the proposed output in one sentence, for example: "I will make 1 syllabus, [N] module pages, [M] assessment documents and [M] rubrics." The `## Build scope` rows give the details. Make rubric documents only if the assessments section has rubric data.
+Read the full manifest. Tell the user the proposed output in one sentence, for example: "I will make 1 syllabus, [N] module pages, [M] assessment documents and [M] rubrics." The `## Build scope` rows give the details. Make one rubric document for each assessment. Use the rubric data from the assessments section when it exists. If it does not exist, write the rubric from the ILOs (Step 5).
 
 **Determining module count and structure:**
 - If `task_analysis.job_tasks` exists: map each high-priority task to a module.
@@ -1167,7 +1167,7 @@ The payload is the **flat section contents** (no enclosing `course_content` key)
 
 The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. It is a record for the designer of what still needs to be filled in. No other skill reads this field.
 
-Use only the approved rows of the report. `generated_files` comes from the `## Generated artifacts` rows. `placeholders_used` comes from their Notes cells. `recommended_generation_targets` comes from the `## Generation targets` rows.
+Use only the approved rows of the report. `generated_files` comes from the `## Generated artifacts` rows. `placeholders_used` comes from their Notes cells. `recommended_generation_targets` comes from the `## Generation targets` rows: one item for each row, with `description` (the Target cell), `source` (the Source finding cell, for example `red-team:alignment-3` or `user-request`), `status` (`generated`, `deferred` or `declined`) and `output_path` (the generated file, only when the status is `generated`).
 
 **Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify only the `course_content` section, Write back. Preserve all other sections verbatim.
 
@@ -1184,7 +1184,7 @@ After writing the manifest, confirm:
 
 **Next steps:**
 - Review and edit the generated files to add your expertise and institutional voice.
-- Run `/idstack:course-quality-review` to audit the complete course against QM standards and CoI presence.
+- Run `/idstack:course-quality-review` to audit the course design in the manifest against QM standards, CoI presence and constructive alignment. It does not read the files in `.idstack/course-content/`.
 - Run `/idstack:course-export` to package the content as an IMS Common Cartridge or push to Canvas."
 
 ---
@@ -1218,7 +1218,7 @@ Use the IDs `AR-1`, `AR-2` and so on, with the Status `fixed` or `open`. If a fi
 If you or the agent changed course files in this step, do the writing standard check at the end of Step 6 again. Tell the user the number of sentences that you changed in each file. Do not show the sentences.
 
 **If the agent fails or returns nothing:** Skip this step. Do not add the `## Alignment review` section. Add this sentence to the Limitations: "idstack did not do the alignment review." Add a note to the output:
-"Note: For a full alignment audit, run `/idstack:course-quality-review` next."
+"Note: idstack did not check the alignment of the generated files. Review the files in `.idstack/course-content/` against your learning objectives. `/idstack:course-quality-review` checks the alignment of the course design in the manifest only."
 
 For the full manifest schema (other sections you may need to read), Read
 `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.

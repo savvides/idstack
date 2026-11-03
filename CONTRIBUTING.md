@@ -58,7 +58,7 @@ The bare `name` field becomes the slash-command suffix: `name: course-import` is
 
 ### Template system
 
-Skills use a template system to share common preamble code. Edit `{skill}/SKILL.md.tmpl`, not `SKILL.md` directly. The generated `SKILL.md` files have an `<!-- AUTO-GENERATED -->` header.
+Skills use a template system to share common preamble code. Edit `skills/{skill}/SKILL.md.tmpl`, not `SKILL.md` directly. The generated `SKILL.md` files have an `<!-- AUTO-GENERATED -->` header.
 
 After editing a `.tmpl` file, `templates/preamble.md`, `templates/manifest-schema.md`, or `templates/snippets/idstack-resolve.sh`, regenerate:
 

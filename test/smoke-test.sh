@@ -61,7 +61,8 @@ for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-learni
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
 
-# Every suite takes its counters from test/test-helper.sh. Nine suites had
+# Every bash suite that runs assertions itself takes its counters from
+# test/test-helper.sh (test-extension.sh delegates to node). Nine suites had
 # each grown their own copy, and they had already drifted — two spelled the
 # helper `assert`, and one swallowed failure output entirely, so CI reported a
 # bare FAIL with no diagnostics. A local `PASS=0` is how that regrows.

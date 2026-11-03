@@ -414,8 +414,8 @@ fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace('"datePublished": "2026-04-20",',
-              '"datePublished": "2026-04-20",\n    "dateModified": "2026-08-06",', 1)
+s = s.replace('"datePublished": "2026-03-30",',
+              '"datePublished": "2026-03-30",\n    "dateModified": "2026-08-06",', 1)
 open(p, 'w').write(s)
 PY
 expect_fail "dateModified reintroduced into docs/index.html" "$WORK/r/test/smoke-test.sh" "$WORK/r"

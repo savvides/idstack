@@ -492,9 +492,11 @@ Example: "Note: this Canvas instance uses a custom rubric format (idstack found 
 **Skill-specific manifest check:** If the manifest `learning_objectives` section already has data,
 ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
-If `learning_objectives.report_path` is empty, the data came from /idstack:course-import (ILOs with
-`alignment_status: "imported-unverified"`), not from this skill. Then ask the same question with this text:
+If `learning_objectives.report_path` is empty, this skill did not write the data. If the ILOs have
+`alignment_status: "imported-unverified"`, the data came from /idstack:course-import. Then ask the same question with this text:
 "Your learning objectives came from the course import. Do you want to update them or start again?"
+If no ILO has that status, another skill wrote the data (for example /idstack:assessment-design). Then ask:
+"Your learning objectives came from another idstack skill. Do you want to update them or start again?"
 
 # Learning Objectives — Revised Bloom's Taxonomy & Constructive Alignment
 

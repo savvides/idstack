@@ -150,7 +150,7 @@ The Markdown report is what the instructional designer reads. The JSON is for th
 
 `<course-slug>` is derived from the manifest's `project_name` via `bin/idstack-slugify` (NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). All per-course artifacts — every per-skill Markdown report, the pipeline `index.md` dashboard, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder, so the deliverable is self-describing when zipped, emailed, or handed off.
 
-`/idstack:pipeline` produces `.idstack/exports/<course-slug>/index.md` — the cross-cutting course dashboard, from the skeleton in `templates/index.md.tmpl`. It surfaces readiness scores, top issues that recur across multiple skills, evidence themes, links to every per-skill report, and where to start. Regenerated on every pipeline run (including partial runs and explicit re-runs when all skills are already complete).
+`/idstack:pipeline` produces `.idstack/exports/<course-slug>/index.md` — the cross-cutting course dashboard, from the skeleton in `templates/index.md.tmpl`. It surfaces readiness scores, top issues that recur across multiple skills, evidence themes, links to every per-skill report, and where to start. Regenerated after each skill the pipeline completes, so a partial run still leaves a dashboard. Also regenerated before the pipeline stops when a skill cannot be invoked, and when the user picks "Regenerate the course dashboard" after all skills are complete. Picking "Exit" leaves the existing dashboard as it is.
 
 Rules for writing the manifest:
 
