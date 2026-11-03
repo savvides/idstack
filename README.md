@@ -370,7 +370,7 @@ CHROME EXTENSION (separate runtime: no Claude Code, no .idstack/ folder)
          chrome.storage; dossier export as Markdown
 ```
 
-Skills are plain Markdown files generated from templates. No build step for users, and no dependencies beyond bash and python3. `./setup` registers the repo as a Claude Code plugin marketplace and installs it, which is what gives the namespaced `/idstack:<skill>` commands. Users invoke skills via `/idstack:<skill>`. Each skill reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
+Skills are plain Markdown files generated from templates. No build step for users, and no dependencies beyond bash and python3. `./setup` registers the repo as a Claude Code plugin marketplace and installs it, which is what gives the namespaced `/idstack:<skill>` commands. Users invoke skills via `/idstack:<skill>`. Each skill that produces results (all skills except `/idstack:start`, `/idstack:pipeline` and `/idstack:learn`) reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
 
 ## How it works
 
