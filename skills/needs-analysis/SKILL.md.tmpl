@@ -110,10 +110,10 @@ Then establish the delivery context. Ask about:
 
 **In audit-existing mode**, much of this is already in the manifest from `course-import`. Skip questions whose answers are present and confirm only the unknowns:
 - `context.modality` — usually inferable from the LMS (Canvas/Moodle/etc. = online or hybrid). Confirm with the user if ambiguous.
-- `context.timeline` — sometimes in `course_settings.xml` (e.g., the syllabus dates from the cartridge). Use it if found; ask only if absent.
+- `context.timeline` — course-import writes it from the term or date information in the import, if it found any. Use it if it is present; ask only if absent.
 - `context.class_size` — typically not in the cartridge; ask.
 - `context.institution_type` — usually inferable from `import_metadata.source_lms` (Canvas in higher-ed, etc.). Confirm with the user if ambiguous.
-- `context.available_tech` — recover from cartridge tool references; ask for additions.
+- `context.available_tech` — course-import writes it from the detected resource types; ask for additions.
 
 Don't re-ask the user for the course title — read it from the top-level `project_name` that `course-import` wrote.
 

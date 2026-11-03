@@ -78,7 +78,7 @@ COURSE TITLE: ${courseData.title || 'Canvas Course'}
 SYLLABUS & LEARNING OBJECTIVES:
 ${(courseData.syllabus || 'No syllabus provided').slice(0, 8000)}
 
-COURSE ASSIGNMENTS & ASSESSMENTS (${total} items; ${shown} shown in full below):
+COURSE ASSIGNMENTS & ASSESSMENTS (${total} items; ${shown} shown below, each description cut to 500 characters):
 ${assignmentsSummary}
 
 Evaluate whether the assessment system constructively aligns with stated learning outcomes ([Alignment-1] Biggs (1996) [T5]).

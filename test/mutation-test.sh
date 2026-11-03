@@ -349,10 +349,11 @@ io.open(p, 'w', encoding='utf-8').write(s.replace(old, '<span class="evidence-ro
 PY
 expect_fail "evidence card overstates its tier range" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 18b. the tier-mix bar moves a study to a stronger tier while the count and the
-# range stay right -> smoke-test must fail. The bar is the one place a visitor
-# sees how much of a domain rests on trials, so it is checked per tier, not only
-# by its total.
+# 18b. the tier-mix bar's data-tiers attribute moves a study to a stronger tier
+# while the count and the range stay right -> smoke-test must fail. The per-tier
+# counts in data-tiers are compared with evidence/references.md by
+# check-evidence-cards.py, not only their total. Nothing renders data-tiers: the
+# visible bar comes from the inline segment widths, which no check compares.
 fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import io, sys

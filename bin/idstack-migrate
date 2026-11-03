@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Migrate .idstack/project.json to the latest schema version.
-# The script reads the manifest, applies the necessary migrations and writes
-# the manifest again. It also writes the JSON to stdout, changed or not.
+# The script reads the manifest and applies the necessary migrations. It writes
+# the manifest again only when it applies a migration. It writes the manifest
+# to stdout, changed or not.
 # When it applies a migration, it writes "MIGRATED <from> <to>" to stderr.
 # If there is no file, the script writes no output and exits 0.
 # If python3 is not available, the script exits 3 and changes nothing.

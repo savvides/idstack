@@ -46,8 +46,9 @@ jobs:
         run: sudo apt-get update -q && sudo apt-get install -y -q zsh
       # smoke-test runs the other unit and behavioral suites itself (manifest-merge,
       # plugin-status, doctor, status, preamble-python, setup, extension,
-      # skill-shell-zsh), so they are not separate steps here. integration-test
-      # is the only suite with its own step.
+      # skill-shell-zsh, ste-check, report-section, citation-tiers,
+      # responsive-landing, rendered-landing), so they are not separate steps
+      # here. integration-test is the only suite with its own step.
       - name: Smoke test
         run: ./test/smoke-test.sh
       - name: Integration test

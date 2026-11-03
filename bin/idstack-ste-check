@@ -14,7 +14,8 @@ Rules that this script examines:
   paragraph-length   more than 6 sentences in a paragraph
   semicolon          a semicolon in text
   contraction        a contraction, for example "don't"
-  verb-form          "has been", "have been" or "had been", also with "not" or an adverb
+  verb-form          "has been", "have been", "had been" or "having been", also with "not",
+                     "never", "already", "also", "just" or "always" between the two words
   word               a word from the word list
   html               an element whose text the checker skips (code, quotation, script, style,
                      pre and similar) that has no end tag (the checker does not examine the
