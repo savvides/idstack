@@ -647,9 +647,9 @@ Extract from the XML:
 - `<resource>` elements contain the actual content
 - `type` attribute indicates resource type:
   - `webcontent` → instructional materials (pages, files)
-  - `imsqti_xmlv2p1` or `imsqti_xmlv1p2` → quizzes/assessments
+  - `imsqti_xmlv2p1`, `imsqti_xmlv1p2`, or a type that starts with `imsqti_xmlv1p2/` (for example `imsqti_xmlv1p2/imscc_xmlv1p3/assessment`, which /idstack:course-export writes) → quizzes/assessments
   - `imsbasiclti_xmlv1p0` → external tool integrations
-  - `imsdt_xmlv1p0` or `topic` → discussion topics
+  - `imsdt_xmlv1p0`, `imsdt_xmlv1p3` (which /idstack:course-export writes) or `topic` → discussion topics
   - `assignment_xmlv1p0` or `assignment` → assignments
 
 **Learning outcomes (if present):**

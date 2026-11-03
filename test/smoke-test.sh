@@ -96,8 +96,9 @@ done
 
 # Landing page (docs/index.html) invariants (DESIGN.md "Landing page" section,
 # Decisions log 2026-11-01). The landing uses the Proof tokens and fonts from DESIGN.md with a
-# prussian hero. Since reports are plain Markdown, the landing and the Chrome
-# extension side panel are the only styled surfaces.
+# prussian hero. Since reports are plain Markdown, the landing (with its OG card
+# template, docs/og-template.html) and the Chrome extension side panel are the
+# only styled surfaces.
 # Guards against regressions: the dark/indigo look or its gradients coming back,
 # a theme toggle creeping in (dark mode follows prefers-color-scheme), the fonts
 # drifting from DESIGN.md, or the stale bare-clone install string returning
