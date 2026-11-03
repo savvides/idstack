@@ -64,8 +64,8 @@ python3 test/test-report-section.py     # 37 tests for bin/idstack-report-sectio
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
 python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
-python3 test/check-doc-accuracy.py .   # Verifies version strings, the schema version, that each bin/ path in README exists and is
-                                       # executable, and that each test/*.sh, *.py and *.js file named in CLAUDE.md and CONTRIBUTING.md exists
+python3 test/check-doc-accuracy.py .   # Verifies version strings, the schema version, that each bin/ path in README exists and,
+                                       # outside bin/lib/, is executable, and that each test/*.sh, *.py and *.js file named in CLAUDE.md and CONTRIBUTING.md exists
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails.
                                   # The full run takes ~2.5 h: run it in the background.
                                   # A case whose anchor text no longer matches prints ERROR, and no result counts until
