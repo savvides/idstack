@@ -173,7 +173,7 @@ Restrained. Two-color annotation set (rust + prussian blue) for primary marks; t
 | `micro` | 50–100 | Hover, focus rings |
 | `short` | 200 | Dropdown reveal (no surface uses it at present) |
 
-No medium / long durations. No scroll-driven animations. No parallax. No entrance animations on page load. `prefers-reduced-motion: reduce` disables all transitions.
+No medium / long durations. No scroll-driven animations. No parallax. No entrance animations on page load. On the landing page, `prefers-reduced-motion: reduce` disables all transitions. The extension side panel does not follow these motion rules yet: it uses 150 ms transitions, a 300 ms width transition and an 800 ms loading spinner, and it has no `prefers-reduced-motion` rule.
 
 ## Anti-patterns (NEVER ship)
 

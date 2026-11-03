@@ -787,7 +787,7 @@ From the PDF content, identify and extract the same elements as Path B:
 **Rise-specific notes:** Articulate Rise PDFs may lose interactive elements
 (Storyline blocks, flashcards, drag-and-drop activities). Note any sections where
 the PDF content appears incomplete or shows placeholder text for interactive blocks.
-Flag these as "interactive element not captured in PDF" in the import quality triage.
+Write these as "interactive element not captured in PDF" in the Limitations section (Step 5).
 
 Continue to Step 1b (Prepare the report).
 
