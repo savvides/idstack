@@ -2249,9 +2249,10 @@ shell_mutation "start no longer refuses a Claude app scratch workspace" \
   skills/start/SKILL.md.tmpl '  "$_HOME_DIR/Library/Application Support/Claude/scratch-workspaces/"*) echo "NOT_A_COURSE_FOLDER: $_HERE" ;;
 ' ''
 
-# 62a-62n. The Step Review. Each report skill shows each step as a table, with a
-# citation in each row except in the fact sections, the user approves it, and
-# bin/idstack-report-section adds it to the report.
+# 62a-62n. The Step Review. Each report skill writes each step as a table, with a
+# citation in each row except in the fact sections. bin/idstack-report-section
+# adds it to the report as a draft, the user reads it in the report file, and
+# when the user approves it, `approve` removes the draft mark.
 # 62a. The helper stops comparing a tier with evidence/references.md ->
 # test-report-section must fail. A row could then claim T1 for a T5 paper.
 fresh

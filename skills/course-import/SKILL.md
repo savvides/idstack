@@ -564,7 +564,7 @@ Options (AskUserQuestion takes a maximum of 4):
 Routing:
 - **LMS or SCORM package file** → ask for the file path. A `.imscc` file goes to
   Path A. A `.zip` file goes to Path E. Step E3 stops with a clear message if
-  the `.zip` is not a SCORM package.
+  the `.zip` has no `imsmanifest.xml` at its root.
 - **PDF or Word file** → Path D.
 - **Paste course documents** → Path B.
 - **Canvas API** → Path C.
