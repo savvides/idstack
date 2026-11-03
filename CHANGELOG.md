@@ -48,9 +48,15 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 
 - **A skill that stops early can finish its report.** `/idstack:accessibility-review`, `/idstack:course-quality-review` and `/idstack:red-team` keep a section for the score. When the skill stopped before the score, `bin/idstack-report-section finish` refused the report, and no Step Review could fill the section. Now the skill runs `finish --stopped`, which writes "idstack did not write this section because the skill stopped." in that section. The Summary still gets its Step Review. Closes #151.
 - **The Chrome extension (1.2.2) has a link to the feedback form in place of the vote buttons.** The buttons showed "Thank you for your feedback!", but the extension sends no telemetry, so no vote went anywhere. Closes #152.
+- **`/idstack:needs-analysis` keeps the data that `/idstack:course-import` wrote.** The two skills write the same `context` and `needs_analysis` sections. needs-analysis now reads each section and adds its results. Before, it replaced the section, and the imported job tasks were lost.
+- **`/idstack:assessment-design` does not give a feedback score in audit mode.** Audit mode (Mode 3) has no feedback strategies, so it has no data for the score.
+- **`/idstack:course-export` counts only files.** The counts of modules, assignments, quizzes, discussions and SCORM files did not include the folder entries of the ZIP file. The example package uses the IMS Common Cartridge 1.3 resource types for quizzes and discussions, and `/idstack:course-import` reads these types.
+- **The course dashboard shows `Done` only for a skill that completed.** A skill that stopped early shows as `Pending`.
+- **The full-course prompt of the Chrome extension tells the model that each assignment description is cut to 500 characters.**
 
 ### Tests
 
+- `test/test-setup.sh` copies `extension/`, so its regeneration test also covers `extension/shared/ste-rules.js`.
 - `test/test-report-section.py` has two tests for `finish --stopped`, and `test/mutation-test.sh` has case 62n. Case 30i now puts back the vote buttons.
 - `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61i.
 
