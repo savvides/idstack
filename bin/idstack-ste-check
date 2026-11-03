@@ -23,7 +23,9 @@ Rules that this script examines:
 
 Text that the script does not examine: code, quotations, citations, URLs, placeholders,
 HTML script and style, Markdown block quotations and fenced code. Each code span,
-quotation, citation, URL and placeholder counts as one word (ASD-STE100 rule 8.6).
+quotation, citation, URL and placeholder ({{...}}, ${...} or [UPPER CASE]) counts as
+one word (ASD-STE100 rule 8.6). In Markdown and HTML, the script removes a <placeholder>
+that is not in backticks as an HTML tag, and it counts as no word.
 
 Exit codes: 0 no problems, 1 problems, 2 an error in the command or the word list, or
 no text to examine (no file to read, or no text in the files that it reads).

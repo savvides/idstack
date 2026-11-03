@@ -7,8 +7,8 @@
 #
 # --context prints QUALITY_TREND, LAST_PRESENCE, SKILLS_COMPLETED, LAST_SKILL,
 # SUGGESTED_NEXT and LEARNINGS lines, then the 3 most recent learnings. The preamble's
-# Context Recovery runs it, so the dashboard and every skill read the timeline
-# with the same code.
+# Context Recovery runs it, so the dashboard summary and every skill read the
+# timeline with the same code. The readiness table has its own reader.
 #
 # Readiness thresholds (the bar a course must clear to be reported READY):
 #   READY_QUALITY_MIN          = 70   (quality_review.overall_score must be >=)
@@ -44,7 +44,8 @@ except: print('unknown')
 fi
 
 # timeline_summary <dashboard|context> — the one reader of the timeline for
-# the dashboard and for --context. PROJECT_NAME travels via the environment,
+# the dashboard summary (skills completed, quality trend, next step) and for
+# --context. The readiness table reads the whole timeline separately. PROJECT_NAME travels via the environment,
 # never interpolated into Python source — a course name containing a quote
 # character must not become a SyntaxError that blanks the dashboard.
 timeline_summary() {
