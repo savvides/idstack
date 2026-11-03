@@ -55,7 +55,7 @@ pipeline learn start"
 setup_happy_path() {
   rm -rf "$MOCK_IDSTACK_DIR/.claude-plugin" "$MOCK_IDSTACK_DIR/skills" "$HOME/.claude"
   mkdir -p "$MOCK_IDSTACK_DIR/.claude-plugin"
-  # Version must parse as JSON — doctor reads it with python3, not a regex.
+  # Version must parse as JSON — with python3, doctor reads it with json.load (grep is the no-python3 fallback).
   echo '{"name": "idstack", "version": "9.9.9.9"}' > "$MOCK_IDSTACK_DIR/.claude-plugin/plugin.json"
   echo '{"name": "idstack"}' > "$MOCK_IDSTACK_DIR/.claude-plugin/marketplace.json"
   for skill in $SKILLS; do
@@ -101,7 +101,7 @@ status: enabled"
 rm "$MOCK_IDSTACK_DIR/.claude-plugin/marketplace.json"
 check "missing marketplace.json is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: missing.*marketplace\.json"
 
-# plugin.json is parsed as JSON, not grepped — malformed must be caught.
+# With python3, doctor parses plugin.json as JSON (grep is the no-python3 fallback) — malformed must be caught.
 setup_happy_path
 mock_claude_output "idstack@idstack
 status: enabled"

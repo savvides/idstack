@@ -673,7 +673,7 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **What audit-existing does (and doesn't do):**
 
-- ✅ Reads existing rubrics from the manifest (`assessments.items[].rubric`, plus `assessments.rubrics` if an older manifest has it) or from the rubric files that an earlier course-builder run listed in `course_content.rubrics` (under `course_content.content_dir`).
+- ✅ Reads existing rubrics from the manifest (`assessments.items[].rubric`, plus `assessments.rubrics` if an older manifest has it) or from the rubric files that an earlier course-builder run listed in `course_content.rubrics`. The manifest lists only file names. The files are in the `rubrics/` subfolder of `course_content.content_dir`.
 - ✅ Classifies each rubric criterion on Bloom's level (same classification approach as Mode 2 and the `/idstack:learning-objectives` skill).
 - ✅ Compares to the course ILOs from `learning_objectives.ilos`. Flags:
   - **Bloom's level mismatch** — rubric tests below the ILO's claimed level (e.g., ILO says "analyze" but rubric criteria are "list/describe").
@@ -686,7 +686,7 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **Audit workflow steps (replaces Steps 1-5 of the design workflow below):**
 
-1. **Inventory.** List every assessment from `assessments.items` (or, if items is empty, from the assessment files that an earlier course-builder run listed in `course_content.assessments`, under `course_content.content_dir`). Note type, title, weight, ILOs claimed.
+1. **Inventory.** List every assessment from `assessments.items` (or, if items is empty, from the assessment files that an earlier course-builder run listed in `course_content.assessments`. The files are in the `assessments/` subfolder of `course_content.content_dir`.) Note type, title, weight, ILOs claimed.
 
 **Step review:** do the Step Review in the preamble. Section: `## Assessment inventory`. Columns: `ID | Assessment | Type | Weight | ILOs claimed | Justification | Evidence`.
 

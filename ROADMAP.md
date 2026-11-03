@@ -138,6 +138,7 @@ _The update check is removed after v3.10.0.0. It did not run for plugin installs
 - PDF and document file import also added for Rise course exports and syllabi
 
 ### Accessibility review + Red team audit (v1.3.0)
+_Since v3.7.0.0 the two tiers are "Necessary changes" (accessibility violations) and "Recommended changes" (UDL recommendations)._
 - `/idstack:accessibility-review` — WCAG 2.1 AA compliance plus Universal Design for Learning (UDL 3.0). Two-tier output: "Must Fix" for legal compliance, "Should Improve" for inclusive design.
 - `/idstack:red-team` — Adversarial course audit. Assumes the course is broken and tries to prove it. Five dimensions: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Produces a confidence score.
 
