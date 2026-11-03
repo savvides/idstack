@@ -94,8 +94,8 @@ for skill in $SKILLS; do
   check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
 
-# Landing page (docs/index.html) - "Evidence Instrument" invariants (DESIGN.md,
-# 2026-11-01). The landing uses the Proof tokens and fonts from DESIGN.md with a
+# Landing page (docs/index.html) invariants (DESIGN.md "Landing page" section,
+# Decisions log 2026-11-01). The landing uses the Proof tokens and fonts from DESIGN.md with a
 # prussian hero. Since reports are plain Markdown, the landing and the Chrome
 # extension side panel are the only styled surfaces.
 # Guards against regressions: the dark/indigo look or its gradients coming back,

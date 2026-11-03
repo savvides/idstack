@@ -8,7 +8,7 @@ Nothing. idstack has no servers of its own and receives none of your data. The C
 
 ## Where your data lives
 
-All course data stays in your project directory:
+All course data stays on your machine, in your project directory:
 
 - `.idstack/project.json` — your course manifest
 - `.idstack/timeline.jsonl` — session history (which skills ran, scores)
@@ -16,6 +16,7 @@ All course data stays in your project directory:
 - `.idstack/course-content/` — generated course files
 - `.idstack/exports/<course-slug>/` — the Markdown reports, the course dashboard and the LMS packages
 - `.idstack/import/` — the text that `/idstack:course-import` takes from a Word file
+- While `/idstack:course-import` reads an IMS Common Cartridge or a SCORM package, it unpacks the package into a temporary folder that your system makes, outside the project directory. The skill deletes that folder when the import step ends.
 - `.idstack/canvas.env` — your Canvas URL, course ID and access token, when you use the Canvas API (see below)
 - `.idstack/learnings-export.md` — learnings that you export with `/idstack:learn`
 
