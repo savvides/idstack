@@ -50,7 +50,7 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 - **The Chrome extension (1.2.2) has a link to the feedback form in place of the vote buttons.** The buttons showed "Thank you for your feedback!", but the extension sends no telemetry, so no vote went anywhere. Closes #152.
 - **`/idstack:needs-analysis` keeps the data that `/idstack:course-import` wrote.** The two skills write the same `context` and `needs_analysis` sections. needs-analysis now reads each section and adds its results. Before, it replaced the section, and the imported job tasks were lost.
 - **`/idstack:assessment-design` does not give a feedback score in audit mode.** Audit mode (Mode 3) has no feedback strategies, so it has no data for the score.
-- **`/idstack:course-export` counts only files.** The counts of modules, assignments, quizzes, discussions and SCORM files did not include the folder entries of the ZIP file. The example package uses the IMS Common Cartridge 1.3 resource types for quizzes and discussions, and `/idstack:course-import` reads these types.
+- **`/idstack:course-export` counts only files.** Before, the counts of modules, assignments, quizzes, discussions and SCORM files included the folder entries of the ZIP file. The example package uses the IMS Common Cartridge 1.3 resource types for quizzes and discussions, and `/idstack:course-import` reads these types.
 - **The course dashboard shows `Done` only for a skill that completed.** A skill that stopped early shows as `Pending`.
 - **The full-course prompt of the Chrome extension tells the model that each assignment description is cut to 500 characters.**
 
