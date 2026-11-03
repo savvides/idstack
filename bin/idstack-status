@@ -6,7 +6,7 @@
 # Shows: project name, skills completed, quality score trend, dimensions, next step.
 #
 # --context prints QUALITY_TREND, LAST_PRESENCE, SKILLS_COMPLETED, LAST_SKILL,
-# SUGGESTED_NEXT and LEARNINGS lines, then the top 3 learnings. The preamble's
+# SUGGESTED_NEXT and LEARNINGS lines, then the 3 most recent learnings. The preamble's
 # Context Recovery runs it, so the dashboard and every skill read the timeline
 # with the same code.
 #

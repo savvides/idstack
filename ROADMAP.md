@@ -11,7 +11,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ### A smaller idstack (v3.8.0.0–v3.9.0.0)
 - **idstack supports Claude Code only.** Without Claude Code, you can use the Chrome extension.
-- **idstack needs python3 3.9 or a later version.** Each script tells you when python3 is missing, and `bin/idstack-doctor` reports a missing or older python3.
+- **idstack needs python3 3.9 or a later version.** `bin/idstack-learnings`, `bin/idstack-timeline-log`, `bin/idstack-status`, `bin/idstack-migrate` and `bin/idstack-slugify` tell you when python3 is missing, and `bin/idstack-doctor` reports a missing or older python3.
 - **The Consensus integration is removed.** You update `evidence/references.md` manually. The Chrome extension (1.2.1) does not keep an audit history.
 - **`./setup` does not remove old installs.** The CHANGELOG gives the commands to remove them manually.
 

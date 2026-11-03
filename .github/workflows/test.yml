@@ -34,7 +34,7 @@ jobs:
       # Node 22 is pinned for two suites. test/test-extension.sh imports the shipped extension
       # ES modules; extension/ has no package.json, so Node must detect ESM syntax in .js files
       # itself (the default only from 20.19 / 22.7). test-rendered-landing.js drives Chrome over
-      # the global WebSocket, which node exposes unflagged only from 22.4. Declaring node here
+      # the global WebSocket, which node exposes without a flag from 22.0 (stable from 22.4). Declaring node here
       # also keeps smoke-test's node-absent SKIP from silently hiding a failure.
       - uses: actions/setup-node@v4
         with:

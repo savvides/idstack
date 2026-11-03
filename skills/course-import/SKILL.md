@@ -1372,7 +1372,7 @@ Write the manifest, then confirm. Write the message as Markdown text, not in a c
 **Two artifacts:**
 - **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the import report
   with evidence-backed quality flags, the Bloom's classification table, and recommended
-  next steps tied to specific findings. Click the link to open it. The folder has all of the files for the report.
+  next steps tied to specific findings. Click the link to open it.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Recommended next steps:**
@@ -1782,7 +1782,7 @@ Empty string means the skill hasn't run yet or didn't record the mode (legacy ma
 ```json
 {
   "description": "Discussion rubric for Module 5",
-  "source": "red-team:alignment-3 | quality-review:<short form of the recommendation's finding text> | user request",
+  "source": "red-team:alignment-3 | quality-review:<short form of the recommendation's finding text> | user-request",
   "status": "generated|deferred|declined",
   "output_path": "Optional — set when status=generated, points to the generated file."
 }

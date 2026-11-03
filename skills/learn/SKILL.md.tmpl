@@ -42,7 +42,7 @@ Format the output as a readable table:
 Key              | Type         | Insight                          | Confidence
 ─────────────────┼──────────────┼──────────────────────────────────┼───────────
 canvas-rubrics   | operational  | Uses HTML format for rubrics     | 8/10
-bloom-verbs      | pedagogical  | Do not use "understand" in ILOs  | 9/10
+bloom-verbs      | operational  | Do not use "understand" in ILOs  | 9/10
 ```
 
 ### search <keyword>
@@ -89,8 +89,9 @@ Export the local learnings of this project (the latest 1000) to a markdown file.
 "$_IDSTACK/bin/idstack-learnings" search --limit 1000
 ```
 
-Format as markdown with sections grouped by type (operational, pedagogical, etc.)
-and write to `.idstack/learnings-export.md`.
+Format as markdown and write to `.idstack/learnings-export.md`. idstack skills log
+every learning with the type `operational`. If the learnings have more than one
+`type` value, make one section for each type.
 
 **Writing standard check.** Run this command on the export file. This check only shows problems. Do not change the learnings in the export. Other sessions wrote them, many before the writing standard.
 
