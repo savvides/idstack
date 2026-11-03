@@ -636,7 +636,7 @@ Decide which mode this skill is operating in **before** running the content gene
 - **Gap-fill mode** — both of these must be true:
   - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
   - `course_content.modules` is non-empty (from an earlier course-builder run; course-import does not write `course_content`)
-- **Build-new mode** — anything else (no manifest, no import_metadata, a `paste` or `pdf` source, or zero modules in course_content).
+- **Build-new mode** — anything else (no manifest, an empty `import_metadata.source`, a `paste` or `pdf` source, or zero modules in course_content).
 
 **Announce the chosen mode to the user as the first sentence:**
 - "Mode: build-new. I will generate a new syllabus, new module pages, and new assessment documents."
@@ -710,7 +710,7 @@ Read the full manifest. Tell the user the proposed output in one sentence, for e
   material.
 - If no task analysis but ILOs exist: group ILOs by knowledge domain or cognitive
   level progression. Each group becomes a module.
-- If `import_metadata` exists, the imported modules are in `task_analysis.job_tasks`,
+- If `import_metadata.source` is not empty (the course came from /idstack:course-import), the imported modules are in `task_analysis.job_tasks`,
   one task for each imported module. Keep that module organization, one module for
   each task, unless the user asks to restructure it.
 - Map the module count to the `context.timeline`. A 16-week course with 5 modules

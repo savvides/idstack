@@ -392,7 +392,7 @@ if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
   check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
 fi
 
-# `claude plugin list` parsing, also extracted to bin/lib/ so it is testable.
+# `claude plugin list` parsing, extracted to bin/lib/ so it is testable.
 # A fixed-size window here once reported a disabled idstack as enabled.
 check "bin/lib/plugin-status.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/plugin-status.sh' ]"
 check "idstack-doctor sources the shared plugin-status parser" "grep -q 'lib/plugin-status.sh' '$IDSTACK_DIR/bin/idstack-doctor'"
