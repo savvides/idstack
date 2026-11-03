@@ -182,6 +182,7 @@ Identify text from a different source for the checker:
 - In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
 - The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
 - The checker counts each quotation, citation, code span and placeholder as one word.
+  A <placeholder> that is not in backticks counts as no word.
 
 When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
 prompt. The sub-agent cannot see this preamble.
@@ -1759,7 +1760,7 @@ The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|mo
 
 ### Mode field — design-new vs audit-existing
 
-`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check). `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report's header metadata line under the title, as `mode: Mode N` (`idstack-report-section init --mode`).
+`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `needs_analysis.mode` is `audit-existing` when `import_metadata.source` is `cartridge`, `scorm` or `canvas-api` and `import_metadata.items_imported.modules > 0`. `course_content.mode` is `gap-fill` when `import_metadata.source` is one of those values and `course_content.modules` is non-empty. `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report's header metadata line under the title, as `mode: Mode N` (`idstack-report-section init --mode`).
 
 Allowed values per skill:
 - `needs_analysis.mode`: `"design-new"` or `"audit-existing"`

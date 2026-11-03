@@ -177,6 +177,7 @@ Identify text from a different source for the checker:
 - In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
 - The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
 - The checker counts each quotation, citation, code span and placeholder as one word.
+  A <placeholder> that is not in backticks counts as no word.
 
 When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
 prompt. The sub-agent cannot see this preamble.
