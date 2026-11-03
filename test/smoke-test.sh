@@ -416,7 +416,7 @@ if [ -x "$IDSTACK_DIR/test/test-status.sh" ]; then
 fi
 
 # The ASD-STE100 checker. Skills run it on each file they write, so a false
-# positive costs the user three rewrite passes on every run.
+# positive costs the user up to three checker runs (two rewrite passes) on every run.
 if command -v python3 &>/dev/null; then
   check "ste checker unit tests pass" "python3 '$IDSTACK_DIR/test/test-ste-check.py'"
 fi

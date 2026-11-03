@@ -640,7 +640,7 @@ Decide which mode this skill is operating in **before** running the content gene
 
 **Announce the chosen mode to the user as the first sentence:**
 - "Mode: build-new. I will generate a new syllabus, new module pages, and new assessment documents."
-- "Mode: gap-fill (idstack found a course import). The course is available. I will generate ONLY the missing artifacts that upstream skills found. I will not generate a new syllabus or new modules. To generate all of the course again, say 'rebuild'."
+- "Mode: gap-fill (idstack found a course import). The course is available. I will generate ONLY the missing artifacts that upstream skills found. I will not generate a new syllabus or new modules."
 
 After you announce the mode, start the report. Run this block. In the `--mode` value, replace `<mode>` with `build-new` or `gap-fill`.
 

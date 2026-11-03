@@ -310,7 +310,7 @@ Any skill works independently. Run `/idstack:pipeline` to chain them all, or inv
 ## Architecture
 
 ```
-BUILD (contributors only; installs ship the generated SKILL.md files)
+BUILD (./setup runs it on each install; marketplace installs use the committed SKILL.md files)
 
   skills/<name>/SKILL.md.tmpl ──────────┐
   templates/preamble.md ────────────────┤

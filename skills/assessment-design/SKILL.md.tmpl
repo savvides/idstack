@@ -217,7 +217,7 @@ Use the assessment IDs from the manifest, for example `A-1`. In the Justificatio
 
 **Step review:** do the Step Review in the preamble. Section: `## Rubric alignment audit`. Columns: `ID | Criterion | Bloom's level | ILO | Status | Justification | Evidence`.
 
-Make one row for each rubric criterion and one row for each untested ILO. Use row IDs like `A-1-C1`. In the Status cell, write `aligned`, `Bloom's mismatch`, `untested ILO`, `orphaned criterion` or `missing rubric`.
+Make one row for each rubric criterion and one row for each untested ILO. Use row IDs like `A-1-C1`. In the Status cell, write `aligned`, `Bloom's mismatch`, `untested ILO`, `orphaned criterion`, `missing rubric` or `no elaborated feedback`.
 
 4. **Recommendations.** Surface the top 1-3 fixes — usually rubric criterion edits, not new assessments. If the user wants to act on them, propose specific edits and apply via `Edit`. Track applied/deferred fixes in `assessments.audit_notes` (item shape in the manifest schema).
 
@@ -395,11 +395,11 @@ Use the IDs `assess-1`, `rubric-1`, `feedback-1` and so on. Make findings from a
 
 In Mode 3, each finding names the audited rubric criterion or assessment and tells the gap. It does not recommend a full redesign.
 
-Before the closing Step Review, calculate the `feedback_quality_score` from the approved rows. Use the rules in the "Write Manifest" section.
+Before the closing Step Review, calculate the `feedback_quality_score` from the approved rows. Use the rules in the "Write Manifest" section. In Mode 3, the approved rows have no feedback strategies or formative checkpoints. Do not calculate the score, and do not write `feedback_quality_score` to the manifest.
 
 **Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns of Top recommendations: `ID | Action | Justification | Evidence`.
 
-- **Summary:** 2 or 3 sentences. Start with "Feedback quality XX/100". Then give the largest alignment risk and one observation about elaborated feedback or rubric coverage.
+- **Summary:** 2 or 3 sentences. In Mode 1 and Mode 2, start with "Feedback quality XX/100". In Mode 3, start with the number of audited assessments and rubric criteria. Then give the largest alignment risk and one observation about elaborated feedback or rubric coverage.
 - **Limitations:** In Mode 3, the report reads the rubric criteria from the manifest or from the rubric files that course-builder wrote. In Mode 1 and Mode 2, idstack wrote the rubrics in this session. The report does not read how instructors use the rubrics on student work. The `feedback_quality_score` is a heuristic. It is not a validated instrument. Mode 3 does not recommend new assessments.
 - **Next steps:** Run `/idstack:course-builder` to make the full course content, with assessment documents, rubric handouts and assignment instructions. For an imported course in gap-fill mode, course-builder makes only the missing artifacts that `/idstack:red-team`, `/idstack:course-quality-review` or you identify.
 
@@ -429,7 +429,7 @@ first, merge in your changes, then pass the full updated section as the payload.
 
 The `assessments` payload must include `report_path` set to the path from the "Report path:" line of the "Start the Report" block (e.g., `.idstack/exports/<course-slug>/assessment-design.md`).
 
-Use only the approved rows in the payloads: the items, the rubric criteria, the feedback strategies, the formative checkpoints, the `gaps[]` entries and the `audit_notes`. Calculate the `feedback_quality_score` from the approved rows.
+Use only the approved rows in the payloads: the items, the rubric criteria, the feedback strategies, the formative checkpoints, the `gaps[]` entries and the `audit_notes`. Calculate the `feedback_quality_score` from the approved rows (Mode 1 and Mode 2 only).
 
 Write each payload with the Write tool first: `.idstack/.assessments-payload.json` (the
 assessments section contents, field shape below; the payload is the flat section contents, with no enclosing `assessments` key) and `.idstack/.learning_objectives-payload.json`

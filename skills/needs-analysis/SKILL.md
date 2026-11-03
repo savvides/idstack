@@ -850,7 +850,11 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 ### Step 7: Write Manifest
 
 Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
-This skill owns the `context` and `needs_analysis` sections and the top-level `project_name`.
+This skill writes the `context` and `needs_analysis` sections and the top-level `project_name`.
+/idstack:course-import also writes them. The merge tool replaces each section whole.
+So for each of the two sections: read the existing section from the manifest (if any),
+add the results of this session to it, and pass the full merged section. Keep the
+fields that course-import wrote, for example `needs_analysis.task_analysis.job_tasks`.
 
 Write each payload with the Write tool first: `.idstack/.context-payload.json` holds the
 `context` section and `.idstack/.needs_analysis-payload.json` holds the `needs_analysis`

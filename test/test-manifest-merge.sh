@@ -206,7 +206,7 @@ check "multi-section write replaces each section" \
   "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"assessments\"]=={\"a\": 1} and d[\"learning_objectives\"]=={\"b\": 2}'"
 check "--set writes project_name" "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"project_name\"]==\"New Name\"'"
 
-# --- Test 18: a bad second payload writes nothing, not even a --create manifest ---
+# --- Test 18: a bad second payload writes nothing; a bad payload with --create makes no manifest ---
 seed_manifest
 cp "$WORK/project.json" "$WORK/before.json"
 echo 'not json' > "$WORK/bad.json"
