@@ -2414,6 +2414,11 @@ shell_mutation "course-builder gap-fill ignores the imported modules" \
 shell_mutation "assessment-design Mode 2 stops saving its ILOs" \
   skills/assessment-design/SKILL.md.tmpl 'In Mode 2, also put each approved `## Learning objectives` row in' 'In Mode 2, the approved `## Learning objectives` rows go in'
 
+# 62r. assessment-design Mode 3 stops asking for ILOs when the import found none
+# -> smoke-test must fail. Mode 3 then audits against no objectives (#153).
+shell_mutation "assessment-design Mode 3 audits with no ILOs" \
+  skills/assessment-design/SKILL.md.tmpl 'If `learning_objectives.ilos` is empty (an import can find assessments but no objectives), first do the objectives step of Mode 2' 'Use the objectives in `learning_objectives.ilos`'
+
 # 62m. The Step Review chat note loses its exact link line -> smoke-test must
 # fail. The model then names the report as text, which is not a link in the app.
 shell_mutation "the Step Review chat note loses its exact link line" \

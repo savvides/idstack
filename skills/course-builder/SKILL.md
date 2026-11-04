@@ -1164,7 +1164,7 @@ PAYLOAD
 
 The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. `--create` makes a canonical manifest first if `.idstack/project.json` does not exist yet (the standalone case). It never replaces a manifest that exists.
 
-**Mode field.** Set `mode` to the mode that "Mode detection" chose: `"gap-fill"` when `import_metadata.source` is `cartridge`, `scorm` or `canvas-api` and `course_content.modules` is non-empty, otherwise `"build-new"`. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
+**Mode field.** Set `mode` to the mode that "Mode detection" chose: `"gap-fill"` when `import_metadata.source` is `cartridge`, `scorm` or `canvas-api` and either `import_metadata.items_imported.modules` is more than 0 or `course_content.modules` is non-empty, otherwise `"build-new"`. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
 
 The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. It is a record for the designer of what still needs to be filled in. No other skill reads this field.
 

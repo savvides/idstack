@@ -784,6 +784,8 @@ check "assessment-design Mode 3 starts on the assessments an import found" \
   "grep -qF 'import_metadata.items_imported.assessments\` is more than 0' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
 check "course-builder gap-fill starts on the modules an import found" \
   "grep -qF 'import_metadata.items_imported.modules\` is more than 0' '$IDSTACK_DIR/skills/course-builder/SKILL.md.tmpl'"
+check "assessment-design Mode 3 asks for ILOs when an import found none" \
+  "grep -qF 'If \`learning_objectives.ilos\` is empty (an import can find assessments but no objectives)' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
 # Regression (#154): Mode 2 classified new ILOs but never saved them, so
 # ilo_to_assessment pointed at ILO IDs that no section defined.
 check "assessment-design Mode 2 saves the ILOs it classifies" \

@@ -687,6 +687,8 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **Audit workflow steps (replaces Steps 1-5 of the design workflow below):**
 
+0. **Objectives.** If `learning_objectives.ilos` is empty (an import can find assessments but no objectives), first do the objectives step of Mode 2: ask for the objectives, classify them, and do its `## Learning objectives` Step Review. Then audit against those ILOs.
+
 1. **Inventory.** List every assessment from `assessments.items` (or, if items is empty, from the assessment files that an earlier course-builder run listed in `course_content.assessments`. The files are in the `assessments/` subfolder of `course_content.content_dir`.) If both are empty, the assessments come from the import: read the `## Imported structure` section of the course-import report (its path is in `import_metadata.report_path`), which gives the number of assessments and rubrics in each module. Ask the user for the title, type, weight and ILOs claimed of each assessment, and for the criteria of each rubric. Give each assessment the ID `A-1`, `A-2` and so on. Note type, title, weight and ILOs claimed. The manifest items have no weight field: get the weight from the `**Points:**` line of the assessment file, or ask the user. If neither gives a weight, write `unknown`.
 
 **Step review:** do the Step Review in the preamble. Section: `## Assessment inventory`. Columns: `ID | Assessment | Type | Weight | ILOs claimed | Justification | Evidence`.
@@ -881,7 +883,7 @@ Before the closing Step Review, calculate the `feedback_quality_score` from the 
 **Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns of Top recommendations: `ID | Action | Justification | Evidence`.
 
 - **Summary:** 2 or 3 sentences. In Mode 1 and Mode 2, start with "Feedback quality XX/100". In Mode 3, start with the number of audited assessments and rubric criteria. Then give the largest alignment risk and one observation about elaborated feedback or rubric coverage.
-- **Limitations:** In Mode 3, the report reads the rubric criteria from the manifest or from the rubric files that course-builder wrote. In Mode 1 and Mode 2, idstack wrote the rubrics in this session. The report does not read how instructors use the rubrics on student work. The `feedback_quality_score` is a heuristic. It is not a validated instrument. Mode 3 does not recommend new assessments.
+- **Limitations:** In Mode 3, the report reads the rubric criteria from the manifest or from the rubric files that course-builder wrote. After an import with neither, the user gave the rubric criteria, and idstack did not read the imported rubric files. In Mode 1 and Mode 2, idstack wrote the rubrics in this session. The report does not read how instructors use the rubrics on student work. The `feedback_quality_score` is a heuristic. It is not a validated instrument. Mode 3 does not recommend new assessments.
 - **Next steps:** Run `/idstack:course-builder` to make the full course content, with assessment documents, rubric handouts and assignment instructions. For an imported course in gap-fill mode, course-builder makes only the missing artifacts that `/idstack:red-team`, `/idstack:course-quality-review` or you identify.
 
 Run the finish command of the Step Review.
@@ -926,7 +928,7 @@ assessments section contents, field shape below; the payload is the flat section
 (the full existing `learning_objectives` section with the new `ilo_to_assessment`
 mapping merged in. In Mode 2, also put each approved `## Learning objectives` row in
 `ilos` as `{"id", "objective", "knowledge_dimension", "cognitive_process"}`, the shape
-that `/idstack:learning-objectives` writes. If there is no `learning_objectives`
+that `/idstack:learning-objectives` writes. Do the same in Mode 3 when step 0 asked for the objectives. If there is no `learning_objectives`
 section yet, start from the empty section in the schema. In Mode 3, also merge in the
 new `gaps[]` entries). Then:
 
