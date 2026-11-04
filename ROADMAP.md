@@ -91,7 +91,7 @@ _Reports and the dashboard are Markdown again after v3.10.0.0 (`<skill>.md`, `in
 - **Install hygiene.** `setup` now actively removes legacy pre-v2.0.1.0 installs at `~/.claude/skills/idstack/` that shadowed the plugin namespace. `bin/idstack-doctor` diagnoses install state. `test/smoke-test.sh` regression-catches the conflict. (v3.9.0.0 removed this cleanup from `setup`, the check for these installs from `bin/idstack-doctor`, and the regression check from `test/smoke-test.sh`.)
 
 ### Imported-course mode (v2.3)
-_Audit mode and gap-fill mode start only when the manifest already has assessments or modules, which `/idstack:course-import` does not write. See the README._
+_In v3.10.0.0 and earlier, audit mode and gap-fill mode did not start right after an import. They now key on the counts that `/idstack:course-import` records._
 - `/idstack:needs-analysis`, `/idstack:assessment-design`, and `/idstack:course-builder` auto-detect imported courses and switch behavior. Needs-analysis runs a design-fit check instead of the training-decision gate. Assessment-design switches to audit mode (classifies existing rubric criteria on Bloom's). Course-builder switches to gap-fill mode (generates only the artifacts upstream skills flagged as missing).
 
 ### Red-team in a clean-context sub-agent + triage-and-fix loop (v2.2)

@@ -778,6 +778,17 @@ check "preamble tells skills to give the report link" \
 check "no skill tells the user to open a report in a web browser" \
   "! grep -l 'Open it in a web browser' $IDSTACK_DIR/skills/*/SKILL.md.tmpl"
 
+# Regression (#153): audit mode and gap-fill mode keyed only on manifest lists
+# that course-import never writes, so neither started right after an import.
+check "assessment-design Mode 3 starts on the assessments an import found" \
+  "grep -qF 'import_metadata.items_imported.assessments\` is more than 0' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
+check "course-builder gap-fill starts on the modules an import found" \
+  "grep -qF 'import_metadata.items_imported.modules\` is more than 0' '$IDSTACK_DIR/skills/course-builder/SKILL.md.tmpl'"
+# Regression (#154): Mode 2 classified new ILOs but never saved them, so
+# ilo_to_assessment pointed at ILO IDs that no section defined.
+check "assessment-design Mode 2 saves the ILOs it classifies" \
+  "grep -qF 'In Mode 2, also put each approved \`## Learning objectives\` row in' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
+
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

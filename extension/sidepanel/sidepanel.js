@@ -1,7 +1,7 @@
 import { getSettings, saveSettings, getDossier, addToDossier, removeFromDossier, clearDossier } from '../shared/storage.js';
 import { renderAuditHTML, renderDossierListHTML } from './renderer-helper.js';
 import { detectCourseContext } from '../content/extractor-core.js';
-import { compileSingleAuditToMarkdown, compileDossierToMarkdown } from '../shared/dossier-compiler.js';
+import { compileSingleAuditToMarkdown, compileDossierToMarkdown, dossierCourseLabel } from '../shared/dossier-compiler.js';
 
 let activePayload = null;
 let activeCourseContext = null;
@@ -151,6 +151,8 @@ function renderResults(data, source) {
     title: source?.title || 'Course Material',
     pageType: source?.pageType || 'Web Page',
     url: source?.url || '',
+    courseId: detectCourseContext(source?.url).courseId,
+    courseTitle: source?.pageType === 'Canvas Course (Full Audit)' ? (source?.title || null) : null,
     result: data,
     timestamp: new Date().toISOString()
   };
@@ -412,9 +414,7 @@ if (closeDossier && dossierDrawer) {
 if (exportDossierMdBtn) {
   exportDossierMdBtn.addEventListener('click', async () => {
     const dossier = await getDossier();
-    const courseTitle = (activeCourseContext && activeCourseContext.courseId)
-      ? `Course ${activeCourseContext.courseId}`
-      : (activePayload?.title || 'Canvas Course');
+    const courseTitle = dossierCourseLabel(dossier);
     const md = compileDossierToMarkdown(dossier, courseTitle);
     const safeTitle = sanitizeFilename(courseTitle);
     downloadMarkdownFile(`idstack-course-dossier-${safeTitle}.md`, md);
@@ -424,9 +424,7 @@ if (exportDossierMdBtn) {
 if (copyDossierMdBtn) {
   copyDossierMdBtn.addEventListener('click', async () => {
     const dossier = await getDossier();
-    const courseTitle = (activeCourseContext && activeCourseContext.courseId)
-      ? `Course ${activeCourseContext.courseId}`
-      : (activePayload?.title || 'Canvas Course');
+    const courseTitle = dossierCourseLabel(dossier);
     const md = compileDossierToMarkdown(dossier, courseTitle);
     await copyWithFeedback(copyDossierMdBtn, md, '📋 Copy Markdown');
   });

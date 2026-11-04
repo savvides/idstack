@@ -53,9 +53,13 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 - **`/idstack:course-export` counts only files.** Before, the counts of modules, assignments, quizzes, discussions and SCORM files included the folder entries of the ZIP file. The example package uses the IMS Common Cartridge 1.3 resource types for quizzes and discussions, and `/idstack:course-import` reads these types.
 - **The course dashboard shows `Done` only for a skill that completed.** A skill that stopped early shows as `Pending`.
 - **The full-course prompt of the Chrome extension tells the model that each assignment description is cut to 500 characters.**
+- **Audit mode and gap-fill mode start after an import.** `/idstack:assessment-design` (Mode 3) and `/idstack:course-builder` (gap-fill) now start when `/idstack:course-import` found assessments or modules. Before, they looked only at manifest lists that the import does not write. assessment-design gets the details of each imported assessment from you, and course-builder reads the imported modules from the import report. Closes #153.
+- **`/idstack:assessment-design` saves the objectives that it writes in Mode 2.** Before, Mode 2 linked assessments to new objective IDs but did not save the objectives in `learning_objectives.ilos`. Closes #154.
+- **The dossier export of the Chrome extension names the audited course.** The name came from the tab that was open when you exported. Now each dossier item keeps the course ID of the page that it audited. A dossier with audits from more than one course is named "Several courses". Closes #155.
 
 ### Tests
 
+- smoke-test has three checks for the audit, gap-fill and Mode 2 fixes, with mutation cases 62o to 62q. `test/test-dossier-compiler.mjs` tests the dossier label, with case 30m.
 - `test/test-setup.sh` copies `extension/`, so its regeneration test also covers `extension/shared/ste-rules.js`.
 - `test/test-report-section.py` has two tests for `finish --stopped`, and `test/mutation-test.sh` has case 62n. Case 30i now puts back the vote buttons.
 - `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61i.

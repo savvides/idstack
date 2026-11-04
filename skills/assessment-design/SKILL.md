@@ -666,15 +666,15 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **Condition (BOTH must be true):**
 - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
-- `assessments.items` is non-empty (from an earlier assessment-design run; course-import does not write it) OR `course_content.assessments` is non-empty (from an earlier course-builder run; course-import does not write `course_content`)
+- `import_metadata.items_imported.assessments` is more than 0 (the import found assessments), OR `assessments.items` is non-empty (from an earlier assessment-design run), OR `course_content.assessments` is non-empty (from an earlier course-builder run)
 
 **Announce the chosen mode to the user as the first sentence:**
 
-> "Mode 3: audit-existing. idstack found [N] assessments and [M] rubrics from an earlier idstack run on this imported course. I will audit them against your ILOs. I will not design new assessments. To add new assessments, say 'design more'."
+> "Mode 3: audit-existing. idstack found [N] assessments and [M] rubrics in this imported course. I will audit them against your ILOs. I will not design new assessments. To add new assessments, say 'design more'."
 
 **What audit-existing does (and doesn't do):**
 
-- ✅ Reads existing rubrics from the manifest (`assessments.items[].rubric`, plus `assessments.rubrics` if an older manifest has it) or from the rubric files that an earlier course-builder run listed in `course_content.rubrics`. The manifest lists only file names. The files are in the `rubrics/` subfolder of `course_content.content_dir`.
+- ✅ Reads existing rubrics from the manifest (`assessments.items[].rubric`, plus `assessments.rubrics` if an older manifest has it) or from the rubric files that an earlier course-builder run listed in `course_content.rubrics`. The manifest lists only file names. The files are in the `rubrics/` subfolder of `course_content.content_dir`. After an import with neither, it gets the rubric criteria from the user (Inventory, step 1).
 - ✅ Classifies each rubric criterion on Bloom's level (same classification approach as Mode 2 and the `/idstack:learning-objectives` skill).
 - ✅ Compares to the course ILOs from `learning_objectives.ilos`. Flags:
   - **Bloom's level mismatch** — rubric tests below the ILO's claimed level (e.g., ILO says "analyze" but rubric criteria are "list/describe").
@@ -687,11 +687,11 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **Audit workflow steps (replaces Steps 1-5 of the design workflow below):**
 
-1. **Inventory.** List every assessment from `assessments.items` (or, if items is empty, from the assessment files that an earlier course-builder run listed in `course_content.assessments`. The files are in the `assessments/` subfolder of `course_content.content_dir`.) Note type, title, weight and ILOs claimed. The manifest items have no weight field: get the weight from the `**Points:**` line of the assessment file, or ask the user. If neither gives a weight, write `unknown`.
+1. **Inventory.** List every assessment from `assessments.items` (or, if items is empty, from the assessment files that an earlier course-builder run listed in `course_content.assessments`. The files are in the `assessments/` subfolder of `course_content.content_dir`.) If both are empty, the assessments come from the import: read the `## Imported structure` section of the course-import report (its path is in `import_metadata.report_path`), which gives the number of assessments and rubrics in each module. Ask the user for the title, type, weight and ILOs claimed of each assessment, and for the criteria of each rubric. Give each assessment the ID `A-1`, `A-2` and so on. Note type, title, weight and ILOs claimed. The manifest items have no weight field: get the weight from the `**Points:**` line of the assessment file, or ask the user. If neither gives a weight, write `unknown`.
 
 **Step review:** do the Step Review in the preamble. Section: `## Assessment inventory`. Columns: `ID | Assessment | Type | Weight | ILOs claimed | Justification | Evidence`.
 
-Use the assessment IDs from the manifest, for example `A-1`. In the Justification cell, tell why the type and the weight can measure the ILOs that the assessment claims.
+Use the assessment IDs from the manifest or from the inventory, for example `A-1`. In the Justification cell, tell why the type and the weight can measure the ILOs that the assessment claims.
 
 2. **Per-assessment Bloom's mapping.** For each assessment, examine its rubric criteria and classify each on Bloom's. Record in `assessments.items[].alignment_status` (`"weak" | "moderate" | "strong"` per the canonical schema) based on whether the criteria collectively reach the ILO's claimed level.
 3. **Cross-walk.** Build a `learning_objectives.alignment_matrix.gaps[]` entries for each Bloom-mismatch, untested ILO, or orphaned criterion. Use the canonical `gaps[]` shape: `{ilo, type, description, severity}`.
@@ -913,8 +913,8 @@ replaces only the named section, preserves every other section verbatim, validat
 and atomically updates the top-level `updated` timestamp. **This skill writes two
 top-level sections** — `assessments` and `learning_objectives` — in one atomic call
 (one `--section`/`--payload` pair per section). The `learning_objectives` write needs to update the
-`alignment_matrix.ilo_to_assessment` mapping (and in Mode 3, the
-`alignment_matrix.gaps` array as well). Read the existing `learning_objectives` section
+`alignment_matrix.ilo_to_assessment` mapping (in Mode 2, also the `ilos` array, and
+in Mode 3, the `alignment_matrix.gaps` array as well). Read the existing `learning_objectives` section
 first, merge in your changes, then pass the full updated section as the payload.
 
 The `assessments` payload must include `report_path` set to the path from the "Report path:" line of the "Start the Report" block (e.g., `.idstack/exports/<course-slug>/assessment-design.md`).
@@ -924,7 +924,11 @@ Use only the approved rows in the payloads: the items, the rubric criteria, the 
 Write each payload with the Write tool first: `.idstack/.assessments-payload.json` (the
 assessments section contents, field shape below; the payload is the flat section contents, with no enclosing `assessments` key) and `.idstack/.learning_objectives-payload.json`
 (the full existing `learning_objectives` section with the new `ilo_to_assessment`
-mapping, and in Mode 3 the new `gaps[]` entries, merged in). Then:
+mapping merged in. In Mode 2, also put each approved `## Learning objectives` row in
+`ilos` as `{"id", "objective", "knowledge_dimension", "cognitive_process"}`, the shape
+that `/idstack:learning-objectives` writes. If there is no `learning_objectives`
+section yet, start from the empty section in the schema. In Mode 3, also merge in the
+new `gaps[]` entries). Then:
 
 ```bash
 _IDSTACK=""

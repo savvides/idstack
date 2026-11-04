@@ -37,6 +37,20 @@ export function compileSingleAuditToMarkdown(item) {
   return md;
 }
 
+// The course label for a dossier comes from its items, not from the tab that is
+// active when you export. Each item keeps the Canvas course ID of the page it
+// audited and, for a full-course audit, the course title.
+export function dossierCourseLabel(dossierItems, fallback = 'Course Materials') {
+  const items = Array.isArray(dossierItems) ? dossierItems : [];
+  const ids = [...new Set(items.map((i) => i && i.courseId).filter(Boolean))];
+  if (ids.length > 1) return 'Several courses';
+  if (ids.length === 1) {
+    const titled = items.find((i) => i && i.courseId === ids[0] && i.courseTitle);
+    return titled ? titled.courseTitle : `Course ${ids[0]}`;
+  }
+  return fallback;
+}
+
 export function compileDossierToMarkdown(dossierItems, courseTitle = 'Canvas Course') {
   if (!Array.isArray(dossierItems) || dossierItems.length === 0) {
     return `# idstack Course Audit Dossier: ${courseTitle}\n\n*The dossier has no audits.*`;

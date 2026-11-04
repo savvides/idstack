@@ -1234,6 +1234,20 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "renderer calls toLowerCase on a non-string tier" node "$WORK/r/test/test-renderer-helper.mjs"
 
+# 30m. the dossier label ignores the course of the audited items -> test-dossier-compiler
+# must fail. The export took its label from the active tab, so a dossier
+# exported from another tab named the wrong course (#155).
+fresh
+python3 - "$WORK/r/extension/shared/dossier-compiler.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "  if (ids.length > 1) return 'Several courses';\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "  return fallback;\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "dossier label ignores the audited course" node "$WORK/r/test/test-dossier-compiler.mjs"
+
 # 31a-31j. The docs made promises the code did not keep. The side panel said
 # no student data was "ever collected, retained, or used for model training"
 # while the extractor read whole Canvas pages and the panel pointed at a free
@@ -2385,6 +2399,20 @@ s = s.replace(old, "                pass\n", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "finish --stopped leaves the reserved placeholder" python3 "$WORK/r/test/test-report-section.py"
+
+# 62o. assessment-design Mode 3 ignores the import's assessment count again
+# -> smoke-test must fail. Audit mode then never started after an import (#153).
+shell_mutation "assessment-design Mode 3 ignores the imported assessments" \
+  skills/assessment-design/SKILL.md.tmpl '`import_metadata.items_imported.assessments` is more than 0 (the import found assessments), OR ' ''
+
+# 62p. course-builder gap-fill ignores the import's module count again
+# -> smoke-test must fail (#153).
+shell_mutation "course-builder gap-fill ignores the imported modules" \
+  skills/course-builder/SKILL.md.tmpl '`import_metadata.items_imported.modules` is more than 0 (the import found modules), or ' ''
+
+# 62q. assessment-design Mode 2 stops saving its ILOs -> smoke-test must fail (#154).
+shell_mutation "assessment-design Mode 2 stops saving its ILOs" \
+  skills/assessment-design/SKILL.md.tmpl 'In Mode 2, also put each approved `## Learning objectives` row in' 'In Mode 2, the approved `## Learning objectives` rows go in'
 
 # 62m. The Step Review chat note loses its exact link line -> smoke-test must
 # fail. The model then names the report as text, which is not a link in the app.

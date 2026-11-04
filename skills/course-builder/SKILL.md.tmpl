@@ -164,8 +164,8 @@ Decide which mode this skill is operating in **before** running the content gene
 
 - **Gap-fill mode** — both of these must be true:
   - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
-  - `course_content.modules` is non-empty (from an earlier course-builder run; course-import does not write `course_content`)
-- **Build-new mode** — anything else (no manifest, an empty `import_metadata.source`, a `paste` or `pdf` source, or zero modules in course_content).
+  - `import_metadata.items_imported.modules` is more than 0 (the import found modules), or `course_content.modules` is non-empty (from an earlier course-builder run)
+- **Build-new mode** — anything else (no manifest, an empty `import_metadata.source`, a `paste` or `pdf` source, or no imported modules and none in course_content).
 
 **Announce the chosen mode to the user as the first sentence:**
 - "Mode: build-new. I will generate a new syllabus, new module pages, and new assessment documents."
@@ -191,7 +191,7 @@ Before the first Step Review, use the Read tool on the files from the "Report ru
 
 In gap-fill mode, **skip Steps 1–5** (scope, instructor info, syllabus, module pages, assessments, rubrics). Instead:
 
-**Identify gaps.** Read the findings in `red_team_audit.dimensions.<dimension>.findings[]` and the items in `quality_review.recommendations[]` from the manifest (if those skills already ran), plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
+**Identify gaps.** The modules of the imported course are the rows of the `## Imported structure` section of the course-import report (its path is in `import_metadata.report_path`). Read the findings in `red_team_audit.dimensions.<dimension>.findings[]` and the items in `quality_review.recommendations[]` from the manifest (if those skills already ran), plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
 
 **Review the targets.** This section is the approval of the targets.
 
