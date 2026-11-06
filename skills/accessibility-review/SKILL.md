@@ -533,8 +533,8 @@ The shared preamble above already ran the manifest existence check
 - Check which sections are populated. This skill benefits most from `learning_objectives`,
   `assessments`, and `course_content` data.
 - If no manifest: this skill works standalone. Gather course information through
-  AskUserQuestion. At the end, if the user wants the results saved, the merge
-  call makes the manifest (`--create`, see Write Manifest).
+  AskUserQuestion. At the end, the merge call makes the manifest
+  (`--create`, see Write Manifest).
 
 ---
 
