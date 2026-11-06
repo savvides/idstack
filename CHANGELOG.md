@@ -59,7 +59,7 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 
 ### Tests
 
-- smoke-test has four checks for the audit, gap-fill and Mode 2 fixes, with mutation cases 62o to 62r. `test/test-dossier-compiler.mjs` tests the dossier label, with case 30m.
+- smoke-test has four checks for the audit, gap-fill and Mode 2 fixes, with mutation cases 62o to 62r. `test/test-dossier-compiler.mjs` tests the dossier label, with case 30n.
 - `test/test-setup.sh` copies `extension/`, so its regeneration test also covers `extension/shared/ste-rules.js`.
 - `test/test-report-section.py` has two tests for `finish --stopped`, and `test/mutation-test.sh` has case 62n. Case 30i now puts back the vote buttons.
 - `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61i.

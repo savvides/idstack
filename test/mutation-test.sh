@@ -1083,6 +1083,7 @@ p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = ("renderResults(response.data, {\n"
        "              url: `${origin}/courses/${courseId}`,\n"
        "              title: response.courseData?.title || 'Canvas Course',\n"
+       "              courseTitle: response.courseData?.title || null,\n"
        "              pageType: 'Canvas Course (Full Audit)'\n"
        "            });")
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
@@ -1234,14 +1235,14 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "renderer calls toLowerCase on a non-string tier" node "$WORK/r/test/test-renderer-helper.mjs"
 
-# 30m. the dossier label ignores the course of the audited items -> test-dossier-compiler
+# 30n. the dossier label ignores the course of the audited items -> test-dossier-compiler
 # must fail. The export took its label from the active tab, so a dossier
 # exported from another tab named the wrong course (#155).
 fresh
 python3 - "$WORK/r/extension/shared/dossier-compiler.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "  if (ids.length > 1) return 'Several courses';\n"
+old = "  if (keys.length > 1) return 'Several courses';\n"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "  return fallback;\n", 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -2400,6 +2401,9 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "finish --stopped leaves the reserved placeholder" python3 "$WORK/r/test/test-report-section.py"
 
+# 62o-62r. Import-mode detection and Mode 2 ILOs (#153, #154). After an import,
+# assessment-design and course-builder start in audit or gap-fill mode, and
+# assessment-design saves the ILOs that it classifies.
 # 62o. assessment-design Mode 3 ignores the import's assessment count again
 # -> smoke-test must fail. Audit mode then never started after an import (#153).
 shell_mutation "assessment-design Mode 3 ignores the imported assessments" \

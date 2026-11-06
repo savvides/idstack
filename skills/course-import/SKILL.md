@@ -1435,7 +1435,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
 | `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |
 | `needs_analysis` | needs-analysis, course-import | Org context, task analysis, learner profile, training justification. |
-| `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. In Mode 2 (no ILOs), it also writes the `ilos` that it classified. |
+| `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. In Mode 2 (no ILOs), and in Mode 3 when its step 0 asked for the objectives, it also writes the `ilos` that it classified. |
 | `assessments` | assessment-design | Items (each with its rubric and, in Mode 1 and Mode 2, its feedback strategy), formative checkpoints and the feedback quality score (Mode 1 and Mode 2), and audit notes (Mode 3). No skill writes `assessment_strategy`, `feedback_plan` or the top-level `rubrics[]`. Mode 3 reads `assessments.rubrics` if it exists. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
 | `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
@@ -1676,7 +1676,7 @@ These document the **shape of array elements and dictionary values** that the ca
   "cognitive_process": "remember|understand|apply|analyze|evaluate|create"
 }
 ```
-`/idstack:course-import` can also add `"confidence": "high|ambiguous"` and `"alignment_status": "imported-unverified"`. `/idstack:learning-objectives` checks these items again. `/idstack:assessment-design` Mode 2 writes items in the same shape.
+`/idstack:course-import` can also add `"confidence": "high|ambiguous"` and `"alignment_status": "imported-unverified"`. `/idstack:learning-objectives` checks these items again. `/idstack:assessment-design` Mode 2, and Mode 3 when its step 0 asked for the objectives, write items in the same shape.
 
 **`assessments.items[]`** — `/idstack:assessment-design` writes each item (`/idstack:course-import` does not write this array):
 ```json

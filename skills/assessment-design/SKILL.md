@@ -915,8 +915,9 @@ replaces only the named section, preserves every other section verbatim, validat
 and atomically updates the top-level `updated` timestamp. **This skill writes two
 top-level sections** — `assessments` and `learning_objectives` — in one atomic call
 (one `--section`/`--payload` pair per section). The `learning_objectives` write needs to update the
-`alignment_matrix.ilo_to_assessment` mapping (in Mode 2, also the `ilos` array, and
-in Mode 3, the `alignment_matrix.gaps` array as well). Read the existing `learning_objectives` section
+`alignment_matrix.ilo_to_assessment` mapping (in Mode 2, also the `ilos` array; in
+Mode 3, the `alignment_matrix.gaps` array, and the `ilos` array when step 0 asked for
+the objectives). Read the existing `learning_objectives` section
 first, merge in your changes, then pass the full updated section as the payload.
 
 The `assessments` payload must include `report_path` set to the path from the "Report path:" line of the "Start the Report" block (e.g., `.idstack/exports/<course-slug>/assessment-design.md`).

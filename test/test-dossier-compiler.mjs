@@ -91,5 +91,9 @@ assert.strictEqual(dossierCourseLabel([{ courseId: '123' }, { courseId: '123' }]
 assert.strictEqual(dossierCourseLabel([{ courseId: '123' }, { courseId: '123', courseTitle: 'BIO 101' }]), 'BIO 101');
 assert.strictEqual(dossierCourseLabel([{ courseId: '123' }, { courseId: '456' }]), 'Several courses');
 assert.strictEqual(dossierCourseLabel([{ title: 'A web page' }]), 'Course Materials');
+assert.strictEqual(dossierCourseLabel([
+  { courseId: '123', courseOrigin: 'https://a.instructure.com' },
+  { courseId: '123', courseOrigin: 'https://b.instructure.com' },
+]), 'Several courses', 'the same course ID on two hosts is two courses');
 assert.strictEqual(dossierCourseLabel([]), 'Course Materials');
 console.log('✅ Dossier course label tests passed.');

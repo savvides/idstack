@@ -38,15 +38,17 @@ export function compileSingleAuditToMarkdown(item) {
 }
 
 // The course label for a dossier comes from its items, not from the tab that is
-// active when you export. Each item keeps the Canvas course ID of the page it
-// audited and, for a full-course audit, the course title.
+// active when you export. Each item keeps the Canvas host and course ID of the
+// page it audited and, for a full-course audit, the course name from Canvas.
+// A course is its host and ID together: two hosts can each have a course 123.
 export function dossierCourseLabel(dossierItems, fallback = 'Course Materials') {
-  const items = Array.isArray(dossierItems) ? dossierItems : [];
-  const ids = [...new Set(items.map((i) => i && i.courseId).filter(Boolean))];
-  if (ids.length > 1) return 'Several courses';
-  if (ids.length === 1) {
-    const titled = items.find((i) => i && i.courseId === ids[0] && i.courseTitle);
-    return titled ? titled.courseTitle : `Course ${ids[0]}`;
+  const items = (Array.isArray(dossierItems) ? dossierItems : []).filter((i) => i && i.courseId);
+  const key = (i) => `${i.courseOrigin || ''}|${i.courseId}`;
+  const keys = [...new Set(items.map(key))];
+  if (keys.length > 1) return 'Several courses';
+  if (keys.length === 1) {
+    const titled = items.find((i) => i.courseTitle);
+    return titled ? titled.courseTitle : `Course ${items[0].courseId}`;
   }
   return fallback;
 }

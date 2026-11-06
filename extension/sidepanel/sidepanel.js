@@ -152,7 +152,8 @@ function renderResults(data, source) {
     pageType: source?.pageType || 'Web Page',
     url: source?.url || '',
     courseId: detectCourseContext(source?.url).courseId,
-    courseTitle: source?.pageType === 'Canvas Course (Full Audit)' ? (source?.title || null) : null,
+    courseOrigin: detectCourseContext(source?.url).origin,
+    courseTitle: source?.courseTitle || null,
     result: data,
     timestamp: new Date().toISOString()
   };
@@ -371,6 +372,7 @@ if (auditCourseBtn) {
             renderResults(response.data, {
               url: `${origin}/courses/${courseId}`,
               title: response.courseData?.title || 'Canvas Course',
+              courseTitle: response.courseData?.title || null,
               pageType: 'Canvas Course (Full Audit)'
             });
           } else {
