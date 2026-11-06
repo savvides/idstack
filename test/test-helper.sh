@@ -26,8 +26,9 @@ TOTAL=0
 # and expected_output_regex to also require matching output — an ERE, matched
 # with grep -qE.
 #
-# On failure the first 5 lines of output are printed, indented. Never silence
-# this; a bare FAIL is the thing this helper exists to stop.
+# On failure the first 5 lines of output are printed, indented (all of the
+# output when CI is set). Never silence this; a bare FAIL is the thing this
+# helper exists to stop.
 check() {
   TOTAL=$((TOTAL + 1))
   local _desc="$1" _cmd="$2" _want_exit="${3:-0}" _want_out="${4:-}"

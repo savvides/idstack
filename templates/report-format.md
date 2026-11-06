@@ -22,7 +22,7 @@ idstack works with the designer. It does not make the course. Each report gives 
 
 ### Canonical content (what each placeholder must carry)
 
-Skills build the Markdown structure from `templates/report.md.tmpl`. The data each placeholder must contain is fixed here. Every report contains, in order:
+Skills build the Markdown structure from `templates/report.md.tmpl`. The data each placeholder must contain is fixed here. A report contains these sections, in this order. A step section, Findings or Top recommendations is left out when it has no rows, for example Findings in a report with no problems, or Top recommendations in a stopped run:
 
 1. **Header** — `skill_title`, `skill_name`, `project_name`, `human_timestamp`, `run_id`, optional `mode`. `init` writes it.
 2. **Summary** — 2–3 sentences. The 30-second read for a designer scanning the file. Lead with the most important thing: a score, a top finding, a confidence statement. Don't bury the lede. `init` writes a placeholder, and the last Step Review replaces it. Reserved score sections (`init --reserve`) come next.
