@@ -1235,6 +1235,9 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "renderer calls toLowerCase on a non-string tier" node "$WORK/r/test/test-renderer-helper.mjs"
 
+# 30n-30p. The dossier export took its course label from the active tab (#155).
+# test-dossier-compiler.mjs covers the label helper (30n); test-sidepanel-state.mjs
+# covers the side panel that stores each item's course and calls it (30o, 30p).
 # 30n. the dossier label ignores the course of the audited items -> test-dossier-compiler
 # must fail. The export took its label from the active tab, so a dossier
 # exported from another tab named the wrong course (#155).
@@ -1248,6 +1251,30 @@ s = s.replace(old, "  return fallback;\n", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "dossier label ignores the audited course" node "$WORK/r/test/test-dossier-compiler.mjs"
+
+# 30o. the side panel stops storing each item's course -> test-sidepanel-state must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    courseId: detectCourseContext(source?.url).courseId,\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "dossier items do not keep their course" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30p. Copy Markdown takes the label from the active tab again -> test-sidepanel-state must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    const courseTitle = dossierCourseLabel(dossier);\n    const md = compileDossierToMarkdown(dossier, courseTitle);\n    await copyWithFeedback"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    const courseTitle = activeCourseContext && activeCourseContext.courseId ? `Course ${activeCourseContext.courseId}` : 'Canvas Course';\n    const md = compileDossierToMarkdown(dossier, courseTitle);\n    await copyWithFeedback", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "Copy Markdown labels the dossier from the active tab" node "$WORK/r/test/test-sidepanel-state.mjs"
 
 # 31a-31j. The docs made promises the code did not keep. The side panel said
 # no student data was "ever collected, retained, or used for model training"

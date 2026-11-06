@@ -202,6 +202,24 @@ const scenarios = {
     assert.strictEqual(btn.textContent, 'Not copied');
   },
 
+  async 'the dossier names the audited course, not the active tab (#155)'() {
+    let copied = '';
+    const D = page('Assignment D', 'https://y.instructure.com/courses/2/assignments/40');
+    const p = await loadPanel({ tab: { id: 1, url: A.url }, payloads: { 1: A, 2: D },
+      clipboard: { writeText: async (t) => { copied = t; } } });
+    await p.$('audit-btn').click();
+    await p.reply({ success: true, data: RESULT });
+    await p.$('add-to-dossier-btn').click();
+    const [item] = p.h.storage.local.activeDossier;
+    assert.strictEqual(item.courseId, '1');
+    assert.strictEqual(item.courseOrigin, 'https://x.instructure.com');
+    await p.switchTab({ id: 2, url: D.url });
+    await p.$('copy-dossier-md-btn').click();
+    await flush();
+    assert.ok(copied.includes('Course Audit Dossier: Course 1'), 'the label names the audited course');
+    assert.ok(!copied.includes('Course 2'), 'the label does not come from the active tab');
+  },
+
   async 'malformed findings still reach the results state (F9)'() {
     const p = await loadPanel({ tab: { id: 1, url: A.url }, payloads: { 1: A } });
     await p.$('audit-btn').click();

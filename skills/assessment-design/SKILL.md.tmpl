@@ -201,7 +201,7 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
   - **Orphaned criteria** — a rubric criterion doesn't measure any stated ILO.
   - **Missing rubric** — an assessment has weight ≥10% but no rubric.
   - **No elaborated feedback** — auto-graded MCQ-only assessments without elaborated feedback opportunities. [Assessment-8] [T1]
-- ✅ Output: three reviewed tables (inventory, rubric alignment audit, audit actions), plus 1-3 rubric-improvement recommendations.
+- ✅ Output: three reviewed tables (inventory, rubric alignment audit, audit actions), plus 1-3 rubric-improvement recommendations. If `learning_objectives.ilos` is empty, step 0 first adds a fourth reviewed table, `## Learning objectives`.
 - ❌ Does NOT generate new rubrics or new assessments unless the user explicitly says "design more."
 
 **Audit workflow steps (replaces Steps 1-5 of the design workflow below):**
