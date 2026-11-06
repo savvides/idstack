@@ -218,7 +218,7 @@ for skill in $REPORT_PRODUCING_SKILLS; do
   check "$skill SKILL.md.tmpl references .idstack/exports/" "grep -q '\.idstack/exports/' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl calls idstack-slugify" "grep -q 'idstack-slugify' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl writes a .md report" "grep -qE '_REPORT_PATH=\"\\\$_EXPORT_DIR/$skill\.md\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
-  # report-format.md requires a "Top recommendations" section in every report.
+  # report-format.md lists a "Top recommendations" section in each report that has rows for it (a stopped run leaves it out).
   # The closing Step Review writes it, so the match is that Step review line.
   check "$skill SKILL.md.tmpl includes Top recommendations" "grep -qF 'Section: \`## Summary\`, \`## Top recommendations\`, \`## Limitations\` and \`## Next steps\`' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done

@@ -139,7 +139,7 @@ Restrained. Two-color annotation set (rust + prussian blue) for primary marks; t
   44px is where Apple's HIG and WCAG 2.5.5 Target Size (Enhanced) both land; citing it is the source
   of the number, not a claim that the page conforms to that AAA criterion. Applies to buttons and
   form inputs at every viewport width, not only in stacked mobile layouts. Text links are not sized
-  to it — measured at 375px they run 18px in prose, 29-32px for nav, footer, `.brand` and
+  to it — measured at 375px they run 21-23px in prose, 29-32px for nav, footer, `.brand` and
   `.cta-secondary`, and 35px for `.skip-link`. They sit in running text where a 44px box would break
   the line rhythm, and all clear WCAG 2.5.8 (AA) at 24px or fall under its inline-target exception.
 
