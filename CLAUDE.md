@@ -68,8 +68,12 @@ python3 test/check-doc-accuracy.py .   # Verifies version strings, the schema ve
                                        # outside bin/lib/, is executable, and that each test/*.sh, *.py and *.js file named in CLAUDE.md and CONTRIBUTING.md exists
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails.
                                   # The full run takes ~2.5 h: run it in the background.
+                                  # Run a frozen copy (cp test/mutation-test.sh "$S/m.sh"; bash "$S/m.sh" "$(pwd -P)"):
+                                  # bash reads the script as it runs, so editing it mid-run breaks the run
                                   # A case whose anchor text no longer matches prints ERROR, and no result counts until
                                   # it is fixed. When you rename or move text, grep this file for it and update the anchor
+                                  # A smoke grep -qF that guards a case must match text found only at the mutated site,
+                                  # or the case reports NOT-GUARDED. Before you number a new case, grep '^# <id>\.': IDs are unique
                                   # To run only cases from N on (header, baseline and no-op control included):
                                   # { sed '/^# 1\. /,$d' test/mutation-test.sh;
                                   #   awk '/^shell_mutation\(\) \{/,/^}/' test/mutation-test.sh;
@@ -80,6 +84,8 @@ python3 test/check-doc-accuracy.py .   # Verifies version strings, the schema ve
 ```
 
 The counts in the comments above are kept by hand. After you add or remove a check, update them from a real run.
+
+The python `test-*.py` suites take no argument; only the `check-*.py` scripts take the repo path (`.`).
 
 `test/test-helper.sh` is not a suite — it is sourced by every **bash** suite that runs assertions itself and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion. There are two exceptions: `test-extension.sh` delegates to node, and `mutation-test.sh` keeps its own `pass`/`fail`/`skip` tally of GUARDED, NOT-GUARDED and SKIPPED cases. Do not add a local counter block to a bash suite. smoke-test fails on one in the nine suites that it lists (the `test-helper.sh` loop in `test/smoke-test.sh`), and a mutation proves that guard works. When you add a bash suite, add it to that list. The node suites (`test-extension.sh`'s sixteen unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it. The two landing-page suites collect their problems and report a count, which is the same contract in another language. The extension unit tests use `node:assert` and stop at the first failure. Three of them (`test-disclosures.mjs`, `test-evidence-labels.mjs`, `test-ste-rules.mjs`) collect their problems first and list them all in one failed assertion.
 
