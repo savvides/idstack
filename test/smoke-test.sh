@@ -781,9 +781,9 @@ check "no skill tells the user to open a report in a web browser" \
 # Regression (#153): audit mode and gap-fill mode keyed only on manifest lists
 # that course-import never writes, so neither started right after an import.
 check "assessment-design Mode 3 starts on the assessments an import found" \
-  "grep -qF 'import_metadata.items_imported.assessments\` is more than 0' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
+  "grep -qF 'import_metadata.items_imported.assessments\` is more than 0 (the import found assessments)' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
 check "course-builder gap-fill starts on the modules an import found" \
-  "grep -qF 'import_metadata.items_imported.modules\` is more than 0' '$IDSTACK_DIR/skills/course-builder/SKILL.md.tmpl'"
+  "grep -qF 'import_metadata.items_imported.modules\` is more than 0 (the import found modules)' '$IDSTACK_DIR/skills/course-builder/SKILL.md.tmpl'"
 check "assessment-design Mode 3 asks for ILOs when an import found none" \
   "grep -qF 'If \`learning_objectives.ilos\` is empty (an import can find assessments but no objectives)' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
 # Regression (#154): Mode 2 classified new ILOs but never saved them, so
