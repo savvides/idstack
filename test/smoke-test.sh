@@ -691,7 +691,7 @@ check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_
 #      Gemini model API  # IDSTACK_CLI_LEAK_ALLOW
 #      the Chrome extension calls, which is an LLM endpoint, not a CLI.
 #
-#      A tag is for a dated, historical mention or the extension's model API.
+#      A tag is for a dated, historical mention, the unsupported-fork pointer, the extension's model API, or the sweep's own test patterns.
 #      It is NEVER for a line that claims idstack runs somewhere it does not.
 #      Tag individual lines, never whole files, and never filter on a bare
 #      string: an earlier draft dropped every line containing a PR-review bot's name
