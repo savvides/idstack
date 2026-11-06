@@ -581,7 +581,7 @@ Then establish the delivery context. Ask about:
 - **Available technology:** What tools do you have? (LMS, video platform, discussion forums, interactive tools, etc.)
 
 **In audit-existing mode**, much of this is already in the manifest from `course-import`. Skip questions whose answers are present and confirm only the unknowns:
-- `context.modality` — usually inferable from the LMS (Canvas/Moodle/etc. = online or hybrid). Confirm with the user if ambiguous.
+- `context.modality` — course-import writes it from the course structure (async = online, sync sessions = hybrid). Use it if it is present. Confirm with the user if it is ambiguous or absent.
 - `context.timeline` — course-import writes it from the term or date information in the import, if it found any. Use it if it is present; ask only if absent.
 - `context.class_size` — typically not in the cartridge; ask.
 - `context.institution_type` — usually inferable from `import_metadata.source_lms` (Canvas in higher-ed, etc.). Confirm with the user if ambiguous.
@@ -949,7 +949,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | Field | Owner skill(s) | Notes |
 |---|---|---|
 | `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
-| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis or course-import sets it with `--set project_name=<v>`. Don't overwrite once set. |
+| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis and course-import write it with `--set project_name=<v>` on every run, so the last of them to run sets the name and the export folder. In audit-existing mode, needs-analysis reuses the name that course-import wrote. Other skills do not write it. |
 | `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
 | `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
 | `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |

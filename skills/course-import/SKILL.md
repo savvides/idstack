@@ -622,7 +622,12 @@ fi
 ```
 
 If no imsmanifest.xml found: "This ZIP does not contain an IMS manifest. Is this
-a Common Cartridge export? Export the course from your LMS again."
+a Common Cartridge export? Export the course from your LMS again." Then delete the
+extracted files and stop:
+
+```bash
+rm -rf "<IMPORT_DIR printed above>"
+```
 
 Read the manifest XML:
 
@@ -986,6 +991,7 @@ if [ -f "$IMPORT_DIR/imsmanifest.xml" ]; then
   echo "SCORM_MANIFEST_FOUND"
   cat "$IMPORT_DIR/imsmanifest.xml"
 else
+  rm -rf "$IMPORT_DIR"
   echo "NO_SCORM_MANIFEST"
 fi
 ```
@@ -1013,7 +1019,7 @@ From `imsmanifest.xml`, extract:
 - Leaf items with `identifierref` are deliverable content (SCOs or assets)
 
 **From `<resources>`:**
-- For each `<resource>`: `identifier`, `type`, `href` (launch file), `adlcp:scormType`
+- For each `<resource>`: `identifier`, `type`, `href` (launch file), `adlcp:scormtype` (SCORM 1.2) or `adlcp:scormType` (SCORM 2004)
 - SCO resources contain the actual learning content
 - Asset resources are supporting files (images, scripts, CSS)
 - Read the HTML content of SCO launch files to extract learning content:
@@ -1430,7 +1436,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | Field | Owner skill(s) | Notes |
 |---|---|---|
 | `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
-| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis or course-import sets it with `--set project_name=<v>`. Don't overwrite once set. |
+| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis and course-import write it with `--set project_name=<v>` on every run, so the last of them to run sets the name and the export folder. In audit-existing mode, needs-analysis reuses the name that course-import wrote. Other skills do not write it. |
 | `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
 | `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
 | `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |

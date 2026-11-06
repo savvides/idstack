@@ -73,7 +73,7 @@ _The Consensus integration and the neuromyth correction were removed in v3.9.0.0
 - `./setup` registers idstack as a Claude Code plugin marketplace and installs from there. Recent Claude Code versions stopped discovering plugins from the bare symlink older setups created, so `/idstack:<skill>` commands silently never appeared in the slash picker. If that happened to you, pull the latest and re-run `./setup`.
 
 ### `DESIGN.md` and design-system reconciliation (v3.1.0.0)
-- The visual system behind the report stylesheet (retired since; reports are Markdown) and the landing page is documented at the repo root in `DESIGN.md` — fonts, colors, spacing, radii, motion, plus anti-patterns and a dated decisions log. Skills, contributors, and reviewers read it before touching anything visual.
+- The visual system behind the report stylesheet (retired since; reports are Markdown) and the landing page is documented at the repo root in `DESIGN.md` — fonts, colors, spacing, radii, motion, plus anti-patterns and a dated decisions log. Contributors and reviewers read it before touching anything visual; reports and the dashboard are plain Markdown, so it does not apply to them.
 - Publication-grade type (Source Serif 4, Public Sans, JetBrains Mono), an ivory palette in place of parchment, sharper card corners, and a second annotation color mirroring the two-pen academic-editor convention. Reports written by older versions still render correctly.
 
 ### Branded HTML reports + per-course export folder (v3.0.0)

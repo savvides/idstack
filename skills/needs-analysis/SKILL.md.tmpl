@@ -109,7 +109,7 @@ Then establish the delivery context. Ask about:
 - **Available technology:** What tools do you have? (LMS, video platform, discussion forums, interactive tools, etc.)
 
 **In audit-existing mode**, much of this is already in the manifest from `course-import`. Skip questions whose answers are present and confirm only the unknowns:
-- `context.modality` — usually inferable from the LMS (Canvas/Moodle/etc. = online or hybrid). Confirm with the user if ambiguous.
+- `context.modality` — course-import writes it from the course structure (async = online, sync sessions = hybrid). Use it if it is present. Confirm with the user if it is ambiguous or absent.
 - `context.timeline` — course-import writes it from the term or date information in the import, if it found any. Use it if it is present; ask only if absent.
 - `context.class_size` — typically not in the cartridge; ask.
 - `context.institution_type` — usually inferable from `import_metadata.source_lms` (Canvas in higher-ed, etc.). Confirm with the user if ambiguous.
