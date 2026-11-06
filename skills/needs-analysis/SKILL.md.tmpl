@@ -19,7 +19,10 @@ allowed-tools:
 {{PREAMBLE}}
 
 **Skill-specific manifest check:** If the manifest `needs_analysis` section already has data,
-ask the user: "You ran this skill previously. Do you want to update the results or start again?"
+ask the user: "The manifest has needs analysis data. Do you want to update the results or start again?"
+
+This data can come from an earlier run of this skill or from /idstack:course-import, which
+writes `needs_analysis.task_analysis.job_tasks`.
 
 # Needs Analysis — Three-Level Assessment Protocol
 
@@ -40,7 +43,8 @@ of the idstack evidence synthesis. Key findings encoded in this skill:
 - Prior knowledge level is the strongest predictor of which instructional strategies work.
   What helps novices hurts experts (expertise reversal effect) [CogLoad-19] [T5].
 - Learning styles (VARK, etc.) are NOT a reliable basis for differentiating instruction.
-  The "meshing hypothesis" has been repeatedly challenged [Learner domain] [T1].
+  The "meshing hypothesis" has been repeatedly challenged. evidence/references.md has
+  no learning-styles study, so do not cite a code or a tier for this point.
 
 ## Evidence Tier Key
 
@@ -58,7 +62,7 @@ When multiple tiers apply, cite the strongest.
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 ---
 
@@ -75,7 +79,7 @@ Before gathering context, decide which mode this skill is operating in. Read
 - **Audit-existing mode** — both of these must be true:
   - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
   - `import_metadata.items_imported.modules > 0` (i.e., the import actually produced content)
-- **Design-new mode** — anything else (no manifest, no import_metadata, manual source, or zero modules imported).
+- **Design-new mode** — anything else (no manifest, no import_metadata, a `paste` or `pdf` source, or zero modules imported).
 
 **Announce the chosen mode to the user as the first sentence of the conversation.**
 Examples:
@@ -105,13 +109,13 @@ Then establish the delivery context. Ask about:
 - **Available technology:** What tools do you have? (LMS, video platform, discussion forums, interactive tools, etc.)
 
 **In audit-existing mode**, much of this is already in the manifest from `course-import`. Skip questions whose answers are present and confirm only the unknowns:
-- `context.modality` — usually inferable from the LMS (Canvas/Moodle/etc. = online or hybrid). Confirm with the user if ambiguous.
-- `context.timeline` — sometimes in `course_settings.xml` (e.g., the syllabus dates from the cartridge). Use it if found; ask only if absent.
+- `context.modality` — course-import writes it from the course structure (async = online, sync sessions = hybrid). Use it if it is present. Confirm with the user if it is ambiguous or absent.
+- `context.timeline` — course-import writes it from the term or date information in the import, if it found any. Use it if it is present; ask only if absent.
 - `context.class_size` — typically not in the cartridge; ask.
 - `context.institution_type` — usually inferable from `import_metadata.source_lms` (Canvas in higher-ed, etc.). Confirm with the user if ambiguous.
-- `context.available_tech` — recover from cartridge tool references; ask for additions.
+- `context.available_tech` — course-import writes it from the detected resource types; ask for additions.
 
-Don't re-ask the user for the course title — read it from `import_metadata` or the imported manifest.
+Don't re-ask the user for the course title — read it from the top-level `project_name` that `course-import` wrote.
 
 Store these in the `context` section of the manifest.
 
@@ -291,7 +295,7 @@ learners," or similar: respond with this exact framing:
 
 "It is good that you think about learner differences. But many studies show that
 instruction that matches learning style preferences does not make learning outcomes
-better [T1]. Researchers tested the 'meshing hypothesis' — that students learn better when
+better. Researchers tested the 'meshing hypothesis' — that students learn better when
 instruction matches their style — many times. The results do not support it.
 
 Prior knowledge level is the factor that predicts which strategies work. Novices
@@ -340,7 +344,7 @@ Use the finding IDs `needs-1`, `needs-2` and so on. The findings come from the t
 
 - **Top recommendations:** three to five actions from the approved findings, with the IDs `R-1`, `R-2` and so on. Put the action with the most effect first.
 - **Summary:** two or three sentences. Start with the decision: training is justified or not. Then tell the largest risk in the learner profile and the most important finding from the task analysis.
-- **Limitations:** in audit-existing mode, idstack did not use the decision gate for training. The learner profile comes from registrar or syllabus data, not from a learner survey. The task analysis comes from lists of job tasks, not from observed performance.
+- **Limitations:** in audit-existing mode, idstack did not use the decision gate for training. The learner profile comes from your answers in this session, not from a learner survey. The task analysis does not come from observed performance.
 - **Next steps:** run `/idstack:learning-objectives` to write learning objectives from this analysis. That skill reads your task analysis and learner profile. It recommends Bloom's levels and alignment strategies.
 
 Run the finish command of the Step Review.
@@ -357,7 +361,11 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 ### Step 7: Write Manifest
 
 Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
-This skill owns the `context` and `needs_analysis` sections and the top-level `project_name`.
+This skill writes the `context` and `needs_analysis` sections and the top-level `project_name`.
+/idstack:course-import also writes them. The merge tool replaces each section whole.
+So for each of the two sections: read the existing section from the manifest (if any),
+add the results of this session to it, and pass the full merged section. Keep the
+fields that course-import wrote, for example `needs_analysis.task_analysis.job_tasks`.
 
 Write each payload with the Write tool first: `.idstack/.context-payload.json` holds the
 `context` section and `.idstack/.needs_analysis-payload.json` holds the `needs_analysis`

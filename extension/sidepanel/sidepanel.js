@@ -1,7 +1,7 @@
 import { getSettings, saveSettings, getDossier, addToDossier, removeFromDossier, clearDossier } from '../shared/storage.js';
 import { renderAuditHTML, renderDossierListHTML } from './renderer-helper.js';
 import { detectCourseContext } from '../content/extractor-core.js';
-import { compileSingleAuditToMarkdown, compileDossierToMarkdown } from '../shared/dossier-compiler.js';
+import { compileSingleAuditToMarkdown, compileDossierToMarkdown, dossierCourseLabel } from '../shared/dossier-compiler.js';
 
 let activePayload = null;
 let activeCourseContext = null;
@@ -151,6 +151,9 @@ function renderResults(data, source) {
     title: source?.title || 'Course Material',
     pageType: source?.pageType || 'Web Page',
     url: source?.url || '',
+    courseId: detectCourseContext(source?.url).courseId,
+    courseOrigin: detectCourseContext(source?.url).origin,
+    courseTitle: source?.courseTitle || null,
     result: data,
     timestamp: new Date().toISOString()
   };
@@ -183,17 +186,6 @@ function renderResults(data, source) {
       refreshActiveTab();
     });
   }
-
-  container.querySelectorAll('.feedback-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const row = btn.parentElement;
-      if (!row) return;
-      // Replace only the vote controls; the row also holds #re-audit-btn.
-      row.querySelectorAll('.feedback-btn').forEach((b) => b.remove());
-      const prompt = row.querySelector('span');
-      if (prompt) prompt.innerHTML = '<em>Thank you for your feedback!</em>';
-    });
-  });
 
   showState('results');
 }
@@ -350,6 +342,9 @@ if (auditCourseBtn) {
 
     showState('loading');
 
+    // These stages run on fixed timers (600 ms, 1300 ms), not on real progress: the
+    // service worker sends one reply when the crawl and the audit both finish. A fast
+    // reply skips the later stages; a slow crawl or model call stays at 85% until then.
     const timer1 = setTimeout(() => {
       if (statusText) statusText.textContent = 'idstack reads the assignments...';
       if (progressFill) progressFill.style.width = '60%';
@@ -377,6 +372,7 @@ if (auditCourseBtn) {
             renderResults(response.data, {
               url: `${origin}/courses/${courseId}`,
               title: response.courseData?.title || 'Canvas Course',
+              courseTitle: response.courseData?.title || null,
               pageType: 'Canvas Course (Full Audit)'
             });
           } else {
@@ -420,9 +416,7 @@ if (closeDossier && dossierDrawer) {
 if (exportDossierMdBtn) {
   exportDossierMdBtn.addEventListener('click', async () => {
     const dossier = await getDossier();
-    const courseTitle = (activeCourseContext && activeCourseContext.courseId)
-      ? `Course ${activeCourseContext.courseId}`
-      : (activePayload?.title || 'Canvas Course');
+    const courseTitle = dossierCourseLabel(dossier);
     const md = compileDossierToMarkdown(dossier, courseTitle);
     const safeTitle = sanitizeFilename(courseTitle);
     downloadMarkdownFile(`idstack-course-dossier-${safeTitle}.md`, md);
@@ -432,9 +426,7 @@ if (exportDossierMdBtn) {
 if (copyDossierMdBtn) {
   copyDossierMdBtn.addEventListener('click', async () => {
     const dossier = await getDossier();
-    const courseTitle = (activeCourseContext && activeCourseContext.courseId)
-      ? `Course ${activeCourseContext.courseId}`
-      : (activePayload?.title || 'Canvas Course');
+    const courseTitle = dossierCourseLabel(dossier);
     const md = compileDossierToMarkdown(dossier, courseTitle);
     await copyWithFeedback(copyDossierMdBtn, md, '📋 Copy Markdown');
   });

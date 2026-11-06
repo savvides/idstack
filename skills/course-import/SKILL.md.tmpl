@@ -62,10 +62,10 @@ Every recommendation and flag includes its evidence tier:
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 - If `needs_analysis` has data from /idstack:needs-analysis: note it. You will PRESERVE
-  this data. Import adds to task_analysis and learner_profile, does not replace.
+  this data. Import adds to task_analysis (job_tasks) and does not replace it.
 - If `learning_objectives` has data from /idstack:learning-objectives: ask the user
   "You already have learning objectives in your manifest. Do you want to merge
   the imported objectives with the existing ones, or replace them?"
@@ -93,7 +93,7 @@ Options (AskUserQuestion takes a maximum of 4):
 Routing:
 - **LMS or SCORM package file** → ask for the file path. A `.imscc` file goes to
   Path A. A `.zip` file goes to Path E. Step E3 stops with a clear message if
-  the `.zip` is not a SCORM package.
+  the `.zip` has no `imsmanifest.xml` at its root.
 - **PDF or Word file** → Path D.
 - **Paste course documents** → Path B.
 - **Canvas API** → Path C.
@@ -150,7 +150,12 @@ fi
 ```
 
 If no imsmanifest.xml found: "This ZIP does not contain an IMS manifest. Is this
-a Common Cartridge export? Export the course from your LMS again."
+a Common Cartridge export? Export the course from your LMS again." Then delete the
+extracted files and stop:
+
+```bash
+rm -rf "<IMPORT_DIR printed above>"
+```
 
 Read the manifest XML:
 
@@ -176,9 +181,9 @@ Extract from the XML:
 - `<resource>` elements contain the actual content
 - `type` attribute indicates resource type:
   - `webcontent` → instructional materials (pages, files)
-  - `imsqti_xmlv2p1` or `imsqti_xmlv1p2` → quizzes/assessments
+  - `imsqti_xmlv2p1`, `imsqti_xmlv1p2`, or a type that starts with `imsqti_xmlv1p2/` (for example `imsqti_xmlv1p2/imscc_xmlv1p3/assessment`, which /idstack:course-export writes) → quizzes/assessments
   - `imsbasiclti_xmlv1p0` → external tool integrations
-  - `imsdt_xmlv1p0` or `topic` → discussion topics
+  - `imsdt_xmlv1p0`, `imsdt_xmlv1p3` (which /idstack:course-export writes) or `topic` → discussion topics
   - `assignment_xmlv1p0` or `assignment` → assignments
 
 **Learning outcomes (if present):**
@@ -316,7 +321,7 @@ From the PDF content, identify and extract the same elements as Path B:
 **Rise-specific notes:** Articulate Rise PDFs may lose interactive elements
 (Storyline blocks, flashcards, drag-and-drop activities). Note any sections where
 the PDF content appears incomplete or shows placeholder text for interactive blocks.
-Flag these as "interactive element not captured in PDF" in the import quality triage.
+Write these as "interactive element not captured in PDF" in the Limitations section (Step 5).
 
 Continue to Step 1b (Prepare the report).
 
@@ -381,7 +386,7 @@ echo "$BODY" | head -5
 
 Handle errors:
 - HTTP 401: "Token rejected. Make sure you copied the full token. In Canvas:
-  Account → Settings → New Access Token."
+  Account → Settings → Approved Integrations → New Access Token."
 - HTTP 403: "Access denied. Your token does not have the necessary permissions."
 - Network error: "idstack cannot connect to Canvas at that URL. Check the address."
 
@@ -444,9 +449,10 @@ curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/outcome_groups/$GROUP_ID/outcomes?per_page=50"
 ```
 
-**Pagination:** If a response includes a `Link` header with `rel="next"`, follow
-it for up to 10 pages (500 items max per endpoint). After 500 items, stop and note
-"Partial import: course has more items than the import limit."
+**Pagination:** Each call reads only the first page of results (a maximum of 50
+items for each endpoint). The commands do not show response headers, so idstack does
+not follow the `Link` header. If an endpoint sends exactly 50 items, note
+"Partial import: the course can have more items than the import reads."
 
 **Error handling for each call:**
 - 404: Skip this endpoint, note what's missing
@@ -513,6 +519,7 @@ if [ -f "$IMPORT_DIR/imsmanifest.xml" ]; then
   echo "SCORM_MANIFEST_FOUND"
   cat "$IMPORT_DIR/imsmanifest.xml"
 else
+  rm -rf "$IMPORT_DIR"
   echo "NO_SCORM_MANIFEST"
 fi
 ```
@@ -540,7 +547,7 @@ From `imsmanifest.xml`, extract:
 - Leaf items with `identifierref` are deliverable content (SCOs or assets)
 
 **From `<resources>`:**
-- For each `<resource>`: `identifier`, `type`, `href` (launch file), `adlcp:scormType`
+- For each `<resource>`: `identifier`, `type`, `href` (launch file), `adlcp:scormtype` (SCORM 1.2) or `adlcp:scormType` (SCORM 2004)
 - SCO resources contain the actual learning content
 - Asset resources are supporting files (images, scripts, CSS)
 - Read the HTML content of SCO launch files to extract learning content:
@@ -760,8 +767,8 @@ Use the finding IDs `import-1`, `quality-1`, `bloom-1` and so on. The findings c
 
 - **Top recommendations:** three to five actions from the approved findings, with the IDs `R-1`, `R-2` and so on. Put the action with the most effect first.
 - **Summary:** two or three sentences. Tell what came in: the number of modules, objectives, assessments, activities and discussions, pages and rubrics. Tell the number of quality flags. Then tell the most important thing for the designer, for example "The structure of the import is clean, but the course has few objectives." or "8 of 12 modules have no rubric."
-- **Limitations:** the import reads structural metadata only. Interactive elements (Storyline, flashcards) do not show in a PDF. The Canvas token stays in `.idstack/canvas.env` on the user's computer. idstack does not write it to the manifest or the report. The import can miss data in SCORM packages that have non-standard manifest extensions. Add each flag that has no citation.
-- **Next steps:** run `/idstack:course-quality-review` for the full evidence-based audit. Run `/idstack:learning-objectives` to check the Bloom's classification and the alignment in the two directions. Run `/idstack:needs-analysis` in audit-existing mode to add the organizational context and the learner profile that idstack cannot get from the course structure.
+- **Limitations:** the quality triage uses the course structure only, and it is not a full review. The import reads a maximum of 10 resource files from a cartridge and the first 50 pages of a PDF. Interactive elements (Storyline, flashcards) do not show in a PDF. The Canvas token stays in `.idstack/canvas.env` on the user's computer. idstack does not write it to the manifest or the report. The import can miss data in SCORM packages that have non-standard manifest extensions. Add each flag that has no citation.
+- **Next steps:** run `/idstack:course-quality-review` for the full evidence-based audit. Run `/idstack:learning-objectives` to check the Bloom's classification and the alignment in the two directions. Run `/idstack:needs-analysis` to add the organizational context and the learner profile that idstack cannot get from the course structure.
 
 Run the finish command of the Step Review.
 
@@ -824,24 +831,32 @@ writes nothing.
 
 - `learning_objectives.alignment_matrix` — partial, from detected objective-assessment links
 
-Use only the approved rows of the report. `job_tasks` has the approved `T-` rows. `ilos` has the approved `ILO-` rows, with the status "imported-unverified". The `items_imported` counts come from the `TOTAL` row of the approved Imported structure section. `quality_flags` is the number of approved rows in the Import quality triage section.
+Use only the approved rows of the report. `job_tasks` has the approved `T-` rows. `ilos` has the approved `ILO-` rows, with the status "imported-unverified". The `items_imported` counts come from the `TOTAL` row of the approved Imported structure section (`rubrics` from its Rubrics column). Write 0 for a count that the table does not have. `quality_flags` is the number of approved rows in the Import quality triage section.
 
 **Import metadata:** The `import_metadata` payload (flat, with no enclosing `import_metadata` key):
 
 ```json
 {
-  "source": "cartridge|paste|canvas-api",
+  "source": "cartridge|paste|canvas-api|pdf|scorm",
   "report_path": "<set to $_REPORT_PATH from the Step 1b bash block — e.g. .idstack/exports/<course-slug>/course-import.md>",
   "imported_at": "ISO-8601",
-  "source_lms": "canvas|blackboard|moodle|d2l|unknown",
+  "source_lms": "canvas|blackboard|moodle|d2l|rise|storyline|unknown",
+  "source_cartridge": "<file name of the cartridge or package, or empty>",
+  "source_size_bytes": 0,
+  "schema": "<cartridge or SCORM schema version, or empty>",
   "items_imported": {
     "modules": 0,
     "objectives": 0,
+    "module_objectives": 0,
     "assessments": 0,
     "activities": 0,
-    "pages": 0
+    "pages": 0,
+    "rubrics": 0,
+    "quizzes": 0,
+    "discussions": 0
   },
-  "quality_flags": 0
+  "quality_flags": 0,
+  "quality_flag_details": []
 }
 ```
 
@@ -865,7 +880,7 @@ Write the manifest, then confirm. Write the message as Markdown text, not in a c
 **Two artifacts:**
 - **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the import report
   with evidence-backed quality flags, the Bloom's classification table, and recommended
-  next steps tied to specific findings. Click the link to open it. The folder has all of the files for the report.
+  next steps tied to specific findings. Click the link to open it.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Recommended next steps:**

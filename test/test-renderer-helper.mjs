@@ -61,7 +61,9 @@ assert.ok(rendered.includes('copy-improved-btn'), 'Must include 1-click copy but
 assert.ok(rendered.includes('| Criterion | Exemplary | Developing |'), 'Must include draft content in pre/code block');
 
 // Check feedback & re-audit controls
-assert.ok(rendered.includes('feedback-btn'), 'Must include feedback voting buttons');
+// The panel sends no telemetry, so it has no vote buttons: feedback goes to the form.
+assert.ok(!rendered.includes('feedback-btn'), 'Must not include vote buttons that send nothing');
+assert.ok(rendered.includes('https://forms.gle/6LDgDD1M6WWyYvME8'), 'Must link to the feedback form');
 assert.ok(rendered.includes('re-audit-btn'), 'Must include re-audit button');
 
 // Test 2: Empty findings list rendering

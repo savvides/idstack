@@ -9,8 +9,9 @@
 # CI tells you something broke and not what.
 #
 # Suites with a genuinely different assertion shape keep their own wrapper and
-# use only the counters from here: test-version-classifier.sh compares a
-# version string to an expected classification rather than running a command.
+# use only the counters from here: test-plugin-status.sh's check_listing feeds a
+# `claude plugin list` listing to plugin_is_enabled and compares the result to
+# an expected enabled/disabled value rather than running a command.
 
 PASS=0
 FAIL=0
@@ -25,8 +26,9 @@ TOTAL=0
 # and expected_output_regex to also require matching output — an ERE, matched
 # with grep -qE.
 #
-# On failure the first 5 lines of output are printed, indented. Never silence
-# this; a bare FAIL is the thing this helper exists to stop.
+# On failure the first 5 lines of output are printed, indented (all of the
+# output when CI is set). Never silence this; a bare FAIL is the thing this
+# helper exists to stop.
 check() {
   TOTAL=$((TOTAL + 1))
   local _desc="$1" _cmd="$2" _want_exit="${3:-0}" _want_out="${4:-}"

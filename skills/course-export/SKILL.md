@@ -32,10 +32,15 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -177,31 +182,13 @@ Identify text from a different source for the checker:
 - In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
 - The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
 - The checker counts each quotation, citation, code span and placeholder as one word.
+  A <placeholder> that is not in backticks counts as no word.
 
 When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
 prompt. The sub-agent cannot see this preamble.
 
 Example sentences in a skill show the content of a message. Write them in STE when you
 use them.
-
-## Preamble: Update Check
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-if [ -n "$_UPD" ]; then echo "$_UPD"; fi
-```
-
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -332,7 +319,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -452,8 +439,10 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 - If the skill stops after the report starts, for any reason, end the report
   first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
-  not write a Top recommendations section. Then run the finish command. This
-  includes an error, a missing file, and a user who stops the skill.
+  not write a Top recommendations section. Then run the finish command with
+  `--stopped` after `finish "<path>"`. Do not do a Step Review for a score section
+  that has no data: `--stopped` writes a note in it. This includes an error, a
+  missing file, and a user who stops the skill.
 - If the finish command shows a section with no text, do the Step Review for that
   section. If it shows a draft section, ask the user to approve that section.
   Then run the finish command again.
@@ -488,8 +477,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -512,7 +501,7 @@ You are a course export partner. Your job is to take the content generated by
 You are the last mile between generated course content and a live course that
 students can access.
 
-Two export paths:
+Three export paths:
 1. **IMS Common Cartridge (.imscc)** — Universal format. Works with every major
    LMS: Canvas, Blackboard, Moodle, D2L/Brightspace. You generate a standards-
    compliant package file that the instructional designer imports through their
@@ -520,6 +509,9 @@ Two export paths:
 2. **Canvas REST API** — Canvas-specific, richest integration. Pushes modules,
    pages, assignments, and discussions directly to a Canvas course instance.
    Requires an access token. Results appear immediately in Canvas.
+3. **SCORM 1.2 package (.zip)** — Standard e-learning format. You generate a
+   SCORM ZIP that the instructional designer uploads to an LMS or a SCORM
+   player. Zero API credentials needed.
 
 The output IS the course. You are not generating a spec, a plan, or a description
 of what the course should contain. You are generating the actual importable
@@ -549,7 +541,7 @@ When multiple tiers apply, cite the strongest.
 ## Course Content Inputs
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 Before starting the export, verify that generated course content exists:
 
@@ -608,8 +600,9 @@ Before the first Step Review, use the Read tool on the files from the "Report ru
 
 All subsequent paths (`.imscc`, SCORM `.zip`, Markdown report) write into
 `$_EXPORT_DIR`, never directly into `.idstack/`. The folder becomes the
-canonical, self-describing deliverable — open `index.md` to navigate, or
-zip the whole folder to hand to a stakeholder.
+canonical, self-describing deliverable. Zip the whole folder to hand to a
+stakeholder. If you ran `/idstack:pipeline`, open its `index.md` course
+dashboard to navigate.
 
 ---
 
@@ -634,6 +627,8 @@ done
 **Step review:** do the Step Review in the preamble. Section: `## Readiness`. Columns: `ID | Check | Value | Threshold | Status`.
 
 Write one row for each line of the readiness output. R-1 is the quality review, R-2 is the red team audit, R-3 is the accessibility review and R-4 is the verdict. Copy the values, the thresholds and the status from the output.
+
+If the output is only `No timeline data. Run the pipeline skills first.`, no review has run. Write R-1, R-2 and R-3 with the Value `-`, the Threshold `-` and the Status `NOT RUN`. Write R-4 with the verdict `INCOMPLETE (run /idstack:course-quality-review, /idstack:red-team, /idstack:accessibility-review)`.
 
 The verdict changes the question of the Step Review:
 
@@ -718,12 +713,11 @@ Read all files in `.idstack/course-content/`:
 find .idstack/course-content/ -type f | sort
 ```
 
-Read each file to understand the content structure. Expect files like:
+Read each file to understand the content structure. /idstack:course-builder writes these files:
 - `syllabus.md` — Course syllabus
-- `module-01.md`, `module-02.md`, etc. — Module content pages
-- `assessment-01.md`, `assessment-02.md`, etc. — Assignment and quiz specs
-- `rubric-01.md`, `rubric-02.md`, etc. — Rubric definitions
-- `discussion-01.md`, `discussion-02.md`, etc. — Discussion prompts
+- `modules/module-01-<slug>.md`, `modules/module-02-<slug>.md`, etc. — Module content pages. A module page for an online or hybrid course also has its discussion prompt, in a `## Discussion Prompt` section.
+- `assessments/assessment-01-<slug>.md`, `assessments/assessment-02-<slug>.md`, etc. — Assignment and quiz specs
+- `rubrics/rubric-01-<slug>.md`, `rubrics/rubric-02-<slug>.md`, etc. — Rubric definitions
 
 Also read the manifest to get the course title, module structure, and ILO
 alignment data. The manifest provides the organizational spine; the content
@@ -780,12 +774,12 @@ the IMS Common Cartridge 1.3 specification:
       <file href="assignments/assign-1.xml"/>
     </resource>
     <!-- Quiz resources (QTI) -->
-    <resource identifier="res-mod-1-quiz-1" type="imsqti_xmlv1p2/imscc_xmlv1p0/assessment"
+    <resource identifier="res-mod-1-quiz-1" type="imsqti_xmlv1p2/imscc_xmlv1p3/assessment"
               href="quizzes/quiz-1.xml">
       <file href="quizzes/quiz-1.xml"/>
     </resource>
     <!-- Discussion resources -->
-    <resource identifier="res-mod-1-disc-1" type="imsdt_xmlv1p0"
+    <resource identifier="res-mod-1-disc-1" type="imsdt_xmlv1p3"
               href="discussions/disc-1.xml">
       <file href="discussions/disc-1.xml"/>
     </resource>
@@ -1013,10 +1007,10 @@ file "$_EXPORT_DIR/course-export.imscc"
 unzip -l "$_EXPORT_DIR/course-export.imscc"
 # Count items
 echo "---"
-echo "Module pages: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'modules/' | wc -l)"
-echo "Assignments: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'assignments/' | wc -l)"
-echo "Quizzes: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'quizzes/' | wc -l)"
-echo "Discussions: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'discussions/' | wc -l)"
+echo "Module pages: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'modules/[^/]' | wc -l)"
+echo "Assignments: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'assignments/[^/]' | wc -l)"
+echo "Quizzes: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'quizzes/[^/]' | wc -l)"
+echo "Discussions: $(unzip -l "$_EXPORT_DIR/course-export.imscc" | grep 'discussions/[^/]' | wc -l)"
 ```
 
 Do not show this output in the chat. From it, collect the data for the rows of
@@ -1086,7 +1080,7 @@ echo "$BODY" | head -5
 
 Handle errors:
 - HTTP 401: "Token rejected. Make sure you copied the full token. In Canvas:
-  Account > Settings > New Access Token."
+  Account → Settings → Approved Integrations → New Access Token."
 - HTTP 403: "Access denied. Your token does not have the necessary permissions for
   this course. You must have the Teacher role, the Designer role or a higher role."
 - Network error: "idstack cannot connect to Canvas at that URL. Check the address and make
@@ -1246,7 +1240,9 @@ curl -s -X POST \
 
 ### B8. Error Handling
 
-Each API call is wrapped in error checking. Handle these cases:
+Each call that creates a module, page, assignment or discussion prints `HTTP: <code>`.
+The calls that publish a module or add an item to a module do not print a code.
+Handle these cases for the calls that print a code:
 
 - **HTTP 401:** Token expired or invalid. Stop. Tell the user to put a new token in
   `.idstack/canvas.env`. Do not ask for the token in the chat.
@@ -1415,7 +1411,7 @@ Replace `<export folder>` again, then run the command:
 _EXPORT_DIR="<export folder>"
 file "$_EXPORT_DIR/scorm-export.zip"
 unzip -l "$_EXPORT_DIR/scorm-export.zip" | head -20
-echo "Total files: $(unzip -l "$_EXPORT_DIR/scorm-export.zip" | tail -1)"
+echo "Total files: $(unzip -Z1 "$_EXPORT_DIR/scorm-export.zip" | grep -vc '/$')"
 ```
 
 Verify:
@@ -1464,8 +1460,8 @@ Cite quiz findings with `[Assessment-10] [T1]` and rubric findings with `[Assess
 
 - **Summary:** two or three sentences. Tell what idstack exported, the format (IMSCC, Canvas API or SCORM), where the export is and the readiness verdict at the time of export. Add this line: "Modules N · Pages M · Assignments P · Quizzes Q · Discussions R".
 - **Top recommendations:** three to five rows, with IDs `rec-1`, `rec-2` and so on. Use the most important approved findings.
-- **Limitations:** SCORM and IMSCC packages contain static HTML only. They do not include interactive elements. The quiz questions come from the assessment specs, and the designer must examine them. The Canvas token stays in `.idstack/canvas.env` on the computer of the user. idstack does not write it to the manifest or the report.
-  - For SCORM, also write these limitations. The package does not include SCORM API tracking (completion, score reports). The LMS marks the SCO as completed when the learner opens it. For more interactivity, create the course in Articulate Rise or Storyline. Then use /idstack:course-quality-review and /idstack:red-team on the exported package.
+- **Limitations:** The SCORM package contains only static HTML pages. It does not include interactive elements. The IMSCC package also contains QTI quizzes, assignments and discussion topics, which the LMS imports as its own quizzes, assignments and discussions. The quiz questions come from the assessment specs, and the designer must examine them. The Canvas token stays in `.idstack/canvas.env` on the computer of the user. idstack does not write it to the manifest or the report.
+  - For SCORM, also write these limitations. The package does not include SCORM API tracking (completion, score reports). The pages do not call the SCORM API. Thus the LMS can show a module as "not attempted" or "incomplete" after the learner opens it. For more interactivity, create the course in Articulate Rise or Storyline. Then run /idstack:course-import on the exported SCORM package, and then run /idstack:course-quality-review and /idstack:red-team.
 - **Next steps:** Make sure that the LMS import kept all of the content correctly. Look carefully at quiz questions, assignment rubrics, discussion prompts and the module sequence. If the readiness verdict was NOT-READY, correct the findings before you publish the course. Also write the import steps for the format:
   - IMSCC: Canvas: Settings > Import Course Content > Common Cartridge 1.x. Blackboard: Course Management > Import > IMS Common Cartridge. Moodle: Site Administration > Restore > Upload .imscc file. D2L/Brightspace: Course Admin > Import/Export/Copy > Import Components.
   - SCORM: Canvas: Settings > Import Course Content > SCORM package. Moodle: Add Activity > SCORM package > Upload. Blackboard: Content > Build Content > SCORM package. Other LMS: upload the .zip file through the content management interface. Most LMS platforms find SCORM packages automatically.
@@ -1564,8 +1560,15 @@ in its manifest key for context — the payload file contains only the inner obj
 ```
 
 The `readiness_check` section captures the state of prior reviews at export time.
-Populate it from the approved Readiness rows. Those rows come from the `quality_review`,
-`red_team_audit`, and `accessibility_review` sections of the manifest (if they exist). The `verdict` is:
+Populate it from the approved Readiness rows, which copy the `idstack-status --readiness`
+output. A row with the Status `NOT RUN` gives `false` for its `*_reviewed` field. Any other
+Status gives `true`. idstack-status reads that status from the `completed` events in
+`.idstack/timeline.jsonl`. The scores and counts come from the `quality_review`,
+`red_team_audit` and `accessibility_review` sections of the manifest (if they exist).
+
+The accessibility row gives a score, not a count of critical findings. Set
+`accessibility_critical` to the WCAG Level-A violation count that the row shows, or 0 if
+the row shows none. The `verdict` is:
 - `export_clean`: all reviewed, no critical findings
 - `export_with_warnings`: reviewed but has critical/warning findings
 - `export_blocked`: not used (export never blocks, advisory only)

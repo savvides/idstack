@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** October 31, 2026
+**Last updated:** November 2, 2026
 
 ## What idstack collects
 
@@ -8,19 +8,24 @@ Nothing. idstack has no servers of its own and receives none of your data. The C
 
 ## Where your data lives
 
-All course data stays in your project directory:
+All course data stays on your machine, in your project directory:
 
 - `.idstack/project.json` — your course manifest
 - `.idstack/timeline.jsonl` — session history (which skills ran, scores)
 - `.idstack/learnings.jsonl` — project-specific discoveries
 - `.idstack/course-content/` — generated course files
+- `.idstack/exports/<course-slug>/` — the Markdown reports, the course dashboard and the LMS packages
+- `.idstack/import/` — the text that `/idstack:course-import` takes from a Word file
+- While `/idstack:course-import` reads an IMS Common Cartridge or a SCORM package, it unpacks the package into a temporary folder that your system makes, outside the project directory. The skill deletes that folder when the import step ends.
+- `.idstack/canvas.env` — your Canvas URL, course ID and access token, when you use the Canvas API (see below)
+- `.idstack/learnings-export.md` — learnings that you export with `/idstack:learn`
 
 Designer profile and cross-project learnings are stored locally:
 
 - `~/.idstack/profile.yaml` — your experience level preference
 - `~/.idstack/global/learnings.jsonl` — learnings promoted across projects
 
-idstack adds no analytics, no tracking, and no telemetry. In the Claude Code plugin, two things can reach the network, both listed under Third-party services below: the Canvas API calls made by `/idstack:course-import` and `/idstack:course-export`, and an update check against this repository on GitHub.
+idstack adds no analytics, no tracking, and no telemetry. In the Claude Code plugin, two things can reach the network, both listed under Third-party services below: the Canvas API calls made by `/idstack:course-import` and `/idstack:course-export`, and the citation currency check in `/idstack:red-team`. idstack does not check for updates.
 
 ## Third-party services
 
@@ -31,9 +36,9 @@ idstack runs inside Claude Code, which is operated by Anthropic. Your conversati
 - `/idstack:course-import` **downloads** your course data from Canvas.
 - `/idstack:course-export` **uploads** generated course content to Canvas — modules, pages, assignments, and discussions are POSTed to your Canvas instance so they appear in the course.
 
-Both run only when you invoke that skill and confirm the target course. Your token is used for those API calls and is neither stored by idstack nor sent anywhere else. The receiving Canvas instance is your institution's, not ours.
+Both run only when you invoke that skill and give it the Canvas URL and course ID. `/idstack:course-export` also changes Canvas only after you approve its export plan. You paste your token into `.idstack/canvas.env` in your course folder, not into the chat. idstack makes that file readable only by you and adds it to `.idstack/.gitignore`, so git does not add it. The token is used for those API calls and is not sent anywhere else. When you are done, delete the file or revoke the token in Canvas. The receiving Canvas instance is your institution's, not ours.
 
-**Update check.** On skill startup idstack runs `git fetch` against this repository to see whether a newer version exists, at most once an hour. That is a request to GitHub carrying nothing but the fetch itself; it never uploads your course data. It only runs for git installs, and removing the repo's `.git` directory disables it.
+**Citation currency check.** `/idstack:red-team` uses Claude Code's WebSearch tool when it is available. It searches the web for newer meta-analyses, trials or retractions for each T1 or T2 citation that the course uses. The search terms come from the cited studies, not from your course text. Without WebSearch, the audit runs without this check.
 
 ## idstack Chrome Extension
 

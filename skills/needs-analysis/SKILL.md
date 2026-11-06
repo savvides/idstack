@@ -31,10 +31,15 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -176,31 +181,13 @@ Identify text from a different source for the checker:
 - In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
 - The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
 - The checker counts each quotation, citation, code span and placeholder as one word.
+  A <placeholder> that is not in backticks counts as no word.
 
 When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
 prompt. The sub-agent cannot see this preamble.
 
 Example sentences in a skill show the content of a message. Write them in STE when you
 use them.
-
-## Preamble: Update Check
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-if [ -n "$_UPD" ]; then echo "$_UPD"; fi
-```
-
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -331,7 +318,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -451,8 +438,10 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 - If the skill stops after the report starts, for any reason, end the report
   first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
-  not write a Top recommendations section. Then run the finish command. This
-  includes an error, a missing file, and a user who stops the skill.
+  not write a Top recommendations section. Then run the finish command with
+  `--stopped` after `finish "<path>"`. Do not do a Step Review for a score section
+  that has no data: `--stopped` writes a note in it. This includes an error, a
+  missing file, and a user who stops the skill.
 - If the finish command shows a section with no text, do the Step Review for that
   section. If it shows a draft section, ask the user to approve that section.
   Then run the finish command again.
@@ -487,8 +476,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -502,7 +491,10 @@ Example: "Note: this Canvas instance uses a custom rubric format (idstack found 
 ---
 
 **Skill-specific manifest check:** If the manifest `needs_analysis` section already has data,
-ask the user: "You ran this skill previously. Do you want to update the results or start again?"
+ask the user: "The manifest has needs analysis data. Do you want to update the results or start again?"
+
+This data can come from an earlier run of this skill or from /idstack:course-import, which
+writes `needs_analysis.task_analysis.job_tasks`.
 
 # Needs Analysis — Three-Level Assessment Protocol
 
@@ -523,7 +515,8 @@ of the idstack evidence synthesis. Key findings encoded in this skill:
 - Prior knowledge level is the strongest predictor of which instructional strategies work.
   What helps novices hurts experts (expertise reversal effect) [CogLoad-19] [T5].
 - Learning styles (VARK, etc.) are NOT a reliable basis for differentiating instruction.
-  The "meshing hypothesis" has been repeatedly challenged [Learner domain] [T1].
+  The "meshing hypothesis" has been repeatedly challenged. evidence/references.md has
+  no learning-styles study, so do not cite a code or a tier for this point.
 
 ## Evidence Tier Key
 
@@ -541,7 +534,7 @@ When multiple tiers apply, cite the strongest.
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 ---
 
@@ -558,7 +551,7 @@ Before gathering context, decide which mode this skill is operating in. Read
 - **Audit-existing mode** — both of these must be true:
   - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
   - `import_metadata.items_imported.modules > 0` (i.e., the import actually produced content)
-- **Design-new mode** — anything else (no manifest, no import_metadata, manual source, or zero modules imported).
+- **Design-new mode** — anything else (no manifest, no import_metadata, a `paste` or `pdf` source, or zero modules imported).
 
 **Announce the chosen mode to the user as the first sentence of the conversation.**
 Examples:
@@ -588,13 +581,13 @@ Then establish the delivery context. Ask about:
 - **Available technology:** What tools do you have? (LMS, video platform, discussion forums, interactive tools, etc.)
 
 **In audit-existing mode**, much of this is already in the manifest from `course-import`. Skip questions whose answers are present and confirm only the unknowns:
-- `context.modality` — usually inferable from the LMS (Canvas/Moodle/etc. = online or hybrid). Confirm with the user if ambiguous.
-- `context.timeline` — sometimes in `course_settings.xml` (e.g., the syllabus dates from the cartridge). Use it if found; ask only if absent.
+- `context.modality` — course-import writes it from the course structure (async = online, sync sessions = hybrid). Use it if it is present. Confirm with the user if it is ambiguous or absent.
+- `context.timeline` — course-import writes it from the term or date information in the import, if it found any. Use it if it is present; ask only if absent.
 - `context.class_size` — typically not in the cartridge; ask.
 - `context.institution_type` — usually inferable from `import_metadata.source_lms` (Canvas in higher-ed, etc.). Confirm with the user if ambiguous.
-- `context.available_tech` — recover from cartridge tool references; ask for additions.
+- `context.available_tech` — course-import writes it from the detected resource types; ask for additions.
 
-Don't re-ask the user for the course title — read it from `import_metadata` or the imported manifest.
+Don't re-ask the user for the course title — read it from the top-level `project_name` that `course-import` wrote.
 
 Store these in the `context` section of the manifest.
 
@@ -783,7 +776,7 @@ learners," or similar: respond with this exact framing:
 
 "It is good that you think about learner differences. But many studies show that
 instruction that matches learning style preferences does not make learning outcomes
-better [T1]. Researchers tested the 'meshing hypothesis' — that students learn better when
+better. Researchers tested the 'meshing hypothesis' — that students learn better when
 instruction matches their style — many times. The results do not support it.
 
 Prior knowledge level is the factor that predicts which strategies work. Novices
@@ -832,7 +825,7 @@ Use the finding IDs `needs-1`, `needs-2` and so on. The findings come from the t
 
 - **Top recommendations:** three to five actions from the approved findings, with the IDs `R-1`, `R-2` and so on. Put the action with the most effect first.
 - **Summary:** two or three sentences. Start with the decision: training is justified or not. Then tell the largest risk in the learner profile and the most important finding from the task analysis.
-- **Limitations:** in audit-existing mode, idstack did not use the decision gate for training. The learner profile comes from registrar or syllabus data, not from a learner survey. The task analysis comes from lists of job tasks, not from observed performance.
+- **Limitations:** in audit-existing mode, idstack did not use the decision gate for training. The learner profile comes from your answers in this session, not from a learner survey. The task analysis does not come from observed performance.
 - **Next steps:** run `/idstack:learning-objectives` to write learning objectives from this analysis. That skill reads your task analysis and learner profile. It recommends Bloom's levels and alignment strategies.
 
 Run the finish command of the Step Review.
@@ -858,7 +851,11 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 ### Step 7: Write Manifest
 
 Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
-This skill owns the `context` and `needs_analysis` sections and the top-level `project_name`.
+This skill writes the `context` and `needs_analysis` sections and the top-level `project_name`.
+/idstack:course-import also writes them. The merge tool replaces each section whole.
+So for each of the two sections: read the existing section from the manifest (if any),
+add the results of this session to it, and pass the full merged section. Keep the
+fields that course-import wrote, for example `needs_analysis.task_analysis.job_tasks`.
 
 Write each payload with the Write tool first: `.idstack/.context-payload.json` holds the
 `context` section and `.idstack/.needs_analysis-payload.json` holds the `needs_analysis`
@@ -943,7 +940,7 @@ PAYLOAD
 (Skills also read this file raw, so it carries no `IDSTACK_RESOLVE` placeholder
 and no copy of the resolve lines.)
 
-The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. `--create` makes a canonical manifest first when there is none. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
+The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. When there is no manifest, `--create` first makes one with `bin/idstack-migrate --init`. That manifest is at the current schema version and has every top-level section, but a section can lack fields until its skill writes it. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
 
 **2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
 
@@ -952,20 +949,20 @@ The merge tool replaces only the named top-level sections, preserves every other
 | Field | Owner skill(s) | Notes |
 |---|---|---|
 | `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
-| `project_name` | (any) | Set on first manifest creation. Don't overwrite once set. |
+| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis and course-import write it with `--set project_name=<v>` on every run, so the last of them to run sets the name and the export folder. In audit-existing mode, needs-analysis reuses the name that course-import wrote. Other skills do not write it. |
 | `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
 | `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
-| `context` | needs-analysis (initial) | Modality, timeline, class size, etc. Edited by skills that learn new context. |
-| `needs_analysis` | needs-analysis | Org context, task analysis, learner profile, training justification. |
-| `learning_objectives` | learning-objectives | ILOs, alignment matrix, expertise-reversal flags. |
-| `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
+| `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |
+| `needs_analysis` | needs-analysis, course-import | Org context, task analysis, learner profile, training justification. |
+| `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. In Mode 2 (no ILOs), and in Mode 3 when its step 0 asked for the objectives, it also writes the `ilos` that it classified. |
+| `assessments` | assessment-design | Items (each with its rubric and, in Mode 1 and Mode 2, its feedback strategy), formative checkpoints and the feedback quality score (Mode 1 and Mode 2), and audit notes (Mode 3). No skill writes `assessment_strategy`, `feedback_plan` or the top-level `rubrics[]`. Mode 3 reads `assessments.rubrics` if it exists. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
-| `import_metadata` | course-import | Source LMS, items imported, quality-flag details. |
+| `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
 | `export_metadata` | course-export | Export destination, items exported, readiness check. |
-| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
+| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. No skill writes `review_history`. `bin/idstack-migrate` adds it as `[]`, and a /idstack:course-quality-review write replaces the whole section, so the field and its contents are removed. The timeline (`.idstack/timeline.jsonl`) keeps the score of each review. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
 | `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
-| `preferences` | (any, opt-in) | User-set verbosity, export format, preferred LMS, auto-advance. |
+| `preferences` | (user, by hand) | Verbosity, export format, preferred LMS, auto-advance. `bin/idstack-migrate` writes the defaults. No skill writes this section; the preamble reads `verbosity`. |
 
 ### Full schema (canonical shape)
 
@@ -1177,9 +1174,9 @@ These document the **shape of array elements and dictionary values** that the ca
 { "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }
 ```
 
-**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape, values are arrays of assessment titles.
+**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape. `/idstack:learning-objectives` writes arrays of assessment titles. `/idstack:assessment-design` replaces them with arrays of assessment IDs (`"A-1"`). A skill that reads this map must accept both.
 
-**`learning_objectives.alignment_matrix.gaps[]`** — each item:
+**`learning_objectives.alignment_matrix.gaps[]`** — `/idstack:assessment-design` writes each item as the object below. `/idstack:learning-objectives` writes each item as a string that describes the gap. A skill that reads `gaps[]` must accept both forms.
 ```json
 {
   "ilo": "ILO-1",
@@ -1193,25 +1190,38 @@ These document the **shape of array elements and dictionary values** that the ca
 ```json
 {
   "id": "ILO-1",
-  "statement": "Analyze competitive forces in...",
-  "blooms_level": "analyze",
-  "blooms_confidence": "high|medium|low"
+  "objective": "Analyze competitive forces in...",
+  "knowledge_dimension": "factual|conceptual|procedural|metacognitive",
+  "cognitive_process": "remember|understand|apply|analyze|evaluate|create"
 }
 ```
+`/idstack:course-import` can also add `"confidence": "high|ambiguous"` and `"alignment_status": "imported-unverified"`. `/idstack:learning-objectives` checks these items again. `/idstack:assessment-design` Mode 2, and Mode 3 when its step 0 asked for the objectives, write items in the same shape.
 
-**`assessments.items[]`** — each item:
+**`assessments.items[]`** — `/idstack:assessment-design` writes each item (`/idstack:course-import` does not write this array):
 ```json
 {
   "id": "A-1",
-  "type": "quiz|discussion|rubric|peer_review|gate|...",
   "title": "Module 1 Quiz",
-  "weight": 5,
-  "ilos_measured": ["ILO-1", "ILO-3"],
-  "rubric_present": true,
-  "elaborated_feedback": false,
-  "alignment_status": "weak|moderate|strong"
+  "type": "quiz|essay|project|case-study|peer-review|portfolio|presentation",
+  "format": "formative|summative",
+  "aligned_ilos": ["ILO-1", "ILO-3"],
+  "rubric": {
+    "criteria": [
+      { "name": "Criterion name", "weight": 40,
+        "levels": { "exceeds": "...", "meets": "...", "approaching": "...", "below": "..." } }
+    ],
+    "levels": ["exceeds", "meets", "approaching", "below"],
+    "total_points": 100
+  },
+  "feedback_strategy": {
+    "type": "elaborated|correctness|peer|self-assessment",
+    "timing": "immediate|delayed|iterative",
+    "principles_applied": [1, 2, 3, 5, 6]
+  },
+  "evidence_tier": "T1"
 }
 ```
+The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|moderate|strong"`.
 
 **`assessments.rubrics[]`** — each item:
 ```json
@@ -1223,7 +1233,7 @@ These document the **shape of array elements and dictionary values** that the ca
 }
 ```
 
-**`import_metadata.quality_flag_details[]`** — each item (replaces the legacy `_import_quality_flags` root field that sometimes appeared in the wild):
+**`import_metadata.quality_flag_details[]`** — each item. No skill fills this array. `bin/idstack-migrate` creates it empty, or fills it when it moves a legacy `_import_quality_flags` root field. `/idstack:course-import` writes it as an empty array, which replaces any details that `bin/idstack-migrate` moved there, and writes the count in `quality_flags`. The flag details are in its report (Import quality triage section):
 ```json
 {
   "key": "orphan_module_8",
@@ -1265,23 +1275,15 @@ These document the **shape of array elements and dictionary values** that the ca
 }
 ```
 
-**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.alignment_audit.findings[]`**, **`quality_review.cross_domain_checks.<check>.flags[]`**, and other findings arrays — each item:
-```json
-{
-  "id": "<dimension>-<n>",
-  "description": "...",
-  "evidence": "[Domain-N] [TX]",
-  "severity": "critical|warning|info"
-}
-```
+**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.coi_presence.<presence>.findings[]`** and **`quality_review.alignment_audit.findings[]`** — each item is a plain string. `/idstack:course-quality-review` writes one short finding sentence per item, for example `"findings": ["Syllabus has no course-level objectives."]`. **`quality_review.cross_domain_checks.<check>.flags[]`** has no fixed item shape. The skill writes a list of flags, or `[]` when the check found nothing. The severity and evidence tier of quality-review findings are in `quality_review.recommendations[]` and `quality_review.quick_wins[]`, not in these arrays.
 
 ### Mode field — design-new vs audit-existing
 
-`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
+`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `needs_analysis.mode` is `audit-existing` when `import_metadata.source` is `cartridge`, `scorm` or `canvas-api` and `import_metadata.items_imported.modules > 0`. `course_content.mode` is `gap-fill` when `import_metadata.source` is one of those values and `import_metadata.items_imported.modules > 0` or `course_content.modules` is non-empty. assessment-design's Mode 3 uses the same source values with `import_metadata.items_imported.assessments > 0`, `assessments.items` or `course_content.assessments`. `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report's header metadata line under the title, as `mode: Mode N` (`idstack-report-section init --mode`).
 
 Allowed values per skill:
 - `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
-- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
+- `assessments.mode`: not written by the current skill. The report records the mode: `"Mode 1"` = full upstream data, `"Mode 2"` = ILOs-from-scratch, `"Mode 3"` = audit existing assessments
 - `course_content.mode`: `"build-new"` or `"gap-fill"`
 
 Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).
@@ -1300,7 +1302,7 @@ Empty string means the skill hasn't run yet or didn't record the mode (legacy ma
 ```json
 {
   "description": "Discussion rubric for Module 5",
-  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
+  "source": "red-team:alignment-3 | quality-review:<short form of the recommendation's finding text> | user-request",
   "status": "generated|deferred|declined",
   "output_path": "Optional — set when status=generated, points to the generated file."
 }

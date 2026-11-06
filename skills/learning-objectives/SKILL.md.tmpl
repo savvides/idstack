@@ -21,6 +21,12 @@ allowed-tools:
 **Skill-specific manifest check:** If the manifest `learning_objectives` section already has data,
 ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
+If `learning_objectives.report_path` is empty, this skill did not write the data. If the ILOs have
+`alignment_status: "imported-unverified"`, the data came from /idstack:course-import. Then ask the same question with this text:
+"Your learning objectives came from the course import. Do you want to update them or start again?"
+If no ILO has that status, another skill wrote the data (for example /idstack:assessment-design). Then ask:
+"Your learning objectives came from another idstack skill. Do you want to update them or start again?"
+
 # Learning Objectives — Revised Bloom's Taxonomy & Constructive Alignment
 
 You are an evidence-based instructional design partner for learning objectives. Your job
@@ -74,7 +80,7 @@ When multiple tiers apply, cite the strongest.
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 **If NO_MANIFEST:**
 - Say: "You did not run `/idstack:needs-analysis`. That skill gives me your
@@ -331,7 +337,7 @@ Use the IDs `align-1`, `bloom-1`, `expertise-1` and so on. The findings come fro
 
 - **Summary:** two or three sentences. Tell how many ILOs you have, how many are aligned, and the most important gap or mismatch.
 - **Top recommendations:** the three to five alignment fixes that have the largest effect, in the order of priority. Use the IDs `REC-1`, `REC-2` and so on. In each Action cell, write the finding ID that the action fixes.
-- **Limitations:** The alignment data comes from the descriptions in the manifest, not from the rubric criteria. The expertise reversal flags come from the learner profile, not from a learner survey.
+- **Limitations:** The alignment data comes from the activities and the assessments that you gave in this session, not from the rubric or the course materials. The expertise reversal flags come from the learner profile, not from a learner survey.
 - **Next steps:** Run `/idstack:assessment-design`. It designs assessments that align with these objectives, with rubrics and feedback plans from the research.
 
 Run the finish command of the Step Review.
@@ -382,7 +388,7 @@ PAYLOAD
 Replace the placeholder payload above with the actual session data. Include the COMPLETE
 section structure — do not omit fields. `--create` makes a canonical manifest first if `.idstack/project.json` does not
 exist yet (the standalone case). It never replaces a manifest that exists.
-If the tool exits non-zero (e.g., exit 2 = malformed manifest), report the error to the
+If the tool exits non-zero (e.g., exit 2 = malformed manifest or a command-line error), report the error to the
 user and stop; never silently overwrite.
 
 Set `learning_objectives.report_path` to the value of `$_REPORT_PATH` from
@@ -397,8 +403,8 @@ the bash block above — i.e., `.idstack/exports/<course-slug>/learning-objectiv
   - `cognitive_process`: remember | understand | apply | analyze | evaluate | create
 
 - `alignment_matrix`:
-  - `ilo_to_activity`: Object mapping ILO IDs to activity descriptions
-  - `ilo_to_assessment`: Object mapping ILO IDs to assessment descriptions
+  - `ilo_to_activity`: Object that maps each ILO ID to an array of activity names (for example `{ "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }`)
+  - `ilo_to_assessment`: Same shape; each ILO ID maps to an array of assessment titles
   - `gaps`: Array of strings describing alignment gaps found
 
 - `expertise_reversal_flags`: Array of strings noting where objective sequencing may
@@ -410,7 +416,7 @@ Write the manifest, then confirm to the user:
 
 - **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the alignment
   table, evidence-backed findings on gaps and mismatches, and a Bloom's-level expertise
-  read. Click the link to open it. The folder has all of the files for the report.
+  read. Click the link to open it.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Next step:** Run `/idstack:assessment-design` to design assessments aligned to your objectives

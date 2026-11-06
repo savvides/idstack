@@ -32,10 +32,15 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -177,31 +182,13 @@ Identify text from a different source for the checker:
 - In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
 - The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
 - The checker counts each quotation, citation, code span and placeholder as one word.
+  A <placeholder> that is not in backticks counts as no word.
 
 When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
 prompt. The sub-agent cannot see this preamble.
 
 Example sentences in a skill show the content of a message. Write them in STE when you
 use them.
-
-## Preamble: Update Check
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-if [ -n "$_UPD" ]; then echo "$_UPD"; fi
-```
-
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -332,7 +319,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -452,8 +439,10 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 - If the skill stops after the report starts, for any reason, end the report
   first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
-  not write a Top recommendations section. Then run the finish command. This
-  includes an error, a missing file, and a user who stops the skill.
+  not write a Top recommendations section. Then run the finish command with
+  `--stopped` after `finish "<path>"`. Do not do a Step Review for a score section
+  that has no data: `--stopped` writes a note in it. This includes an error, a
+  missing file, and a user who stops the skill.
 - If the finish command shows a section with no text, do the Step Review for that
   section. If it shows a draft section, ask the user to approve that section.
   Then run the finish command again.
@@ -488,8 +477,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -545,10 +534,10 @@ Every recommendation and flag includes its evidence tier:
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 - If `needs_analysis` has data from /idstack:needs-analysis: note it. You will PRESERVE
-  this data. Import adds to task_analysis and learner_profile, does not replace.
+  this data. Import adds to task_analysis (job_tasks) and does not replace it.
 - If `learning_objectives` has data from /idstack:learning-objectives: ask the user
   "You already have learning objectives in your manifest. Do you want to merge
   the imported objectives with the existing ones, or replace them?"
@@ -576,7 +565,7 @@ Options (AskUserQuestion takes a maximum of 4):
 Routing:
 - **LMS or SCORM package file** → ask for the file path. A `.imscc` file goes to
   Path A. A `.zip` file goes to Path E. Step E3 stops with a clear message if
-  the `.zip` is not a SCORM package.
+  the `.zip` has no `imsmanifest.xml` at its root.
 - **PDF or Word file** → Path D.
 - **Paste course documents** → Path B.
 - **Canvas API** → Path C.
@@ -633,7 +622,12 @@ fi
 ```
 
 If no imsmanifest.xml found: "This ZIP does not contain an IMS manifest. Is this
-a Common Cartridge export? Export the course from your LMS again."
+a Common Cartridge export? Export the course from your LMS again." Then delete the
+extracted files and stop:
+
+```bash
+rm -rf "<IMPORT_DIR printed above>"
+```
 
 Read the manifest XML:
 
@@ -659,9 +653,9 @@ Extract from the XML:
 - `<resource>` elements contain the actual content
 - `type` attribute indicates resource type:
   - `webcontent` → instructional materials (pages, files)
-  - `imsqti_xmlv2p1` or `imsqti_xmlv1p2` → quizzes/assessments
+  - `imsqti_xmlv2p1`, `imsqti_xmlv1p2`, or a type that starts with `imsqti_xmlv1p2/` (for example `imsqti_xmlv1p2/imscc_xmlv1p3/assessment`, which /idstack:course-export writes) → quizzes/assessments
   - `imsbasiclti_xmlv1p0` → external tool integrations
-  - `imsdt_xmlv1p0` or `topic` → discussion topics
+  - `imsdt_xmlv1p0`, `imsdt_xmlv1p3` (which /idstack:course-export writes) or `topic` → discussion topics
   - `assignment_xmlv1p0` or `assignment` → assignments
 
 **Learning outcomes (if present):**
@@ -799,7 +793,7 @@ From the PDF content, identify and extract the same elements as Path B:
 **Rise-specific notes:** Articulate Rise PDFs may lose interactive elements
 (Storyline blocks, flashcards, drag-and-drop activities). Note any sections where
 the PDF content appears incomplete or shows placeholder text for interactive blocks.
-Flag these as "interactive element not captured in PDF" in the import quality triage.
+Write these as "interactive element not captured in PDF" in the Limitations section (Step 5).
 
 Continue to Step 1b (Prepare the report).
 
@@ -864,7 +858,7 @@ echo "$BODY" | head -5
 
 Handle errors:
 - HTTP 401: "Token rejected. Make sure you copied the full token. In Canvas:
-  Account → Settings → New Access Token."
+  Account → Settings → Approved Integrations → New Access Token."
 - HTTP 403: "Access denied. Your token does not have the necessary permissions."
 - Network error: "idstack cannot connect to Canvas at that URL. Check the address."
 
@@ -927,9 +921,10 @@ curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/outcome_groups/$GROUP_ID/outcomes?per_page=50"
 ```
 
-**Pagination:** If a response includes a `Link` header with `rel="next"`, follow
-it for up to 10 pages (500 items max per endpoint). After 500 items, stop and note
-"Partial import: course has more items than the import limit."
+**Pagination:** Each call reads only the first page of results (a maximum of 50
+items for each endpoint). The commands do not show response headers, so idstack does
+not follow the `Link` header. If an endpoint sends exactly 50 items, note
+"Partial import: the course can have more items than the import reads."
 
 **Error handling for each call:**
 - 404: Skip this endpoint, note what's missing
@@ -996,6 +991,7 @@ if [ -f "$IMPORT_DIR/imsmanifest.xml" ]; then
   echo "SCORM_MANIFEST_FOUND"
   cat "$IMPORT_DIR/imsmanifest.xml"
 else
+  rm -rf "$IMPORT_DIR"
   echo "NO_SCORM_MANIFEST"
 fi
 ```
@@ -1023,7 +1019,7 @@ From `imsmanifest.xml`, extract:
 - Leaf items with `identifierref` are deliverable content (SCOs or assets)
 
 **From `<resources>`:**
-- For each `<resource>`: `identifier`, `type`, `href` (launch file), `adlcp:scormType`
+- For each `<resource>`: `identifier`, `type`, `href` (launch file), `adlcp:scormtype` (SCORM 1.2) or `adlcp:scormType` (SCORM 2004)
 - SCO resources contain the actual learning content
 - Asset resources are supporting files (images, scripts, CSS)
 - Read the HTML content of SCO launch files to extract learning content:
@@ -1252,8 +1248,8 @@ Use the finding IDs `import-1`, `quality-1`, `bloom-1` and so on. The findings c
 
 - **Top recommendations:** three to five actions from the approved findings, with the IDs `R-1`, `R-2` and so on. Put the action with the most effect first.
 - **Summary:** two or three sentences. Tell what came in: the number of modules, objectives, assessments, activities and discussions, pages and rubrics. Tell the number of quality flags. Then tell the most important thing for the designer, for example "The structure of the import is clean, but the course has few objectives." or "8 of 12 modules have no rubric."
-- **Limitations:** the import reads structural metadata only. Interactive elements (Storyline, flashcards) do not show in a PDF. The Canvas token stays in `.idstack/canvas.env` on the user's computer. idstack does not write it to the manifest or the report. The import can miss data in SCORM packages that have non-standard manifest extensions. Add each flag that has no citation.
-- **Next steps:** run `/idstack:course-quality-review` for the full evidence-based audit. Run `/idstack:learning-objectives` to check the Bloom's classification and the alignment in the two directions. Run `/idstack:needs-analysis` in audit-existing mode to add the organizational context and the learner profile that idstack cannot get from the course structure.
+- **Limitations:** the quality triage uses the course structure only, and it is not a full review. The import reads a maximum of 10 resource files from a cartridge and the first 50 pages of a PDF. Interactive elements (Storyline, flashcards) do not show in a PDF. The Canvas token stays in `.idstack/canvas.env` on the user's computer. idstack does not write it to the manifest or the report. The import can miss data in SCORM packages that have non-standard manifest extensions. Add each flag that has no citation.
+- **Next steps:** run `/idstack:course-quality-review` for the full evidence-based audit. Run `/idstack:learning-objectives` to check the Bloom's classification and the alignment in the two directions. Run `/idstack:needs-analysis` to add the organizational context and the learner profile that idstack cannot get from the course structure.
 
 Run the finish command of the Step Review.
 
@@ -1334,24 +1330,32 @@ writes nothing.
 
 - `learning_objectives.alignment_matrix` — partial, from detected objective-assessment links
 
-Use only the approved rows of the report. `job_tasks` has the approved `T-` rows. `ilos` has the approved `ILO-` rows, with the status "imported-unverified". The `items_imported` counts come from the `TOTAL` row of the approved Imported structure section. `quality_flags` is the number of approved rows in the Import quality triage section.
+Use only the approved rows of the report. `job_tasks` has the approved `T-` rows. `ilos` has the approved `ILO-` rows, with the status "imported-unverified". The `items_imported` counts come from the `TOTAL` row of the approved Imported structure section (`rubrics` from its Rubrics column). Write 0 for a count that the table does not have. `quality_flags` is the number of approved rows in the Import quality triage section.
 
 **Import metadata:** The `import_metadata` payload (flat, with no enclosing `import_metadata` key):
 
 ```json
 {
-  "source": "cartridge|paste|canvas-api",
+  "source": "cartridge|paste|canvas-api|pdf|scorm",
   "report_path": "<set to $_REPORT_PATH from the Step 1b bash block — e.g. .idstack/exports/<course-slug>/course-import.md>",
   "imported_at": "ISO-8601",
-  "source_lms": "canvas|blackboard|moodle|d2l|unknown",
+  "source_lms": "canvas|blackboard|moodle|d2l|rise|storyline|unknown",
+  "source_cartridge": "<file name of the cartridge or package, or empty>",
+  "source_size_bytes": 0,
+  "schema": "<cartridge or SCORM schema version, or empty>",
   "items_imported": {
     "modules": 0,
     "objectives": 0,
+    "module_objectives": 0,
     "assessments": 0,
     "activities": 0,
-    "pages": 0
+    "pages": 0,
+    "rubrics": 0,
+    "quizzes": 0,
+    "discussions": 0
   },
-  "quality_flags": 0
+  "quality_flags": 0,
+  "quality_flag_details": []
 }
 ```
 
@@ -1375,7 +1379,7 @@ Write the manifest, then confirm. Write the message as Markdown text, not in a c
 **Two artifacts:**
 - **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the import report
   with evidence-backed quality flags, the Bloom's classification table, and recommended
-  next steps tied to specific findings. Click the link to open it. The folder has all of the files for the report.
+  next steps tied to specific findings. Click the link to open it.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Recommended next steps:**
@@ -1423,7 +1427,7 @@ PAYLOAD
 (Skills also read this file raw, so it carries no `IDSTACK_RESOLVE` placeholder
 and no copy of the resolve lines.)
 
-The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. `--create` makes a canonical manifest first when there is none. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
+The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. When there is no manifest, `--create` first makes one with `bin/idstack-migrate --init`. That manifest is at the current schema version and has every top-level section, but a section can lack fields until its skill writes it. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
 
 **2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
 
@@ -1432,20 +1436,20 @@ The merge tool replaces only the named top-level sections, preserves every other
 | Field | Owner skill(s) | Notes |
 |---|---|---|
 | `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
-| `project_name` | (any) | Set on first manifest creation. Don't overwrite once set. |
+| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis and course-import write it with `--set project_name=<v>` on every run, so the last of them to run sets the name and the export folder. In audit-existing mode, needs-analysis reuses the name that course-import wrote. Other skills do not write it. |
 | `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
 | `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
-| `context` | needs-analysis (initial) | Modality, timeline, class size, etc. Edited by skills that learn new context. |
-| `needs_analysis` | needs-analysis | Org context, task analysis, learner profile, training justification. |
-| `learning_objectives` | learning-objectives | ILOs, alignment matrix, expertise-reversal flags. |
-| `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
+| `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |
+| `needs_analysis` | needs-analysis, course-import | Org context, task analysis, learner profile, training justification. |
+| `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. In Mode 2 (no ILOs), and in Mode 3 when its step 0 asked for the objectives, it also writes the `ilos` that it classified. |
+| `assessments` | assessment-design | Items (each with its rubric and, in Mode 1 and Mode 2, its feedback strategy), formative checkpoints and the feedback quality score (Mode 1 and Mode 2), and audit notes (Mode 3). No skill writes `assessment_strategy`, `feedback_plan` or the top-level `rubrics[]`. Mode 3 reads `assessments.rubrics` if it exists. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
-| `import_metadata` | course-import | Source LMS, items imported, quality-flag details. |
+| `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
 | `export_metadata` | course-export | Export destination, items exported, readiness check. |
-| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
+| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. No skill writes `review_history`. `bin/idstack-migrate` adds it as `[]`, and a /idstack:course-quality-review write replaces the whole section, so the field and its contents are removed. The timeline (`.idstack/timeline.jsonl`) keeps the score of each review. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
 | `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
-| `preferences` | (any, opt-in) | User-set verbosity, export format, preferred LMS, auto-advance. |
+| `preferences` | (user, by hand) | Verbosity, export format, preferred LMS, auto-advance. `bin/idstack-migrate` writes the defaults. No skill writes this section; the preamble reads `verbosity`. |
 
 ### Full schema (canonical shape)
 
@@ -1657,9 +1661,9 @@ These document the **shape of array elements and dictionary values** that the ca
 { "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }
 ```
 
-**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape, values are arrays of assessment titles.
+**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape. `/idstack:learning-objectives` writes arrays of assessment titles. `/idstack:assessment-design` replaces them with arrays of assessment IDs (`"A-1"`). A skill that reads this map must accept both.
 
-**`learning_objectives.alignment_matrix.gaps[]`** — each item:
+**`learning_objectives.alignment_matrix.gaps[]`** — `/idstack:assessment-design` writes each item as the object below. `/idstack:learning-objectives` writes each item as a string that describes the gap. A skill that reads `gaps[]` must accept both forms.
 ```json
 {
   "ilo": "ILO-1",
@@ -1673,25 +1677,38 @@ These document the **shape of array elements and dictionary values** that the ca
 ```json
 {
   "id": "ILO-1",
-  "statement": "Analyze competitive forces in...",
-  "blooms_level": "analyze",
-  "blooms_confidence": "high|medium|low"
+  "objective": "Analyze competitive forces in...",
+  "knowledge_dimension": "factual|conceptual|procedural|metacognitive",
+  "cognitive_process": "remember|understand|apply|analyze|evaluate|create"
 }
 ```
+`/idstack:course-import` can also add `"confidence": "high|ambiguous"` and `"alignment_status": "imported-unverified"`. `/idstack:learning-objectives` checks these items again. `/idstack:assessment-design` Mode 2, and Mode 3 when its step 0 asked for the objectives, write items in the same shape.
 
-**`assessments.items[]`** — each item:
+**`assessments.items[]`** — `/idstack:assessment-design` writes each item (`/idstack:course-import` does not write this array):
 ```json
 {
   "id": "A-1",
-  "type": "quiz|discussion|rubric|peer_review|gate|...",
   "title": "Module 1 Quiz",
-  "weight": 5,
-  "ilos_measured": ["ILO-1", "ILO-3"],
-  "rubric_present": true,
-  "elaborated_feedback": false,
-  "alignment_status": "weak|moderate|strong"
+  "type": "quiz|essay|project|case-study|peer-review|portfolio|presentation",
+  "format": "formative|summative",
+  "aligned_ilos": ["ILO-1", "ILO-3"],
+  "rubric": {
+    "criteria": [
+      { "name": "Criterion name", "weight": 40,
+        "levels": { "exceeds": "...", "meets": "...", "approaching": "...", "below": "..." } }
+    ],
+    "levels": ["exceeds", "meets", "approaching", "below"],
+    "total_points": 100
+  },
+  "feedback_strategy": {
+    "type": "elaborated|correctness|peer|self-assessment",
+    "timing": "immediate|delayed|iterative",
+    "principles_applied": [1, 2, 3, 5, 6]
+  },
+  "evidence_tier": "T1"
 }
 ```
+The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|moderate|strong"`.
 
 **`assessments.rubrics[]`** — each item:
 ```json
@@ -1703,7 +1720,7 @@ These document the **shape of array elements and dictionary values** that the ca
 }
 ```
 
-**`import_metadata.quality_flag_details[]`** — each item (replaces the legacy `_import_quality_flags` root field that sometimes appeared in the wild):
+**`import_metadata.quality_flag_details[]`** — each item. No skill fills this array. `bin/idstack-migrate` creates it empty, or fills it when it moves a legacy `_import_quality_flags` root field. `/idstack:course-import` writes it as an empty array, which replaces any details that `bin/idstack-migrate` moved there, and writes the count in `quality_flags`. The flag details are in its report (Import quality triage section):
 ```json
 {
   "key": "orphan_module_8",
@@ -1745,23 +1762,15 @@ These document the **shape of array elements and dictionary values** that the ca
 }
 ```
 
-**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.alignment_audit.findings[]`**, **`quality_review.cross_domain_checks.<check>.flags[]`**, and other findings arrays — each item:
-```json
-{
-  "id": "<dimension>-<n>",
-  "description": "...",
-  "evidence": "[Domain-N] [TX]",
-  "severity": "critical|warning|info"
-}
-```
+**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.coi_presence.<presence>.findings[]`** and **`quality_review.alignment_audit.findings[]`** — each item is a plain string. `/idstack:course-quality-review` writes one short finding sentence per item, for example `"findings": ["Syllabus has no course-level objectives."]`. **`quality_review.cross_domain_checks.<check>.flags[]`** has no fixed item shape. The skill writes a list of flags, or `[]` when the check found nothing. The severity and evidence tier of quality-review findings are in `quality_review.recommendations[]` and `quality_review.quick_wins[]`, not in these arrays.
 
 ### Mode field — design-new vs audit-existing
 
-`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
+`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `needs_analysis.mode` is `audit-existing` when `import_metadata.source` is `cartridge`, `scorm` or `canvas-api` and `import_metadata.items_imported.modules > 0`. `course_content.mode` is `gap-fill` when `import_metadata.source` is one of those values and `import_metadata.items_imported.modules > 0` or `course_content.modules` is non-empty. assessment-design's Mode 3 uses the same source values with `import_metadata.items_imported.assessments > 0`, `assessments.items` or `course_content.assessments`. `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report's header metadata line under the title, as `mode: Mode N` (`idstack-report-section init --mode`).
 
 Allowed values per skill:
 - `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
-- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
+- `assessments.mode`: not written by the current skill. The report records the mode: `"Mode 1"` = full upstream data, `"Mode 2"` = ILOs-from-scratch, `"Mode 3"` = audit existing assessments
 - `course_content.mode`: `"build-new"` or `"gap-fill"`
 
 Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).
@@ -1780,7 +1789,7 @@ Empty string means the skill hasn't run yet or didn't record the mode (legacy ma
 ```json
 {
   "description": "Discussion rubric for Module 5",
-  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
+  "source": "red-team:alignment-3 | quality-review:<short form of the recommendation's finding text> | user-request",
   "status": "generated|deferred|declined",
   "output_path": "Optional — set when status=generated, points to the generated file."
 }

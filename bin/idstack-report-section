@@ -7,14 +7,15 @@ Usage:
   idstack-report-section check DRAFT
   idstack-report-section append REPORT DRAFT
   idstack-report-section approve REPORT [--draft DRAFT]
-  idstack-report-section finish REPORT
+  idstack-report-section finish REPORT [--stopped]
 
 init    writes the report header, an in-progress status line, a Summary
         placeholder, one placeholder for each --reserve heading, and the footer.
         It replaces a report from an earlier run.
 check   examines a draft section (the Step Review in templates/preamble.md):
-        each "## " section has a table, the first column is ID, a cited table
-        ends with Justification and Evidence, each Evidence cell has only
+        each "## " section other than Summary, Limitations and Next steps has
+        a table, the first column is ID, a cited table ends with Justification
+        and Evidence, each Evidence cell has only
         citations whose tiers agree with evidence/references.md, a findings
         table is in severity order, and the text obeys bin/idstack-ste-check.
 append  runs check, then puts each section of the draft in the report, marked as a
@@ -26,7 +27,9 @@ append  runs check, then puts each section of the draft in the report, marked as
 approve removes the draft mark from each section that has one. With --draft,
         it also deletes the draft file.
 finish  makes sure that no placeholder and no draft section remain, and removes
-        the status line.
+        the status line. With --stopped (the skill stopped early), each reserved
+        section that still has its placeholder gets STOPPED_TEXT. The Summary
+        placeholder is not changed: the last Step Review writes the Summary.
 
 Exit codes: 0 OK; 1 problems (the report did not change); 2 an error in the
 command, or a missing file that the script needs; 3 the report does not exist.
@@ -53,6 +56,7 @@ VERSION_FILE = os.path.join(HERE, '..', 'VERSION')
 STATUS_LINE = '**Status:** in progress. A section with a draft mark waits for your approval.'
 DRAFT_LINE = '**Draft:** this section waits for your approval.'
 PLACEHOLDER = '_idstack writes this section at the end of the skill._'
+STOPPED_TEXT = 'idstack did not write this section because the skill stopped.'
 PROSE_SECTIONS = ('Summary', 'Limitations', 'Next steps')
 FACT_SECTIONS = ('Project context', 'Course information', 'Imported structure',
                  'Readiness', 'Export contents', 'Generated artifacts')
@@ -375,11 +379,18 @@ def cmd_approve(report, draft=None):
     return 0
 
 
-def cmd_finish(report):
+def cmd_finish(report, stopped=False):
     if not os.path.isfile(report):
         return fail(3, 'the report %s does not exist. Run "init" first.' % report)
     with open(report, encoding='utf-8') as handle:
         lines = handle.read().split('\n')
+    if stopped:
+        heading = None
+        for i, line in enumerate(lines):
+            if line.startswith('## '):
+                heading = line[3:].strip()
+            elif line.strip() == PLACEHOLDER and heading != 'Summary':
+                lines[i] = STOPPED_TEXT
     _, sections, _ = split_sections(lines)
     empty = [heading for heading, section_lines in sections
              if any(line.strip() == PLACEHOLDER for line in section_lines)]
@@ -424,6 +435,7 @@ def main(argv=None):
     p_approve.add_argument('--draft')
     p_finish = sub.add_parser('finish')
     p_finish.add_argument('report')
+    p_finish.add_argument('--stopped', action='store_true')
     args = parser.parse_args(argv)
     if not args.command:
         parser.print_usage(sys.stderr)
@@ -432,7 +444,7 @@ def main(argv=None):
     if args.command == 'init':
         return cmd_init(args)
     if args.command == 'finish':
-        return cmd_finish(args.report)
+        return cmd_finish(args.report, args.stopped)
     if args.command == 'approve':
         return cmd_approve(args.report, args.draft)
 

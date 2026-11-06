@@ -34,7 +34,7 @@ jobs:
       # Node 22 is pinned for two suites. test/test-extension.sh imports the shipped extension
       # ES modules; extension/ has no package.json, so Node must detect ESM syntax in .js files
       # itself (the default only from 20.19 / 22.7). test-rendered-landing.js drives Chrome over
-      # the global WebSocket, which node exposes unflagged only from 22.4. Declaring node here
+      # the global WebSocket, which node exposes without a flag from 22.0 (stable from 22.4). Declaring node here
       # also keeps smoke-test's node-absent SKIP from silently hiding a failure.
       - uses: actions/setup-node@v4
         with:
@@ -44,9 +44,11 @@ jobs:
       - name: Install zsh
         if: runner.os == 'Linux'
         run: sudo apt-get update -q && sudo apt-get install -y -q zsh
-      # smoke-test runs every unit and behavioral suite itself (manifest-merge,
+      # smoke-test runs the other unit and behavioral suites itself (manifest-merge,
       # plugin-status, doctor, status, preamble-python, setup, extension,
-      # skill-shell-zsh), so they are not separate steps here.
+      # skill-shell-zsh, ste-check, report-section, citation-tiers,
+      # responsive-landing, rendered-landing), so they are not separate steps
+      # here. integration-test is the only suite with its own step.
       - name: Smoke test
         run: ./test/smoke-test.sh
       - name: Integration test
@@ -67,9 +69,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      # Node 22 for the same two reasons as the test job, and a hard requirement here: fresh()
-      # copies extension/ and smoke runs test-extension.sh in every case, and the landing-page
-      # mutations are guarded only by the node suites, so without node they report NOT-GUARDED.
+      # Node 22 for the same two reasons as the test job, and a hard requirement here: many
+      # cases run test-extension.sh or a node test file directly, so without node they fail for
+      # the wrong reason. smoke-test skips its node suites without node, so the responsive
+      # landing-page mutations (guarded only by test-responsive-landing.js and
+      # test-rendered-landing.js) would report NOT-GUARDED.
       # The rendered-landing mutation additionally needs Chrome.
       - uses: actions/setup-node@v4
         with:

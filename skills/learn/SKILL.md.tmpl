@@ -3,8 +3,8 @@ name: learn
 description: |
   Manage the course-design learnings that idstack saved across sessions. Search, list,
   delete, promote, and export them. Use when asked about idstack learnings, for example
-  "what has idstack learned about this course", "show idstack learnings", "prune stale
-  idstack learnings", or "export idstack learnings". (idstack)
+  "what has idstack learned about this course", "show idstack learnings", "delete an idstack
+  learning", or "export idstack learnings". (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -21,6 +21,11 @@ and manage the learnings that idstack has accumulated during course design sessi
 
 Learnings are stored in `.idstack/learnings.jsonl` (project-local) and optionally
 `~/.idstack/global/learnings.jsonl` (cross-project).
+
+The steps of this skill do not write the manifest. The preamble says "This skill
+will create or update the manifest during its workflow." That line is not true for
+this skill. The preamble can update an old manifest to the current schema. That is
+correct.
 
 ## Commands
 
@@ -42,7 +47,7 @@ Format the output as a readable table:
 Key              | Type         | Insight                          | Confidence
 ─────────────────┼──────────────┼──────────────────────────────────┼───────────
 canvas-rubrics   | operational  | Uses HTML format for rubrics     | 8/10
-bloom-verbs      | pedagogical  | Do not use "understand" in ILOs  | 9/10
+bloom-verbs      | operational  | Do not use "understand" in ILOs  | 9/10
 ```
 
 ### search <keyword>
@@ -60,11 +65,11 @@ For cross-project search:
 "$_IDSTACK/bin/idstack-learnings" search --keyword KEYWORD --cross-project --limit 10
 ```
 
-If results include global learnings (tagged with `_source`), show their source project.
+If results include global learnings (tagged `"_source": "global"`), show the project name from their `_source_project` field.
 
 ### delete <key>
 
-Delete a learning by its key. Always confirm with the user before deleting.
+Delete the most recent local learning with this key. Older local entries with the same key, and copies in the global store, stay. To remove an older entry, run the command again. Always confirm with the user before deleting.
 
 ```bash
 {{IDSTACK_RESOLVE}}
@@ -82,15 +87,16 @@ Copy a local learning to the global store so it's available across projects.
 
 ### export
 
-Export all learnings to a markdown file.
+Export the local learnings of this project (the latest 1000) to a markdown file. The export does not include learnings in the global store.
 
 ```bash
 {{IDSTACK_RESOLVE}}
 "$_IDSTACK/bin/idstack-learnings" search --limit 1000
 ```
 
-Format as markdown with sections grouped by type (operational, pedagogical, etc.)
-and write to `.idstack/learnings-export.md`.
+Format as markdown and write to `.idstack/learnings-export.md`. idstack skills log
+every learning with the type `operational`. If the learnings have more than one
+`type` value, make one section for each type.
 
 **Writing standard check.** Run this command on the export file. This check only shows problems. Do not change the learnings in the export. Other sessions wrote them, many before the writing standard.
 

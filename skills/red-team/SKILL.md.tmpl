@@ -90,7 +90,7 @@ Use the **Agent tool** with `subagent_type=general-purpose`. The prompt is the f
 
 - `{{FOCUS}}` → the user's choice from Step 1 (or `Full sweep` by default)
 - `{{MANIFEST_INFO}}` → either `Manifest at .idstack/project.json — read it directly.` or, in standalone mode, the captured course information from Step 1
-- `{{COURSE_FILES_HINT}}` → if the manifest has `course_content.content_dir`, set this to that path; otherwise `Look under ./course/ or ./modules/ for generated course files.`
+- `{{COURSE_FILES_HINT}}` → if the manifest has `course_content.content_dir`, set this to that path; otherwise `Look under .idstack/course-content/ for generated course files.`
 
 Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble at the end of the prompt. The orchestrator cannot see the preamble.
 
@@ -453,7 +453,7 @@ Put the approved rows of the five Dimension sections in one table. Put the `crit
 - **Summary:** 2–3 sentences. Lead with the confidence score (0–100) and the band ("High confidence" / "Moderate confidence, changes necessary" / "Low confidence, important gaps" / "New design necessary"). Include the one-line scoreboard: "Confidence XX/100 · Critical N · Warning N · Info N". Use the counts of the approved findings.
 - **Top recommendations:** the 3 changes that would most improve the score. Give each row the ID `R-1` to `R-3`. Name the finding id in the Action cell. Use the citation of that finding.
 - **Limitations:** the `limitations` text from the JSON file. Add the text that you put in Limitations during the Step Reviews.
-- **Next steps:** If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
+- **Next steps:** If the confidence score is less than 60, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If it is 60 or more, recommend `/idstack:course-export`. The score does not change after the fixes in this run. To get a new score, run `/idstack:red-team` again.
 
 Run the finish command of the Step Review.
 
@@ -523,7 +523,7 @@ rm -f .idstack/.red-team-findings.json
 
 Two sentences:
 - "Confidence: X/100. I made N changes and deferred M changes. The report is at <the Report path, written as a link as the Report Links section of the preamble tells you>."
-- If confidence is <60 after fixes, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If 60+, recommend `/idstack:course-export`.
+- If the confidence score is less than 60, recommend re-running `/idstack:learning-objectives` or `/idstack:assessment-design`. If it is 60 or more, recommend `/idstack:course-export`. To get a new score after the fixes, run `/idstack:red-team` again.
 
 If the user wants to verify fixes hold, they can re-run `/idstack:red-team` — that's deliberately manual to avoid token costs of automatic re-verification.
 

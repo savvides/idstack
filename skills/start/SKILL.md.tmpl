@@ -25,20 +25,19 @@ command in a terminal.
 Do Step 1 and Step 2 before you act on the result of the Project Manifest check
 in the preamble.
 
-The steps of this skill do not write the manifest, a report or the timeline.
-The preamble says "This skill will create or update the manifest during its
+The steps of this skill do not write a report or the timeline. They do not
+write the manifest. The one exception is the repair in Step 3, with the user's
+yes. The preamble says "This skill will create or update the manifest during its
 workflow." That line is not true for this skill. The preamble can update an old
 manifest to the current schema. That is correct.
 
-In this skill, do not give the NO_PROFILE note. If the Update Check shows
-UPDATE_AVAILABLE, tell the user that a new version of idstack is available. Do
-not give the update command.
+In this skill, do not give the NO_PROFILE note.
 
 When Step 4 starts a different skill with the Skill tool, the limits of this
 skill stop. Do all of the steps of that skill, including the files that it
-writes and its timeline entry. Three rules of this skill stay in effect after the
-handoff. Do not give the update command, and do not give the NO_PROFILE note.
-Do not give the welcome-back message again.
+writes and its timeline entry. Two rules of this skill stay in effect after the
+handoff. Do not give the NO_PROFILE note, and do not give the welcome-back
+message again.
 
 ## Step 1: Setup check
 
@@ -86,8 +85,9 @@ esac
 
 - **COURSE_FOLDER:** Go to Step 3.
 - **NOT_A_COURSE_FOLDER:** Tell the user: "idstack keeps the files for one
-  course in one folder. This session is in your home folder, in Documents,
-  Desktop or Downloads, or in a temporary folder of the Claude app. Make a new
+  course in one folder. This session is in the top folder of the disk, your
+  home folder, Documents, Desktop or Downloads, or a temporary folder of the
+  Claude app. Make a new
   folder for the course, for example in Documents. Start a new session, and
   use the folder button below the message box to select the new folder. Then type `/idstack:start` again." STOP.
 
@@ -165,10 +165,12 @@ fi
 - **Dashboard path:** give the path as a link, as the "Report Links" section
   of the preamble tells you. If the output also shows DASHBOARD_OLD, tell the user:
   "This dashboard is older than some of the reports.
-  `/idstack:pipeline` updates the dashboard after it runs the next stage." Then STOP.
+  `/idstack:pipeline` updates the dashboard. If all the stages are complete,
+  select 'Regenerate the course dashboard'." Then STOP.
 - **NO_DASHBOARD:** Tell the user: "This course has no dashboard.
-  `/idstack:pipeline` makes the dashboard. To make it, type
-  `/idstack:pipeline`." Then give each `Report path:` path as a
+  `/idstack:pipeline` makes the dashboard when it completes the next stage. If
+  all the stages are complete, type `/idstack:pipeline` and select 'Regenerate
+  the course dashboard'." Then give each `Report path:` path as a
   link, as the "Report Links" section of the preamble tells you. Then STOP.
 
 ## Step 6: Run one skill

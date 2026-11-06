@@ -9,6 +9,12 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **`/idstack:start` checks your setup and starts the correct skill.** It finds the macOS python3 stub and a session in your home folder before they cause a problem.
 - **Each skill gives you a link to its report.** Click the link to open the report in the app.
 
+### A smaller idstack (v3.8.0.0–v3.9.0.0)
+- **idstack supports Claude Code only.** Without Claude Code, you can use the Chrome extension.
+- **idstack needs python3 3.9 or a later version.** `bin/idstack-learnings`, `bin/idstack-timeline-log`, `bin/idstack-status`, `bin/idstack-migrate` and `bin/idstack-slugify` tell you when python3 is missing, and `bin/idstack-doctor` reports a missing or older python3.
+- **The Consensus integration is removed.** You update `evidence/references.md` manually. The Chrome extension (1.2.1) does not keep an audit history.
+- **`./setup` does not remove old installs.** The CHANGELOG gives the commands to remove them manually.
+
 ### ASD-STE100 writing standard & a fix for finding idstack's scripts (v3.7.0.0)
 - **idstack writes the English text that it shows to a person in ASD-STE100.** This includes skill chat, reports, the course dashboard, CLI messages and the Chrome extension. `bin/idstack-ste-check` finds some of the problems, and each skill runs it on each report, dashboard or course file that it writes for a person. ASD does not endorse idstack.
 - **Skills find the plugin that Claude Code loaded.** Before, a skill could run the scripts of an old copy of idstack. If an install has no checker, the check step now says so and gives the path.
@@ -16,6 +22,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **The Chrome extension is version 1.2.0.** Its fixed text is in ASD-STE100, and five buttons have new names, for example **Audit Full Course** and **Remove All from Dossier**.
 
 ### Consensus evidence checks & Chrome extension hardening (v3.6.0.0)
+_The Consensus integration and the neuromyth correction were removed in v3.9.0.0._
 - **An optional Consensus evidence engine, on your own API key.** `bin/idstack-consensus` looks up and caches claims. `/idstack:course-quality-review`, `/idstack:assessment-design`, and `/idstack:red-team` check their findings with it before writing them, and correct four known neuromyths with or without a key.
 - **The Chrome extension (1.1.0) reads only the tab you point it at.** It no longer asks for access to every website, refuses Canvas pages that show student records, and reads every page of a course's assignments.
 - **Its privacy notes match the code.** The side panel and PRIVACY.md say what is sent to Google and to Consensus, and where results are kept.
@@ -27,16 +34,16 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ### Chrome Extension, Course Dossier & Robustness (v3.5.0.0)
 - **Native Chrome Side Panel extension for Canvas LMS & Google Docs.** Officially published on the [Chrome Web Store](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). Audits course content and assignments with cognitive demand classification (Bloom's Revised Taxonomy) and empirical evidence citations directly in the browser.
-- **Automated background Canvas course crawler.** Audits entire Canvas courses in the background via active session cookies without requiring developer API keys.
-- **Course Dossier multi-page compiler & Markdown exporter.** Compiles multi-page course findings into unified structured markdown dossiers with TOC, reading time estimates, and metadata sidecars.
+- **Automated background Canvas course crawler.** Audits a Canvas course's syllabus and assignments in the background, with your existing Canvas login, without requiring developer API keys.
+- **Course Dossier multi-page compiler & Markdown exporter.** Compiles the audits of several pages into one Markdown dossier, with a table of the audited materials and one section for each page.
 - **Automated Web Store packaging.** Added `bin/package-extension.sh` to package clean `.zip` bundles for the Chrome Web Store Developer Console.
-- **Atomic learnings deletion with permission preservation (#60).** Replaced destructive file truncation in `bin/lib/idstack-learnings-delete` with an atomic tempfile-and-rename pattern that preserves POSIX permissions.
-- **Cross-project local-over-global search precedence (#61).** Enforces project-local learnings priority over global store records during cross-project searches in `bin/idstack-learnings-search`.
+- **Atomic learnings deletion with permission preservation (#60).** Replaced destructive file truncation in `bin/idstack-learnings-delete` (now `bin/idstack-learnings delete`) with an atomic tempfile-and-rename pattern that preserves POSIX permissions.
+- **Cross-project local-over-global search precedence (#61).** Enforces project-local learnings priority over global store records during cross-project searches in `bin/idstack-learnings-search` (now `bin/idstack-learnings search`).
 - **Full test coverage for slugify stdin/emojis & migrate malformed manifest fallback (#62).** Added smoke tests for stdin piping, emoji handling in `bin/idstack-slugify`, and graceful fallback on malformed JSON manifests in `bin/idstack-migrate`.
 
 ### Documentation accuracy & automated verification (v3.4.0.1)
 - **Evidence cards derived from research references.** `test/check-evidence-cards.py` verifies landing page cards against `evidence/references.md` in `smoke-test.sh` so study counts and tier spans match.
-- **Privacy policy disclosures updated.** `PRIVACY.md` discloses outbound Canvas API uploads in `/idstack:course-export` and `git fetch` operations in `bin/idstack-update-check`.
+- **Privacy policy disclosures updated.** `PRIVACY.md` discloses outbound Canvas API uploads in `/idstack:course-export` and `git fetch` operations in `bin/idstack-update-check` (since removed; idstack no longer checks for updates).
 - **Windows setup instructions fixed.** `README.md` specifies WSL or Git Bash for Windows installs (PowerShell does not run extensionless bash scripts).
 
 ### Single-host Claude Code plugin architecture (v3.4.0.0)
@@ -46,7 +53,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 ### Follow-up fixes to the v3.3.0.0 audit (v3.3.0.1–v3.3.0.4)
 - **Skills stopped suggesting commands that don't exist.** Welcome-back and next-step messages named things like `/assessment-design`, which does not resolve in Claude Code. It landed inside the context-recovery message v3.3.0.0 had just repaired, so it was the first thing you saw once those messages started working again (v3.3.0.1).
 - **Searching your learnings for a word with an apostrophe returned the wrong answer.** `Bloom's` or `learner's` made the search code a syntax error, which was swallowed, and the fallback that took over ignores the `--type` filter — so it answered with a record of the wrong type instead of failing. Those are ordinary search terms in this tool (v3.3.0.2).
-- Smaller: a malformed payload can no longer corrupt the manifest, and on machines without python3 the search fallback's `--type` filter works at all (it had never matched anything idstack wrote).
+- Smaller: a malformed payload can no longer corrupt the manifest, and on machines without python3 the search fallback's `--type` filter matched records (before, it had never matched anything idstack wrote). v3.9.0.0 removed that fallback: idstack now needs python3, and `bin/idstack-learnings` says so instead of searching.
 
 ### Course memory, pipeline orchestration, and re-run detection fixed (v3.3.0.0)
 - **Welcome-back messages work on stock macOS.** The session-memory code embedded in every skill contained an f-string that is a SyntaxError on any Python below 3.12 — including the 3.9 macOS ships. It failed silently, so context recovery, quality-score trends, and next-step suggestions produced nothing. Fixed, and now exercised on 3.9 in CI so the class of bug can't ship again.
@@ -57,7 +64,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **Standalone runs persist.** `bin/idstack-migrate --init` creates a canonical manifest, so a skill run outside the pipeline has something to write into instead of silently discarding its results.
 
 ### Test infrastructure and CI (v3.3.0.0–v3.3.0.4, for contributors)
-- The suite had never run automatically. GitHub Actions runs every suite on each push and pull request, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, and more since; `CONTRIBUTING.md` lists the current set.
+- The suite had never run automatically. GitHub Actions runs every suite on each pull request and each push to main, across ubuntu (Python 3.9 + 3.12) and macOS — eight suites at v3.3.0.0, and more since; `CONTRIBUTING.md` lists the current set.
 - `./setup` — the primary deliverable — went from zero coverage to 17 behavioral tests.
 - `bin/idstack-doctor` and `bin/idstack-status --readiness` gained their first execution coverage in v3.3.0.4. Both are what a user reaches for when something has already gone wrong, and neither had any.
 - `test/mutation-test.sh` reintroduces each fixed defect and asserts its guarding test fails, which is how a test that only appeared to test something gets caught. Every mutation in it is guarded; the suite prints the current count when you run it.
@@ -66,10 +73,11 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - `./setup` registers idstack as a Claude Code plugin marketplace and installs from there. Recent Claude Code versions stopped discovering plugins from the bare symlink older setups created, so `/idstack:<skill>` commands silently never appeared in the slash picker. If that happened to you, pull the latest and re-run `./setup`.
 
 ### `DESIGN.md` and design-system reconciliation (v3.1.0.0)
-- The visual system behind the report stylesheet and the landing page is documented at the repo root in `DESIGN.md` — fonts, colors, spacing, radii, motion, plus anti-patterns and a dated decisions log. Skills, contributors, and reviewers read it before touching anything visual.
+- The visual system behind the report stylesheet (retired since; reports are Markdown) and the landing page is documented at the repo root in `DESIGN.md` — fonts, colors, spacing, radii, motion, plus anti-patterns and a dated decisions log. Contributors and reviewers read it before touching anything visual; reports and the dashboard are plain Markdown, so it does not apply to them.
 - Publication-grade type (Source Serif 4, Public Sans, JetBrains Mono), an ivory palette in place of parchment, sharper card corners, and a second annotation color mirroring the two-pen academic-editor convention. Reports written by older versions still render correctly.
 
 ### Branded HTML reports + per-course export folder (v3.0.0)
+_Reports and the dashboard are Markdown again after v3.10.0.0 (`<skill>.md`, `index.md`); the HTML templates and `idstack.css` are removed. The per-course export folder stays._
 - **HTML replaces Markdown for the human view.** Every skill that produces findings now writes a branded, self-contained HTML report at `.idstack/exports/<course-slug>/<skill>.html`. Visual contract: `templates/report.html.tmpl` + `templates/assets/idstack.css` (scholarly serif body, severity-colored finding cards, evidence-tier badges, print-friendly, auto light/dark via `prefers-color-scheme`). Content contract is unchanged — observation → evidence → why-it-matters → suggestion, severity + tier on every finding.
 - **One folder per course, by name.** All per-course artifacts — every per-skill HTML report, the pipeline `index.html` dashboard, the bundled CSS, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under `.idstack/exports/<course-slug>/`. The slug is derived from `project_name` via `bin/idstack-slugify` (NFKD-fold, kebab-case, ASCII-safe). Zip the folder to hand the whole deliverable to a stakeholder.
 - **`/idstack:pipeline` produces a course dashboard.** `index.html` at the folder root, with readiness scores (Quality / Accessibility / Red-team confidence), a pipeline status table with links to every per-skill report, top cross-cutting issues, and a where-to-start pointer. Replaces the old `pipeline.md` aggregate.
@@ -77,19 +85,20 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **Breaking change.** `report_path` semantics moved from `.idstack/reports/<skill>.md` to `.idstack/exports/<course-slug>/<skill>.html`. Existing `.idstack/reports/*.md` files from previous runs are left in place but treated as legacy — re-run the pipeline (or any skill) to migrate.
 
 ### Dual-output report contract + pipeline aggregator (v2.4)
-- **Two artifacts per skill.** Every finding-producing skill now writes both `.idstack/project.json` (system state for downstream skills) and `.idstack/reports/<skill>.md` (the human view). Each finding follows observation → evidence → why-it-matters → suggestion, with severity and evidence tier. Recommendations are framed as "consider…", not directives — idstack collaborates on your design, doesn't dictate it.
+- **Two artifacts per skill.** Every finding-producing skill now writes both `.idstack/project.json` (system state for downstream skills) and `.idstack/reports/<skill>.md` (the human view). Each finding follows observation → evidence → why-it-matters → suggestion, with severity and evidence tier. Recommendations are not directives — idstack collaborates on your design, doesn't dictate it. (Since v3.7.0.0 a recommendation reads "idstack recommends that you …" or "You can …".)
 - **`/idstack:pipeline` produces `.idstack/reports/pipeline.md`.** A single aggregate document the designer can read for the full audit across all 8 stages: top recurring issues, evidence themes, where to start. Regenerated on every pipeline run, including partial runs and explicit re-runs.
 - **`bin/idstack-status` lists report paths.** New "Reports" block surfaces every Markdown report under `.idstack/reports/` with `pipeline.md` first.
-- **Install hygiene.** `setup` now actively removes legacy pre-v2.0.1.0 installs at `~/.claude/skills/idstack/` that shadowed the plugin namespace. `bin/idstack-doctor` diagnoses install state. `test/smoke-test.sh` regression-catches the conflict.
+- **Install hygiene.** `setup` now actively removes legacy pre-v2.0.1.0 installs at `~/.claude/skills/idstack/` that shadowed the plugin namespace. `bin/idstack-doctor` diagnoses install state. `test/smoke-test.sh` regression-catches the conflict. (v3.9.0.0 removed this cleanup from `setup`, the check for these installs from `bin/idstack-doctor`, and the regression check from `test/smoke-test.sh`.)
 
 ### Imported-course mode (v2.3)
+_In v3.10.0.0 and earlier, audit mode and gap-fill mode did not start right after an import. They now key on the counts that `/idstack:course-import` records._
 - `/idstack:needs-analysis`, `/idstack:assessment-design`, and `/idstack:course-builder` auto-detect imported courses and switch behavior. Needs-analysis runs a design-fit check instead of the training-decision gate. Assessment-design switches to audit mode (classifies existing rubric criteria on Bloom's). Course-builder switches to gap-fill mode (generates only the artifacts upstream skills flagged as missing).
 
 ### Red-team in a clean-context sub-agent + triage-and-fix loop (v2.2)
-- `/idstack:red-team` now spawns a clean-context sub-agent so the audit can't inherit build-bias from the parent. After the audit, control returns to the parent with a triage-and-fix prompt (Critical / Critical+High / All / Skip).
+- `/idstack:red-team` now spawns a clean-context sub-agent so the audit can't inherit build-bias from the parent. After the audit, control returns to the parent with a triage-and-fix prompt (Critical only / Critical + Warning / All findings / Skip).
 
 ### Manifest-merge tool + schema cleanup (v2.1)
-- New `bin/idstack-manifest-merge` is the canonical write path: section-scoped, atomic (tempfile + rename), preserves foreign sections, validates against `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback.
+- New `bin/idstack-manifest-merge` is the canonical write path: section-scoped, atomic (tempfile + rename), preserves foreign sections, accepts only the section names in `templates/manifest-schema.md`. Inline full-manifest `Edit` is the deprecated fallback.
 - Schema migration v1.4 fixes drifted field names (`red_team_audit.summary.*_count` → `findings_summary.*`, `_import_quality_flags` → `import_metadata.quality_flag_details`).
 
 ### idstack v2 — Pipeline orchestrator, intelligence, sub-agents
@@ -102,7 +111,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **Manifest preferences** — schema v1.3 adds verbosity, export format, preferred LMS settings.
 - **Sub-agent architecture** — `/idstack:red-team` (5 parallel agents), `/idstack:accessibility-review` (2 parallel), `/idstack:course-quality-review` (3 parallel). Sequential fallback when a sub-agent cannot start.
 - **Spec review loop** — `/idstack:course-builder` validates alignment via adversarial subagent after generating content.
-- **IDSTACK_HOME** — all paths portable via env var. Lets a development checkout override the installed plugin.
+- **IDSTACK_HOME** — all paths portable via env var. (Since v3.7.0.0 the plugin that Claude Code loaded comes first. IDSTACK_HOME is used only when that path is not available. To test a development checkout, point the plugin install at it with `./setup`.)
 
 ### Bidirectional pipeline + evidence depth (v1.5.1)
 - All 9 skills now write back to the manifest. Downstream skills get richer input from upstream analysis.
@@ -119,6 +128,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - Template system for contributors: shared preamble maintained in one place.
 
 ### Landing page and update check (v1.4.1)
+_The update check is removed after v3.10.0.0. It did not run for plugin installs. To update, use the steps in the README._
 - [idstack.org](https://idstack.org) — landing page with getting started guide, evidence grid, and SEO
 - Skills check for updates and notify when a new version is available.
 
@@ -128,6 +138,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - PDF and document file import also added for Rise course exports and syllabi
 
 ### Accessibility review + Red team audit (v1.3.0)
+_Since v3.7.0.0 the two tiers are "Necessary changes" (accessibility violations) and "Recommended changes" (UDL recommendations)._
 - `/idstack:accessibility-review` — WCAG 2.1 AA compliance plus Universal Design for Learning (UDL 3.0). Two-tier output: "Must Fix" for legal compliance, "Should Improve" for inclusive design.
 - `/idstack:red-team` — Adversarial course audit. Assumes the course is broken and tries to prove it. Five dimensions: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Produces a confidence score.
 
@@ -153,7 +164,7 @@ Direct API connections to Blackboard, Moodle, and D2L (beyond the IMS Common Car
 ### Push changes back to your LMS
 After `/idstack:course-quality-review` identifies issues and `/idstack:learning-objectives` generates better objectives, push the improvements directly back to Canvas (and eventually other LMS platforms). No more copy-pasting between a design document and your LMS. The output IS the course.
 
-This is the 10x goal. It depends on stable import/export, Canvas API write support, conflict handling, and institutional partnerships. It's a ways out, but it's where we're headed.
+This is the 10x goal. It depends on stable import/export, updates to content that is already in Canvas (`/idstack:course-export` can already create new modules, pages, assignments and discussions through the Canvas API), conflict handling, and institutional partnerships. It's a ways out, but it's where we're headed.
 
 ## Shipped
 

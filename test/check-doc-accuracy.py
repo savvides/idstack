@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate documentation accuracy across version strings, manifest schemas, binaries, and links.
+"""Validate documentation accuracy: version strings, the manifest schema version, bin/ and test/ path references, and removed date fields.
 
 Usage: check-doc-accuracy.py <repo-root>
 Prints diagnostic lines and exits 1 on mismatch; prints nothing and exits 0 when clean.

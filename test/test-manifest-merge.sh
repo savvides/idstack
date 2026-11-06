@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# (see idstack-migrate --init coverage at the end of this file)
+# (see idstack-migrate --init coverage after Test 12 in this file)
 # Unit tests for bin/idstack-manifest-merge.
-# Run from the repo root (or sourced by smoke-test.sh).
+# Run from the repo root, or through smoke-test.sh, which runs it.
 
 set -e
 
@@ -124,8 +124,8 @@ set -e
 check "manifest with string root exits 2" "[ $EC -eq 2 ]"
 
 # --- idstack-migrate --init: the manifest bootstrap the merge tool depends on ---
-# Skills running standalone create the manifest with --init before merging;
-# without it the merge exits 4 and standalone results are never persisted.
+# Skills pass --create to the merge, which runs idstack-migrate --init when
+# no manifest exists; without --create the merge exits 4 and standalone results are never saved.
 MIGRATE="$(cd "$(dirname "$0")/.." && pwd -P)/bin/idstack-migrate"
 
 INIT_DIR="$WORK/initcase"
@@ -206,7 +206,7 @@ check "multi-section write replaces each section" \
   "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"assessments\"]=={\"a\": 1} and d[\"learning_objectives\"]=={\"b\": 2}'"
 check "--set writes project_name" "python3 -c 'import json; d=json.load(open(\"$WORK/project.json\")); assert d[\"project_name\"]==\"New Name\"'"
 
-# --- Test 18: a bad second payload writes nothing, not even a --create manifest ---
+# --- Test 18: a bad second payload writes nothing; a bad payload with --create makes no manifest ---
 seed_manifest
 cp "$WORK/project.json" "$WORK/before.json"
 echo 'not json' > "$WORK/bad.json"

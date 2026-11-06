@@ -13,7 +13,8 @@
  * Keep both. The text suite is fast, runs everywhere, and names the exact rule that regressed;
  * this one is slower, needs a browser, and cannot be evaded.
  *
- * Requires node 22.4+ for the global WebSocket (no npm dependency, but node 20 cannot run this).
+ * Requires node 22.0+ for the global WebSocket, which is on by default from 22.0 and stable from
+ * 22.4 (no npm dependency, but node 20 cannot run this).
  * Chrome is located via $CHROME_PATH, then the usual macOS and Linux paths. With no browser this
  * exits 0 after printing a SKIP line — a silent pass would be worse than no test, so the line is
  * deliberately loud.
@@ -48,7 +49,8 @@ if (!fs.existsSync(landingPath)) {
 }
 
 // Widths worth asserting: the narrowest phone anyone still ships, the common iPhone/Android
-// logical widths, both breakpoints the stylesheet declares, and a desktop width.
+// logical widths, four of the six breakpoints the stylesheet declares (480, 640, 880, 1024;
+// not 720 or 1080), and a desktop width.
 const WIDTHS = [320, 360, 375, 390, 414, 480, 640, 768, 880, 1024, 1280];
 const TAP_MIN = 44;
 const TAP_SELECTORS = ['.copy-btn', '.btn-chrome', '.footer-signup input[type="email"]', '.footer-signup button'];

@@ -40,7 +40,7 @@ const longCoursePrompt = buildCourseAuditPrompt({
   syllabus: 'Objectives: Analyze cellular metabolism.',
   assignments: Array.from({ length: 80 }, (_, i) => ({ title: `Lab ${i + 1}`, description: 'd'.repeat(600), points: 10 }))
 });
-const assignmentsHeader = /COURSE ASSIGNMENTS & ASSESSMENTS \((\d+) items; (\d+) shown in full below\)/.exec(longCoursePrompt);
+const assignmentsHeader = /COURSE ASSIGNMENTS & ASSESSMENTS \((\d+) items; (\d+) shown below, each description cut to 500 characters\)/.exec(longCoursePrompt);
 assert.ok(assignmentsHeader, 'course prompt header states the item count and how many are shown in full');
 assert.strictEqual(assignmentsHeader[1], '80', 'the header counts every crawled assignment');
 const listedBlocks = longCoursePrompt.match(/^Assignment \d+: .*\nDescription: .*$/gm) || [];

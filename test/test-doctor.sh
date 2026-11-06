@@ -39,8 +39,8 @@ DOCTOR_CMD="$MOCK_IDSTACK_DIR/bin/idstack-doctor"
 # (the mock repo has no templates/ word list), with the python3 found here.
 PYTHON="$(command -v python3)"
 
-# Pinned PATH: only what doctor and its libs actually invoke, plus whatever
-# mock we drop in. `claude` is absent unless a test installs it.
+# Pinned PATH: the commands that doctor, its libs and this harness run, plus
+# any mock that a test adds. `claude` is absent unless a test installs it.
 MOCK_BIN="$TEST_ROOT/bin"
 mkdir -p "$MOCK_BIN"
 for _c in bash sh env command dirname echo grep head python3 readlink sed tr awk cat ls rm mkdir ln chmod mktemp printf sort wc basename find touch cp cut; do
@@ -55,7 +55,7 @@ pipeline learn start"
 setup_happy_path() {
   rm -rf "$MOCK_IDSTACK_DIR/.claude-plugin" "$MOCK_IDSTACK_DIR/skills" "$HOME/.claude"
   mkdir -p "$MOCK_IDSTACK_DIR/.claude-plugin"
-  # Version must parse as JSON — doctor reads it with python3, not a regex.
+  # Version must parse as JSON — with python3, doctor reads it with json.load (grep is the no-python3 fallback).
   echo '{"name": "idstack", "version": "9.9.9.9"}' > "$MOCK_IDSTACK_DIR/.claude-plugin/plugin.json"
   echo '{"name": "idstack"}' > "$MOCK_IDSTACK_DIR/.claude-plugin/marketplace.json"
   for skill in $SKILLS; do
@@ -101,7 +101,7 @@ status: enabled"
 rm "$MOCK_IDSTACK_DIR/.claude-plugin/marketplace.json"
 check "missing marketplace.json is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: missing.*marketplace\.json"
 
-# plugin.json is parsed as JSON, not grepped — malformed must be caught.
+# With python3, doctor parses plugin.json as JSON (grep is the no-python3 fallback) — malformed must be caught.
 setup_happy_path
 mock_claude_output "idstack@idstack
 status: enabled"

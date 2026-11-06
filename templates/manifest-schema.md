@@ -32,7 +32,7 @@ PAYLOAD
 (Skills also read this file raw, so it carries no `IDSTACK_RESOLVE` placeholder
 and no copy of the resolve lines.)
 
-The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. `--create` makes a canonical manifest first when there is none. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
+The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. When there is no manifest, `--create` first makes one with `bin/idstack-migrate --init`. That manifest is at the current schema version and has every top-level section, but a section can lack fields until its skill writes it. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
 
 **2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
 
@@ -41,20 +41,20 @@ The merge tool replaces only the named top-level sections, preserves every other
 | Field | Owner skill(s) | Notes |
 |---|---|---|
 | `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
-| `project_name` | (any) | Set on first manifest creation. Don't overwrite once set. |
+| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis and course-import write it with `--set project_name=<v>` on every run, so the last of them to run sets the name and the export folder. In audit-existing mode, needs-analysis reuses the name that course-import wrote. Other skills do not write it. |
 | `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
 | `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
-| `context` | needs-analysis (initial) | Modality, timeline, class size, etc. Edited by skills that learn new context. |
-| `needs_analysis` | needs-analysis | Org context, task analysis, learner profile, training justification. |
-| `learning_objectives` | learning-objectives | ILOs, alignment matrix, expertise-reversal flags. |
-| `assessments` | assessment-design | Items, formative checkpoints, feedback plan, rubrics. |
+| `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |
+| `needs_analysis` | needs-analysis, course-import | Org context, task analysis, learner profile, training justification. |
+| `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. In Mode 2 (no ILOs), and in Mode 3 when its step 0 asked for the objectives, it also writes the `ilos` that it classified. |
+| `assessments` | assessment-design | Items (each with its rubric and, in Mode 1 and Mode 2, its feedback strategy), formative checkpoints and the feedback quality score (Mode 1 and Mode 2), and audit notes (Mode 3). No skill writes `assessment_strategy`, `feedback_plan` or the top-level `rubrics[]`. Mode 3 reads `assessments.rubrics` if it exists. |
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
-| `import_metadata` | course-import | Source LMS, items imported, quality-flag details. |
+| `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
 | `export_metadata` | course-export | Export destination, items exported, readiness check. |
-| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. |
+| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. No skill writes `review_history`. `bin/idstack-migrate` adds it as `[]`, and a /idstack:course-quality-review write replaces the whole section, so the field and its contents are removed. The timeline (`.idstack/timeline.jsonl`) keeps the score of each review. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
 | `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
-| `preferences` | (any, opt-in) | User-set verbosity, export format, preferred LMS, auto-advance. |
+| `preferences` | (user, by hand) | Verbosity, export format, preferred LMS, auto-advance. `bin/idstack-migrate` writes the defaults. No skill writes this section; the preamble reads `verbosity`. |
 
 ### Full schema (canonical shape)
 
@@ -266,9 +266,9 @@ These document the **shape of array elements and dictionary values** that the ca
 { "ILO-1": ["Module 1 case study", "Discussion 2"], "ILO-2": [] }
 ```
 
-**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape, values are arrays of assessment titles.
+**`learning_objectives.alignment_matrix.ilo_to_assessment`** — same shape. `/idstack:learning-objectives` writes arrays of assessment titles. `/idstack:assessment-design` replaces them with arrays of assessment IDs (`"A-1"`). A skill that reads this map must accept both.
 
-**`learning_objectives.alignment_matrix.gaps[]`** — each item:
+**`learning_objectives.alignment_matrix.gaps[]`** — `/idstack:assessment-design` writes each item as the object below. `/idstack:learning-objectives` writes each item as a string that describes the gap. A skill that reads `gaps[]` must accept both forms.
 ```json
 {
   "ilo": "ILO-1",
@@ -282,25 +282,38 @@ These document the **shape of array elements and dictionary values** that the ca
 ```json
 {
   "id": "ILO-1",
-  "statement": "Analyze competitive forces in...",
-  "blooms_level": "analyze",
-  "blooms_confidence": "high|medium|low"
+  "objective": "Analyze competitive forces in...",
+  "knowledge_dimension": "factual|conceptual|procedural|metacognitive",
+  "cognitive_process": "remember|understand|apply|analyze|evaluate|create"
 }
 ```
+`/idstack:course-import` can also add `"confidence": "high|ambiguous"` and `"alignment_status": "imported-unverified"`. `/idstack:learning-objectives` checks these items again. `/idstack:assessment-design` Mode 2, and Mode 3 when its step 0 asked for the objectives, write items in the same shape.
 
-**`assessments.items[]`** — each item:
+**`assessments.items[]`** — `/idstack:assessment-design` writes each item (`/idstack:course-import` does not write this array):
 ```json
 {
   "id": "A-1",
-  "type": "quiz|discussion|rubric|peer_review|gate|...",
   "title": "Module 1 Quiz",
-  "weight": 5,
-  "ilos_measured": ["ILO-1", "ILO-3"],
-  "rubric_present": true,
-  "elaborated_feedback": false,
-  "alignment_status": "weak|moderate|strong"
+  "type": "quiz|essay|project|case-study|peer-review|portfolio|presentation",
+  "format": "formative|summative",
+  "aligned_ilos": ["ILO-1", "ILO-3"],
+  "rubric": {
+    "criteria": [
+      { "name": "Criterion name", "weight": 40,
+        "levels": { "exceeds": "...", "meets": "...", "approaching": "...", "below": "..." } }
+    ],
+    "levels": ["exceeds", "meets", "approaching", "below"],
+    "total_points": 100
+  },
+  "feedback_strategy": {
+    "type": "elaborated|correctness|peer|self-assessment",
+    "timing": "immediate|delayed|iterative",
+    "principles_applied": [1, 2, 3, 5, 6]
+  },
+  "evidence_tier": "T1"
 }
 ```
+The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|moderate|strong"`.
 
 **`assessments.rubrics[]`** — each item:
 ```json
@@ -312,7 +325,7 @@ These document the **shape of array elements and dictionary values** that the ca
 }
 ```
 
-**`import_metadata.quality_flag_details[]`** — each item (replaces the legacy `_import_quality_flags` root field that sometimes appeared in the wild):
+**`import_metadata.quality_flag_details[]`** — each item. No skill fills this array. `bin/idstack-migrate` creates it empty, or fills it when it moves a legacy `_import_quality_flags` root field. `/idstack:course-import` writes it as an empty array, which replaces any details that `bin/idstack-migrate` moved there, and writes the count in `quality_flags`. The flag details are in its report (Import quality triage section):
 ```json
 {
   "key": "orphan_module_8",
@@ -354,23 +367,15 @@ These document the **shape of array elements and dictionary values** that the ca
 }
 ```
 
-**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.alignment_audit.findings[]`**, **`quality_review.cross_domain_checks.<check>.flags[]`**, and other findings arrays — each item:
-```json
-{
-  "id": "<dimension>-<n>",
-  "description": "...",
-  "evidence": "[Domain-N] [TX]",
-  "severity": "critical|warning|info"
-}
-```
+**`quality_review.qm_standards.<standard>.findings[]`**, **`quality_review.coi_presence.<presence>.findings[]`** and **`quality_review.alignment_audit.findings[]`** — each item is a plain string. `/idstack:course-quality-review` writes one short finding sentence per item, for example `"findings": ["Syllabus has no course-level objectives."]`. **`quality_review.cross_domain_checks.<check>.flags[]`** has no fixed item shape. The skill writes a list of flags, or `[]` when the check found nothing. The severity and evidence tier of quality-review findings are in `quality_review.recommendations[]` and `quality_review.quick_wins[]`, not in these arrays.
 
 ### Mode field — design-new vs audit-existing
 
-`needs_analysis.mode`, `assessments.mode`, and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `import_metadata.source` ∈ `{cartridge, scorm, canvas-api}` plus the relevant section being non-empty (skill-specific check).
+`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `needs_analysis.mode` is `audit-existing` when `import_metadata.source` is `cartridge`, `scorm` or `canvas-api` and `import_metadata.items_imported.modules > 0`. `course_content.mode` is `gap-fill` when `import_metadata.source` is one of those values and `import_metadata.items_imported.modules > 0` or `course_content.modules` is non-empty. assessment-design's Mode 3 uses the same source values with `import_metadata.items_imported.assessments > 0`, `assessments.items` or `course_content.assessments`. `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report's header metadata line under the title, as `mode: Mode N` (`idstack-report-section init --mode`).
 
 Allowed values per skill:
 - `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
-- `assessments.mode`: `"Mode 1"`, `"Mode 2"`, or `"Mode 3"` (Mode 1 = full upstream data, Mode 2 = ILOs-from-scratch, Mode 3 = audit existing assessments)
+- `assessments.mode`: not written by the current skill. The report records the mode: `"Mode 1"` = full upstream data, `"Mode 2"` = ILOs-from-scratch, `"Mode 3"` = audit existing assessments
 - `course_content.mode`: `"build-new"` or `"gap-fill"`
 
 Empty string means the skill hasn't run yet or didn't record the mode (legacy manifests).
@@ -389,7 +394,7 @@ Empty string means the skill hasn't run yet or didn't record the mode (legacy ma
 ```json
 {
   "description": "Discussion rubric for Module 5",
-  "source": "red-team:alignment-3 | quality-review:learner_support-2 | user-request",
+  "source": "red-team:alignment-3 | quality-review:<short form of the recommendation's finding text> | user-request",
   "status": "generated|deferred|declined",
   "output_path": "Optional — set when status=generated, points to the generated file."
 }

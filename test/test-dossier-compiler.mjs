@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { compileDossierToMarkdown, compileSingleAuditToMarkdown } from '../extension/shared/dossier-compiler.js';
+import { compileDossierToMarkdown, compileSingleAuditToMarkdown, dossierCourseLabel } from '../extension/shared/dossier-compiler.js';
 
 // Test 1: Single Audit Markdown Compilation
 const singleItem = {
@@ -85,3 +85,15 @@ const nullDossierMd = compileDossierToMarkdown(null);
 assert.ok(nullDossierMd.includes('*The dossier has no audits.*'));
 
 console.log('✅ Task 1 Dossier compiler tests passed.');
+
+// The dossier label comes from the audited items, not from the active tab (#155).
+assert.strictEqual(dossierCourseLabel([{ courseId: '123' }, { courseId: '123' }]), 'Course 123');
+assert.strictEqual(dossierCourseLabel([{ courseId: '123' }, { courseId: '123', courseTitle: 'BIO 101' }]), 'BIO 101');
+assert.strictEqual(dossierCourseLabel([{ courseId: '123' }, { courseId: '456' }]), 'Several courses');
+assert.strictEqual(dossierCourseLabel([{ title: 'A web page' }]), 'Course Materials');
+assert.strictEqual(dossierCourseLabel([
+  { courseId: '123', courseOrigin: 'https://a.instructure.com' },
+  { courseId: '123', courseOrigin: 'https://b.instructure.com' },
+]), 'Several courses', 'the same course ID on two hosts is two courses');
+assert.strictEqual(dossierCourseLabel([]), 'Course Materials');
+console.log('✅ Dossier course label tests passed.');

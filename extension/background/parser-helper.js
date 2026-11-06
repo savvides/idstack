@@ -73,7 +73,7 @@ export function getDemoCourseAuditResult(payload = {}) {
     summary: {
       bloomsLevel: 'Analyze & Evaluate (Levels 4-5)',
       alignmentScore: 'Moderate (74%)',
-      keyTakeaway: `[Course-Level Demo] This is a full-course audit for "${title}". The audit found alignment problems between the recall quizzes in weeks 1-4 and the analysis capstone in week 12.`
+      keyTakeaway: `[Course-Level Demo] This is a sample full-course audit for "${title}". It does not use the text of this course. If you save a Google AI Studio API key in Settings, idstack audits the syllabus and the assignments.`
     },
     findings: [
       {

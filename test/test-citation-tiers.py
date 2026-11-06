@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Unit tests for test/check-citation-tiers.py.
 
-Each test builds a small repo with an evidence/references.md and one skill
-template, then runs the checker on it. The forms here are the ones a line-by-line
+Each test except test_the_repo_passes writes one skill template to a small repo
+with an evidence/references.md, then runs the checker on it.
+test_the_repo_passes runs the checker on this repo. The forms here are the ones a line-by-line
 match missed: codes separated by commas, and a citation that a line break splits.
 """
 

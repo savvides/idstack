@@ -56,7 +56,8 @@ ${WRITING_STANDARD}`;
 export function buildCourseAuditPrompt(courseData = {}) {
   const blocks = (courseData.assignments || [])
     .map((a, i) => `Assignment ${i+1}: ${a.title} (${a.points || 0} pts)\nDescription: ${(a.description || '').slice(0, 500)}`);
-  // Whole assignments up to a 20,000-char budget, and the header says how many
+  // Whole assignment blocks (each description already cut to 500 characters)
+  // up to a 20,000-char budget, and the header says how many
   // made it: a plain character cut ended mid-assignment under a header that
   // still counted every item. The budget keeps a 500-assignment course's
   // prompt, and so the model's response time, bounded.
@@ -77,7 +78,7 @@ COURSE TITLE: ${courseData.title || 'Canvas Course'}
 SYLLABUS & LEARNING OBJECTIVES:
 ${(courseData.syllabus || 'No syllabus provided').slice(0, 8000)}
 
-COURSE ASSIGNMENTS & ASSESSMENTS (${total} items; ${shown} shown in full below):
+COURSE ASSIGNMENTS & ASSESSMENTS (${total} items; ${shown} shown below, each description cut to 500 characters):
 ${assignmentsSummary}
 
 Evaluate whether the assessment system constructively aligns with stated learning outcomes ([Alignment-1] Biggs (1996) [T5]).

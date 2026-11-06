@@ -11,7 +11,6 @@ IDSTACK_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 # Single source of truth for the released version — all version assertions
 # derive from VERSION so a release bump can't leave this test stale.
 VER="$(tr -d '[:space:]' < "$IDSTACK_DIR/VERSION" 2>/dev/null || true)"
-VER3="${VER%.*}"  # 4-component 3.2.0.0 -> 3-component 3.2.0 (JSON-LD softwareVersion)
 
 echo "idstack smoke test"
 echo "  idstack dir: $IDSTACK_DIR"
@@ -50,17 +49,21 @@ done
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
 # Check bin scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-update-check idstack-ste-check idstack-report-section; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-ste-check idstack-report-section; do
   check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
   check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
 done
 
-# Bash syntax gate for the shell entry points (idstack-manifest-merge is python).
-for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-learnings bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/idstack-update-check bin/lib/plugin-status.sh test/test-helper.sh; do
+# Bash syntax gate for most shell entry points. bin/idstack-timeline-log and
+# bin/package-extension.sh are not checked here; idstack-manifest-merge,
+# idstack-ste-check and idstack-report-section are python.
+for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-learnings bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/lib/plugin-status.sh test/test-helper.sh; do
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
 
-# Every suite takes its counters from test/test-helper.sh. Nine suites had
+# Every bash suite that runs assertions itself takes its counters from
+# test/test-helper.sh (test-extension.sh delegates to node, and mutation-test.sh
+# keeps its own pass/fail/skip tally of GUARDED, NOT-GUARDED and SKIPPED cases). Nine suites had
 # each grown their own copy, and they had already drifted — two spelled the
 # helper `assert`, and one swallowed failure output entirely, so CI reported a
 # bare FAIL with no diagnostics. A local `PASS=0` is how that regrows.
@@ -92,12 +95,15 @@ for skill in $SKILLS; do
   check "$skill has SKILL.md.tmpl" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' ]"
 done
 
-# Landing page (docs/index.html) - "Evidence Instrument" invariants (DESIGN.md,
-# 2026-11-01). The landing uses the report system's Proof tokens and fonts with a
-# prussian hero. Guards against regressions: the dark/indigo look or its gradients
-# coming back, a theme toggle creeping in (dark mode follows prefers-color-scheme),
-# the fonts drifting from the reports, or the stale bare-clone install string
-# returning (see dea7ebc).
+# Landing page (docs/index.html) invariants (DESIGN.md "Landing page" section,
+# Decisions log 2026-11-01). The landing uses the Proof tokens and fonts from DESIGN.md with a
+# prussian hero. Since reports are plain Markdown, the landing (with its OG card
+# template, docs/og-template.html) and the Chrome extension side panel are the
+# only styled surfaces.
+# Guards against regressions: the dark/indigo look or its gradients coming back,
+# a theme toggle creeping in (dark mode follows prefers-color-scheme), the fonts
+# drifting from DESIGN.md, or the stale bare-clone install string returning
+# (see dea7ebc).
 LANDING="$IDSTACK_DIR/docs/index.html"
 check "landing/index.html exists" "[ -f '$LANDING' ]"
 check "landing: ivory Proof background (#faf8f3)" "grep -q -- '--bg: *#faf8f3' '$LANDING'"
@@ -126,8 +132,9 @@ check "landing: Output section present" "grep -q 'id=.output.' '$LANDING'"
 check "landing: no transparent text (no bare 'color: transparent')" \
   "! grep -Eq '[^-]color: *transparent' '$LANDING'"
 
-# The landing page's evidence cards restate evidence/references.md: a study count
-# and a tier range per domain. They were hand-maintained and three had drifted —
+# The landing page's evidence index restates evidence/references.md: one row per
+# domain with a study count, the count at each tier and a tier range. The earlier
+# per-domain cards were hand-maintained and three had drifted —
 # two advertised T2 for domains whose strongest evidence is T3, which is the one
 # error idstack cannot afford, since tier honesty is the whole product. Derived
 # from the reference file now, so the numbers cannot disagree.
@@ -211,7 +218,7 @@ for skill in $REPORT_PRODUCING_SKILLS; do
   check "$skill SKILL.md.tmpl references .idstack/exports/" "grep -q '\.idstack/exports/' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl calls idstack-slugify" "grep -q 'idstack-slugify' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl writes a .md report" "grep -qE '_REPORT_PATH=\"\\\$_EXPORT_DIR/$skill\.md\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
-  # report-format.md requires a "Top recommendations" section in every report.
+  # report-format.md lists a "Top recommendations" section in each report that has rows for it (a stopped run leaves it out).
   # The closing Step Review writes it, so the match is that Step review line.
   check "$skill SKILL.md.tmpl includes Top recommendations" "grep -qF 'Section: \`## Summary\`, \`## Top recommendations\`, \`## Limitations\` and \`## Next steps\`' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
@@ -353,8 +360,9 @@ check "pipeline SKILL.md.tmpl produces index.md in exports/<slug>/" "grep -qE 'e
 
 # Schema-drift regression: skills that share the canonical schema must use the
 # {{MANIFEST_SCHEMA}} substitution rather than re-inlining their own copy. Only
-# the skills that build several sections inline it; the single-section writers
-# Read the file from the plugin root when they need another section's shape.
+# needs-analysis and course-import inline it; the other writers (assessment-design
+# among them, though it also writes several sections) Read the file from the plugin
+# root when they need another section's shape.
 SCHEMA_HOST_SKILLS="needs-analysis course-import"
 for skill in $SCHEMA_HOST_SKILLS; do
   check "$skill SKILL.md.tmpl uses {{MANIFEST_SCHEMA}}" "grep -q '{{MANIFEST_SCHEMA}}' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
@@ -385,7 +393,7 @@ if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
   check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
 fi
 
-# `claude plugin list` parsing, also extracted to bin/lib/ so it is testable.
+# `claude plugin list` parsing, extracted to bin/lib/ so it is testable.
 # A fixed-size window here once reported a disabled idstack as enabled.
 check "bin/lib/plugin-status.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/plugin-status.sh' ]"
 check "idstack-doctor sources the shared plugin-status parser" "grep -q 'lib/plugin-status.sh' '$IDSTACK_DIR/bin/idstack-doctor'"
@@ -393,8 +401,9 @@ check "idstack-doctor no longer uses a fixed -A4 window" "! grep -q 'grep -A4' '
 if [ -x "$IDSTACK_DIR/test/test-plugin-status.sh" ]; then
   check "plugin-status unit tests pass" "'$IDSTACK_DIR/test/test-plugin-status.sh'"
 fi
-# Hooked in here as well as in CI because release.yml's gate runs only
-# smoke-test.sh — doctor's branches would otherwise be unverified at release.
+# Run here because neither test.yml nor release.yml starts this suite as a
+# step of its own: both start smoke-test.sh, so without this hook doctor's
+# branches would go unverified in CI and at release.
 if [ -x "$IDSTACK_DIR/test/test-doctor.sh" ]; then
   check "doctor behavioral tests pass" "'$IDSTACK_DIR/test/test-doctor.sh'"
 fi
@@ -408,7 +417,7 @@ if [ -x "$IDSTACK_DIR/test/test-status.sh" ]; then
 fi
 
 # The ASD-STE100 checker. Skills run it on each file they write, so a false
-# positive costs the user three rewrite passes on every run.
+# positive costs the user up to three checker runs (two rewrite passes) on every run.
 if command -v python3 &>/dev/null; then
   check "ste checker unit tests pass" "python3 '$IDSTACK_DIR/test/test-ste-check.py'"
 fi
@@ -432,8 +441,9 @@ for skill in $SKILLS; do
 done
 rm -rf "$STE_NOCHK"
 
-# The Step Review. Each report skill shows the output of each step in a table,
-# the user approves it, and bin/idstack-report-section adds it to the report.
+# The Step Review. After each step, bin/idstack-report-section adds the output
+# to the report file as a draft section with a table. The user reads it there
+# and approves it, and `approve` removes the draft mark.
 if command -v python3 &>/dev/null; then
   check "report-section unit tests pass" "python3 '$IDSTACK_DIR/test/test-report-section.py'"
 fi
@@ -587,9 +597,10 @@ done
 # gets it from the {{IDSTACK_RESOLVE}} expansion)
 check "every generated SKILL.md supports CLAUDE_PLUGIN_ROOT" "! grep -L 'CLAUDE_PLUGIN_ROOT' $IDSTACK_DIR/skills/*/SKILL.md | grep -q ."
 
-# The preamble's embedded python must run on the oldest supported interpreter
-# (macOS system python3 is 3.9) — a SyntaxError there dies silently behind
-# `2>/dev/null || true` in every generated skill.
+# The preamble's Context Recovery block runs bin/idstack-status --context, whose
+# Python must run on the oldest supported interpreter (macOS system python3 is
+# 3.9) — a SyntaxError there dies silently behind `2>/dev/null || true` in every
+# generated skill. (The Preferences block's inline python3 -c is not run here.)
 if [ -x "$IDSTACK_DIR/test/test-preamble-python.sh" ]; then
   check "preamble embedded-python tests pass" "'$IDSTACK_DIR/test/test-preamble-python.sh'"
 fi
@@ -658,7 +669,7 @@ check "generator exits 2 on an unknown argument" "'$IDSTACK_DIR/bin/idstack-gen-
 check "resolve chain drops the ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
 check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/preamble.md'"
 
-# Repo-wide sweep for the retired CLI's name. Three exemptions:
+# Repo-wide sweep for the retired CLI's name. Four exemptions:
 #
 #   1. CHANGELOG.md — the release record, which has to keep describing what was
 #      removed and how to clean up after it.
@@ -669,17 +680,21 @@ check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_
 #      --exclude-dir matches a name at any depth, so never add the dotless
 #      `superpowers`: it exempted the committed specs and plans under
 #      docs/superpowers/ and superpowers/.
-#   3. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Kinds of line that carry the tag
+#   3. designs/ and docs/designs/ — left over from an earlier design-notes
+#      folder; neither exists in the repo. --exclude-dir matches a name, so
+#      docs/designs (with a slash) matches nothing, and designs is exempt at
+#      any depth.
+#   4. Lines tagged IDSTACK_CLI_LEAK_ALLOW. Kinds of line that carry the tag
 #      include: this block's own patterns, the unsupported-fork pointer on
-#      the landing page and in README.md, the comments crediting "Gemini Code Assist" — a PR-review bot  # IDSTACK_CLI_LEAK_ALLOW
-#      that flagged the version classifier four times, unrelated to the CLI and
-#      the reason those test cases exist — and mentions of the Gemini model API  # IDSTACK_CLI_LEAK_ALLOW
+#      the landing page and in README.md, dated historical mentions (ROADMAP.md),
+#      the leak payloads that test/mutation-test.sh injects, and mentions of the
+#      Gemini model API  # IDSTACK_CLI_LEAK_ALLOW
 #      the Chrome extension calls, which is an LLM endpoint, not a CLI.
 #
-#      A tag is for a dated, historical mention or the extension's model API.
+#      A tag is for a dated, historical mention, the unsupported-fork pointer, the extension's model API, or the sweep's own test patterns.
 #      It is NEVER for a line that claims idstack runs somewhere it does not.
 #      Tag individual lines, never whole files, and never filter on a bare
-#      string: an earlier draft dropped every line containing the bot's name
+#      string: an earlier draft dropped every line containing a PR-review bot's name
 #      repo-wide, which would have let an untagged capability claim through
 #      anywhere it appeared.
 CLI_LEAK_RE='codex|gemini|antigravity' # IDSTACK_CLI_LEAK_ALLOW
@@ -695,8 +710,9 @@ check "retired-CLI references confined to CHANGELOG.md" \
 
 
 # Skill bash blocks run in Claude Code's Bash tool: in the user's shell (zsh on
-# macOS), with BSD tools, and in a new shell for each call. CI runs only bash,
-# so these patterns pass every other suite and fail for real users:
+# macOS), with BSD tools, and in a new shell for each call. CI runs only some
+# skill blocks in zsh and on macOS (test-skill-shell-zsh.sh and the macOS leg),
+# so these patterns can pass every other suite and still fail for real users:
 #   - `head -n -1` is GNU-only. BSD head rejects it, so the Canvas push read an
 #     empty body and posted every item to /modules//items.
 #   - `for x in $VAR` does not word-split in zsh, so it loops once.
@@ -761,6 +777,19 @@ check "preamble tells skills to give the report link" \
   "grep -q '^## Preamble: Report Links' '$IDSTACK_DIR/templates/preamble.md'"
 check "no skill tells the user to open a report in a web browser" \
   "! grep -l 'Open it in a web browser' $IDSTACK_DIR/skills/*/SKILL.md.tmpl"
+
+# Regression (#153): audit mode and gap-fill mode keyed only on manifest lists
+# that course-import never writes, so neither started right after an import.
+check "assessment-design Mode 3 starts on the assessments an import found" \
+  "grep -qF 'import_metadata.items_imported.assessments\` is more than 0 (the import found assessments)' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
+check "course-builder gap-fill starts on the modules an import found" \
+  "grep -qF 'import_metadata.items_imported.modules\` is more than 0 (the import found modules)' '$IDSTACK_DIR/skills/course-builder/SKILL.md.tmpl'"
+check "assessment-design Mode 3 asks for ILOs when an import found none" \
+  "grep -qF 'If \`learning_objectives.ilos\` is empty (an import can find assessments but no objectives)' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
+# Regression (#154): Mode 2 classified new ILOs but never saved them, so
+# ilo_to_assessment pointed at ILO IDs that no section defined.
+check "assessment-design Mode 2 saves the ILOs it classifies" \
+  "grep -qF 'In Mode 2, also put each approved \`## Learning objectives\` row in' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

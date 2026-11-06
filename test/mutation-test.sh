@@ -6,8 +6,9 @@
 # of the classifier, and gen-skills counted a missing-placeholder template as
 # neither generated nor failed).
 #
-# Slower than the gate suites (it copies the repo and runs smoke-test once per
-# mutation), so it is NOT wired into smoke-test.sh. Run it after touching a
+# Slower than the gate suites (it copies the repo for each mutation and runs
+# that mutation's guarding suite, often smoke-test), so it is NOT wired into
+# smoke-test.sh. Run it after touching a
 # test, a guard, or bin/lib/. CI runs it as a separate job.
 #
 # Usage: test/mutation-test.sh [path-to-repo]   (defaults to this checkout)
@@ -84,7 +85,8 @@ regen() {
 # Baseline: the unmutated copy must pass, or every expect_fail below reports
 # GUARDED for the wrong reason. fresh() once omitted extension/, so smoke-test
 # failed on every copy and each smoke-guarded case "passed" while guarding
-# nothing. smoke-test runs every other guarding suite, so one run covers them.
+# nothing. smoke-test runs every other guarding suite except integration-test.sh,
+# so this run does not cover the three cases that integration-test.sh guards.
 fresh
 if ! "$WORK/r/test/smoke-test.sh" "$WORK/r" >"$WORK/baseline.log" 2>&1; then
   echo "  ERROR: the unmutated copy fails smoke-test; every GUARDED result would be meaningless" >&2
@@ -149,7 +151,7 @@ expect_fail "bare /skill reference regression" "$WORK/r/test/smoke-test.sh" "$WO
 # The guard above matched only backticked refs until v3.3.0.1, so three plain-prose
 # examples sat in the preamble's context-recovery section telling the model to say
 # "/assessment-design is the natural next step" — a command that does nothing. The
-# preamble is spliced into all 22 skill files, so this reached every user.
+# preamble was spliced into every skill file (22 at the time), so this reached every user.
 fresh
 sed -i.bak 's|the next skill is /idstack:assessment-design|the next skill is /assessment-design|' \
   "$WORK/r/templates/preamble.md"
@@ -347,10 +349,11 @@ io.open(p, 'w', encoding='utf-8').write(s.replace(old, '<span class="evidence-ro
 PY
 expect_fail "evidence card overstates its tier range" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 18b. the tier-mix bar moves a study to a stronger tier while the count and the
-# range stay right -> smoke-test must fail. The bar is the one place a visitor
-# sees how much of a domain rests on trials, so it is checked per tier, not only
-# by its total.
+# 18b. the tier-mix bar's data-tiers attribute moves a study to a stronger tier
+# while the count and the range stay right -> smoke-test must fail. The per-tier
+# counts in data-tiers are compared with evidence/references.md by
+# check-evidence-cards.py, not only their total. Nothing renders data-tiers: the
+# visible bar comes from the inline segment widths, which no check compares.
 fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import io, sys
@@ -363,7 +366,7 @@ expect_fail "tier-mix bar overstates a domain's T1 share" "$WORK/r/test/smoke-te
 
 # 19. a domain's study count drifts from the reference file -> smoke-test must
 # fail. The count and the tier range are separate assertions; a checker that
-# only compared tiers would let "108 peer-reviewed studies" rot silently.
+# only compared tiers would let a card's "12 studies" count rot silently.
 fresh
 python3 - "$WORK/r/evidence/references.md" <<'PY'
 import io, sys
@@ -412,8 +415,8 @@ fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace('"datePublished": "2026-04-20",',
-              '"datePublished": "2026-04-20",\n    "dateModified": "2026-08-06",', 1)
+s = s.replace('"datePublished": "2026-03-30",',
+              '"datePublished": "2026-03-30",\n    "dateModified": "2026-08-06",', 1)
 open(p, 'w').write(s)
 PY
 expect_fail "dateModified reintroduced into docs/index.html" "$WORK/r/test/smoke-test.sh" "$WORK/r"
@@ -591,7 +594,7 @@ PY
 expect_fail "tier scale puts randomized trials in T2" "$WORK/r/test/test-extension.sh"
 
 # 26b. the demo cites Biggs as [Alignment-3] [T2] again -> test-extension must
-# fail. references.md files Biggs as [Alignment-1] T5; [Alignment-3] is Pereira, T4.
+# fail. references.md files Biggs as [Alignment-1] T5; [Alignment-3] is Pereira, T5.
 fresh
 python3 - "$WORK/r/extension/background/parser-helper.js" <<'PY'
 import sys
@@ -1049,13 +1052,14 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "HTML sign-in page audited as the Google Doc" "$WORK/r/test/test-extension.sh"
 
-# 30a-30l. The side panel labelled a result with whatever tab was active when
+# 30a-30m. The side panel labelled a result with whatever tab was active when
 # the reply landed, let a slow tab refresh overwrite a newer one, left the last
 # result behind Add to Dossier after an error, retried the single-page audit
 # whatever had failed, wiped Audit a Different Page on a vote, and said "Copied!"
 # when the clipboard write failed. The renderer threw on malformed findings,
 # inside the sendMessage callback, so the spinner stayed up.
-# test-sidepanel-state.mjs drives the shipped sidepanel.js through each case.
+# test-sidepanel-state.mjs drives the shipped sidepanel.js through 30a-30h and 30m;
+# test-renderer-helper.mjs covers the renderer cases, 30i-30l.
 
 # 30a. a page audit is labelled with the tab active when the reply lands ->
 # test-sidepanel-state must fail.
@@ -1079,6 +1083,7 @@ p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = ("renderResults(response.data, {\n"
        "              url: `${origin}/courses/${courseId}`,\n"
        "              title: response.courseData?.title || 'Canvas Course',\n"
+       "              courseTitle: response.courseData?.title || null,\n"
        "              pageType: 'Canvas Course (Full Audit)'\n"
        "            });")
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
@@ -1180,18 +1185,19 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "Retry audits the course or site now active, not the one that failed" node "$WORK/r/test/test-sidepanel-state.mjs"
 
-# 30i. a feedback vote rewrites the whole row -> test-sidepanel-state must fail.
-# The row also holds Audit a Different Page, the only way back to the ready state.
+# 30i. the vote buttons that send nothing come back -> test-renderer-helper must
+# fail. They said "Thank you for your feedback!", but the panel has no telemetry,
+# so no vote went anywhere (#152). Feedback goes to the form instead.
 fresh
-python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+python3 - "$WORK/r/extension/sidepanel/renderer-helper.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "if (prompt) prompt.innerHTML = '<em>Thank you for your feedback!</em>';"
+old = '>Tell us about this audit</a>'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "row.innerHTML = '<em>Thank you for your feedback!</em>';", 1)
+s = s.replace(old, old + '\n      <button class="feedback-btn" data-vote="up">Yes</button>', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
-expect_fail "feedback vote wipes Audit a Different Page" node "$WORK/r/test/test-sidepanel-state.mjs"
+expect_fail "vote buttons that send nothing come back" node "$WORK/r/test/test-renderer-helper.mjs"
 
 # 30j. the renderer trusts a non-array findings value -> test-renderer-helper must fail.
 fresh
@@ -1229,7 +1235,48 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "renderer calls toLowerCase on a non-string tier" node "$WORK/r/test/test-renderer-helper.mjs"
 
-# 31a-31i. The docs made promises the code did not keep. The side panel said
+# 30n-30p. The dossier export took its course label from the active tab (#155).
+# test-dossier-compiler.mjs covers the label helper (30n); test-sidepanel-state.mjs
+# covers the side panel that stores each item's course and calls it (30o, 30p).
+# 30n. the dossier label ignores the course of the audited items -> test-dossier-compiler
+# must fail. The export took its label from the active tab, so a dossier
+# exported from another tab named the wrong course (#155).
+fresh
+python3 - "$WORK/r/extension/shared/dossier-compiler.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "  if (keys.length > 1) return 'Several courses';\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "  return fallback;\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "dossier label ignores the audited course" node "$WORK/r/test/test-dossier-compiler.mjs"
+
+# 30o. the side panel stops storing each item's course -> test-sidepanel-state must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    courseId: detectCourseContext(source?.url).courseId,\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "dossier items do not keep their course" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 30p. Copy Markdown takes the label from the active tab again -> test-sidepanel-state must fail.
+fresh
+python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    const courseTitle = dossierCourseLabel(dossier);\n    const md = compileDossierToMarkdown(dossier, courseTitle);\n    await copyWithFeedback"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "    const courseTitle = activeCourseContext && activeCourseContext.courseId ? `Course ${activeCourseContext.courseId}` : 'Canvas Course';\n    const md = compileDossierToMarkdown(dossier, courseTitle);\n    await copyWithFeedback", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "Copy Markdown labels the dossier from the active tab" node "$WORK/r/test/test-sidepanel-state.mjs"
+
+# 31a-31j. The docs made promises the code did not keep. The side panel said
 # no student data was "ever collected, retained, or used for model training"
 # while the extractor read whole Canvas pages and the panel pointed at a free
 # API tier whose terms allow that use. The settings called canned demo output
@@ -1593,7 +1640,7 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the checker misses an inline element that has no end tag" python3 "$WORK/r/test/test-ste-check.py"
 
-# 48a-48b. The writing standard reaches a report only through the skill steps and
+# 48a-48c. The writing standard reaches a report only through the skill steps and
 # the report template. A skill without the check step ships text that no check
 # has seen, and a bad template label goes into every report.
 # 48a. A skill loses its writing standard check step -> smoke-test must fail.
@@ -1733,7 +1780,7 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "course prompt drops the STE rules" "$WORK/r/test/test-extension.sh"
 
-# 46a-46c. The extension's fixed text obeys ASD-STE100. smoke-test sends the printed
+# 46a-46d. The extension's fixed text obeys ASD-STE100. smoke-test sends the printed
 # extension output and the side-panel page through bin/idstack-ste-check. Only the
 # STE checks catch 46a and 46b: every other suite still passes.
 # 46a. The Markdown export labels a recommendation in non-STE text again -> smoke-test must fail.
@@ -2000,7 +2047,7 @@ PY
 expect_fail "the rendered landing test loses output that Chrome writes after it exits" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 
-# 55a-55f. Skill shell that breaks only in Claude Code's Bash tool (zsh, BSD
+# 63a-63f. Skill shell that breaks only in Claude Code's Bash tool (zsh, BSD
 # tools, a new shell for each call) comes back -> smoke-test must fail. Each
 # case puts back one form that the v3.7.0.1 fixes removed.
 shell_mutation() { # <name> <file> <old> <new>
@@ -2031,7 +2078,7 @@ shell_mutation "a report block stops printing the plugin template path" \
 ' ''
 
 
-# 56a-56c. Claude-Code-only guards (v3.8.0.0) -> smoke-test must fail.
+# 64a-64c. Claude-Code-only guards (v3.8.0.0) -> smoke-test must fail.
 shell_mutation "an untagged support claim for another agent enters the README" \
   README.md '**Requirements:** [Claude Code](https://claude.ai/code)' '**Requirements:** [Claude Code](https://claude.ai/code) or Antigravity'  # IDSTACK_CLI_LEAK_ALLOW
 shell_mutation "a skill description names a bare /skill again" \
@@ -2244,9 +2291,10 @@ shell_mutation "start no longer refuses a Claude app scratch workspace" \
   skills/start/SKILL.md.tmpl '  "$_HOME_DIR/Library/Application Support/Claude/scratch-workspaces/"*) echo "NOT_A_COURSE_FOLDER: $_HERE" ;;
 ' ''
 
-# 62a-62m. The Step Review. Each report skill shows each step as a table with a
-# citation in each row, the user approves it, and bin/idstack-report-section
-# adds it to the report.
+# 62a-62n. The Step Review. Each report skill writes each step as a table, with a
+# citation in each row except in the fact sections. bin/idstack-report-section
+# adds it to the report as a draft, the user reads it in the report file, and
+# when the user approves it, `approve` removes the draft mark.
 # 62a. The helper stops comparing a tier with evidence/references.md ->
 # test-report-section must fail. A row could then claim T1 for a T5 paper.
 fresh
@@ -2365,6 +2413,42 @@ s = s.replace(old, old + "    os.remove(draft)\n", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "report append deletes the draft file" python3 "$WORK/r/test/test-report-section.py"
+
+# 62n. finish --stopped leaves the reserved placeholder -> test-report-section
+# must fail. A skill that stopped early could then never finish a report that
+# has a score section (accessibility-review, course-quality-review, red-team).
+fresh
+python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "                lines[i] = STOPPED_TEXT\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "                pass\n", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "finish --stopped leaves the reserved placeholder" python3 "$WORK/r/test/test-report-section.py"
+
+# 62o-62r. Import-mode detection and Mode 2 ILOs (#153, #154). After an import,
+# assessment-design and course-builder start in audit or gap-fill mode, and
+# assessment-design saves the ILOs that it classifies.
+# 62o. assessment-design Mode 3 ignores the import's assessment count again
+# -> smoke-test must fail. Audit mode then never started after an import (#153).
+shell_mutation "assessment-design Mode 3 ignores the imported assessments" \
+  skills/assessment-design/SKILL.md.tmpl '`import_metadata.items_imported.assessments` is more than 0 (the import found assessments), OR ' ''
+
+# 62p. course-builder gap-fill ignores the import's module count again
+# -> smoke-test must fail (#153).
+shell_mutation "course-builder gap-fill ignores the imported modules" \
+  skills/course-builder/SKILL.md.tmpl '`import_metadata.items_imported.modules` is more than 0 (the import found modules), or ' ''
+
+# 62q. assessment-design Mode 2 stops saving its ILOs -> smoke-test must fail (#154).
+shell_mutation "assessment-design Mode 2 stops saving its ILOs" \
+  skills/assessment-design/SKILL.md.tmpl 'In Mode 2, also put each approved `## Learning objectives` row in' 'In Mode 2, the approved `## Learning objectives` rows go in'
+
+# 62r. assessment-design Mode 3 stops asking for ILOs when the import found none
+# -> smoke-test must fail. Mode 3 then audits against no objectives (#153).
+shell_mutation "assessment-design Mode 3 audits with no ILOs" \
+  skills/assessment-design/SKILL.md.tmpl 'If `learning_objectives.ilos` is empty (an import can find assessments but no objectives), first do the objectives step of Mode 2' 'Use the objectives in `learning_objectives.ilos`'
 
 # 62m. The Step Review chat note loses its exact link line -> smoke-test must
 # fail. The model then names the report as text, which is not a link in the app.

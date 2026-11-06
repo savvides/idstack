@@ -22,7 +22,7 @@ trap 'rm -rf "$WORK"' EXIT
 setup_env() {
   rm -rf "$WORK/env"
   mkdir -p "$WORK/env/home" "$WORK/env/bin" "$WORK/env/idstack"
-  for item in bin skills templates evidence docs .claude-plugin \
+  for item in bin skills templates evidence docs extension .claude-plugin \
               VERSION setup; do
     [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/env/idstack/"
   done

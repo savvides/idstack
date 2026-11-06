@@ -23,74 +23,46 @@ Free, MIT licensed, open source. Available as a [Claude Code plugin](#install-30
 You:    /idstack:course-import
 
 idstack: How do you want to import your course?
-         A) IMS Common Cartridge file (.imscc)
-         B) Paste course documents
-         C) Canvas API
-         D) PDF or document file
-         E) SCORM package (.zip)
+         - LMS or SCORM package file
+         - PDF or Word file
+         - Paste course documents
+         - Canvas API
 
-You:    C — here's my Canvas URL and access token.
+You:    Canvas API. The course is https://canvas.university.edu/courses/12345.
 
-idstack: Connected. Pulling course data...
-         Found: 12 modules, 8 assignments, 4 discussions, 6 outcomes.
+idstack: Open .idstack/canvas.env in a text editor. Paste your Canvas access
+         token between the two quotes after CANVAS_TOKEN=. Save the file,
+         then tell me when it is done.
 
-         ## Import Quality Triage
+You:    Done.
 
-         Found 4 flags during import:
-         ⚠ 12 modules, only 4 have stated learning objectives
-         ⚠ All 8 assessments are auto-graded quizzes (no rubrics)
-           [Assessment-8] [T1] — elaborated feedback produces larger
-           learning gains than correctness-only
-         ⚠ No collaborative activities beyond discussion forums
-           [Online-15] [T4] — low social presence predicts weaker outcomes
-         ⚠ No accessibility information for video content
+idstack: Connected. Found 12 modules, 8 assignments, 4 discussions, 6 outcomes.
 
-         6 objectives pre-classified with Bloom's taxonomy.
-         12 modules mapped to task analysis.
+         ... a note and a question for the Imported structure section ...
 
-         Manifest saved to .idstack/project.json.
-         Run /idstack:course-quality-review for a full evidence-based audit.
+         Import quality triage: 4 rows (4 warning).
+         All 8 assessments are auto-graded quizzes with no rubrics.
+         Read the draft in .idstack/exports/bio-101/course-import.md.
+
+         Do you approve the Import quality triage section?
+         - Approve  - Change a row  - Remove a row
+
+You:    Approve
+
+         ... one draft section and one question for each step ...
 
 You:    /idstack:course-quality-review
 
-idstack: Reading your manifest... I have 12 modules, 6 objectives,
-         and 8 assessments from your Canvas import.
+idstack: QM structural review: 8 rows (3 pass, 5 flag).
+         Standard 3 (Assessment): no rubrics, no alignment to objectives.
+         Read the draft in .idstack/exports/bio-101/course-quality-review.md.
 
-         ## Course Quality Review
-
-         **Overall Score: 62/100**
-
-         ### QM Structural Review
-         | Standard              | Status | Finding                    |
-         |-----------------------|--------|----------------------------|
-         | Course Overview       | pass   | Clear syllabus, nav set    |
-         | Learning Objectives   | flag   | 8 modules lack objectives  |
-         | Assessment            | flag   | No rubrics, no alignment   |
-         | Instructional Materials| pass   | Materials current           |
-         | Learning Activities   | flag   | No active learning design  |
-         | Course Technology     | pass   | Tools used purposefully    |
-         | Learner Support       | flag   | No support section found   |
-         | Accessibility         | flag   | No alt formats for video   |
-
-         ### Community of Inquiry Presence
-         - Teaching Presence:  7/10 — strong content, weak facilitation
-         - Social Presence:    3/10 — no group work, minimal peer interaction
-         - Cognitive Presence: 5/10 — surface-level activities, no inquiry cycle
-
-         This course meets 3 of 8 QM standards but scores 3/10 on social
-         presence. Courses with low social presence show weaker learning
-         outcomes in online settings [Online-15] [T4].
-
-         ### Top 3 Recommendations
-         1. Add rubrics to all assessments with elaborated feedback
-            [Assessment-8] [T1] — Run /idstack:learning-objectives
-         2. Design collaborative activities for at least 4 modules
-            [Online-15] [T4]
-         3. Add learner support section with office hours, tutoring,
-            and technical help resources
+         Do you approve the QM structural review section?
 ```
 
-You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses, `learn` is a separate cross-project memory utility, and `start` is the first-run guide. These three sit outside the linear chain, which is why pipeline runs 8 of the 12 skills).
+The chat shows a short note and one question for each section. The tables, scores and citations go into the Markdown report. For example, the report for this course has the finding "All 8 assessments are auto-graded quizzes with no rubrics", the citation `[Assessment-8] [T1]` and the recommendation to run `/idstack:assessment-design`.
+
+You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses, `learn` is a separate cross-project memory utility, and `start` is the first-run guide. These three, and pipeline itself, sit outside the linear chain, which is why pipeline runs 8 of the 12 skills).
 
 ## Install (30 seconds)
 
@@ -145,16 +117,19 @@ Claude clones the repo, runs setup, and confirms the skills are registered.
 ```bash
 ./setup                # Register the plugin with Claude Code at user scope
 ./setup --local        # Install at project scope (./.claude/) instead of user scope
+./setup --help         # Show the usage and exit (also -h)
 ```
 
 Setup is idempotent — re-run it any time.
 </details>
 
-You should see:
+You should see output like this:
 ```
   regenerated skill files
 Setup installs idstack (scope: user)...
   source: /path/to/idstack
+
+<messages from claude plugin marketplace add and claude plugin install>
 
 Setup installed idstack in Claude Code (scope: user).
 
@@ -196,7 +171,7 @@ You can use idstack in the Code tab of the [Claude desktop app](https://claude.a
 5. Start a new session. Select the course folder again with the folder button. Claude Code loads a plugin only when a session starts.
 6. Type `/idstack:start` and press Return. idstack checks your setup, then asks how you want to start.
 
-Each skill gives you a link to its report. Click the link to open the report in the app.
+Each skill that writes a report gives you a link to it. Click the link to open the report in the app.
 
 **macOS asks you to install developer tools?** idstack needs python3. Click **Install** in the macOS window. When the installation is complete, type `/idstack:start` again.
 
@@ -259,16 +234,16 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 
 | Skill | Your specialist | What they do |
 |-------|----------------|--------------|
-| `/idstack:start` | **Guide** | The first skill to run in a course folder. It makes sure that idstack can run, then starts the correct skill: course import, needs analysis or the pipeline. It writes no report. |
-| `/idstack:needs-analysis` | **Needs Analyst** | Three-level assessment before you build anything. Organizational analysis (is training even the right intervention?), task analysis (what must learners do?), learner profiling (prior knowledge, not learning styles). Creates the project manifest. Auto-detects imported courses and runs a design-fit check instead of the training-decision gate. Writes `.idstack/exports/<course-slug>/needs-analysis.md`. |
+| `/idstack:start` | **Guide** | The first skill to run in a course folder. It makes sure that idstack can run and that the session is in a course folder (not your home folder or a temporary folder of the app), then starts the correct skill: course import or needs analysis for a new folder. For a course that already has a manifest, it continues the pipeline or starts one skill that you select from a list. It can also open the course dashboard. It writes no report. |
+| `/idstack:needs-analysis` | **Needs Analyst** | Three-level assessment before you build anything. Organizational analysis (is training even the right intervention?), task analysis (what must learners do?), learner profiling (prior knowledge, not learning styles). Creates the project manifest. For a course imported from an LMS package, a SCORM package or the Canvas API in which the import found modules, it runs a design-fit check instead of the training-decision gate. Writes `.idstack/exports/<course-slug>/needs-analysis.md`. |
 | `/idstack:learning-objectives` | **Curriculum Designer** | Writes measurable objectives with revised Bloom's taxonomy. Classifies on two dimensions (knowledge type + cognitive process). Bidirectional alignment check: does each objective have a matching activity AND assessment? Flags gaps. Writes `.idstack/exports/<course-slug>/learning-objectives.md`. |
-| `/idstack:assessment-design` | **Assessment Architect** | Designs assessments aligned to Bloom's levels with evidence-based rubrics and feedback strategies. Applies Nicol's 7 principles of good feedback. Builds formative checkpoints before summative assessments. For imported courses, switches to audit mode: classifies existing rubric criteria on Bloom's, compares to ILOs, and surfaces alignment gaps without proposing new assessments. Writes `.idstack/exports/<course-slug>/assessment-design.md`. |
-| `/idstack:course-import` | **LMS Bridge** | Imports your course from any LMS or authoring tool. Five input methods: IMS Common Cartridge, pasted documents, Canvas API, PDF upload (Articulate Rise, Storyline), or SCORM package. Quick-scan quality flags, auto-maps modules to task analysis, pre-classifies objectives with Bloom's. Writes `.idstack/exports/<course-slug>/course-import.md`. |
-| `/idstack:course-builder` | **Content Generator** | Generates complete course content from the manifest: syllabus, module pages, assignment descriptions, and rubric documents. Content follows cognitive load principles. Includes adversarial spec review (auto-validates alignment). For imported courses, switches to gap-fill mode: generates only the artifacts upstream skills flagged as missing, instead of regenerating what already exists in the cartridge. Writes `.idstack/exports/<course-slug>/course-builder.md`. |
-| `/idstack:course-export` | **LMS Publisher** | Exports to any LMS. Generates IMS Common Cartridge (.imscc), SCORM 1.2 packages, or pushes directly to Canvas via API. Shows readiness dashboard before export. The output IS the course. |
+| `/idstack:assessment-design` | **Assessment Architect** | Designs assessments aligned to Bloom's levels with evidence-based rubrics and feedback strategies. Applies Nicol's 7 principles of good feedback. Builds formative checkpoints before summative assessments. For a course imported from an LMS package, a SCORM package or the Canvas API in which the import found assessments, it switches to audit mode: it lists the imported assessments (it asks you for their details), classifies the rubric criteria on Bloom's, compares them to the ILOs, and shows alignment gaps without proposing new assessments. Writes `.idstack/exports/<course-slug>/assessment-design.md`. |
+| `/idstack:course-import` | **LMS Bridge** | Imports your course from any LMS or authoring tool. Four options: an LMS or SCORM package file (IMS Common Cartridge `.imscc`, or a SCORM 1.2 / 2004 `.zip` from Rise, Storyline or Captivate), a PDF or Word file, pasted course documents, or the Canvas API. Quick-scan quality flags, auto-maps modules to task analysis, pre-classifies objectives with Bloom's. Writes `.idstack/exports/<course-slug>/course-import.md`. |
+| `/idstack:course-builder` | **Content Generator** | Generates complete course content from the manifest: syllabus, module pages, assignment descriptions, and rubric documents. Content follows cognitive load principles. Includes adversarial spec review (auto-validates alignment). For a course imported from an LMS package, a SCORM package or the Canvas API in which the import found modules, it switches to gap-fill mode: it generates only the artifacts that upstream skills flagged as missing. Writes `.idstack/exports/<course-slug>/course-builder.md`. |
+| `/idstack:course-export` | **LMS Publisher** | Generates an IMS Common Cartridge (.imscc) for Canvas, Blackboard, Moodle or D2L, a SCORM 1.2 package, or pushes directly to Canvas via API. Shows an advisory readiness check before export. The output IS the course. Writes `.idstack/exports/<course-slug>/course-export.md`. |
 | `/idstack:course-quality-review` | **Quality Auditor** | Full QM-aligned audit plus Community of Inquiry presence layer. 8 structural standards, 3 presence dimensions (teaching, social, cognitive), constructive alignment audit. Parallel sub-agents for speed. Writes `.idstack/exports/<course-slug>/course-quality-review.md`. |
 | `/idstack:accessibility-review` | **Accessibility Reviewer** | WCAG 2.1 AA compliance audit plus Universal Design for Learning (UDL 3.0) enhancement review. Two-tier output: "Necessary changes" for accessibility violations, "Recommended changes" for UDL recommendations. Parallel sub-agents for WCAG and UDL. Writes `.idstack/exports/<course-slug>/accessibility-review.md`. |
-| `/idstack:red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Runs in a clean-context sub-agent so the audit can't inherit build-bias from the parent. Five dimensions in parallel: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. Writes `.idstack/exports/<course-slug>/red-team.md` and returns to the parent for a triage-and-fix loop (Critical / Critical+High / All / Skip). Produces a confidence score. |
+| `/idstack:red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Runs in a clean-context sub-agent so the audit can't inherit build-bias from the parent. Five dimensions in parallel: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. The sub-agent writes its findings to `.idstack/.red-team-findings.json` and returns a summary. The parent then adds each findings table to `.idstack/exports/<course-slug>/red-team.md` for your approval, then runs a triage-and-fix loop (Critical only / Critical + Warning / All findings / Skip). Produces a confidence score. |
 | `/idstack:pipeline` | **Orchestrator** | Chains the 8-skill linear pipeline automatically. Auto-skips completed skills. Shows pipeline status. Pause anytime, resume later. Produces `.idstack/exports/<course-slug>/index.md`, a Markdown course dashboard linking to every per-skill report, with readiness scores, top recurring issues, evidence themes, and where to start. |
 | `/idstack:learn` | **Memory Manager** | Search, list, delete, promote, and export project learnings. Supports cross-project intelligence. |
 
@@ -282,7 +257,7 @@ Skill names in the diagram below are shown unprefixed to keep the columns readab
 EXISTING COURSE                           NEW COURSE
 
 /course-import                            /needs-analysis
-  IMS Cartridge, SCORM, PDF, Canvas API     Three-level needs assessment
+  IMSCC, SCORM, PDF, Word, paste, Canvas    Three-level needs assessment
   Quick-scan quality flags                  Is training the right intervention?
   Pre-classify objectives                   Task analysis + learner profile
         │                                          │
@@ -335,7 +310,7 @@ Any skill works independently. Run `/idstack:pipeline` to chain them all, or inv
 ## Architecture
 
 ```
-BUILD (contributors only; installs ship the generated SKILL.md files)
+BUILD (./setup runs it on each install; marketplace installs use the committed SKILL.md files)
 
   skills/<name>/SKILL.md.tmpl ──────────┐
   templates/preamble.md ────────────────┤
@@ -343,6 +318,8 @@ BUILD (contributors only; installs ship the generated SKILL.md files)
   templates/snippets/idstack-resolve.sh ┘              │
                                                        ▼
                                              skills/<name>/SKILL.md
+                                             extension/shared/ste-rules.js
+                                               (writing rules, from the preamble)
 
 INSTALL
 
@@ -355,21 +332,22 @@ RUN (Claude Code, inside your course project folder)
 
   /idstack:<skill>
      │
-     ├─ preamble: update check (bin/idstack-update-check) · manifest check
-     │            (bin/idstack-migrate) · preferences · designer profile
-     │            (~/.idstack/profile.yaml) · context recovery (reads the
-     │            timeline and learnings below)
+     ├─ preamble: manifest check (bin/idstack-migrate) · preferences ·
+     │            designer profile (~/.idstack/profile.yaml) · context
+     │            recovery (reads the timeline and learnings below)
      ▼
   workflow: one AskUserQuestion at a time
      │  cites evidence/references.md as [Domain-N] [T1–T5]
      │
      ├──▶ .idstack/project.json        manifest: the system view (JSON)
-     │      written via bin/idstack-manifest-merge (atomic, one section);
-     │      needs-analysis and course-import write several sections directly
+     │      written via bin/idstack-manifest-merge (atomic, section-scoped);
+     │      needs-analysis, course-import and assessment-design write
+     │      several sections in one merge call
      │      └─▶ read by later skills, /idstack:pipeline, bin/idstack-status
      │
      ├──▶ .idstack/exports/<course-slug>/      (bin/idstack-slugify)
-     │      <skill>.md            per-skill report: the human view
+     │      <skill>.md            per-skill report: the human view, built one
+     │                            draft section at a time (bin/idstack-report-section)
      │      index.md              course dashboard (/idstack:pipeline)
      │      course-export.imscc, scorm-export.zip   (/idstack:course-export)
      │      skeletons: templates/report.md.tmpl, index.md.tmpl
@@ -383,19 +361,21 @@ CHROME EXTENSION (separate runtime: no Claude Code, no .idstack/ folder)
 
   sidepanel ── injects content/extractor.js into the tab, reads page text
      │
-     └─ RUN_AUDIT ──▶ background/service-worker
-                        ├─ canvas-crawler (whole-course audits)
+     ├─ RUN_AUDIT (one page) ──────────────┐
+     └─ CRAWL_AND_AUDIT_COURSE (course) ───┴─▶ background/service-worker
+                        ├─ canvas-crawler (course audits: syllabus, assignments)
                         └─ shared/prompts ──▶ Google AI API (your key;
                                               demo findings without one)
-     ◀── findings, saved to chrome.storage; dossier export as Markdown
+     ◀── findings in the side panel; "Add to Dossier" saves them in
+         chrome.storage; dossier export as Markdown
 ```
 
-Skills are plain Markdown files generated from templates. No build step for users, and no dependencies beyond bash and python3. `./setup` registers the repo as a Claude Code plugin marketplace and installs it, which is what gives the namespaced `/idstack:<skill>` commands. Users invoke skills via `/idstack:<skill>`. Each skill reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
+Skills are plain Markdown files generated from templates. No build step for users, and no dependencies beyond bash and python3. `./setup` registers the repo as a Claude Code plugin marketplace and installs it, which is what gives the namespaced `/idstack:<skill>` commands. Users invoke skills via `/idstack:<skill>`. Each skill that produces results (all skills except `/idstack:start`, `/idstack:pipeline` and `/idstack:learn`) reads the shared manifest and session history, runs its evidence-based workflow, writes back its section, and logs the session to the timeline. The pipeline adds context but every skill also works standalone.
 
 ## How it works
 
 ### The project manifest
-idstack saves your design decisions in `.idstack/project.json` so each skill remembers your course context. You never edit this file directly. The skills manage it.
+idstack saves your design decisions in `.idstack/project.json` so each skill remembers your course context. The skills manage it, so you do not need to edit it.
 
 When you run `/idstack:course-import`, it creates the manifest with your course structure. When you run `/idstack:learning-objectives`, it reads the manifest and extends it with objectives and alignment data. `/idstack:assessment-design` adds rubrics and feedback strategies. `/idstack:course-builder` generates the actual content. `/idstack:course-quality-review` audits the full chain. `/idstack:course-export` packages it for your LMS. Each skill reads what came before and adds its layer. Or run `/idstack:pipeline` and it chains them all automatically.
 
@@ -405,7 +385,7 @@ idstack functions as a design partner rather than an automated content generator
 - **Markdown report** at `.idstack/exports/<course-slug>/<skill>.md` — the human view. The skill gives you a link to it. Every finding follows the same structure: *what we saw* in your course, *what the evidence says* (with a citation tag like `[Assessment-8] [T1]`), *why it matters* for learners, and a *recommendation* for what to change. Recommendations, not orders: the designer owns the course, while idstack provides the analytical review.
 - **Manifest section** at `.idstack/project.json` — the system view. Same findings in JSON so other skills can read and act on them.
 
-After each step, the skill shows its output as a table, with a justification and a citation for each row. You approve each section, and the skill adds it to the report at once.
+After each step, the skill adds its output to the report at once, as a draft section with a table. Each row has a justification and a citation, except in the fact sections (for example Course information and Readiness), which have no Justification or Evidence columns. You read the table in the report file. The chat shows only a short note, a link to the draft and the question "Do you approve the <section> section?". You can approve the section, change a row or remove a row. When you approve, the draft mark goes away. If a session stops, the report keeps each section, and a section that you did not approve keeps its draft mark. The manifest gets only the rows that you approved. `bin/idstack-report-section` does these steps and checks each citation against `evidence/references.md`.
 
 The report skeleton lives in [`templates/report.md.tmpl`](templates/report.md.tmpl). The content contract is in [`templates/report-format.md`](templates/report-format.md). Re-running a skill overwrites its report; the timeline at `.idstack/timeline.jsonl` carries the run history.
 
@@ -414,7 +394,7 @@ Every per-course artifact — every per-skill report, the pipeline dashboard, an
 When you run `/idstack:pipeline`, it also produces a course dashboard at `.idstack/exports/<course-slug>/index.md` — readiness scores, links to every per-skill report, top issues that recur across multiple stages, evidence themes, and where to start. Open this first if you've run multiple skills and want one entry point that synthesizes the whole audit.
 
 ### Course memory
-idstack remembers your design sessions. Each skill logs what it did to `.idstack/timeline.jsonl`, and project-specific discoveries (LMS quirks, format issues, course patterns) are stored in `.idstack/learnings.jsonl`. When you start a new session, idstack tells you where you left off: quality score trends, which skills have been completed, and what the next step is. Run `bin/idstack-status` anytime to see your course health dashboard.
+idstack remembers your design sessions. Each skill logs what it did to `.idstack/timeline.jsonl`, and project-specific discoveries (LMS quirks, format issues, course patterns) are stored in `.idstack/learnings.jsonl`. When you start a new session, idstack tells you where you left off: quality score trends, which skills have been completed, and what the next step is. To see your course health dashboard at any time, run `<your idstack clone>/bin/idstack-status` in your course folder. It reads `.idstack/` in the current folder.
 
 ### Evidence tiers
 Every recommendation includes an evidence tier so you know how strong the backing is:
@@ -436,17 +416,19 @@ Any skill works on its own. `/idstack:course-quality-review` works without a man
 
 idstack encodes findings from a literature synthesis spanning 11 domains of instructional design research. The full citation list (all 11 domains, 5 evidence tiers) is in [evidence/references.md](evidence/references.md). A selection:
 
-| Domain | Evidence Strength | Key Finding |
-|--------|------------------|-------------|
-| Cognitive Load Theory | Very strong (T1) | Manage working memory load through sequencing, segmenting, and integration |
-| Multimedia Learning | Very strong (T1) | Spatial contiguity, signaling, and coherence reliably improve learning |
-| Formative Assessment | Strong (T1) | Feedback that explains what to do next outperforms correctness-only feedback |
-| Constructive Alignment | Moderate-Strong (T2) | Objectives, activities, and assessments must form a coherent chain |
-| Online Course Quality | Moderate (T2-T4) | QM standards + CoI presence predicts outcomes beyond compliance |
-| Needs Analysis | Weak-Moderate (T3) | Multi-level analysis is necessary but rarely done |
-| Accessibility & UDL | Moderate (T2-T3) | WCAG 2.1 AA is the legal baseline; UDL 3.0 extends to design for learner variation |
+| Domain | Studies (T1 studies) | Tier range | Key Finding |
+|--------|---------------------|------------|-------------|
+| Cognitive Load Theory | 19 (6) | T1–T5 | Manage working memory load through sequencing, segmenting, and integration |
+| Multimedia Learning | 14 (7) | T1–T5 | Spatial contiguity, signaling, and coherence reliably improve learning |
+| Formative Assessment | 14 (10) | T1–T5 | Feedback that explains what to do next outperforms correctness-only feedback |
+| Constructive Alignment | 13 (2) | T1–T5 | Objectives, activities, and assessments must form a coherent chain |
+| Online Course Quality | 14 (3) | T1–T5 | QM standards + CoI presence predicts outcomes beyond compliance |
+| Needs Analysis | 11 (2) | T1–T3 | Multi-level analysis is necessary but rarely done |
+| Accessibility & UDL | 13 (2) | T1–T5 | WCAG 2.1 AA is the legal baseline; UDL 3.0 extends to design for learner variation |
 
-**Cross-domain principles** (appear in 3+ domains):
+The counts come from `evidence/references.md`. Most of the Constructive Alignment references are T4 and T5, and most of the Needs Analysis references are T3.
+
+**Cross-domain principles** (each is in 2 or more domains):
 1. Alignment is non-negotiable
 2. Expertise level changes which instructional moves help and which backfire
 3. Feedback quality matters more than feedback quantity
@@ -456,7 +438,7 @@ idstack encodes findings from a literature synthesis spanning 11 domains of inst
 ## FAQ
 
 **Do I need to know how to code?**
-No. You interact with idstack through conversation in Claude Code. It is a chat interface. In the [Claude desktop app](#claude-desktop-app-no-terminal) you do not need a terminal at all.
+No. You interact with idstack through conversation in Claude Code. It is a chat interface. In the [Claude desktop app](#claude-desktop-app-no-terminal) you do not need a terminal to install or use idstack. To update it, you run two commands in a terminal (see "How do I update idstack?").
 
 **What is Claude Code?**
 Claude Code is Anthropic's coding tool. It's available as a [desktop app, web app, and CLI](https://claude.ai/code). You type `/idstack:needs-analysis` and have a conversation. No programming required.
@@ -465,26 +447,30 @@ Claude Code is Anthropic's coding tool. It's available as a [desktop app, web ap
 Yes. `/idstack:course-import` connects to Canvas via API or reads Canvas course exports (.imscc files). It also works with Blackboard, Moodle, and D2L through the IMS Common Cartridge format.
 
 **Can I use this with Articulate Rise?**
-Yes. Export your Rise course as a PDF (hover over the course card > `...` > Download as PDF), then run `/idstack:course-import` and choose "PDF or document file." Give it the file path and it reads the PDF directly, extracts the course structure, and maps it to the project manifest. From there, every skill works: quality review, accessibility audit, red team, everything. Note: interactive elements like Storyline blocks and flashcards don't render in PDFs, but course structure, objectives, and assessment descriptions come through fine.
+Yes. Export your Rise course as a PDF (hover over the course card > `...` > Download as PDF), then run `/idstack:course-import` and choose "PDF or Word file." Give it the file path and it reads the PDF directly, extracts the course structure, and maps it to the project manifest. From there, every skill works: quality review, accessibility audit, red team, everything. Note: interactive elements like Storyline blocks and flashcards don't render in PDFs, but course structure, objectives, and assessment descriptions come through fine.
 
 **What if I only want to run the quality review?**
 That works. `/idstack:course-quality-review` asks you about your course directly if there's no manifest.
 
 **How do I check my course health without re-running a skill?**
-Run `bin/idstack-status` from your project directory for the dashboard (quality score trends, dimensions, what skills have run, paths to every report under `.idstack/exports/<course-slug>/`). Add `--readiness` to get the pre-export readiness gate only (quality ≥ 70, accessibility ≥ 80, zero critical red-team findings, zero WCAG Level-A violations).
+Run `<your idstack clone>/bin/idstack-status` in your course folder for the dashboard (quality score trends, dimensions, what skills have run, paths to every report under `.idstack/exports/<course-slug>/`). Add `--readiness` to get only the pre-export readiness check (quality ≥ 70, accessibility ≥ 80, zero critical red-team findings, zero WCAG Level-A violations). The check is advisory: `/idstack:course-export` shows it, but you can always export. After `/idstack:pipeline` writes the course dashboard (`index.md`), you can also run `/idstack:start` and select **Open the course dashboard**.
 
 **Do I need python3?**
-Yes, python3 3.9 or later. Every skill saves its results to the project manifest with it, and the status dashboard, learnings and timeline use it too. macOS and most Linux systems already have it. Run `bin/idstack-doctor` to check; it reports a missing or older python3 as a problem.
+Yes, python3 3.9 or later. Each skill that produces results (all skills except `/idstack:start`, `/idstack:pipeline` and `/idstack:learn`) uses it to save those results to the project manifest. The status dashboard, learnings and timeline use it too. macOS and most Linux systems already have it. Run `bin/idstack-doctor` to check; it reports a missing or older python3 as a problem.
 
 **Is my data safe?**
-idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Session history (`.idstack/timeline.jsonl`) and learnings (`.idstack/learnings.jsonl`) are also local. In the Claude Code plugin, course data reaches external servers only when you explicitly invoke integration skills (such as Canvas API calls via `/idstack:course-import` or `/idstack:course-export`) or perform hourly update checks via `git fetch`. The Chrome extension sends page text to Google's API when you run an audit with your own API key saved; see [PRIVACY.md](PRIVACY.md). Claude Code's own privacy policy applies to the AI conversation.
+idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Session history (`.idstack/timeline.jsonl`) and learnings (`.idstack/learnings.jsonl`) are also local. In the Claude Code plugin, course data reaches external servers only when you explicitly invoke integration skills (such as Canvas API calls via `/idstack:course-import` or `/idstack:course-export`). `/idstack:red-team` also searches the web for newer research on the studies that your course cites. The search terms are about the studies, not your course text. Your Canvas token stays in `.idstack/canvas.env` in your course folder, which only you can read and git ignores. Delete the file when you are done. The Chrome extension sends page text to Google's API when you run an audit with your own API key saved; see [PRIVACY.md](PRIVACY.md). Claude Code's own privacy policy applies to the AI conversation.
 
 **Can I edit the project manifest directly?**
 You can, but let the skills manage it. If you do edit it, keep the JSON valid.
 
 **How do I update idstack?**
-idstack checks for updates when you run any skill. If a newer version is available, you'll see a notification. Update manually: `cd <your idstack clone> && git pull && ./setup`
-If you downloaded ZIP: download the latest version and run `./setup` again.
+Update manually. idstack does not tell you when a new version is available.
+- If you installed from a clone: `cd <your idstack clone> && git pull && ./setup`
+- If you installed in the Claude desktop app (or with `/plugin marketplace add`): run these commands in a terminal: `claude plugin marketplace update idstack`, then `claude plugin update idstack@idstack`.
+- If you downloaded ZIP: download the latest version and run `./setup` again.
+
+Then start a new session. Claude Code loads a plugin only when a session starts.
 
 **How do I request a feature or report a bug?**
 [Fill out this form](https://forms.gle/6LDgDD1M6WWyYvME8). No GitHub account needed. If you have a GitHub account, you can also [open an issue](https://github.com/savvides/idstack/issues).
@@ -501,13 +487,13 @@ cd <your idstack clone> && ./setup
 
 **Can't import a .imscc cartridge?** Make sure the file is a valid ZIP. Try re-exporting from your LMS with "Course" selected (not just content).
 
-**Canvas API says "token rejected"?** Generate a fresh token: Canvas -> Account -> Settings -> New Access Token. Tokens expire.
+**Canvas API says "token rejected"?** Generate a fresh token: Canvas -> Account -> Settings -> Approved Integrations -> New Access Token. Paste it into `.idstack/canvas.env` in your course folder, not into the chat. Tokens expire.
 
 **Claude says it can't find idstack skills?** Make sure you've run `./setup` after cloning. Setup registers the repo as a plugin marketplace and installs it so Claude Code discovers the namespaced `/idstack:<skill>` commands. Restart Claude Code after install — plugins load at session start.
 
 **Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Remove the old install, then clone fresh and run setup: `rm -rf ~/.claude/skills/idstack && git clone https://github.com/savvides/idstack.git && cd idstack && ./setup`. Setup no longer removes old installs for you; the CHANGELOG lists every path an older install can leave behind.
 
-**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `bin/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 12 SKILL.md files, and python3 — printing the exact remediation command for whatever it finds.
+**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `bin/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 12 SKILL.md files, and python3. It reports each problem it finds, and for a Claude Code install problem it prints the command that fixes it.
 
 ## Contributing
 

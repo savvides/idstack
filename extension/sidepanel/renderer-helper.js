@@ -68,9 +68,7 @@ export function renderAuditHTML(data) {
     </div>
 
     <div class="feedback-row">
-      <span>Did this audit help you?</span>
-      <button class="feedback-btn" data-vote="up">👍</button>
-      <button class="feedback-btn" data-vote="down">👎</button>
+      <a class="help-link" href="https://forms.gle/6LDgDD1M6WWyYvME8" target="_blank" rel="noopener noreferrer">Tell us about this audit</a>
       <button id="re-audit-btn" class="link-btn">Audit a Different Page</button>
     </div>
   `;

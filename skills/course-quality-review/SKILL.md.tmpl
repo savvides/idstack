@@ -88,7 +88,7 @@ When multiple tiers apply, cite the strongest.
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 - Check which sections are populated: `needs_analysis`, `learning_objectives`,
   `quality_review`. This determines your review mode.
@@ -653,7 +653,7 @@ This is the last Step Review. Write the four sections in one draft. Only Top rec
 
 - **Summary:** 2 or 3 sentences. Start with the overall score and the most important finding. Add the line "Quality XX/100 · Teaching XX/10 · Social XX/10 · Cognitive XX/10". If the timeline has a previous score, add "Previous: X/100 (YYYY-MM-DD), delta +/-Z".
 - **Top recommendations:** 3 to 5 rows. Put the top 3 quick wins from the Quick Wins ranking first. Use the finding ID as the row ID. In the Action cell, write one command that names the skill to run.
-- **Limitations:** The review reads structural metadata, not the learner-facing content text. The cognitive-load assessments are heuristic. The CoI presence scores come from manifest signals, not from a survey.
+- **Limitations:** The review reads the course data in the manifest or, with no manifest, the course files and your answers. It does not read each page of learner content. The cognitive-load assessments are heuristic. The CoI presence scores come from this course data, not from a survey.
 - **Next steps:** 1–3 specific next actions referencing other idstack skills. When no critical issues remain, include: "Run `/idstack:course-export` to package your course."
 
 Run the finish command of the Step Review.

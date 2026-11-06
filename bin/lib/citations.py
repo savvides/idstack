@@ -31,7 +31,9 @@ def check_evidence(cell, refs):
     """Check one Evidence cell. It must hold only citations, each with one tier.
 
     Returns (problems, strongest_tier). strongest_tier is None if the cell has
-    no valid citation.
+    no code-plus-one-tier citation, or has text other than citations. Otherwise
+    it is the strongest tier written in the cell, even when a code is not in
+    references.md or has a different tier there (those cases are in problems).
     """
     text = cell.strip()
     problems = []

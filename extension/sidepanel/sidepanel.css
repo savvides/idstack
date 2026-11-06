@@ -406,20 +406,6 @@ a.citation:hover {
   color: var(--ink);
 }
 
-.feedback-btn {
-  background: var(--raised);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  padding: 4px 8px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: background 0.15s ease;
-}
-
-.feedback-btn:hover {
-  background: var(--bg);
-}
-
 .action-buttons {
   display: flex;
   flex-direction: column;

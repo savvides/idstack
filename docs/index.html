@@ -48,7 +48,7 @@
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
     "softwareVersion": "3.10.0.0",
-    "datePublished": "2026-04-20",
+    "datePublished": "2026-03-30",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -75,7 +75,7 @@
     }
 
     :root {
-      /* The report system's "Proof" tokens (templates/assets/idstack.css), plus the
+      /* The "Proof" tokens (from the retired report stylesheet), plus the
          landing's prussian hero. See DESIGN.md § Color and § Landing page. */
       --bg:           #faf8f3;
       --raised:       #ffffff;
@@ -123,7 +123,7 @@
       --tap-min: 44px;
     }
 
-    /* Dark mode follows the reader's system setting, with the report stylesheet's dark
+    /* Dark mode follows the reader's system setting, with the retired report stylesheet's dark
        tokens. No toggle: the light theme is canonical, dark is a courtesy. */
     @media (prefers-color-scheme: dark) {
       :root {
@@ -172,6 +172,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
     }
 
     a {
@@ -534,7 +535,7 @@
     .session-finding code { font-size: 0.8em; }
     .session-more { margin-top: 0.75rem; }
 
-    /* Tier + severity pills: outlined tier chips, as in the reports. */
+    /* Tier + severity pills: outlined tier chips. */
     .tier {
       display: inline-flex;
       align-items: center;
@@ -616,8 +617,8 @@
     .evidence-legend-dot.t4 { background: var(--tier-4); }
     .evidence-legend-dot.t5 { background: var(--tier-5); }
 
-    /* One row per domain, ranked by study count. The bar is 15 studies wide at full
-       length (the largest domain); each segment is that domain's count at one tier. */
+    /* One row per domain, ranked by study count. The bar width scales to the study
+       count (the largest domain = full width); each segment is that domain's count at one tier. */
     .evidence-index { list-style: none; border-top: 1px solid var(--rule-strong); }
     .evidence-row {
       display: grid;
@@ -1125,18 +1126,19 @@
         <figcaption class="session-head">Claude Code · sample session</figcaption>
         <div class="session-body">
           <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">/idstack:course-import</span></p>
-          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">How do you want to import your course? A) Common Cartridge B) Paste documents C) Canvas API D) PDF E) SCORM</span></p>
-          <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">C. Here is my Canvas URL and access token.</span></p>
-          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">Connected. Found 12 modules, 8 assignments, 4 discussions, 6 outcomes. I added 4 flags to the report as a draft. Read the draft in <code>.idstack/exports/bio-101/course-import.md</code>. The first row:</span></p>
+          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">How do you want to import your course? LMS or SCORM package file · PDF or Word file · Paste course documents · Canvas API</span></p>
+          <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">Canvas API. Here is my Canvas URL and course ID.</span></p>
+          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">Paste your access token into <code>.idstack/canvas.env</code>, not into the chat. Then tell me when it is done.</span></p>
+          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">Connected. Found 12 modules, 8 assignments, 4 discussions, 6 outcomes. Import quality triage: 4 flags (4 warning). The most important: all 8 assessments are auto-graded quizzes with no rubrics. Read the draft in <code>.idstack/exports/bio-101/course-import.md</code>.</span></p>
+          <p class="session-line session-more"><span class="session-who"></span><span class="session-said">In the report:</span></p>
 
           <div class="session-finding">
             <p class="finding-tags"><span class="severity severity-warning">warning</span> <span class="tier tier-1">T1</span></p>
             <p class="finding-title">All 8 assessments are auto-graded quizzes with no rubrics</p>
-            <p><span class="finding-label">Evidence</span>Elaborated feedback produces larger learning gains than correctness-only feedback. <span class="cite-pill">[Assessment-8] [T1]</span></p>
-            <p><span class="finding-label">Next</span>Run <code>/idstack:assessment-design</code> to add rubrics and feedback.</p>
+            <p><span class="finding-label">Justification</span>Elaborated feedback produces larger learning gains than correctness-only feedback. <span class="cite-pill">[Assessment-8] [T1]</span></p>
           </div>
 
-          <p class="session-line session-more"><span class="session-who"></span><span class="session-said">+ 3 more flags, for example: only 4 of 12 modules state learning objectives.</span></p>
+          <p class="session-line session-more"><span class="session-who"></span><span class="session-said">+ 3 more flags in the report, for example: only 4 of 12 modules state learning objectives.</span></p>
         </div>
       </figure>
     </section>
@@ -1226,7 +1228,7 @@
         </li>
       </ol>
 
-      <p class="evidence-foot">Every recommendation includes a research domain code and evidence tier (such as <code>[Alignment-14] [T1]</code>) linking directly to the cited paper.</p>
+      <p class="evidence-foot">Every recommendation includes a research domain code and evidence tier (such as <code>[Alignment-14] [T1]</code>). The code points to the cited paper in <code>evidence/references.md</code>.</p>
     </section>
 
     <!-- ────────── Pipeline ────────── -->
@@ -1239,10 +1241,10 @@
       <div class="pipeline-canvas">
         <p class="pipeline-track-label">Sequence (left to right) under <span class="track-mono">/idstack:pipeline</span></p>
         <ol class="pipeline-flow" role="list">
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 1: needs-analysis. Three-level needs assessment and design-fit gate.">
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 1: needs-analysis. Three-level needs assessment and training-decision gate. After a course import, the pipeline skips this skill.">
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">needs-analysis</span>
-            <span class="node-desc">Three-level needs assessment; design-fit gate.</span>
+            <span class="node-desc">Three-level needs assessment; training-decision gate. Skipped after a course import.</span>
           </li>
           <li class="pipeline-node" tabindex="0" aria-label="Skill 2: learning-objectives. Bloom's classification and bidirectional alignment.">
             <span class="node-num" aria-hidden="true"></span>
@@ -1288,23 +1290,23 @@
           </div>
           <div class="pipeline-aside">
             <span class="aside-tag">course-import</span>
-            <span>Extracts existing modules, assignments, and syllabi from Canvas API, IMSCC, or SCORM.</span>
+            <span>Extracts existing modules, assignments, and syllabi from an IMSCC or SCORM package, a PDF or Word file, pasted documents, or the Canvas API.</span>
           </div>
           <div class="pipeline-aside">
             <span class="aside-tag">learn</span>
-            <span>Manages cross-project institutional knowledge, design preferences, and recurring findings.</span>
+            <span>Searches, deletes, promotes, and exports the learnings that skills save, in this course and across courses.</span>
           </div>
         </div>
       </div>
 
-      <p class="pipeline-foot">Run the complete workflow with <code>/idstack:pipeline</code>. It tracks course state, skips completed skills, and resumes automatically across sessions.</p>
+      <p class="pipeline-foot">Run the complete workflow with <code>/idstack:pipeline</code>. It tracks course state, skips completed skills, and continues from where you stopped when you run it again.</p>
     </section>
 
     <!-- ────────── Output ────────── -->
     <section class="section" id="output" aria-labelledby="output-title">
       <header class="section-header">
         <h2 id="output-title">Each skill writes both a report and a manifest.</h2>
-        <p class="lede">Every analytical skill outputs two artifacts: a Markdown report formatted for faculty and stakeholders, and a structured JSON manifest consumed by downstream skills. Files are organized in <code>.idstack/exports/&lt;course-slug&gt;/</code>.</p>
+        <p class="lede">Every analytical skill outputs two artifacts: a Markdown report formatted for faculty and stakeholders, and a structured JSON manifest consumed by downstream skills. Reports go in <code>.idstack/exports/&lt;course-slug&gt;/</code>; the manifest is <code>.idstack/project.json</code>.</p>
       </header>
 
       <div class="output-pair">
@@ -1312,13 +1314,13 @@
           <header class="output-header">Markdown · .idstack/exports/&lt;course-slug&gt;/learning-objectives.md</header>
           <div class="output-body">
             <h3>
-              Finding obj-3: Unassessed Intended Learning Objectives
+              Finding align-1
               <span class="severity severity-warning">warning</span>
-              <span class="tier tier-1">T1</span>
+              <span class="tier tier-5">T5</span>
             </h3>
-            <p><strong>Observation.</strong> 3 of 8 stated learning objectives have no associated assessment items.</p>
-            <p><strong>Empirical Evidence.</strong> Constructive alignment requires direct correspondence between objectives, activities, and assessments. Unassessed objectives correlate with lower learning gains. <span class="cite-pill">[Alignment-14]</span>&nbsp;<span class="tier tier-1">T1</span></p>
-            <p><strong>Recommendation.</strong> Run <code>/idstack:assessment-design</code> to generate aligned assessment rubrics, or update the objective list.</p>
+            <p><strong>What we saw:</strong> 3 of 8 stated learning objectives have no associated assessment items.</p>
+            <p><strong>Why it matters:</strong> In constructive alignment, each objective has an assessment that measures it, so learners and teachers can see what the course asks for. <span class="cite-pill">[Alignment-1]</span>&nbsp;<span class="tier tier-5">T5</span></p>
+            <p><strong>Recommendation:</strong> idstack recommends that you run <code>/idstack:assessment-design</code> to add aligned assessments, or change the objective list.</p>
           </div>
         </article>
 
@@ -1326,30 +1328,25 @@
           <header class="output-header">JSON · .idstack/project.json</header>
 <pre class="output-json"><code><span class="punct">{</span>
   <span class="key">"learning_objectives"</span><span class="punct">:</span> <span class="punct">{</span>
-    <span class="key">"findings"</span><span class="punct">:</span> <span class="punct">[</span>
-      <span class="punct">{</span>
-        <span class="key">"id"</span><span class="punct">:</span> <span class="str">"obj-3"</span><span class="punct">,</span>
-        <span class="key">"severity"</span><span class="punct">:</span> <span class="str">"warning"</span><span class="punct">,</span>
-        <span class="key">"tier"</span><span class="punct">:</span> <span class="str">"T1"</span><span class="punct">,</span>
-        <span class="key">"domain"</span><span class="punct">:</span> <span class="str">"Alignment-14"</span><span class="punct">,</span>
-        <span class="key">"observation"</span><span class="punct">:</span> <span class="str">"3 of 8 ILOs lack assessment"</span><span class="punct">,</span>
-        <span class="key">"consider"</span><span class="punct">:</span> <span class="str">"/idstack:assessment-design"</span>
-      <span class="punct">}</span>
-    <span class="punct">],</span>
     <span class="key">"report_path"</span><span class="punct">:</span> <span class="str">".idstack/exports/&lt;course-slug&gt;/learning-objectives.md"</span><span class="punct">,</span>
-    <span class="key">"updated"</span><span class="punct">:</span> <span class="str">"2026-05-13T14:32:18Z"</span>
-  <span class="punct">}</span>
+    <span class="key">"alignment_matrix"</span><span class="punct">:</span> <span class="punct">{</span>
+      <span class="key">"gaps"</span><span class="punct">:</span> <span class="punct">[</span>
+        <span class="str">"ILO-3 has no matching assessment."</span>
+      <span class="punct">]</span>
+    <span class="punct">}</span>
+  <span class="punct">},</span>
+  <span class="key">"updated"</span><span class="punct">:</span> <span class="str">"2026-05-13T14:32:18Z"</span>
 <span class="punct">}</span></code></pre>
         </article>
       </div>
 
-      <p class="output-foot">Markdown reports are plain text files for distribution to faculty and curriculum committees. JSON manifests preserve machine-readable state for downstream tools. The project timeline at <code>.idstack/timeline.jsonl</code> records audit history, and <code>/idstack:pipeline</code> compiles an aggregated <code>index.md</code> dashboard summarizing all findings.</p>
+      <p class="output-foot">Markdown reports are plain text files for distribution to faculty and curriculum committees. JSON manifests preserve machine-readable state for downstream tools. The project timeline at <code>.idstack/timeline.jsonl</code> records audit history, and <code>/idstack:pipeline</code> compiles an <code>index.md</code> dashboard with readiness scores, the top issues that recur across skills, and a link to each skill's full report.</p>
     </section>
 
     <!-- ────────── Install ────────── -->
     <section class="section" id="install" aria-labelledby="install-title">
       <header class="section-header">
-        <h2 id="install-title">Two ways to install.</h2>
+        <h2 id="install-title">Three ways to install.</h2>
       </header>
 
       <div class="install-tracks">
@@ -1383,13 +1380,13 @@
             <code id="install-cmd-3">/plugin marketplace add savvides/idstack</code>
             <button class="copy-btn" type="button" data-copy-target="install-cmd-3" aria-label="Copy desktop install command">Copy</button>
           </div>
-          <p class="install-prose">Click <strong>+</strong>, then <strong>Add plugins</strong>, and install idstack. Then start a new session and select the course folder again, because Claude Code loads a plugin only when a session starts. Type <code>/idstack:start</code>. Each skill gives you a link to open its report in the app.</p>
+          <p class="install-prose">Click <strong>+</strong>, then <strong>Add plugins</strong>, and install idstack. Then start a new session and select the course folder again, because Claude Code loads a plugin only when a session starts. Type <code>/idstack:start</code>. Each skill that writes a report gives you a link to open it in the app.</p>
         </div>
 
         <div class="install-track-card">
           <div class="install-track-header">
             <h3>Claude Code Plugin</h3>
-            <span class="track-badge">Full 12-Skill Pipeline</span>
+            <span class="track-badge">All 12 Skills</span>
           </div>
           <div class="install-block" role="group" aria-label="Install command">
             <span class="prompt" aria-hidden="true">$</span>
@@ -1403,7 +1400,7 @@
 
           <p class="install-prose">To verify an installation, run <code>bin/idstack-doctor</code> to diagnose plugin registration or <code>bin/idstack-status</code> to view course health.</p>
 
-          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/download" rel="noopener">Download it first</a> (free), then paste the command above. When Claude Code starts, run <code>/idstack:start</code>.</p>
+          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/code" rel="noopener">Install the Claude Code command-line tool</a> first, then paste the command above in a terminal. In the Claude desktop app, use the steps in the Claude Desktop App card. When Claude Code starts, run <code>/idstack:start</code>.</p>
 
           <p class="install-prose">Not using Claude Code? The idstack skills run in Claude Code only. Use the Chrome extension, or fork the repo and adapt the skills for a different agent, for example Codex or Antigravity. idstack does not support or test those forks.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
         </div>
@@ -1416,7 +1413,7 @@
     <div class="footer-top">
       <div>
         <p class="footer-brand"><strong>idstack</strong>: Open-source evidence-based instructional design.</p>
-        <p class="footer-tag">Skills are tested end-to-end; feedback and contributions are welcome.</p>
+        <p class="footer-tag">The scripts and the skills' shell steps are tested in CI; feedback and contributions are welcome.</p>
       </div>
       <div class="footer-links">
         <a href="https://github.com/savvides/idstack" rel="noopener">GitHub</a>

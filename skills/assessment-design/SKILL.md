@@ -32,10 +32,15 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -177,31 +182,13 @@ Identify text from a different source for the checker:
 - In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
 - The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
 - The checker counts each quotation, citation, code span and placeholder as one word.
+  A <placeholder> that is not in backticks counts as no word.
 
 When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
 prompt. The sub-agent cannot see this preamble.
 
 Example sentences in a skill show the content of a message. Write them in STE when you
 use them.
-
-## Preamble: Update Check
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-if [ -n "$_UPD" ]; then echo "$_UPD"; fi
-```
-
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -332,7 +319,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -452,8 +439,10 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 - If the skill stops after the report starts, for any reason, end the report
   first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
-  not write a Top recommendations section. Then run the finish command. This
-  includes an error, a missing file, and a user who stops the skill.
+  not write a Top recommendations section. Then run the finish command with
+  `--stopped` after `finish "<path>"`. Do not do a Step Review for a score section
+  that has no data: `--stopped` writes a note in it. This includes an error, a
+  missing file, and a user who stops the skill.
 - If the finish command shows a section with no text, do the Step Review for that
   section. If it shows a draft section, ask the user to approve that section.
   Then run the finish command again.
@@ -488,8 +477,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -517,8 +506,7 @@ of what the objectives say. You exist to close the gap between intended outcomes
 measured outcomes.
 
 Your primary evidence base is Domain 5 (Formative Assessment & Feedback) and Domain 2
-(Constructive Alignment) of the idstack evidence synthesis. You also draw on Domain 10
-(Online Course Quality) for digital assessment considerations.
+(Constructive Alignment) of the idstack evidence synthesis.
 
 Your two core commitments:
 1. **Constructive alignment is non-negotiable.** Every assessment must measure the
@@ -594,7 +582,7 @@ When multiple tiers apply, cite the strongest.
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 **If NO_MANIFEST:**
 - Say: "You did not run `/idstack:learning-objectives`. That skill gives me
@@ -677,47 +665,49 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 
 **Condition (BOTH must be true):**
 - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
-- `assessments.items` is non-empty (course-import populated it) OR `course_content.assessments` is non-empty (cartridge has assessment artifacts)
+- `import_metadata.items_imported.assessments` is more than 0 (the import found assessments), OR `assessments.items` is non-empty (from an earlier assessment-design run), OR `course_content.assessments` is non-empty (from an earlier course-builder run)
 
 **Announce the chosen mode to the user as the first sentence:**
 
-> "Mode 3: audit-existing. The imported course contains [N] assessments and [M] rubrics. I will audit them against your ILOs. I will not design new assessments. To add new assessments, say 'design more'."
+> "Mode 3: audit-existing. idstack found [N] assessments and [M] rubrics in this imported course. I will audit them against your ILOs. I will not design new assessments. To add new assessments, say 'design more'."
 
 **What audit-existing does (and doesn't do):**
 
-- ✅ Reads existing rubrics from the manifest (`assessments.rubrics`) or from the cartridge files referenced by `course_content.rubrics`.
-- ✅ Classifies each rubric criterion on Bloom's level (same classification approach as Mode 1).
+- ✅ Reads existing rubrics from the manifest (`assessments.items[].rubric`, plus `assessments.rubrics` if an older manifest has it) or from the rubric files that an earlier course-builder run listed in `course_content.rubrics`. The manifest lists only file names. The files are in the `rubrics/` subfolder of `course_content.content_dir`. After an import with neither, it gets the rubric criteria from the user (Inventory, step 1).
+- ✅ Classifies each rubric criterion on Bloom's level (same classification approach as Mode 2 and the `/idstack:learning-objectives` skill).
 - ✅ Compares to the course ILOs from `learning_objectives.ilos`. Flags:
   - **Bloom's level mismatch** — rubric tests below the ILO's claimed level (e.g., ILO says "analyze" but rubric criteria are "list/describe").
   - **Untested ILOs** — an ILO has no rubric criterion measuring it.
   - **Orphaned criteria** — a rubric criterion doesn't measure any stated ILO.
   - **Missing rubric** — an assessment has weight ≥10% but no rubric.
   - **No elaborated feedback** — auto-graded MCQ-only assessments without elaborated feedback opportunities. [Assessment-8] [T1]
-- ✅ Output: three reviewed tables (inventory, rubric alignment audit, audit actions), plus 1-3 rubric-improvement recommendations.
+- ✅ Output: three reviewed tables (inventory, rubric alignment audit, audit actions), plus 1-3 rubric-improvement recommendations. If `learning_objectives.ilos` is empty, step 0 first adds a fourth reviewed table, `## Learning objectives`.
 - ❌ Does NOT generate new rubrics or new assessments unless the user explicitly says "design more."
 
-**Audit workflow steps (replaces Steps 1-4 of the design workflow below):**
+**Audit workflow steps (replaces Steps 1-5 of the design workflow below):**
 
-1. **Inventory.** List every assessment from `assessments.items` (or derived from cartridge if items is empty). Note type, title, weight, ILOs claimed.
+0. **Objectives.** If `learning_objectives.ilos` is empty (an import can find assessments but no objectives), first do the objectives step of Mode 2: ask for the objectives, classify them, and do its `## Learning objectives` Step Review. Then audit against those ILOs.
+
+1. **Inventory.** List every assessment from `assessments.items` (or, if items is empty, from the assessment files that an earlier course-builder run listed in `course_content.assessments`. The files are in the `assessments/` subfolder of `course_content.content_dir`.) If both are empty, the assessments come from the import: read the `## Imported structure` section of the course-import report (its path is in `import_metadata.report_path`), which gives the number of assessments and rubrics in each module. Ask the user for the title, type, weight and ILOs claimed of each assessment, and for the criteria of each rubric. Give each assessment the ID `A-1`, `A-2` and so on. Note type, title, weight and ILOs claimed. The manifest items have no weight field: get the weight from the `**Points:**` line of the assessment file, or ask the user. If neither gives a weight, write `unknown`.
 
 **Step review:** do the Step Review in the preamble. Section: `## Assessment inventory`. Columns: `ID | Assessment | Type | Weight | ILOs claimed | Justification | Evidence`.
 
-Use the assessment IDs from the manifest, for example `A-1`. In the Justification cell, tell why the type and the weight can measure the ILOs that the assessment claims.
+Use the assessment IDs from the manifest or from the inventory, for example `A-1`. In the Justification cell, tell why the type and the weight can measure the ILOs that the assessment claims.
 
 2. **Per-assessment Bloom's mapping.** For each assessment, examine its rubric criteria and classify each on Bloom's. Record in `assessments.items[].alignment_status` (`"weak" | "moderate" | "strong"` per the canonical schema) based on whether the criteria collectively reach the ILO's claimed level.
 3. **Cross-walk.** Build a `learning_objectives.alignment_matrix.gaps[]` entries for each Bloom-mismatch, untested ILO, or orphaned criterion. Use the canonical `gaps[]` shape: `{ilo, type, description, severity}`.
 
 **Step review:** do the Step Review in the preamble. Section: `## Rubric alignment audit`. Columns: `ID | Criterion | Bloom's level | ILO | Status | Justification | Evidence`.
 
-Make one row for each rubric criterion and one row for each untested ILO. Use row IDs like `A-1-C1`. In the Status cell, write `aligned`, `Bloom's mismatch`, `untested ILO`, `orphaned criterion` or `missing rubric`.
+Make one row for each rubric criterion and one row for each untested ILO. Use row IDs like `A-1-C1`. In the Status cell, write `aligned`, `Bloom's mismatch`, `untested ILO`, `orphaned criterion`, `missing rubric` or `no elaborated feedback`.
 
-4. **Recommendations.** Surface the top 1-3 fixes — usually rubric criterion edits, not new assessments. If the user wants to act on them, propose specific edits and apply via `Edit`. Track applied/deferred fixes in a new optional `assessments.audit_notes` array.
+4. **Recommendations.** Surface the top 1-3 fixes — usually rubric criterion edits, not new assessments. If the user wants to act on them, propose specific edits and apply via `Edit`. Track applied/deferred fixes in `assessments.audit_notes` (item shape in the manifest schema).
 
 **Step review:** do the Step Review in the preamble. Section: `## Audit actions`. Columns: `ID | Change | Status | Justification | Evidence`.
 
 Make one row for each fix. Use the IDs `AN-1`, `AN-2` and so on. In the Status cell, write `applied` or `deferred`.
 
-When the audit actions are approved, do the Findings and the closing Step Reviews and the writing standard check (see the "Generate Report" section). Then write the manifest with `bin/idstack-manifest-merge` (see the "Write Manifest" section). Do not do the remaining steps of this skill (Steps 1-5 of the design workflow are for design-new mode only).
+When the audit actions are approved, do the Findings and the closing Step Reviews and the writing standard check (see the "Generate Report" section). Then write the manifest with `bin/idstack-manifest-merge` (see the "Write Manifest" section). Do not do the remaining steps of this skill (Steps 1-5 of the design workflow are for Mode 1 and Mode 2 only).
 
 ---
 
@@ -887,13 +877,13 @@ Use the IDs `assess-1`, `rubric-1`, `feedback-1` and so on. Make findings from a
 
 In Mode 3, each finding names the audited rubric criterion or assessment and tells the gap. It does not recommend a full redesign.
 
-Before the closing Step Review, calculate the `feedback_quality_score` from the approved rows. Use the rules in the "Write Manifest" section.
+Before the closing Step Review, calculate the `feedback_quality_score` from the approved rows. Use the rules in the "Write Manifest" section. In Mode 3, the approved rows have no feedback strategies or formative checkpoints. Do not calculate the score, and do not write `feedback_quality_score` to the manifest.
 
 **Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns of Top recommendations: `ID | Action | Justification | Evidence`.
 
-- **Summary:** 2 or 3 sentences. Start with "Feedback quality XX/100". Then give the largest alignment risk and one observation about elaborated feedback or rubric coverage.
-- **Limitations:** The report reads the rubric criteria from the manifest. It does not read how instructors use them on student work. The `feedback_quality_score` is a heuristic. It is not a validated instrument. Mode 3 does not recommend new assessments.
-- **Next steps:** Run `/idstack:course-builder` to make the full course content, with assessment documents, rubric handouts and assignment instructions. For an imported course in gap-fill mode, course-builder makes only the missing artifacts that this report found.
+- **Summary:** 2 or 3 sentences. In Mode 1 and Mode 2, start with "Feedback quality XX/100". In Mode 3, start with the number of audited assessments and rubric criteria. Then give the largest alignment risk and one observation about elaborated feedback or rubric coverage.
+- **Limitations:** In Mode 3, the report reads the rubric criteria from the manifest or from the rubric files that course-builder wrote. After an import with neither, the user gave the rubric criteria, and idstack did not read the imported rubric files. In Mode 1 and Mode 2, idstack wrote the rubrics in this session. The report does not read how instructors use the rubrics on student work. The `feedback_quality_score` is a heuristic. It is not a validated instrument. Mode 3 does not recommend new assessments.
+- **Next steps:** Run `/idstack:course-builder` to make the full course content, with assessment documents, rubric handouts and assignment instructions. For an imported course in gap-fill mode, course-builder makes only the missing artifacts that `/idstack:red-team`, `/idstack:course-quality-review` or you identify.
 
 Run the finish command of the Step Review.
 
@@ -924,18 +914,23 @@ replaces only the named section, preserves every other section verbatim, validat
 and atomically updates the top-level `updated` timestamp. **This skill writes two
 top-level sections** — `assessments` and `learning_objectives` — in one atomic call
 (one `--section`/`--payload` pair per section). The `learning_objectives` write needs to update the
-`alignment_matrix.ilo_to_assessment` mapping (and in Mode 3, the
-`alignment_matrix.gaps` array as well). Read the existing `learning_objectives` section
+`alignment_matrix.ilo_to_assessment` mapping (in Mode 2, also the `ilos` array; in
+Mode 3, the `alignment_matrix.gaps` array, and the `ilos` array when step 0 asked for
+the objectives). Read the existing `learning_objectives` section
 first, merge in your changes, then pass the full updated section as the payload.
 
 The `assessments` payload must include `report_path` set to the path from the "Report path:" line of the "Start the Report" block (e.g., `.idstack/exports/<course-slug>/assessment-design.md`).
 
-Use only the approved rows in the payloads: the items, the rubric criteria, the feedback strategies, the formative checkpoints, the `gaps[]` entries and the `audit_notes`. Calculate the `feedback_quality_score` from the approved rows.
+Use only the approved rows in the payloads: the items, the rubric criteria, the feedback strategies, the formative checkpoints, the `gaps[]` entries and the `audit_notes`. Calculate the `feedback_quality_score` from the approved rows (Mode 1 and Mode 2 only).
 
 Write each payload with the Write tool first: `.idstack/.assessments-payload.json` (the
-assessments section, field shape below) and `.idstack/.learning_objectives-payload.json`
+assessments section contents, field shape below; the payload is the flat section contents, with no enclosing `assessments` key) and `.idstack/.learning_objectives-payload.json`
 (the full existing `learning_objectives` section with the new `ilo_to_assessment`
-mapping, and in Mode 3 the new `gaps[]` entries, merged in). Then:
+mapping merged in. In Mode 2, also put each approved `## Learning objectives` row in
+`ilos` as `{"id", "objective", "knowledge_dimension", "cognitive_process"}`, the shape
+that `/idstack:learning-objectives` writes. Do the same in Mode 3 when step 0 asked for the objectives. If there is no `learning_objectives`
+section yet, start from the empty section in the schema. In Mode 3, also merge in the
+new `gaps[]` entries). Then:
 
 ```bash
 _IDSTACK=""
@@ -960,57 +955,58 @@ nothing.
 
 If `bin/idstack-manifest-merge` is unavailable: fall back to manual write (Read manifest, modify only the two sections, Write back, preserve all others).
 
-**Populate the `assessments` section:**
+**Populate the `assessments` section (payload contents, no enclosing `assessments` key):**
 
 ```json
 {
-  "assessments": {
-    "items": [
-      {
-        "id": "A-1",
-        "title": "Assessment title",
-        "type": "quiz|essay|project|case-study|peer-review|portfolio|presentation",
-        "format": "formative|summative",
-        "aligned_ilos": ["ILO-1"],
-        "rubric": {
-          "criteria": [
-            {
-              "name": "Criterion name from ILO",
-              "weight": 40,
-              "levels": {
-                "exceeds": "Specific observable descriptor",
-                "meets": "Specific observable descriptor",
-                "approaching": "Specific observable descriptor",
-                "below": "Specific observable descriptor"
-              }
+  "report_path": ".idstack/exports/<course-slug>/assessment-design.md",
+  "items": [
+    {
+      "id": "A-1",
+      "title": "Assessment title",
+      "type": "quiz|essay|project|case-study|peer-review|portfolio|presentation",
+      "format": "formative|summative",
+      "aligned_ilos": ["ILO-1"],
+      "rubric": {
+        "criteria": [
+          {
+            "name": "Criterion name from ILO",
+            "weight": 40,
+            "levels": {
+              "exceeds": "Specific observable descriptor",
+              "meets": "Specific observable descriptor",
+              "approaching": "Specific observable descriptor",
+              "below": "Specific observable descriptor"
             }
-          ],
-          "levels": ["exceeds", "meets", "approaching", "below"],
-          "total_points": 100
-        },
-        "feedback_strategy": {
-          "type": "elaborated|correctness|peer|self-assessment",
-          "timing": "immediate|delayed|iterative",
-          "principles_applied": [1, 2, 3, 5, 6]
-        },
-        "evidence_tier": "T1"
-      }
-    ],
-    "formative_checkpoints": [
-      {
-        "id": "FC-1",
-        "title": "Checkpoint title",
-        "before_assessment": "A-1",
-        "format": "practice quiz|draft review|self-check|peer study",
-        "feedback_type": "immediate|delayed|peer",
-        "feedback_detail": "elaborated|correctness",
-        "purpose": "What gap this checkpoint closes"
-      }
-    ],
-    "feedback_quality_score": 0
-  }
+          }
+        ],
+        "levels": ["exceeds", "meets", "approaching", "below"],
+        "total_points": 100
+      },
+      "feedback_strategy": {
+        "type": "elaborated|correctness|peer|self-assessment",
+        "timing": "immediate|delayed|iterative",
+        "principles_applied": [1, 2, 3, 5, 6]
+      },
+      "evidence_tier": "T1"
+    }
+  ],
+  "formative_checkpoints": [
+    {
+      "id": "FC-1",
+      "title": "Checkpoint title",
+      "before_assessment": "A-1",
+      "format": "practice quiz|draft review|self-check|peer study",
+      "feedback_type": "immediate|delayed|peer",
+      "feedback_detail": "elaborated|correctness",
+      "purpose": "What gap this checkpoint closes"
+    }
+  ],
+  "feedback_quality_score": 0
 }
 ```
+
+In Mode 3, also add `alignment_status` to each item and write `audit_notes` (for their shapes, Read `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`).
 
 **Calculate `feedback_quality_score`** (0-100):
 - 15 points per assessment using elaborated feedback (max 60)
@@ -1039,12 +1035,18 @@ Write the manifest, then confirm to the user:
 "I saved your assessment designs in two files:
 
 - **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the assessment
-  plan, the feedback-quality score with evidence-backed findings, and per-rubric
-  alignment notes. Click the link to open it. The folder has all of the files for the report.
+  tables from each step, the feedback-quality score with evidence-backed findings, and per-rubric
+  alignment notes. Click the link to open it.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Next step:** Run `/idstack:course-builder` to generate the full course content, with
 assessment documents, rubric handouts, and assignment instructions."
+
+In Mode 3, say this message with two changes. Replace the text after the **Read this** link with
+"— the audit of your assessments and rubric criteria against your ILOs, with evidence-backed
+findings. Click the link to open it." Replace the **Next step** with "**Next step:** Run
+`/idstack:course-builder`. For an imported course in gap-fill mode, it makes only the missing
+artifacts that `/idstack:red-team`, `/idstack:course-quality-review` or you identify."
 
 For the full manifest schema (other sections you may need to read), Read
 `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.

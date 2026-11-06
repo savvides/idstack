@@ -32,10 +32,15 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -177,31 +182,13 @@ Identify text from a different source for the checker:
 - In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
 - The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
 - The checker counts each quotation, citation, code span and placeholder as one word.
+  A <placeholder> that is not in backticks counts as no word.
 
 When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
 prompt. The sub-agent cannot see this preamble.
 
 Example sentences in a skill show the content of a message. Write them in STE when you
 use them.
-
-## Preamble: Update Check
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-if [ -n "$_UPD" ]; then echo "$_UPD"; fi
-```
-
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -332,7 +319,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -452,8 +439,10 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 - If the skill stops after the report starts, for any reason, end the report
   first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
-  not write a Top recommendations section. Then run the finish command. This
-  includes an error, a missing file, and a user who stops the skill.
+  not write a Top recommendations section. Then run the finish command with
+  `--stopped` after `finish "<path>"`. Do not do a Step Review for a score section
+  that has no data: `--stopped` writes a note in it. This includes an error, a
+  missing file, and a user who stops the skill.
 - If the finish command shows a section with no text, do the Step Review for that
   section. If it shows a draft section, ask the user to approve that section.
   Then run the finish command again.
@@ -488,8 +477,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -669,13 +658,13 @@ Also read `.idstack/project.json` for project_name, scores (`quality_review.over
   - The first paragraph gives the verdict.
   - The second paragraph gives the themes that occur in more than one skill.
   - The third paragraph tells where to start. It is optional. If you do not use it, remove its placeholder.
-- **Readiness table** — fill the one row of the Readiness pipe table (Quality, Accessibility, Red-team confidence, Verdict). Write the verdict as a text label: `Ready`, `Issues`, `Blocked`, or `Pending` (when the skill has not run). If a score is not available, replace the full cell, `/100` included, with `not run`. Thresholds match `bin/idstack-status --readiness`.
-- **Skill reports table** — one pipe-table row per pipeline skill. In the Status column, write `Done` if the per-skill report file exists without the in-progress line `**Status:** in progress. A section with a draft mark waits for your approval.`, and `Pending` in all other conditions. The Signal column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). In the Report column, link the relative Markdown filename (e.g., `[needs-analysis.md](needs-analysis.md)`). If the report file is not in the folder, write `not run` in the Report column. Add the optional course-import row when that report is present.
+- **Readiness table** — fill the one row of the Readiness pipe table (Quality, Accessibility, Red-team confidence, Verdict). Write the verdict as a text label: `Ready`, `Issues`, `Blocked`, or `Pending` (when the skill has not run). If a score is not available, replace the full cell, `/100` included, with `not run`. The quality (70) and accessibility (80) thresholds match `bin/idstack-status --readiness`. For red-team, `--readiness` checks the number of critical findings (it must be 0), not the confidence score.
+- **Skill reports table** — one pipe-table row per pipeline skill. In the Status column, write `Done` if the skill is in the SKILLS_COMPLETED line (run the Step 1 command again here, because a skill that this run completed is not in the first reading) and the per-skill report file exists without the in-progress line `**Status:** in progress. A section with a draft mark waits for your approval.`, and `Pending` in all other conditions. A skill that stopped early also has no in-progress line (`finish --stopped` removes it), but it logs no `completed` event. The Signal column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). In the Report column, link the relative Markdown filename (e.g., `[needs-analysis.md](needs-analysis.md)`). If the report file is not in the folder, write `not run` in the Report column. Add the optional course-import row when that report is present.
 - **Top cross-cutting issues** (numbered list): 3–5 highest-impact findings that appear in or affect multiple per-skill reports. Each item shows the source skill(s) and the citation as plain text, for example `[Alignment-14] [T1]`.
 - **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: "This folder has no LMS packages. To make them, run `/idstack:course-export`."
 - **Where to start** — one paragraph. The single change (or 2–3 changes) that would address the largest number of cross-cutting concerns. Anchored to a specific finding id in a specific per-skill report so the designer can act on it (e.g., "Address `assess-1` in `assessment-design.md` first…").
 
-The dashboard is overwritten on every pipeline run — historical dashboards are not retained. The timeline at `.idstack/timeline.jsonl` carries the run history.
+Each time this step runs, it overwrites the dashboard — historical dashboards are not retained. The timeline at `.idstack/timeline.jsonl` carries the run history.
 
 **Writing standard check.** In this command, replace `<path>` with the path from the "Dashboard path:" line. Then run the command.
 
@@ -698,10 +687,10 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 ### Step 5: Pipeline Complete
 
 When all remaining skills have been executed:
-- Announce: "The pipeline is completed. Your course went through all 8 stages."
+- Announce: "The pipeline is completed. Your course went through all of the pipeline stages."
 - Confirm the dashboard path: "The course dashboard is at <the Dashboard path, written as a link as the Report Links section of the preamble tells you>. Click it to see the cross-cutting view. The per-skill reports in the same folder give the full findings. To give the reports to a stakeholder, zip the folder."
 - If `/idstack:course-quality-review` produced a score, show it.
-- Remind the user they can re-run any skill individually if needed, and that re-running `/idstack:pipeline` regenerates the course dashboard.
+- Remind the user they can re-run any skill individually if needed. To regenerate the course dashboard, they can run `/idstack:pipeline` again and select "Regenerate the course dashboard".
 - Log the pipeline run so "the pipeline was run" is recoverable from the timeline:
 
 ```bash
@@ -727,5 +716,5 @@ done
 - **Respect the user.** If at any point the user says "stop", "pause", or "that's
   enough for now", stop the pipeline gracefully. Their progress is saved in
   timeline.jsonl and they can resume later with `/idstack:pipeline`.
-- **No quality gate yet.** In v2.0, skip logic is purely completion-based. Quality-gated
+- **No quality gate yet.** Skip logic is purely completion-based. Quality-gated
   skipping (only skip if score > threshold) is planned for a future version.

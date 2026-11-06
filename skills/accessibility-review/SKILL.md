@@ -32,10 +32,15 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -177,31 +182,13 @@ Identify text from a different source for the checker:
 - In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
 - The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
 - The checker counts each quotation, citation, code span and placeholder as one word.
+  A <placeholder> that is not in backticks counts as no word.
 
 When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
 prompt. The sub-agent cannot see this preamble.
 
 Example sentences in a skill show the content of a message. Write them in STE when you
 use them.
-
-## Preamble: Update Check
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-if [ -n "$_UPD" ]; then echo "$_UPD"; fi
-```
-
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -332,7 +319,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -452,8 +439,10 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 - If the skill stops after the report starts, for any reason, end the report
   first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
-  not write a Top recommendations section. Then run the finish command. This
-  includes an error, a missing file, and a user who stops the skill.
+  not write a Top recommendations section. Then run the finish command with
+  `--stopped` after `finish "<path>"`. Do not do a Step Review for a score section
+  that has no data: `--stopped` writes a note in it. This includes an error, a
+  missing file, and a user who stops the skill.
 - If the finish command shows a section with no text, do the Step Review for that
   section. If it shows a draft section, ask the user to approve that section.
   Then run the finish command again.
@@ -488,8 +477,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -539,13 +528,13 @@ When multiple tiers apply, cite the strongest.
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 - Check which sections are populated. This skill benefits most from `learning_objectives`,
   `assessments`, and `course_content` data.
 - If no manifest: this skill works standalone. Gather course information through
-  AskUserQuestion. At the end, if the user wants the results saved, the merge
-  call makes the manifest (`--create`, see Write Manifest).
+  AskUserQuestion. At the end, the merge call makes the manifest
+  (`--create`, see Write Manifest).
 
 ---
 
@@ -824,9 +813,9 @@ Write three rows: the WCAG component, the UDL component and the overall score. C
 
 **Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`. Columns: `ID | Action | Justification | Evidence`.
 
-- **Summary:** 2 or 3 sentences. Start with the overall score, the number of WCAG Level A violations, and the largest barrier in the course. Add this line: "Overall XX/100 · WCAG XX/100 · UDL XX/100".
+- **Summary:** 2 or 3 sentences. Start with the overall score, the number of WCAG Level A violations, and the largest barrier in the course. Add this line: "Overall XX/100 · WCAG XX/50 · UDL XX/50".
 - **Top recommendations:** the 3 changes that give the most improvement for the least work. Use the approved findings. Cite each row.
-- **Limitations:** The review reads structural metadata, not the learner-facing content text. The review checks that alt text is present, not that it is accurate. The UDL recommendations come from manifest signals, not from observed learner use.
+- **Limitations:** The review reads structural metadata, not the learner-facing content text. The review checks that alt text is present, not that it is accurate. The UDL recommendations come from the manifest data or from your answers, not from observed learner use.
 - **Next steps:** If the course has WCAG Level A violations, correct them first, because they stop access. Then run `/idstack:red-team` for an adversarial persona test. The persona dimension simulates learners who need the accommodations that this review audited.
 
 Run the finish command of the Step Review.
@@ -919,10 +908,9 @@ After writing the manifest, confirm to the user:
 - **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the report
   with WCAG violations (Necessary changes), UDL recommendations (Recommended changes), evidence-backed
   findings on every item, and the 3 highest-impact quick wins. Click the link to open it.
-  The folder has all of the files for the report.
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
-**Score:** Overall XX/100 · WCAG XX/100 · UDL XX/100. [If Level A violations exist,
+**Score:** Overall XX/100 · WCAG XX/50 · UDL XX/50. [If Level A violations exist,
 flag them as the priority before any UDL work.]
 
 **Next step:** Run `/idstack:red-team` for an adversarial persona test. The persona

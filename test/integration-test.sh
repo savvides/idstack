@@ -42,8 +42,8 @@ check "handles no arg without error" \
   "$IDSTACK_DIR/bin/idstack-timeline-log"
 
 # Exact count, not `-gt 1`. Every preceding write in this section contributes a
-# line (4 by here); a loose comparison still passes when three of the four are
-# lost, which is the regression this assertion exists to catch.
+# line (4 including this call); a loose comparison still passes when one or two
+# of the four are lost, which is the regression this assertion exists to catch.
 check "multiple appends create exactly one line each" \
   "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 4 ]"
 
@@ -284,8 +284,8 @@ check "promotes learning with known project" \
   "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/bin/idstack-learnings promote key2 && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'my-test-proj'\""
 
 # Carried over from PR #30, which was closed in favour of #37. #37 pins
-# _source_project but not the _promoted marker, and downstream readers use that
-# marker to tell a promoted record from a natively-global one.
+# _source_project but not the _promoted marker. The marker lets a reader tell a
+# promoted record from a natively-global one, though no reader uses it yet.
 check "promoted record carries the _promoted marker" \
   "python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_promoted'] is True\""
 

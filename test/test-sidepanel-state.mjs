@@ -172,14 +172,14 @@ const scenarios = {
     assert.strictEqual(crawls[1].payload.courseId, '123');
   },
 
-  async 'a feedback vote keeps the Audit a Different Page button (F14)'() {
+  async 'the results row has the feedback form link and Audit a Different Page (F14)'() {
     const p = await loadPanel({ tab: { id: 1, url: A.url }, payloads: { 1: A } });
     await p.$('audit-btn').click();
     await p.reply({ success: true, data: RESULT });
-    await p.document.querySelector('.feedback-btn').click();
-    assert.ok(p.$('re-audit-btn'), '#re-audit-btn must survive a vote');
+    const row = p.document.querySelector('.feedback-row');
+    assert.ok(row.textContent.includes('Tell us about this audit'), 'feedback goes to the form');
     assert.strictEqual(p.document.querySelectorAll('.feedback-btn').length, 0);
-    assert.ok(p.document.querySelector('.feedback-row').textContent.includes('Thank you for your feedback!'));
+    assert.ok(p.$('re-audit-btn'), '#re-audit-btn stays in the row');
   },
 
   async 'Copy to Clipboard reports a rejected write (F14)'() {
@@ -200,6 +200,24 @@ const scenarios = {
     await flush();
     assert.strictEqual(clickErrors.length, before, 'click handler must not reject');
     assert.strictEqual(btn.textContent, 'Not copied');
+  },
+
+  async 'the dossier names the audited course, not the active tab (#155)'() {
+    let copied = '';
+    const D = page('Assignment D', 'https://canvas.example.edu/courses/2/assignments/40');
+    const p = await loadPanel({ tab: { id: 1, url: A.url }, payloads: { 1: A, 2: D },
+      clipboard: { writeText: async (t) => { copied = t; } } });
+    await p.$('audit-btn').click();
+    await p.reply({ success: true, data: RESULT });
+    await p.$('add-to-dossier-btn').click();
+    const [item] = p.h.storage.local.activeDossier;
+    assert.strictEqual(item.courseId, '1');
+    assert.strictEqual(item.courseOrigin, 'https://x.instructure.com');
+    await p.switchTab({ id: 2, url: D.url });
+    await p.$('copy-dossier-md-btn').click();
+    await flush();
+    assert.ok(copied.includes('Course Audit Dossier: Course 1'), 'the label names the audited course');
+    assert.ok(!copied.includes('Course 2'), 'the label does not come from the active tab');
   },
 
   async 'malformed findings still reach the results state (F9)'() {

@@ -4,9 +4,10 @@ idstack-manifest-merge — atomically replace sections of .idstack/project.json.
 
 Contract:
   Reads the manifest, validates it parses as JSON, replaces ONLY the named
-  top-level sections with the supplied payloads, updates the top-level
-  "updated" timestamp, and writes back once. All other sections (version,
-  project_name, created, foreign skill sections) are preserved verbatim.
+  top-level sections with the supplied payloads (and project_name, when
+  --set gives it), updates the top-level "updated" timestamp, and writes
+  back once. All other sections (version, created, foreign skill sections,
+  and project_name unless --set changes it) are preserved verbatim.
   Every payload is validated before anything is written, so a bad payload
   leaves the manifest (or its absence) unchanged.
 
@@ -36,7 +37,9 @@ Usage:
 Exit codes:
   0  success
   1  malformed payload JSON
-  2  malformed manifest JSON
+  2  malformed manifest JSON, or a command-line error (argparse: a missing
+     --section or --payload, a count mismatch, a repeated --section, or
+     more than one "-" payload)
   3  unknown section name
   4  manifest file not found
   5  payload file not found

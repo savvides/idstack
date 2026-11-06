@@ -3,7 +3,8 @@
 
 docs/index.html carries one row per research domain, each restating three facts
 from evidence/references.md: how many studies the domain holds, how many sit at
-each tier (the data-tiers attribute that draws the tier-mix bar), and the span
+each tier (the tier-mix bar's data-tiers attribute; nothing renders it, since the bar
+is drawn by the inline segment widths, which this check does not compare), and the span
 of evidence tiers across them. The earlier per-domain cards were hand-typed, and
 three had drifted by v3.4.0.0 — two advertised T2 for domains whose strongest
 reference is T3.
@@ -30,8 +31,10 @@ DOMAIN_RE = re.compile(r"^## Domain \d+: (.+?)\s*$")
 CITATION_RE = re.compile(r"\[[A-Za-z][A-Za-z-]*-\d+\]")
 TIER_RE = re.compile(r"\bT([1-5])\b")
 # One index row: title, study count, per-tier counts, tier range. Order-independent;
-# matched by title. Each field is bounded by the row's own markup so a row missing a
-# field cannot borrow the next row's value.
+# matched by title. The title, count and per-tier fields are bounded by the row's own
+# markup, so a row missing one of them cannot borrow the next row's value. The tier-range
+# field is reached with '.*?', so a row with no evidence-row-tiers span takes the next
+# row's range.
 CARD_RE = re.compile(
     r'evidence-row-title">([^<]*)</h3>'
     r'[^<]*<span class="evidence-row-count">(\d+)\s+studies</span>'

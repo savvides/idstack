@@ -15,7 +15,7 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 
 - **Each report skill adds the output of each step to the report as a table.** You read the table in the report file, where it shows as a draft. Each row has a one-sentence justification and a citation from `evidence/references.md`. Sections that give only facts, for example Project context, have no justification.
 - **idstack adds each section to the Markdown report at once, and you approve it.** The report grows one section at a time. When you approve a section, idstack removes its draft mark. If a session stops, the report keeps each section, and a section that you did not approve keeps its draft mark. The project manifest gets only the rows that you approved.
-- **A skill asks more approval questions.** The chat shows a short note of a maximum of three lines and the question. It does not show the table. A skill asks one question for each section. You can approve the section, change a row or remove a row.
+- **A skill asks more approval questions.** The chat shows a short note of a maximum of three lines and the question. It does not show the table. A skill asks one question for each step. For the last draft, it asks one question for all of its sections. You can approve the section, change a row or remove a row.
 - **`bin/idstack-report-section` checks each section before idstack adds it.** It finds each citation in `evidence/references.md`. If the tier is not the same, it refuses the section. It also writes the findings blocks from the findings table. `approve` removes the draft marks, and `finish` refuses a report that has a draft section.
 - **`bin/idstack-status` shows "(in progress)" for a report that is not complete.**
 
@@ -23,8 +23,45 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 
 - **`/idstack:start` stops in a temporary folder of the Claude desktop app.** The app can start a session in a folder under `~/Library/Application Support/Claude/scratch-workspaces/`. That folder is hidden, and the app can delete it. Before, `/idstack:start` let the session continue there, and the next skill wrote the course data in that folder.
 
+### Documentation
+
+- **The documentation agrees with the code.** An audit compared each document with the skills and the scripts.
+  - The README and the landing page show the 4 import options of `/idstack:course-import`, and the Canvas token goes into `.idstack/canvas.env`, not into the chat.
+  - The README sample session shows the draft sections and the approval questions.
+  - The red-team triage options, the report-section flow and the evidence table are correct.
+  - The README tells how to update an install from the Claude desktop app.
+- **PRIVACY.md names the citation search of `/idstack:red-team` and `.idstack/canvas.env`.**
+- **Some fixed text in the skills is correct now.**
+  - `/idstack:accessibility-review` gives the WCAG and UDL scores out of 50.
+  - `/idstack:course-export` names its three export paths and tells what the IMSCC package contains.
+  - The Canvas token messages give the full path to New Access Token.
+  - `/idstack:learn` tells which entry `delete` removes.
+  - `/idstack:red-team` tells you to run it again for a new score.
+  - The demo of a full-course audit in the Chrome extension says that it is a sample.
+- **CONTRIBUTING.md, CLAUDE.md, ROADMAP.md and `templates/manifest-schema.md` are correct.** They describe what `bin/idstack-manifest-merge` checks and which skills write each manifest section. They also list the test suites and mark the features that a later release removed.
+
+### Removed — the update check
+
+- **idstack does not check for updates.** `bin/idstack-update-check` ran `git fetch` only when the skills ran from a git clone. Every plugin install runs from the plugin folder of Claude Code, which has no `.git` folder, so the check did not run for those installs. The script and the update step of the preamble are removed, so no skill makes a request to GitHub. To update, use the steps in the README. Closes #149.
+
+### Fixed — a stopped skill and the extension feedback
+
+- **A skill that stops early can finish its report.** `/idstack:accessibility-review`, `/idstack:course-quality-review` and `/idstack:red-team` keep a section for the score. When the skill stopped before the score, `bin/idstack-report-section finish` refused the report, and no Step Review could fill the section. Now the skill runs `finish --stopped`, which writes "idstack did not write this section because the skill stopped." in that section. The Summary still gets its Step Review. Closes #151.
+- **The Chrome extension (1.2.2) has a link to the feedback form in place of the vote buttons.** The buttons showed "Thank you for your feedback!", but the extension sends no telemetry, so no vote went anywhere. Closes #152.
+- **`/idstack:needs-analysis` keeps the data that `/idstack:course-import` wrote.** The two skills write the same `context` and `needs_analysis` sections. needs-analysis now reads each section and adds its results. Before, it replaced the section, and the imported job tasks were lost.
+- **`/idstack:assessment-design` does not give a feedback score in audit mode.** Audit mode (Mode 3) has no feedback strategies, so it has no data for the score.
+- **`/idstack:course-export` counts only files.** Before, the counts of modules, assignments, quizzes, discussions and SCORM files included the folder entries of the ZIP file. The example package uses the IMS Common Cartridge 1.3 resource types for quizzes and discussions, and `/idstack:course-import` reads these types.
+- **The course dashboard shows `Done` only for a skill that completed.** A skill that stopped early shows as `Pending`.
+- **The full-course prompt of the Chrome extension tells the model that each assignment description is cut to 500 characters.**
+- **Audit mode and gap-fill mode start after an import.** `/idstack:assessment-design` (Mode 3) and `/idstack:course-builder` (gap-fill) now start when `/idstack:course-import` found assessments or modules. Before, they looked only at manifest lists that the import does not write. assessment-design gets the details of each imported assessment from you, and course-builder reads the imported modules from the import report. Closes #153.
+- **`/idstack:assessment-design` saves the objectives that it writes in Mode 2.** Before, Mode 2 linked assessments to new objective IDs but did not save the objectives in `learning_objectives.ilos`. Closes #154.
+- **The dossier export of the Chrome extension names the audited course.** The name came from the tab that was open when you exported. Now each dossier item keeps the course ID of the page that it audited. A dossier with audits from more than one course is named "Several courses". Closes #155.
+
 ### Tests
 
+- smoke-test has four checks for the audit, gap-fill and Mode 2 fixes, with mutation cases 62o to 62r. `test/test-dossier-compiler.mjs` tests the dossier label, with case 30n. `test/test-sidepanel-state.mjs` tests that the side panel uses it, with cases 30o and 30p.
+- `test/test-setup.sh` copies `extension/`, so its regeneration test also covers `extension/shared/ste-rules.js`.
+- `test/test-report-section.py` has two tests for `finish --stopped`, and `test/mutation-test.sh` has case 62n. Case 30i now puts back the vote buttons.
 - `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61i.
 
 ## v3.10.0.0 (2026-11-01)

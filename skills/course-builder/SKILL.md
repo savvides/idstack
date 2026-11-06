@@ -32,10 +32,15 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
   more than 4 choices, write them as a numbered list in chat and ask the user to type a
   number. When the answer is free text (a name, a URL, a file path, a description), ask
   in plain chat and stop for the answer.
-- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool to run work
-  in parallel: accessibility-review, course-builder, course-quality-review, and red-team.
+- **Agent (sub-agents)** — four skills start sub-agents with the `Agent` tool.
+  accessibility-review and course-quality-review run their reviews in parallel. red-team
+  starts one orchestrator, which runs its five dimensions. course-builder
+  starts one agent that does the alignment review.
   The written-out steps after each dispatch define the work. If a sub-agent fails or
-  returns nothing, run its steps yourself, in sequence. A sub-agent cannot start its own
+  returns nothing, accessibility-review and course-quality-review run its steps
+  themselves, in sequence. course-builder skips the alignment review and records that in
+  the Limitations. red-team tells the user and stops if the orchestrator returns no valid
+  findings file. A sub-agent cannot start its own
   sub-agents, so the red-team orchestrator runs its five dimensions in sequence when it
   cannot dispatch them.
 - **Skill (cross-skill invocation)** — used by `/idstack:pipeline`, which invokes each
@@ -177,31 +182,13 @@ Identify text from a different source for the checker:
 - In Markdown, put a long quotation on lines that start with `> `. Put a short quotation in quotation marks.
 - The name of a standard or a principle can have a word from the word list. Identify that name as a short quotation. Example: `<q>3.3.3 Error Suggestion</q>`.
 - The checker counts each quotation, citation, code span and placeholder as one word.
+  A <placeholder> that is not in backticks counts as no word.
 
 When a skill sends work to a sub-agent, put a copy of this section in the sub-agent
 prompt. The sub-agent cannot see this preamble.
 
 Example sentences in a skill show the content of a message. Write them in STE when you
 use them.
-
-## Preamble: Update Check
-
-```bash
-_IDSTACK=""
-_idstack_cache_root="$HOME/.claude/plugins/cache/idstack/idstack"
-_idstack_cache=""
-if [ -d "$_idstack_cache_root" ]; then
-  _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
-  [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
-fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
-  if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
-done
-_UPD=$("$_IDSTACK/bin/idstack-update-check" 2>/dev/null || true)
-if [ -n "$_UPD" ]; then echo "$_UPD"; fi
-```
-
-If the output contains `UPDATE_AVAILABLE`: tell the user "A new version of idstack is available. To update, run `cd $_IDSTACK && git pull && ./setup`. Do not skip the `./setup` step. It removes symlinks from earlier installs." Then continue normally.
 
 ## Preamble: Project Manifest
 
@@ -332,7 +319,7 @@ That line gives the section heading and the table columns.
   `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
   Write the severity as `critical`, `warning` or `info`. Put the `critical` rows
   first, then `warning`, then `info`. Do not write `### Finding` blocks.
-  idstack writes them from the approved rows.
+  idstack writes them from the rows when it adds the section.
 
 **The procedure**
 
@@ -452,8 +439,10 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 - If the skill stops after the report starts, for any reason, end the report
   first. Do the last Step Review. In the Summary, tell why the skill stopped. Do
-  not write a Top recommendations section. Then run the finish command. This
-  includes an error, a missing file, and a user who stops the skill.
+  not write a Top recommendations section. Then run the finish command with
+  `--stopped` after `finish "<path>"`. Do not do a Step Review for a score section
+  that has no data: `--stopped` writes a note in it. This includes an error, a
+  missing file, and a user who stops the skill.
 - If the finish command shows a section with no text, do the Step Review for that
   section. If it shows a draft section, ask the user to approve that section.
   Then run the finish command again.
@@ -488,8 +477,8 @@ done
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
 Quality score trend: 62 -> 68 -> 72 over 3 reviews. Last skill: /idstack:learning-objectives."
-Keep it to 2-3 sentences. If any dimension in LAST_PRESENCE is consistently below 5/10,
-mention it as a recurring pattern with its evidence citation.
+Keep it to 2-3 sentences. LAST_PRESENCE has the scores of the most recent review only. If a
+dimension in it is below 5/10, mention it with its evidence citation.
 
 **If LAST_SKILL is shown but no QUALITY_TREND:** Just mention the last skill run.
 Example: "Welcome back. Last session you ran /idstack:course-import."
@@ -596,7 +585,7 @@ When multiple tiers apply, cite the strongest.
 ## Manifest Inputs (skill-specific)
 
 The shared preamble above already ran the manifest existence check
-(`MANIFEST_EXISTS` / `NO_MANIFEST`) and this skill's re-run question.
+(`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
 **If MANIFEST_EXISTS:**
 - Check which sections are populated. At minimum, you need:
@@ -647,12 +636,12 @@ Decide which mode this skill is operating in **before** running the content gene
 
 - **Gap-fill mode** — both of these must be true:
   - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
-  - `course_content.modules` is non-empty (the imported course actually has content; not a half-import)
-- **Build-new mode** — anything else (no manifest, no import_metadata, manual source, or zero modules in course_content).
+  - `import_metadata.items_imported.modules` is more than 0 (the import found modules), or `course_content.modules` is non-empty (from an earlier course-builder run)
+- **Build-new mode** — anything else (no manifest, an empty `import_metadata.source`, a `paste` or `pdf` source, or no imported modules and none in course_content).
 
 **Announce the chosen mode to the user as the first sentence:**
 - "Mode: build-new. I will generate a new syllabus, new module pages, and new assessment documents."
-- "Mode: gap-fill (idstack found a cartridge import). The course is available. I will generate ONLY the missing artifacts that upstream skills found. I will not generate a new syllabus or new modules. To generate all of the course again, say 'rebuild'."
+- "Mode: gap-fill (idstack found a course import). The course is available. I will not generate a new syllabus or rebuild the course. I will generate only the missing artifacts that upstream skills found, for example a rubric or a module page."
 
 After you announce the mode, start the report. Run this block. In the `--mode` value, replace `<mode>` with `build-new` or `gap-fill`.
 
@@ -683,13 +672,13 @@ Before the first Step Review, use the Read tool on the files from the "Report ru
 
 In gap-fill mode, **skip Steps 1–5** (scope, instructor info, syllabus, module pages, assessments, rubrics). Instead:
 
-**Identify gaps.** Read `red_team_audit.top_actions` and `quality_review.recommendations` from the manifest (if those skills already ran) plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
+**Identify gaps.** The modules of the imported course are the rows of the `## Imported structure` section of the course-import report (its path is in `import_metadata.report_path`). Read the findings in `red_team_audit.dimensions.<dimension>.findings[]` and the items in `quality_review.recommendations[]` from the manifest (if those skills already ran), plus any explicit user requests. Each "missing artifact" finding becomes a generation target.
 
 **Review the targets.** This section is the approval of the targets.
 
 **Step review:** do the Step Review in the preamble. Section: `## Generation targets`. Columns: `ID | Target | Source finding | Status | Justification | Evidence`.
 
-Use the IDs `GT-1`, `GT-2` and so on, with the Status `generate` and the upstream finding ID, for example `red-team:alignment-3`. If the user selects "Change a row", the user can set the Status to `deferred` or `declined`.
+Use the IDs `GT-1`, `GT-2` and so on, with the Status `generate`. In Source finding, put the red-team finding `id` with the prefix `red-team:`, for example `red-team:alignment-3`. A `quality_review.recommendations[]` item has no ID, so for it put `quality-review:` and a short form of its `finding` text. For a request from the user, put `user-request`. If the user selects "Change a row", the user can set the Status to `deferred` or `declined`.
 
 **Generate only what's missing.** For each target with the Status `generate`, follow the relevant sub-step from Steps 4–5 below (e.g., generate one rubric, one module page, one quiz set) — but skip the full-course iteration. After you generate each artifact, review it.
 
@@ -714,7 +703,7 @@ Do not batch multiple questions.
 
 ### Step 1: Analyze Manifest and Determine Scope
 
-Read the full manifest. Tell the user the proposed output in one sentence, for example: "I will make 1 syllabus, [N] module pages, [M] assessment documents and [M] rubrics." The `## Build scope` rows give the details. Make rubric documents only if the assessments section has rubric data.
+Read the full manifest. Tell the user the proposed output in one sentence, for example: "I will make 1 syllabus, [N] module pages, [M] assessment documents and [M] rubrics." The `## Build scope` rows give the details. Make one rubric document for each assessment. Use the rubric data from the assessments section when it exists. If it does not exist, write the rubric from the ILOs (Step 5).
 
 **Determining module count and structure:**
 - If `task_analysis.job_tasks` exists: map each high-priority task to a module.
@@ -722,8 +711,9 @@ Read the full manifest. Tell the user the proposed output in one sentence, for e
   material.
 - If no task analysis but ILOs exist: group ILOs by knowledge domain or cognitive
   level progression. Each group becomes a module.
-- If `import_metadata` exists with module structure: preserve the imported module
-  organization unless the user requests restructuring.
+- If `import_metadata.source` is not empty (the course came from /idstack:course-import), course-import added one task to `task_analysis.job_tasks` for each imported
+  module. The list can also hold tasks from an earlier /idstack:needs-analysis run.
+  Keep the imported module organization unless the user asks to restructure it.
 - Map the module count to the `context.timeline`. A 16-week course with 5 modules
   means roughly 3 weeks per module. A 4-week intensive with 5 modules means
   compressed pacing — flag this and recommend reducing scope or increasing
@@ -1091,7 +1081,7 @@ First, list the files that you wrote in this run.
 
 Use the IDs `GA-1`, `GA-2` and so on, with one row for each file. In the Notes cell, write the placeholders that the file has, or "None".
 
-Then do the "Spec Review Loop" at the end of this skill. It adds the `## Alignment review` section. Do it before the findings, because idstack adds the sections to the report in the order that you approve them.
+Then do the "Spec Review Loop" at the end of this skill. It adds the `## Alignment review` section. Do it before the findings, because idstack adds the sections to the report in the order that you append their drafts.
 
 **Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
 
@@ -1174,11 +1164,11 @@ PAYLOAD
 
 The payload is the **flat section contents** (no enclosing `course_content` key) — the merge tool already knows the section from `--section course_content`. Wrapping the payload would double-nest. `--create` makes a canonical manifest first if `.idstack/project.json` does not exist yet (the standalone case). It never replaces a manifest that exists.
 
-**Mode field.** Set `mode` to `"build-new"` for a from-scratch generation or `"gap-fill"` when this run was triggered by upstream skills flagging missing artifacts. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
+**Mode field.** Set `mode` to the mode that "Mode detection" chose: `"gap-fill"` when `import_metadata.source` is `cartridge`, `scorm` or `canvas-api` and either `import_metadata.items_imported.modules` is more than 0 or `course_content.modules` is non-empty, otherwise `"build-new"`. In `gap-fill` mode, populate `recommended_generation_targets[]` with the per-target outcomes (`status`: `generated|deferred|declined`); in `build-new` mode, leave the array empty.
 
-The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. This helps downstream skills (like `/idstack:course-export`) know what still needs to be filled in.
+The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. It is a record for the designer of what still needs to be filled in. No other skill reads this field.
 
-Use only the approved rows of the report. `generated_files` comes from the `## Generated artifacts` rows. `placeholders_used` comes from their Notes cells. `recommended_generation_targets` comes from the `## Generation targets` rows.
+Use only the approved rows of the report. `generated_files` comes from the `## Generated artifacts` rows. `placeholders_used` comes from their Notes cells. `recommended_generation_targets` comes from the `## Generation targets` rows: one item for each row, with `description` (the Target cell), `source` (the Source finding cell, for example `red-team:alignment-3` or `user-request`), `status` (`generated`, `deferred` or `declined`) and `output_path` (the generated file, only when the status is `generated`).
 
 **Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify only the `course_content` section, Write back. Preserve all other sections verbatim.
 
@@ -1188,14 +1178,14 @@ After writing the manifest, confirm:
 
 - **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the build report
   with evidence-backed design choices, cognitive-load notes, and a placeholders list.
-  Click the link to open it. The folder has all of the files for the report.
+  Click the link to open it.
 - Course content: `.idstack/course-content/` (the course files — review them and add
   your voice and institutional details).
 - System state: `.idstack/project.json` (the manifest — for downstream skills).
 
 **Next steps:**
 - Review and edit the generated files to add your expertise and institutional voice.
-- Run `/idstack:course-quality-review` to audit the complete course against QM standards and CoI presence.
+- Run `/idstack:course-quality-review` to audit the course design in the manifest against QM standards, CoI presence and constructive alignment. It does not read the files in `.idstack/course-content/`.
 - Run `/idstack:course-export` to package the content as an IMS Common Cartridge or push to Canvas."
 
 ---
@@ -1229,7 +1219,7 @@ Use the IDs `AR-1`, `AR-2` and so on, with the Status `fixed` or `open`. If a fi
 If you or the agent changed course files in this step, do the writing standard check at the end of Step 6 again. Tell the user the number of sentences that you changed in each file. Do not show the sentences.
 
 **If the agent fails or returns nothing:** Skip this step. Do not add the `## Alignment review` section. Add this sentence to the Limitations: "idstack did not do the alignment review." Add a note to the output:
-"Note: For a full alignment audit, run `/idstack:course-quality-review` next."
+"Note: idstack did not check the alignment of the generated files. Review the files in `.idstack/course-content/` against your learning objectives. `/idstack:course-quality-review` checks the alignment of the course design in the manifest only."
 
 For the full manifest schema (other sections you may need to read), Read
 `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.

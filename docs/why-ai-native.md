@@ -23,7 +23,7 @@ idstack operates on all four criteria.
 
 **Model capabilities enhance skill output.** As foundation models improve in instruction following, pedagogical reasoning, and domain analysis, idstack skill execution improves without code changes.
 
-**Substantial computational workloads.** Running the pipeline (import, learning objectives, assessment design, content construction, quality review, accessibility audit, red team analysis, and export) across a multi-week course represents a focused computational workload that automates detailed instructional audits.
+**Substantial computational workloads.** Running the pipeline (needs analysis, learning objectives, assessment design, content construction, quality review, accessibility audit, red team analysis, and export) across a multi-week course represents a focused computational workload that automates detailed instructional audits.
 
 **Practical instructional design impact.** When an audit indicates that empirical T1 evidence favors elaborated feedback over simple correctness indicators, designers can adjust assessment structures accordingly. When an adversarial audit highlights cognitive process mismatches across Bloom's levels, designers can refine learning objectives. Evidence tiers provide objective decision criteria for course revisions.
 
@@ -35,9 +35,9 @@ Context management is critical when orchestrating agent tools:
 - **API integrations** involve connection setup, authentication, and structured payload exchange.
 - **MCP servers** expose tool schemas that persist in the active context window throughout a session.
 
-Skills represent an on-demand category. They load into the agent's context when invoked, execute their analytical instructions, write structured reports and manifest updates, and allow context to be reclaimed once completed.
+Skills represent an on-demand category. A skill loads into the agent's context only when it is invoked. It then runs its analytical instructions and writes structured reports and manifest updates. A session uses context only for the skills it runs.
 
-This lifecycle is essential for idstack because skill instructions range from 400 to 900 lines of structured rules. On-demand execution prevents context exhaustion across multi-skill pipelines.
+This matters for idstack because each skill's instructions, with the shared preamble, range from about 650 to 1,850 lines of structured rules. A skill's text stays in context after it finishes. In a `/idstack:pipeline` run, each skill runs in the same conversation, so its text adds to the context of the skills before it. The pipeline saves progress after each skill. You can stop and later continue in a new session with `/idstack:pipeline`, and it skips the skills that are already complete.
 
 ## Contributor Guidelines
 

@@ -7,9 +7,12 @@
 # `for x in $VAR` (zsh does not word-split), and a packaging block that relied
 # on a variable from an earlier call.
 #
-# Each block is extracted from skills/<name>/SKILL.md (what ships), its
-# placeholders are filled in, and it runs in a scratch course project. zsh runs
-# with -f (no rc files), so default options such as NOMATCH apply.
+# Each skill block is extracted from skills/<name>/SKILL.md (what ships), its
+# placeholders are filled in, and it runs in a scratch course project. The
+# preamble blocks come from templates/preamble.md, with the whole resolve
+# snippet spliced in (bin/idstack-gen-skills also leaves out the snippet's
+# comment lines, which does not change what runs). zsh runs with -f (no rc files),
+# so default options such as NOMATCH apply.
 set -u
 
 . "$(dirname "$0")/test-helper.sh"
@@ -23,7 +26,7 @@ echo "test-skill-shell-zsh"
 check "zsh is installed (CI installs it on Linux)" "command -v zsh"
 command -v zsh >/dev/null 2>&1 || { echo ""; echo "Results: $PASS/$TOTAL passed, $FAIL failed"; exit 1; }
 
-# A copy of the plugin without .git, so the update check makes no network call.
+# A copy of the plugin, used as IDSTACK_HOME.
 mkdir -p "$WORK/plugin"
 cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/evidence" "$IDSTACK_DIR/VERSION" "$WORK/plugin/"
 export IDSTACK_HOME="$WORK/plugin"
@@ -292,7 +295,8 @@ MD
   mkdir -p "$P/pre/.idstack"
   printf '%s\n' '{"ts":"2026-08-04T00:00:00Z","skill":"needs-analysis","event":"completed"}' > "$P/pre/.idstack/timeline.jsonl"
   # The preamble carries {{IDSTACK_RESOLVE}} placeholders; splice the snippet in
-  # as bin/idstack-gen-skills does, so each block runs as a skill sees it.
+  # (comments included, which gen-skills leaves out), so each block runs the
+  # commands a skill runs.
   awk -v snip="$IDSTACK_DIR/templates/snippets/idstack-resolve.sh" '
     /^```bash$/{f=1; n++; next} f && /^```$/{f=0}
     f && /\{\{IDSTACK_RESOLVE\}\}/{while ((getline l < snip) > 0) print l > ("'"$P"'/pre/block" n ".sh"); close(snip); next}
