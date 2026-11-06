@@ -204,7 +204,7 @@ const scenarios = {
 
   async 'the dossier names the audited course, not the active tab (#155)'() {
     let copied = '';
-    const D = page('Assignment D', 'https://y.instructure.com/courses/2/assignments/40');
+    const D = page('Assignment D', 'https://canvas.example.edu/courses/2/assignments/40');
     const p = await loadPanel({ tab: { id: 1, url: A.url }, payloads: { 1: A, 2: D },
       clipboard: { writeText: async (t) => { copied = t; } } });
     await p.$('audit-btn').click();
