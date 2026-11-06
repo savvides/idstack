@@ -641,7 +641,7 @@ Decide which mode this skill is operating in **before** running the content gene
 
 **Announce the chosen mode to the user as the first sentence:**
 - "Mode: build-new. I will generate a new syllabus, new module pages, and new assessment documents."
-- "Mode: gap-fill (idstack found a course import). The course is available. I will generate ONLY the missing artifacts that upstream skills found. I will not generate a new syllabus or new modules."
+- "Mode: gap-fill (idstack found a course import). The course is available. I will not generate a new syllabus or rebuild the course. I will generate only the missing artifacts that upstream skills found, for example a rubric or a module page."
 
 After you announce the mode, start the report. Run this block. In the `--mode` value, replace `<mode>` with `build-new` or `gap-fill`.
 
@@ -1081,7 +1081,7 @@ First, list the files that you wrote in this run.
 
 Use the IDs `GA-1`, `GA-2` and so on, with one row for each file. In the Notes cell, write the placeholders that the file has, or "None".
 
-Then do the "Spec Review Loop" at the end of this skill. It adds the `## Alignment review` section. Do it before the findings, because idstack adds the sections to the report in the order that you approve them.
+Then do the "Spec Review Loop" at the end of this skill. It adds the `## Alignment review` section. Do it before the findings, because idstack adds the sections to the report in the order that you append their drafts.
 
 **Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
 
