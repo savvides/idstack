@@ -1309,7 +1309,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"course-quality-review","event":"completed","score":OVERALL_SCORE,"dimensions":{"teaching_presence":TP,"social_presence":SP,"cognitive_presence":CP}}'
+IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
+{"skill":"course-quality-review","event":"completed","score":OVERALL_SCORE,"dimensions":{"teaching_presence":TP,"social_presence":SP,"cognitive_presence":CP}}
+IDSTACK_EVENT
+"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace OVERALL_SCORE with the actual overall score (0-100), and TP/SP/CP with the
@@ -1329,5 +1332,8 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings" log '{"skill":"course-quality-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
+{"skill":"course-quality-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
+IDSTACK_LEARNING
+"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
 ```

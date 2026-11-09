@@ -43,7 +43,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/smoke-test.sh              # 542 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
-./test/integration-test.sh        # 52 behavioral tests across the bin/ scripts; also proves the suite
+./test/integration-test.sh        # 57 behavioral tests across the bin/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 10 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
 ./test/test-doctor.sh             # 18 behavioral tests for bin/idstack-doctor's PROBLEM/WARNING branches and --quick
@@ -51,7 +51,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-manifest-merge.sh     # bin/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # bin/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on the local python3; CI covers 3.9 and 3.12
-./test/test-skill-shell-zsh.sh    # 83 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
+./test/test-skill-shell-zsh.sh    # 157 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules directly
                                   # (test/extension-harness.mjs stubs browser globals for the ones that need them)
@@ -60,7 +60,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # bin/idstack-ste-check unit tests (smoke-test also runs them)
-python3 test/test-report-section.py     # 37 tests for bin/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
+python3 test/test-report-section.py     # 39 tests for bin/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
 python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
@@ -242,7 +242,7 @@ Editing `evidence/references.md`:
 - Add each new reference with the next free number in its domain. Never renumber or reuse a number.
 - When a tier changes, update every `[Code-N] [Tn]` that cites it, then run `bin/idstack-gen-skills`. If a grouped citation (`[A] [B] [T1]`) now has mixed tiers, split it (`[A] [T1] [B] [T2]`).
 - `check-citation-tiers.py` does not scan `extension/`. `test/test-evidence-labels.mjs` (run by `test-extension.sh`) checks the codes and tiers in `extension/shared/prompts.js`, `extension/background/parser-helper.js` (the demo findings) and `extension/shared/evidence-base.js`.
-- The total study count is hand-typed: 6 places in `docs/index.html`, plus `DESIGN.md` and `docs/og-template.html`. The README evidence table has hand-typed study counts, T1 counts and tier ranges for 7 domains. `check-evidence-cards.py` checks only the per-domain cards.
+- The total study count is hand-typed: 6 places in `docs/index.html`, plus `DESIGN.md` and `docs/og-template.html`. `docs/og-image.png` is a screenshot of `docs/og-template.html`: after you change the template, render the image again with the command in its header comment. The README evidence table has hand-typed study counts, T1 counts and tier ranges for 7 domains. `check-evidence-cards.py` checks only the per-domain cards.
 - `test/mutation-test.sh` quotes literal citation lines and needs one card tier range that is unique on the page (case 18). After changing tiers, grep it for the old strings.
 - The Consensus MCP server, if connected, can verify references and find newer ones. Run at most 3 searches at a time. idstack itself has no Consensus integration since v3.9.0.0.
 

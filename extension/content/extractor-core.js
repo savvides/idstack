@@ -1,5 +1,5 @@
 // Canvas course-root detection for the side panel. The content script does not use it.
-export function detectCourseContext(url, docTitle) {
+export function detectCourseContext(url) {
   if (!url) return { isCourseRoot: false, courseId: null, origin: null };
   try {
     const parsedUrl = new URL(url);

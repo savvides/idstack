@@ -2,7 +2,9 @@
  * Injected content script to extract course content from Canvas, Google Docs, and web pages.
  */
 function detectPageType(url, document) {
-  if (url.includes('instructure.com') || /\/courses\/\d+(?:[/?#]|$)/.test(url)) {
+  let hostname = '';
+  try { hostname = new URL(url).hostname; } catch (e) { /* '' or not a URL */ }
+  if (hostname.endsWith('.instructure.com') || /\/courses\/\d+(?:[/?#]|$)/.test(url)) {
     if (document.querySelector('#assignment_show')) return 'Canvas Assignment';
     if (document.querySelector('#syllabusContainer') || url.includes('/assignments/syllabus')) return 'Canvas Syllabus';
     if (document.querySelector('#context_modules, #modules') || url.includes('/modules')) return 'Canvas Modules';

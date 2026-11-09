@@ -71,6 +71,7 @@ elif cmd == "search":
         limit = int(limit)
     except ValueError:
         limit = 3
+    limit = max(limit, 1)  # matches[-0:] is every match
     matches = []
     for src in sources:
         try:
@@ -82,7 +83,7 @@ elif cmd == "search":
                 d = json.loads(line)
                 if type_filter and d.get("type") != type_filter:
                     continue
-                if keyword and keyword not in (d.get("insight", "") + " " + d.get("key", "")).lower():
+                if keyword and keyword not in ((d.get("insight") or "") + " " + (d.get("key") or "")).lower():
                     continue
                 if src == GLOBAL:
                     d["_source"] = "global"
@@ -154,6 +155,7 @@ fi
 case "$CMD" in
   log)
     [ -z "${1:-}" ] && exit 0
+    case "$1" in -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
     mkdir -p "$(dirname "$LOCAL")" 2>/dev/null || exit 0
     learnings_py log "$1" 2>/dev/null
     exit 0
@@ -165,6 +167,10 @@ case "$CMD" in
     KEYWORD=""
     CROSS_PROJECT=0
     while [ $# -gt 0 ]; do
+      case "$1" in
+        --limit|--type|--keyword)
+          [ $# -ge 2 ] || { echo "idstack-learnings: give a value after $1." >&2; exit 1; } ;;
+      esac
       case "$1" in
         --limit) LIMIT="$2"; shift 2 ;;
         --limit=*) LIMIT="${1#--limit=}"; shift ;;

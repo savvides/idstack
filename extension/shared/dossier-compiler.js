@@ -1,3 +1,8 @@
+// Model text and page titles can hold newlines and |, which end a list item or
+// split a table cell.
+const oneLine = (v) => String(v).replace(/\r?\n/g, ' ');
+const cell = (v) => oneLine(v).replace(/\|/g, '\\|');
+
 export function compileSingleAuditToMarkdown(item) {
   if (!item || !item.result) return '';
   const result = item.result;
@@ -15,16 +20,16 @@ export function compileSingleAuditToMarkdown(item) {
   md += `## Executive Summary\n\n`;
   md += `- **Bloom's Demand:** ${result.summary?.bloomsLevel || 'N/A'}\n`;
   md += `- **Alignment Score:** ${result.summary?.alignmentScore || 'N/A'}\n`;
-  md += `- **Key Takeaway:** ${result.summary?.keyTakeaway || 'The audit has no summary.'}\n\n`;
+  md += `- **Key Takeaway:** ${oneLine(result.summary?.keyTakeaway || 'The audit has no summary.')}\n\n`;
 
   if (Array.isArray(result.findings) && result.findings.length > 0) {
     md += `## Findings, Evidence & Recommendations\n\n`;
     result.findings.forEach((f, idx) => {
       md += `### ${idx + 1}. [${f.tier || 'T1'}] ${f.citation || 'Citation'}\n\n`;
       md += `- **Severity:** \`${(f.severity || 'info').toUpperCase()}\`\n`;
-      md += `- **Observation:** ${f.observation || ''}\n`;
-      md += `- **Evidence:** ${f.evidence || ''}\n`;
-      md += `- **Recommendation:** ${f.recommendation || ''}\n\n`;
+      md += `- **Observation:** ${oneLine(f.observation || '')}\n`;
+      md += `- **Evidence:** ${oneLine(f.evidence || '')}\n`;
+      md += `- **Recommendation:** ${oneLine(f.recommendation || '')}\n\n`;
     });
   }
 
@@ -70,7 +75,7 @@ export function compileDossierToMarkdown(dossierItems, courseTitle = 'Canvas Cou
   md += `| :--- | :--- | :--- | :--- | :--- |\n`;
   dossierItems.forEach((item, idx) => {
     const s = item.result?.summary || {};
-    md += `| ${idx + 1} | ${item.title || 'Untitled'} | ${item.pageType || 'Page'} | ${s.bloomsLevel || 'N/A'} | ${s.alignmentScore || 'N/A'} |\n`;
+    md += `| ${idx + 1} | ${cell(item.title || 'Untitled')} | ${cell(item.pageType || 'Page')} | ${cell(s.bloomsLevel || 'N/A')} | ${cell(s.alignmentScore || 'N/A')} |\n`;
   });
   md += `\n---\n\n`;
 
@@ -82,15 +87,15 @@ export function compileDossierToMarkdown(dossierItems, courseTitle = 'Canvas Cou
     md += `### Summary\n`;
     md += `- **Bloom's Demand:** ${r.summary?.bloomsLevel || 'N/A'}\n`;
     md += `- **Alignment Score:** ${r.summary?.alignmentScore || 'N/A'}\n`;
-    md += `- **Key Takeaway:** ${r.summary?.keyTakeaway || 'N/A'}\n\n`;
+    md += `- **Key Takeaway:** ${oneLine(r.summary?.keyTakeaway || 'N/A')}\n\n`;
 
     if (Array.isArray(r.findings) && r.findings.length > 0) {
       md += `### Findings & Evidence\n\n`;
       r.findings.forEach((f, fIdx) => {
         md += `#### ${idx + 1}.${fIdx + 1} [${f.tier || 'T1'}] ${f.citation || 'Citation'}\n`;
-        md += `- **Observation:** ${f.observation || ''}\n`;
-        md += `- **Evidence:** ${f.evidence || ''}\n`;
-        md += `- **Recommendation:** ${f.recommendation || ''}\n\n`;
+        md += `- **Observation:** ${oneLine(f.observation || '')}\n`;
+        md += `- **Evidence:** ${oneLine(f.evidence || '')}\n`;
+        md += `- **Recommendation:** ${oneLine(f.recommendation || '')}\n\n`;
       });
     }
 

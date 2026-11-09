@@ -112,4 +112,3 @@ Respond with ONLY a valid JSON object matching this schema:
 ${WRITING_STANDARD}`;
 }
 
-export { TIER_METADATA };

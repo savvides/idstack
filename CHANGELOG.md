@@ -21,6 +21,25 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 
 ### Fixed
 
+- **Course text cannot run as a shell command.** An audit found that some skill steps put text from a course into a shell command. A title, a file name or a SCORM link that contains `$(...)` or a backtick ran as a command.
+  - `/idstack:course-export` writes each title and each HTML body to a file in `.idstack/canvas-push/`, and curl sends the file. A `$`, a backtick, `&` or `+` gets to Canvas with no change. Before, `Q&A` got to Canvas as `Q`.
+  - `/idstack:course-import` reads each file path, each SCORM link and the project name with a quoted heredoc. It does not read a SCORM link that starts with `/` or that contains `..`. It also does not read a file that a symbolic link puts out of the import folder.
+  - `/idstack:learn` reads the search word and the entry key with a quoted heredoc. Before, a search for two words found only the first word.
+  - Each skill logs a learning or a timeline event with a quoted heredoc. Before, an apostrophe in a learning stopped the command, and idstack did not save the learning. JSON on more than one line is also logged.
+- **The Canvas token is safer.** The skills refuse a Canvas URL that does not start with `https://`. curl gets the token on its standard input, so the token is not in the process list. The skills refuse a token that has a quotation mark or a backslash. If `.idstack/.gitignore` has no newline at its end, the skills add one before they add `canvas.env`, so git ignores the token file.
+- **`bin/idstack-migrate` does not damage the manifest when a write fails.** It writes a temporary file and then replaces the manifest. If the write fails, the manifest does not change and the script exits with 1. Before, a failed write left a part of the manifest and the script exited with 0. If the manifest is a symbolic link, the script updates the file that the link points to.
+- **`bin/idstack-report-section` refuses a draft that has the same heading two times.** Before, the second section replaced the first, and the rows of the first section were lost.
+- **`bin/idstack-learnings search` does not stop when a flag has no value.** `--keyword`, `--limit` and `--type` with no value give an error. `--limit 0` shows one entry, and `--keyword` finds an entry that has no insight.
+- **`--help` is not logged.** `bin/idstack-timeline-log --help` and `bin/idstack-learnings log --help` show the usage. Before, they added `--help` to the log as an event.
+- **The manifest and the reports keep their file mode.** Before, each write changed the mode to 600.
+- **The Chrome extension keeps each audit in the dossier.**
+  - A full-course audit and an audit of the course home page are two items. Before, the second audit replaced the first. A new full-course audit replaces a full-course audit from an earlier version.
+  - The dossier does each change one at a time, so two fast clicks do not lose a change. If Chrome cannot save an audit, the button shows "Not added".
+  - "Clear Dossier" asks a question before it removes the audits.
+  - A `|` in a page title does not break the Markdown table.
+- **The Chrome extension finds Canvas pages from the host name.** Before, a page on a different site that had `instructure.com` in its address was read as a Canvas page.
+- **The Chrome extension reads a model response that has text around the JSON.** If it cannot read the response, it shows the "not in the audit format" message, not a JavaScript error.
+- **The Chrome extension asks for Canvas pages on `https://` only.**
 - **`/idstack:start` stops in a temporary folder of the Claude desktop app.** The app can start a session in a folder under `~/Library/Application Support/Claude/scratch-workspaces/`. That folder is hidden, and the app can delete it. Before, `/idstack:start` let the session continue there, and the next skill wrote the course data in that folder.
 
 ### Documentation

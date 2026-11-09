@@ -165,6 +165,53 @@ mkdir -p "$NOINIT_DIR/.idstack"
 ( cd "$NOINIT_DIR" && "$MIGRATE" .idstack/project.json >/dev/null 2>&1 )
 check "plain migrate does not create a manifest" "[ ! -f '$NOINIT_DIR/.idstack/project.json' ]"
 
+# migrate once wrote the manifest in place and turned a failed write into exit 0,
+# which left a cut-off manifest. A 20 KB manifest cannot be written under a
+# 4-block file size limit.
+FAILMIG="$WORK/failmig"
+mkdir -p "$FAILMIG"
+python3 -c "import json, sys; json.dump({'version': '1.3', 'project_name': 'x', 'pad': 'p' * 20000}, open(sys.argv[1], 'w'))" "$FAILMIG/project.json"
+cp "$FAILMIG/project.json" "$FAILMIG/before.json"
+set +e
+MIG_OUT=$( ulimit -f 4; "$MIGRATE" "$FAILMIG/project.json" 2>/dev/null )
+MIG_EC=$?
+set -e
+check "migrate that cannot write exits non-zero, prints nothing and keeps the manifest" \
+  "[ $MIG_EC -ne 0 ] && [ -z \"\$MIG_OUT\" ] && cmp -s '$FAILMIG/project.json' '$FAILMIG/before.json' && [ -z \"\$(ls -A '$FAILMIG' | grep -v -e '^project.json\$' -e '^before.json\$')\" ]"
+
+# migrate once pasted the path into its python source, so a quote broke it.
+QUOTEMIG="$WORK/o'neil course"
+mkdir -p "$QUOTEMIG"
+echo '{"version": "1.3", "project_name": "q"}' > "$QUOTEMIG/project.json"
+chmod 640 "$QUOTEMIG/project.json"
+check "migrate works at a path with a quote and keeps the file mode" \
+  "\"\$MIGRATE\" \"\$QUOTEMIG/project.json\" >/dev/null 2>&1 && python3 -c 'import json, os, sys; p = sys.argv[1]; assert json.load(open(p))[\"version\"] == \"1.4\"; assert os.stat(p).st_mode & 0o777 == 0o640, oct(os.stat(p).st_mode)' \"\$QUOTEMIG/project.json\""
+
+# migrate once replaced a symlinked manifest with a plain file and left the target at the old version.
+LINKMIG="$WORK/linkmig"
+mkdir -p "$LINKMIG/real"
+echo '{"version": "1.0", "project_name": "l"}' > "$LINKMIG/real/project.json"
+ln -s "$LINKMIG/real/project.json" "$LINKMIG/project.json"
+"$MIGRATE" "$LINKMIG/project.json" >/dev/null 2>&1 || true
+check "migrate writes through a symlinked manifest" \
+  "[ -L '$LINKMIG/project.json' ] && python3 -c 'import json, sys; assert json.load(open(sys.argv[1]))[\"version\"] == \"1.4\"' '$LINKMIG/real/project.json'"
+
+# migrate once gave a python traceback when it could not make its tempfile.
+if [ "$(id -u)" -ne 0 ]; then
+  ROMIG="$WORK/romig"
+  mkdir -p "$ROMIG"
+  echo '{"version": "1.3", "project_name": "r"}' > "$ROMIG/project.json"
+  cp "$ROMIG/project.json" "$ROMIG/before.json"
+  chmod 555 "$ROMIG"
+  set +e
+  RO_ERR=$( "$MIGRATE" "$ROMIG/project.json" 2>&1 >/dev/null )
+  RO_EC=$?
+  set -e
+  chmod 755 "$ROMIG"
+  check "migrate in a read-only folder exits 1 with a clear message and keeps the manifest" \
+    "[ $RO_EC -eq 1 ] && printf '%s' \"\$RO_ERR\" | grep -q 'The manifest did not change' && ! printf '%s' \"\$RO_ERR\" | grep -q Traceback && cmp -s '$ROMIG/project.json' '$ROMIG/before.json'"
+fi
+
 echo ""
 
 # --- Test 13: payload with non-dict root (list) rejected with exit 1 ---
@@ -233,6 +280,13 @@ EC2=$?
 set -e
 check "--set with an unknown key exits 3" "[ $EC -eq 3 ]"
 check "a --section with no --payload is refused" "[ $EC2 -ne 0 ]"
+
+# --- Test 20: the merge keeps the manifest's file mode (mkstemp makes 0600) ---
+seed_manifest
+chmod 644 "$WORK/project.json"
+echo '{}' | "$MERGE" --section quality_review --payload - --manifest "$WORK/project.json" --quiet
+check "merge keeps the manifest mode 644" \
+  "python3 -c 'import os, sys; m = os.stat(sys.argv[1]).st_mode & 0o777; assert m == 0o644, oct(m)' '$WORK/project.json'"
 
 echo ""
 echo "manifest-merge: $PASS/$TOTAL passed, $FAIL failed"

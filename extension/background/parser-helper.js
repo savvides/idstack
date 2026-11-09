@@ -2,11 +2,16 @@
  * Helper to clean and parse JSON responses from LLM API.
  */
 export function cleanJsonResponse(rawText) {
-  let cleaned = rawText.trim();
-  if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '');
-  if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '');
-  if (cleaned.endsWith('```')) cleaned = cleaned.replace(/```$/, '');
-  return JSON.parse(cleaned.trim());
+  const cleaned = rawText.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    // Prose before or after the object ("Here is the JSON:").
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start < 0 || end <= start) throw e;
+    return JSON.parse(cleaned.slice(start, end + 1));
+  }
 }
 
 export function getDemoAuditResult(payload = {}) {

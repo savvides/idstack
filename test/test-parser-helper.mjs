@@ -34,6 +34,9 @@ assert.strictEqual(cleanJsonResponse('  \n\t {"key": "value"} \n ').key, 'value'
 assert.throws(() => cleanJsonResponse('```json\n{"key": "value",}\n```'), SyntaxError, 'a trailing comma must not parse');
 assert.throws(() => cleanJsonResponse('{"key": "value"'), SyntaxError, 'truncated JSON must not parse');
 assert.throws(() => cleanJsonResponse('not json'), SyntaxError);
+// An upper-case fence or prose around the object still parses.
+assert.deepStrictEqual(cleanJsonResponse('```JSON\n{"key": "value"}\n```'), { key: 'value' });
+assert.deepStrictEqual(cleanJsonResponse('Here is the JSON:\n{"a": {"b": 1}}\nI hope this helps.'), { a: { b: 1 } });
 
 // Test 6: Demo fallback when API key is not configured
 assert.strictEqual(typeof getDemoAuditResult, 'function', 'getDemoAuditResult must be a function');

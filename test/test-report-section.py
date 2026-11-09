@@ -180,6 +180,12 @@ class ReportSectionTest(unittest.TestCase):
                                           'You should consider this task.'),
                             'writing standard: word: "should"')
 
+    def test_check_refuses_a_heading_that_repeats(self):
+        # append once added the first section and replaced it with the second,
+        # so the rows of the first were lost.
+        self.assert_refused(TASKS + '\n' + TASKS.replace('T-1', 'T-2'),
+                            'the draft has the section "Task analysis" two times')
+
     def test_check_refuses_a_row_with_the_wrong_cell_count(self):
         self.assert_refused(TASKS + '| T-2 | Short row |\n', 'the row has 2 cells')
 
@@ -246,6 +252,18 @@ class ReportSectionTest(unittest.TestCase):
     def test_append_without_a_report_exits_3(self):
         result = self.append(TASKS)
         self.assertEqual(result.returncode, 3)
+
+    def test_init_and_append_keep_a_readable_file_mode(self):
+        # mkstemp makes a 0600 file, and the rename once kept that mode.
+        old_umask = os.umask(0o022)
+        try:
+            self.init()
+        finally:
+            os.umask(old_umask)
+        self.assertEqual(os.stat(self.path(REPORT)).st_mode & 0o777, 0o644)
+        os.chmod(self.path(REPORT), 0o640)
+        self.append(TASKS)
+        self.assertEqual(os.stat(self.path(REPORT)).st_mode & 0o777, 0o640)
 
     def test_append_leaves_no_temporary_file(self):
         self.init()

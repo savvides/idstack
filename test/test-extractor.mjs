@@ -161,6 +161,12 @@ assert.strictEqual(extractedLong.content.length, 15000, 'Content should be cappe
 assert.strictEqual(detectPageType('https://canvas.instructure.com/courses/1/assignments/2', { querySelector: (s) => s === '#assignment_show' ? {} : null }), 'Canvas Assignment');
 assert.strictEqual(detectPageType('https://docs.google.com/document/d/123', {}), 'Google Doc Syllabus');
 assert.strictEqual(detectPageType('https://harvard.edu/syllabus', {}), 'Web Syllabus / Course Page');
+// Only an instructure.com host is Canvas, not a URL that names it in a query or path.
+for (const notCanvas of ['https://example.edu/syllabus?ref=instructure.com', 'https://instructure.com.evil.example/x', 'https://example.edu/instructure.com/page', 'not a url', '']) {
+  assert.strictEqual(detectPageType(notCanvas, { querySelector: () => null }), 'Web Syllabus / Course Page', notCanvas);
+}
+assert.strictEqual(detectPageType('https://canvas.instructure.com/about', { querySelector: () => null }), 'Canvas LMS Page');
+assert.strictEqual(detectPageType('https://canvas.example.edu/courses/1', { querySelector: () => null }), 'Canvas LMS Page');
 
 // Test 10: executeScript({ files }) contract. The side panel injects the shipped
 // extractor.js and reads the script's completion value as the InjectionResult.
