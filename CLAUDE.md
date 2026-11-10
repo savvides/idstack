@@ -85,6 +85,8 @@ python3 test/check-doc-accuracy.py .   # Verifies version strings, the schema ve
 
 The counts in the comments above are kept by hand. After you add or remove a check, update them from a real run.
 
+smoke-test's retired-CLI check runs `grep -r` over the whole checkout and ignores `.gitignore`. Keep tool output (graph builds, scratch files) outside the repo, or smoke-test fails on words copied from the docs.
+
 The python `test-*.py` suites take no argument; only the `check-*.py` scripts take the repo path (`.`).
 
 `test/test-helper.sh` is not a suite — it is sourced by every **bash** suite that runs assertions itself and owns the shared `PASS`/`FAIL`/`TOTAL` counters and the `check()` assertion. There are two exceptions: `test-extension.sh` delegates to node, and `mutation-test.sh` keeps its own `pass`/`fail`/`skip` tally of GUARDED, NOT-GUARDED and SKIPPED cases. Do not add a local counter block to a bash suite. smoke-test fails on one in the nine suites that it lists (the `test-helper.sh` loop in `test/smoke-test.sh`), and a mutation proves that guard works. When you add a bash suite, add it to that list. The node suites (`test-extension.sh`'s sixteen unit tests, `test/test-responsive-landing.js`, and `test/test-rendered-landing.js`) cannot source it. The two landing-page suites collect their problems and report a count, which is the same contract in another language. The extension unit tests use `node:assert` and stop at the first failure. Three of them (`test-disclosures.mjs`, `test-evidence-labels.mjs`, `test-ste-rules.mjs`) collect their problems first and list them all in one failed assertion.
@@ -192,6 +194,10 @@ Every skill template follows this pattern:
 6. **Timeline logging** (logs session data to `.idstack/timeline.jsonl` on completion). Not in `learn` or `start`: neither writes a timeline event
 7. **Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/bin/idstack-ste-check"` on that file. `test/smoke-test.sh` sets the number of check steps for each skill template, and fails on a different number. Update it when you add or remove a check step. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.
 
+Never put model-filled or course-derived text (titles, HTML, file paths, hrefs, names, keywords, log JSON) in a quoted shell string. Read it with a quoted heredoc, `IFS= read -r X <<'MARKER'` (`-d '' ... || true` for multi-line), or have the model Write a file and send it with `--data-urlencode "field@file"`. `test/test-skill-shell-zsh.sh` checks this in bash 3.2 and zsh.
+
+Canvas curl calls take the token on stdin: `printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - ...`. Never `-H "...$CANVAS_TOKEN"`: the token then shows in `ps`.
+
 The shared preamble includes: interaction conventions (defines how skills use `AskUserQuestion`, `Agent`, and `Skill`), writing standard (the ASD-STE100 rules and word list), manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
 
 Python that the preamble runs must parse on Python 3.9 — the version macOS ships. Context Recovery calls `bin/idstack-status --context`, which reads the timeline with the same code as the dashboard; `test/test-preamble-python.sh` runs the preamble block against it on the local python3, and the CI matrix runs it on 3.9 and 3.12. A syntax error there dies silently at runtime, which is how context recovery stayed broken for several releases. Skills get the course slug from `bin/idstack-slugify`, never from inline Python. Most call it with `--from-manifest`. needs-analysis and course-import write `project_name` themselves, so they pass the name as an argument.
@@ -202,6 +208,8 @@ Logic used by more than one script — or that deserves a unit test — lives in
 
 - `bin/lib/plugin-status.sh` — parses `claude plugin list` output into idstack's own entry
 - `bin/lib/citations.py` — parses `[Code-N] [Tn]` citations and the tiers in `evidence/references.md`. Imported by `bin/idstack-report-section` and `test/check-citation-tiers.py`
+
+Atomic file writes (manifest, reports, learnings): `mkstemp` in the directory of `os.path.realpath(target)`, then `shutil.copymode`, then `os.replace` onto the real path. Create the tempfile inside the `try`; on failure exit non-zero with the target unchanged.
 
 Test the shipped file, never a copy. The version classifier drifted across three PRs while a mirrored copy in its test passed green.
 
