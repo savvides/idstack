@@ -1065,7 +1065,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"red-team","event":"completed"}'
+IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
+{"skill":"red-team","event":"completed"}
+IDSTACK_EVENT
+"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
 ```
 
 Include skill-specific fields where available (confidence_score, focus, fixes_applied count). Log synchronously (no background &).
@@ -1083,5 +1086,8 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings" log '{"skill":"red-team","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
+{"skill":"red-team","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
+IDSTACK_LEARNING
+"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
 ```

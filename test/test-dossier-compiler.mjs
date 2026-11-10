@@ -97,3 +97,15 @@ assert.strictEqual(dossierCourseLabel([
 ]), 'Several courses', 'the same course ID on two hosts is two courses');
 assert.strictEqual(dossierCourseLabel([]), 'Course Materials');
 console.log('✅ Dossier course label tests passed.');
+
+// A | in a title or a newline in model text must not break the table or a list item.
+const pipeItem = { title: 'Lab | Part 2', pageType: 'Canvas\nAssignment', url: 'u', result: { summary: { bloomsLevel: 'Apply | Analyze', keyTakeaway: 'Line one.\nLine two.' }, findings: [{ citation: 'c', observation: 'Saw\r\nthis.' }] } };
+const pipeMd = compileDossierToMarkdown([pipeItem], 'C');
+const row = pipeMd.split('\n').find((l) => l.startsWith('| 1 |'));
+assert.ok(row, 'the table row stays on one line');
+assert.strictEqual(row.split(/(?<!\\)\|/).length, 7, `the row keeps 5 cells: ${row}`);
+assert.ok(row.includes('Lab \\| Part 2'), 'a | in a title is escaped');
+assert.ok(pipeMd.includes('- **Key Takeaway:** Line one. Line two.\n'), 'a newline in a list item becomes a space');
+assert.ok(pipeMd.includes('- **Observation:** Saw this.\n'));
+assert.ok(compileSingleAuditToMarkdown(pipeItem).includes('- **Key Takeaway:** Line one. Line two.\n'));
+console.log('✅ Dossier Markdown escaping tests passed.');

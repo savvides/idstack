@@ -28,7 +28,7 @@
   ],
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*",
-    "*://*.instructure.com/*"
+    "https://*.instructure.com/*"
   ],
   "optional_host_permissions": [
     "https://*/*"

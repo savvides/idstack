@@ -872,7 +872,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="<project name>" \
+IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
+<project name>
+IDSTACK_PROJECT_NAME
+"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="$_PROJECT_NAME" \
   --section context --payload .idstack/.context-payload.json \
   --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
   && rm -f .idstack/.context-payload.json .idstack/.needs_analysis-payload.json
@@ -1329,7 +1332,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"needs-analysis","event":"completed"}'
+IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
+{"skill":"needs-analysis","event":"completed"}
+IDSTACK_EVENT
+"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -1349,5 +1355,8 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings" log '{"skill":"needs-analysis","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
+{"skill":"needs-analysis","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
+IDSTACK_LEARNING
+"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
 ```

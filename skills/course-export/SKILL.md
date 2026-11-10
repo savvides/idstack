@@ -1046,12 +1046,32 @@ token that is already in the file:
 ```bash
 umask 077
 mkdir -p .idstack
+IFS= read -r _URL <<'IDSTACK_CANVAS_URL'
+<canvas url>
+IDSTACK_CANVAS_URL
+IFS= read -r _COURSE <<'IDSTACK_COURSE_ID'
+<course id>
+IDSTACK_COURSE_ID
+case "$_URL" in *\'*) echo "CANVAS_URL_BAD: $_URL"; exit 1 ;; https://*) ;; *) echo "CANVAS_URL_NOT_HTTPS: $_URL"; exit 1 ;; esac
+case "$_COURSE" in ''|*[!0-9]*) echo "CANVAS_COURSE_ID_BAD: $_COURSE"; exit 1 ;; esac
 _TOKEN_LINE=$(grep '^CANVAS_TOKEN=' .idstack/canvas.env 2>/dev/null || echo "CANVAS_TOKEN=''")
-printf "CANVAS_BASE_URL='%s'\nCANVAS_COURSE_ID='%s'\n%s\n" '<canvas url>' '<course id>' "$_TOKEN_LINE" > .idstack/canvas.env
+printf "CANVAS_BASE_URL='%s'\nCANVAS_COURSE_ID='%s'\n%s\n" "$_URL" "$_COURSE" "$_TOKEN_LINE" > .idstack/canvas.env
 chmod 600 .idstack/canvas.env
+[ -s .idstack/.gitignore ] && [ -n "$(tail -c1 .idstack/.gitignore)" ] && echo >> .idstack/.gitignore
 grep -qx 'canvas.env' .idstack/.gitignore 2>/dev/null || echo 'canvas.env' >> .idstack/.gitignore
+grep -qx 'canvas-push/' .idstack/.gitignore 2>/dev/null || echo 'canvas-push/' >> .idstack/.gitignore
 echo "Canvas settings file: $PWD/.idstack/canvas.env"
 ```
+
+If the command prints one of these codes, tell the user the text. Then ask for
+the correct value and run the command again.
+
+- `CANVAS_URL_NOT_HTTPS`: "The Canvas URL must start with `https://`. idstack
+  does not send your token on a connection that is not encrypted."
+- `CANVAS_URL_BAD`: "The Canvas URL cannot contain a quotation mark. Check the
+  address."
+- `CANVAS_COURSE_ID_BAD`: "The course ID must be a number. Check the course URL
+  in Canvas."
 
 Then tell the user:
 
@@ -1069,8 +1089,9 @@ revoke the token in Canvas."
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 [ -n "$CANVAS_TOKEN" ] || { echo "CANVAS_TOKEN_EMPTY: add the token to .idstack/canvas.env"; exit 1; }
-RESPONSE=$(curl -s -w "\n%{http_code}" \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
+case "$CANVAS_TOKEN" in *'"'*|*'\'*) echo "CANVAS_TOKEN_BAD: the token in .idstack/canvas.env has a quotation mark or a backslash"; exit 1 ;; esac
+case "$CANVAS_BASE_URL" in https://*) ;; *) echo "CANVAS_URL_NOT_HTTPS: $CANVAS_BASE_URL"; exit 1 ;; esac
+RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" \
   "$CANVAS_BASE_URL/api/v1/users/self" 2>&1)
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
 BODY=$(echo "$RESPONSE" | sed '$d')
@@ -1079,6 +1100,8 @@ echo "$BODY" | head -5
 ```
 
 Handle errors:
+- `CANVAS_URL_NOT_HTTPS`: "The Canvas URL in `.idstack/canvas.env` must start
+  with `https://`. Give me the correct address." Then run the settings command again.
 - HTTP 401: "Token rejected. Make sure you copied the full token. In Canvas:
   Account → Settings → Approved Integrations → New Access Token."
 - HTTP 403: "Access denied. Your token does not have the necessary permissions for
@@ -1089,8 +1112,7 @@ Handle errors:
 Verify course access:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-curl -s -w "\n%{http_code}" \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
+printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID" 2>&1
 ```
 
@@ -1100,7 +1122,8 @@ curl -s -w "\n%{http_code}" \
   role from your Canvas admin."
 
 **SECURITY RULE: The token is only in `.idstack/canvas.env`. Use
-`$CANVAS_TOKEN` ONLY in the curl `Authorization` header. NEVER show the file
+`$CANVAS_TOKEN` ONLY in the `printf` line that gives curl the `Authorization`
+header. NEVER put the token in a curl argument. NEVER show the file
 with `cat`, NEVER echo the token, and NEVER write it to the manifest, the
 report, or a different file.**
 
@@ -1112,16 +1135,28 @@ accept HTML in their body fields).
 
 Then do the "Export Plan" step. Go to B4 only after the user approves the plan.
 
+**Course text goes in files, not in commands.** Course text can contain `$`,
+quotes, backticks and `&`. The shell changes these characters in a command. Before
+each command in B4 to B7 that sends text, write each value to its file in
+`.idstack/canvas-push/`. Use the Write tool. Each command sends the files with
+`--data-urlencode "<field>@<file>"` and then deletes the folder.
+
+Write only the value, with no newline at the end. Write the files again before the next command. If a command prints
+`PUSH_FILE_MISSING`, write the files and run the command again.
+
 ### B4. Create Modules
 
-For each module in the course content:
+For each module in the course content, write the module title to
+`.idstack/canvas-push/title.txt`. Then run:
 
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
-  -d "module[name]={module title}&module[position]={position}" \
+[ -f .idstack/canvas-push/title.txt ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
+RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" -X POST \
+  --data-urlencode "module[name]@.idstack/canvas-push/title.txt" \
+  -d "module[position]={position}" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules" 2>&1)
+rm -rf .idstack/canvas-push
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
 BODY=$(echo "$RESPONSE" | sed '$d')
 echo "HTTP: $HTTP_CODE"
@@ -1133,8 +1168,7 @@ Publish the module:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 MODULE_ID=<module id printed in B4>
-curl -s -X PUT \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
+printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -X PUT \
   -d "module[published]=true" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID"
 ```
@@ -1143,17 +1177,20 @@ Store the returned module ID for adding items in subsequent steps.
 
 ### B5. Create Pages and Add to Modules
 
-For each module page (content, syllabus):
+For each module page (content, syllabus), write the page title to
+`.idstack/canvas-push/title.txt` and the HTML content to
+`.idstack/canvas-push/body.html`. Then run:
 
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+[ -f .idstack/canvas-push/title.txt ] && [ -f .idstack/canvas-push/body.html ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
 # Create the page
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
-  --data-urlencode "wiki_page[title]={page title}" \
-  --data-urlencode "wiki_page[body]={html content}" \
+RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" -X POST \
+  --data-urlencode "wiki_page[title]@.idstack/canvas-push/title.txt" \
+  --data-urlencode "wiki_page[body]@.idstack/canvas-push/body.html" \
   -d "wiki_page[published]=true" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/pages" 2>&1)
+rm -rf .idstack/canvas-push
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
 BODY=$(echo "$RESPONSE" | sed '$d')
 PAGE_URL=$(echo "$BODY" | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
@@ -1161,32 +1198,40 @@ echo "HTTP: $HTTP_CODE"
 echo "PAGE_URL=$PAGE_URL"
 ```
 
-Then add the page to its module:
+Then write the page title to `.idstack/canvas-push/title.txt` again and add the
+page to its module:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+[ -f .idstack/canvas-push/title.txt ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
 MODULE_ID=<module id printed in B4>
-PAGE_URL=<PAGE_URL printed above>
-curl -s -X POST \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
-  -d "module_item[title]={page title}&module_item[type]=Page&module_item[page_url]=$PAGE_URL&module_item[published]=true" \
+IFS= read -r PAGE_URL <<'IDSTACK_PAGE_URL'
+<PAGE_URL printed above>
+IDSTACK_PAGE_URL
+printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -X POST \
+  --data-urlencode "module_item[title]@.idstack/canvas-push/title.txt" \
+  -d "module_item[type]=Page" -d "module_item[page_url]=$PAGE_URL" -d "module_item[published]=true" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
+rm -rf .idstack/canvas-push
 ```
 
 ### B6. Create Assignments
 
-For each assessment (essay, project, upload type):
+For each assessment (essay, project, upload type), write the title to
+`.idstack/canvas-push/title.txt` and the HTML description with the rubric to
+`.idstack/canvas-push/body.html`. Then run:
 
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
-  --data-urlencode "assignment[name]={title}" \
-  --data-urlencode "assignment[description]={html description with rubric}" \
+[ -f .idstack/canvas-push/title.txt ] && [ -f .idstack/canvas-push/body.html ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
+RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" -X POST \
+  --data-urlencode "assignment[name]@.idstack/canvas-push/title.txt" \
+  --data-urlencode "assignment[description]@.idstack/canvas-push/body.html" \
   -d "assignment[points_possible]={points}" \
   -d "assignment[submission_types][]=online_text_entry" \
   -d "assignment[submission_types][]=online_upload" \
   -d "assignment[published]=false" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/assignments" 2>&1)
+rm -rf .idstack/canvas-push
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
 BODY=$(echo "$RESPONSE" | sed '$d')
 ASSIGN_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
@@ -1194,15 +1239,18 @@ echo "HTTP: $HTTP_CODE"
 echo "ASSIGN_ID=$ASSIGN_ID"
 ```
 
-Add the assignment to its module:
+Write the assignment title to `.idstack/canvas-push/title.txt` again, then add the
+assignment to its module:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+[ -f .idstack/canvas-push/title.txt ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
 MODULE_ID=<module id printed in B4>
 ASSIGN_ID=<ASSIGN_ID printed above>
-curl -s -X POST \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
-  -d "module_item[title]={title}&module_item[type]=Assignment&module_item[content_id]=$ASSIGN_ID&module_item[published]=true" \
+printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -X POST \
+  --data-urlencode "module_item[title]@.idstack/canvas-push/title.txt" \
+  -d "module_item[type]=Assignment" -d "module_item[content_id]=$ASSIGN_ID" -d "module_item[published]=true" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
+rm -rf .idstack/canvas-push
 ```
 
 Note: Assignments are created unpublished by default. The instructional designer
@@ -1210,16 +1258,18 @@ should review descriptions, rubrics, and due dates in Canvas before publishing.
 
 ### B7. Create Discussion Topics
 
-For each discussion activity:
+For each discussion activity, write the title to `.idstack/canvas-push/title.txt`
+and the HTML discussion prompt to `.idstack/canvas-push/body.html`. Then run:
 
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
-  --data-urlencode "title={title}" \
-  --data-urlencode "message={html discussion prompt}" \
+[ -f .idstack/canvas-push/title.txt ] && [ -f .idstack/canvas-push/body.html ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
+RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" -X POST \
+  --data-urlencode "title@.idstack/canvas-push/title.txt" \
+  --data-urlencode "message@.idstack/canvas-push/body.html" \
   -d "published=false" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/discussion_topics" 2>&1)
+rm -rf .idstack/canvas-push
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
 BODY=$(echo "$RESPONSE" | sed '$d')
 TOPIC_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
@@ -1227,15 +1277,18 @@ echo "HTTP: $HTTP_CODE"
 echo "TOPIC_ID=$TOPIC_ID"
 ```
 
-Add to its module:
+Write the discussion title to `.idstack/canvas-push/title.txt` again, then add the
+discussion to its module:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
+[ -f .idstack/canvas-push/title.txt ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
 MODULE_ID=<module id printed in B4>
 TOPIC_ID=<TOPIC_ID printed above>
-curl -s -X POST \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
-  -d "module_item[title]={title}&module_item[type]=Discussion&module_item[content_id]=$TOPIC_ID&module_item[published]=true" \
+printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -X POST \
+  --data-urlencode "module_item[title]@.idstack/canvas-push/title.txt" \
+  -d "module_item[type]=Discussion" -d "module_item[content_id]=$TOPIC_ID" -d "module_item[published]=true" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
+rm -rf .idstack/canvas-push
 ```
 
 ### B8. Error Handling
@@ -1611,7 +1664,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"course-export","event":"completed"}'
+IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
+{"skill":"course-export","event":"completed"}
+IDSTACK_EVENT
+"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -1631,5 +1687,8 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings" log '{"skill":"course-export","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
+{"skill":"course-export","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
+IDSTACK_LEARNING
+"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
 ```

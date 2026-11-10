@@ -546,7 +546,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings" search --keyword KEYWORD --limit 10
+IFS= read -r _KEYWORD <<'IDSTACK_KEYWORD'
+<keyword>
+IDSTACK_KEYWORD
+"$_IDSTACK/bin/idstack-learnings" search --keyword "$_KEYWORD" --limit 10
 ```
 
 For cross-project search:
@@ -561,7 +564,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings" search --keyword KEYWORD --cross-project --limit 10
+IFS= read -r _KEYWORD <<'IDSTACK_KEYWORD'
+<keyword>
+IDSTACK_KEYWORD
+"$_IDSTACK/bin/idstack-learnings" search --keyword "$_KEYWORD" --cross-project --limit 10
 ```
 
 If results include global learnings (tagged `"_source": "global"`), show the project name from their `_source_project` field.
@@ -581,7 +587,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings" delete KEY
+IFS= read -r _KEY <<'IDSTACK_KEY'
+<key>
+IDSTACK_KEY
+"$_IDSTACK/bin/idstack-learnings" delete "$_KEY"
 ```
 
 ### promote <key>
@@ -599,7 +608,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings" promote KEY
+IFS= read -r _KEY <<'IDSTACK_KEY'
+<key>
+IDSTACK_KEY
+"$_IDSTACK/bin/idstack-learnings" promote "$_KEY"
 ```
 
 ### export

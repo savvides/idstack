@@ -801,7 +801,10 @@ across sessions (e.g., "Quality score trend: 62 -> 72 -> 78 over 3 reviews").
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"course-quality-review","event":"completed","score":OVERALL_SCORE,"dimensions":{"teaching_presence":TP,"social_presence":SP,"cognitive_presence":CP}}'
+IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
+{"skill":"course-quality-review","event":"completed","score":OVERALL_SCORE,"dimensions":{"teaching_presence":TP,"social_presence":SP,"cognitive_presence":CP}}
+IDSTACK_EVENT
+"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace OVERALL_SCORE with the actual overall score (0-100), and TP/SP/CP with the
@@ -812,5 +815,8 @@ import format issue, course structure pattern), also log it as a learning:
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings" log '{"skill":"course-quality-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
+{"skill":"course-quality-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
+IDSTACK_LEARNING
+"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
 ```

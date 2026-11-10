@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { TIER_METADATA, buildAuditPrompt, buildCourseAuditPrompt } from '../extension/shared/prompts.js';
+import { buildAuditPrompt, buildCourseAuditPrompt } from '../extension/shared/prompts.js';
+import { TIER_METADATA } from '../extension/shared/evidence-base.js';
 
 assert.ok(TIER_METADATA.T1, 'Tier 1 metadata must exist');
 assert.strictEqual(TIER_METADATA.T1.color, '#2f7a4a', 'T1 must match canonical DESIGN.md color');

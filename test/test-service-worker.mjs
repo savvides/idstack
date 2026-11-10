@@ -142,6 +142,10 @@ for (const bad of [{ findings: { 0: {} } }, { findings: [null] }, { findings: [{
   await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload }), /audit format/);
 }
 
+// Text that is not JSON gets the audit-format message, not a raw SyntaxError.
+h = await loadWorker({ apiKey: 'k', fetchHandler: async () => jsonResponse({ candidates: [{ content: { parts: [{ text: 'Sorry, I cannot do that.' }] } }] }) });
+await assertRejected(await h.dispatch({ action: 'RUN_AUDIT', payload }), /^The AI response is not in the audit format/);
+
 // F3: only the side panel may start audits. A content script shares sender.id
 // with the panel, so a sender.id check would let any page's injected world
 // trigger credentialed Canvas fetches and model calls.

@@ -47,6 +47,10 @@ check "handles no arg without error" \
 check "multiple appends create exactly one line each" \
   "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 4 ]"
 
+# --help was once logged as the event {"raw": "--help"}.
+check "--help prints usage and logs nothing" \
+  "mkdir -p '$TEST_DIR/help-tl' && out=\$(cd '$TEST_DIR/help-tl' && $IDSTACK_DIR/bin/idstack-timeline-log --help) && echo \"\$out\" | grep -q 'Usage: idstack-timeline-log' && [ ! -e '$TEST_DIR/help-tl/.idstack' ]"
+
 echo ""
 
 # --- idstack-learnings log ---
@@ -60,6 +64,10 @@ check "appends valid JSON with ts field" \
 
 check "handles empty arg without error" \
   "$IDSTACK_DIR/bin/idstack-learnings log ''"
+
+# --help was once logged as the learning {"raw": "--help"}.
+check "log --help prints usage and logs nothing" \
+  "mkdir -p '$TEST_DIR/help-learn' && out=\$(cd '$TEST_DIR/help-learn' && $IDSTACK_DIR/bin/idstack-learnings log --help) && echo \"\$out\" | grep -q 'Usage: idstack-learnings' && [ ! -e '$TEST_DIR/help-learn/.idstack' ]"
 
 echo ""
 
@@ -117,6 +125,21 @@ out = subprocess.check_output(['$IDSTACK_DIR/bin/idstack-learnings', 'search', '
 keys = [json.loads(line)['key'] for line in out.strip().splitlines() if line.strip()]
 assert keys == ['l1', 'l2'], f'Expected local keys [l1, l2], got {keys}'
 \""
+
+# --limit 0 once printed every record (matches[-0:]).
+check "--limit 0 prints one record" \
+  "[ \$($IDSTACK_DIR/bin/idstack-learnings search --limit 0 | wc -l | tr -d ' ') -eq 1 ]"
+
+# A null insight once raised a TypeError that the search swallowed, so the
+# record never matched a keyword.
+$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"review","type":"pattern","key":"null_insight_key","insight":null}'
+check "--keyword finds a record whose insight is null" \
+  "$IDSTACK_DIR/bin/idstack-learnings search --keyword null_insight_key | grep -q 'null_insight_key'"
+
+# A flag with no value once made the option loop run forever (shift 2 fails).
+# perl's alarm stops the old loop, so the check fails and does not hang.
+check "--keyword with no value fails and says why" \
+  "out=\$(perl -e 'alarm 10; exec @ARGV' $IDSTACK_DIR/bin/idstack-learnings search --keyword 2>&1); [ \$? -eq 1 ] && echo \"\$out\" | grep -q -- '--keyword'"
 
 # --- python3 absent ---
 # python3 3.9 or later is a requirement. The scripts used to fall back to

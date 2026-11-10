@@ -71,7 +71,32 @@ const scenarios = {
     await p.$('add-to-dossier-btn').click();
     const [item] = p.h.storage.local.activeDossier;
     assert.deepStrictEqual([item.title, item.pageType, item.url],
-      ['BIO 101: Cell Biology', 'Canvas Course (Full Audit)', 'https://x.instructure.com/courses/123']);
+      ['BIO 101: Cell Biology', 'Canvas Course (Full Audit)', 'https://x.instructure.com/courses/123#full-course']);
+    assert.deepStrictEqual([item.courseId, item.courseOrigin], ['123', 'https://x.instructure.com']);
+  },
+
+  async 'a course-home audit and a full-course audit are two dossier items'() {
+    const url = 'https://x.instructure.com/courses/123';
+    const p = await loadPanel({ tab: { id: 1, url }, payloads: { 1: page('Course Home', url, 'Canvas Modules') } });
+    await p.$('audit-btn').click();
+    await p.reply({ success: true, data: RESULT });
+    await p.$('add-to-dossier-btn').click();
+    await p.$('audit-course-btn').click();
+    await flush();
+    await p.reply({ success: true, data: RESULT, courseData: { title: 'BIO 101' } });
+    await p.$('add-to-dossier-btn').click();
+    assert.deepStrictEqual(p.h.storage.local.activeDossier.map((i) => i.title), ['Course Home', 'BIO 101']);
+  },
+
+  async 'a failed dossier write does not say Added'() {
+    const p = await loadPanel({ tab: { id: 1, url: A.url }, payloads: { 1: A } });
+    await p.$('audit-btn').click();
+    await p.reply({ success: true, data: RESULT });
+    p.h.chrome.storage.local.set = (items, cb) => { p.h.chrome.runtime.lastError = { message: 'QUOTA_BYTES quota exceeded' }; cb(); p.h.chrome.runtime.lastError = undefined; };
+    const before = clickErrors.length;
+    await p.$('add-to-dossier-btn').click();
+    assert.strictEqual(clickErrors.length, before, 'click handler must not reject');
+    assert.strictEqual(p.$('add-to-dossier-btn').textContent, 'Not added');
   },
 
   async 'a slow extraction reply for an old tab is dropped (F8)'() {

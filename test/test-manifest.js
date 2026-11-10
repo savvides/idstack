@@ -13,7 +13,7 @@ assert.ok(manifest.permissions.includes('sidePanel'));
 assert.ok(manifest.permissions.includes('storage'));
 assert.ok(manifest.permissions.includes('activeTab'));
 assert.ok(manifest.host_permissions && manifest.host_permissions.includes('https://generativelanguage.googleapis.com/*'), 'host_permissions for AI API required');
-assert.ok(manifest.host_permissions && manifest.host_permissions.includes('*://*.instructure.com/*'), 'host_permissions for Canvas API required');
+assert.ok(manifest.host_permissions && manifest.host_permissions.includes('https://*.instructure.com/*'), 'host_permissions for Canvas API required');
 
 // F4: no declarative content script (its <all_urls> match put "all your data on all
 // websites" on the install prompt). The panel injects the extractor on demand under

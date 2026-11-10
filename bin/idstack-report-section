@@ -41,6 +41,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -190,7 +191,13 @@ def check_draft(path, refs):
     if not sections:
         problems.append((1, 'the draft has no "## " section'))
     number = len(head) + 1
+    seen = set()
     for heading, section_lines in sections:
+        # append would add the first section and then replace it with the second.
+        if heading in seen:
+            problems.append((number, 'the draft has the section "%s" two times. '
+                                     'Put all of its rows in one section.' % heading))
+        seen.add(heading)
         found = tables(section_lines, number)
         if not found and heading not in PROSE_SECTIONS:
             problems.append((number, 'the section "%s" has no table' % heading))
@@ -254,6 +261,13 @@ def write_atomic(path, text):
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as handle:
             handle.write(text)
+        # mkstemp makes the file 0600. Keep the mode of the report, or use the umask.
+        if os.path.exists(path):
+            shutil.copymode(path, tmp)
+        else:
+            umask = os.umask(0)
+            os.umask(umask)
+            os.chmod(tmp, 0o666 & ~umask)
         os.replace(tmp, path)
     except BaseException:
         if os.path.exists(tmp):

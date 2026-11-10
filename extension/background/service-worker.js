@@ -63,7 +63,12 @@ async function callLlmApi(apiKey, prompt) {
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!rawText) throw new Error('The AI model sent an empty response.');
 
-  const result = cleanJsonResponse(rawText);
+  let result = null;
+  try {
+    result = cleanJsonResponse(rawText);
+  } catch (e) {
+    // Not JSON: the shape check below explains it.
+  }
   // The renderer and dossier compiler read every finding and call string methods
   // on tier and severity; refuse a shape they cannot handle before it reaches them.
   const optionalString = (v) => v == null || typeof v === 'string';

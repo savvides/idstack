@@ -6,6 +6,8 @@
 # When it applies a migration, it writes "MIGRATED <from> <to>" to stderr.
 # If there is no file, the script writes no output and exits 0.
 # If python3 is not available, the script exits 3 and changes nothing.
+# If it cannot write the manifest, it writes nothing to stdout, does not
+# change the manifest and exits 1.
 #
 # Usage:
 #   idstack-migrate [--init] [path]
@@ -69,10 +71,12 @@ fi
 # Nothing to do if no manifest exists
 [ -f "$MANIFEST" ] || exit 0
 
-VERSION=$(python3 -c "
-import json, sys
+# The path goes in through the environment, not into the python source, so a
+# path with a quote in it cannot break the program.
+VERSION=$(MANIFEST="$MANIFEST" python3 -c "
+import json, os, sys
 try:
-    with open('$MANIFEST') as f:
+    with open(os.environ['MANIFEST']) as f:
         data = json.load(f)
     print(data.get('version', ''))
 except Exception:
@@ -85,11 +89,13 @@ if [ "$VERSION" = "$LATEST_VERSION" ]; then
   exit 0
 fi
 
-# Chained migration: apply each step sequentially
-python3 -c "
-import json, sys
+# Chained migration: apply each step sequentially. On a failure, print nothing to
+# stdout and exit 1: the preamble then prints the manifest, which did not change.
+MANIFEST="$MANIFEST" python3 -c "
+import json, os, shutil, sys, tempfile
 
-with open('$MANIFEST') as f:
+MANIFEST = os.environ['MANIFEST']
+with open(MANIFEST) as f:
     data = json.load(f)
 
 version = data.get('version', '')
@@ -224,14 +230,31 @@ if version == '1.3':
 
 if version != '$LATEST_VERSION':
     # Unknown version — output unchanged
-    with open('$MANIFEST') as f:
+    with open(MANIFEST) as f:
         print(f.read(), end='')
     sys.exit(0)
 
-with open('$MANIFEST', 'w') as f:
-    json.dump(data, f, indent=2)
-    f.write('\n')
+# Write a tempfile and rename it, so a failed write cannot cut the manifest.
+# Rename onto the real file, so a symlinked manifest stays a link.
+real = os.path.realpath(MANIFEST)
+tmp = None
+try:
+    fd, tmp = tempfile.mkstemp(prefix='.manifest-migrate.', suffix='.tmp',
+                               dir=os.path.dirname(real))
+    with os.fdopen(fd, 'w') as f:
+        json.dump(data, f, indent=2)
+        f.write('\n')
+    shutil.copymode(real, tmp)
+    os.replace(tmp, real)
+except Exception as exc:
+    if tmp:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+    print(f'idstack-migrate: cannot write the manifest {MANIFEST}: {exc}. The manifest did not change.', file=sys.stderr)
+    sys.exit(1)
 
 print(json.dumps(data, indent=2))
 print(f'MIGRATED {migrated_from} $LATEST_VERSION', file=sys.stderr)
-" || { cat "$MANIFEST"; exit 0; }
+"

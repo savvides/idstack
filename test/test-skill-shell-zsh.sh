@@ -52,19 +52,26 @@ PY
 }
 
 # Fake curl for the Canvas blocks: prints a JSON body and then the HTTP code
-# on its own line, as `curl -s -w "\n%{http_code}"` does.
+# on its own line, as `curl -s -w "\n%{http_code}"` does. It takes the token
+# only from a config on stdin (`-K -`): a token in argv shows in `ps`. It logs
+# its argv to $CURL_LOG and the text of each `name@file` field to $CURL_LOG.data.
 mkdir -p "$WORK/fakebin"
+export CURL_LOG="$WORK/curl.log"
 cat > "$WORK/fakebin/curl" <<'EOF'
 #!/bin/sh
+printf '%s\n' "$*" >> "$CURL_LOG"
+prev= cfg=
 for a in "$@"; do
-  case "$a" in
-    "Authorization: Bearer secret-token-123") ok=1 ;;
-  esac
+  [ "$prev" = -K ] && [ "$a" = - ] && cfg=$(cat)
+  case "$prev:$a" in --data-urlencode:*@*) cat "${a#*@}" >> "$CURL_LOG.data"; echo >> "$CURL_LOG.data" ;; esac
+  prev=$a
 done
-[ "${ok:-0}" = 1 ] || { printf '{"error":"no token"}\n401'; exit 0; }
+case "$cfg" in *'header = "Authorization: Bearer secret-token-123"'*) ;; *) printf '{"error":"no token"}\n401'; exit 0 ;; esac
 printf '{"id":42,"name":"Module 1"}\n200'
 EOF
 chmod +x "$WORK/fakebin/curl"
+# Text with characters that the shell changes when it is put in a command.
+HOSTILE='Q&A and Review+Practice: $HOME costs $50, `touch pwned` $(touch pwned) it'"'"'s "done"'
 
 for sh in bash zsh; do
   run() { # run <dir> <script>: runs the script with this leg's shell in <dir>
@@ -95,6 +102,30 @@ for sh in bash zsh; do
   out=$(run "$P" "$b")
   check "[$sh] course-import reads both SCO launch files" \
     "[ \"\$(printf '%s' \"\$out\" | grep -c '=== SCO:')\" = 2 ]"
+  # The hrefs come from an untrusted imsmanifest.xml: no shell expansion, and
+  # no file outside the import folder.
+  echo top-secret > "$P/secret.txt"
+  mkdir -p "$P/scohost"
+  b=$(block course-import 'sco_href' \
+    "<IMPORT_DIR printed above>=$P/sco" \
+    "<href of SCO 1>=../secret.txt" "<href of SCO 2>=$P/secret.txt
+a.html'\$(touch pwned)'\`touch pwned\`
+m1/index.html")
+  out=$(run "$P/scohost" "$b")
+  check "[$sh] course-import SCO loop skips '..' and absolute hrefs" \
+    "! printf '%s' \"\$out\" | grep -q top-secret && [ \"\$(printf '%s\n' \"\$out\" | grep -c '^SCO_HREF_SKIPPED: ')\" = 2 ] && printf '%s' \"\$out\" | grep -qx one"
+  check "[$sh] course-import SCO hrefs do not run commands" "[ ! -e '$P/scohost/pwned' ]"
+  # A package can hold symlinks (Info-ZIP restores them): a symlinked file or
+  # folder must not let the loop read a file outside the import folder.
+  mkdir -p "$P/scolnk/ok" && echo three > "$P/scolnk/ok/index.html"
+  ln -s "$P" "$P/scolnk/up"; ln -s "$P/secret.txt" "$P/scolnk/ok/leak.html"
+  b=$(block course-import 'sco_href' \
+    "<IMPORT_DIR printed above>=$P/scolnk" \
+    "<href of SCO 1>=up/secret.txt" "<href of SCO 2>=ok/leak.html
+ok/index.html")
+  out=$(run "$P" "$b")
+  check "[$sh] course-import SCO loop skips symlinked files and folders" \
+    "! printf '%s' \"\$out\" | grep -q top-secret && [ \"\$(printf '%s\n' \"\$out\" | grep -c '^SCO_HREF_SKIPPED: ')\" = 2 ] && printf '%s' \"\$out\" | grep -qx three"
 
   # course-import: .docx text extraction.
   mkdir -p "$P/docx"
@@ -108,10 +139,16 @@ doc = ('<w:document xmlns:w="%s"><w:body>'
 with zipfile.ZipFile(sys.argv[1], 'w') as z:
     z.writestr('word/document.xml', doc)
 PY
-  b=$(block course-import 'DOCX_PATH=' "<file path from the user>=Course Plan.docx")
+  b=$(block course-import 'read -r DOCX_PATH' "<file path from the user>=Course Plan.docx")
   out=$(run "$P/docx" "$b")
   check "[$sh] course-import extracts .docx text with headings" \
     "grep -qx '## Week 1' '$P/docx/.idstack/import/Course Plan.txt' && grep -qx 'Students will analyze data.' '$P/docx/.idstack/import/Course Plan.txt'"
+  # A file name is not trusted: the shell must not run a command in it.
+  cp "$P/docx/Course Plan.docx" "$P/docx/Bio\$(touch pwned).docx"
+  b=$(block course-import 'read -r DOCX_PATH' "<file path from the user>=Bio\$(touch pwned).docx")
+  out=$(run "$P/docx" "$b")
+  check "[$sh] course-import does not run a command in a file name" \
+    "[ ! -e '$P/docx/pwned' ] && grep -qx '## Week 1' '$P/docx/.idstack/import/Bio\$(touch pwned).txt'"
 
   # course-export: IMSCC staging, then packaging in a later, separate shell.
   mkdir -p "$P/exp/.idstack/exports/demo-course"
@@ -149,21 +186,113 @@ PY
     "ls -l '$P/canvas/.idstack/canvas.env' | grep -q '^-rw-------'"
   check "[$sh] Canvas settings file is git-ignored" \
     "grep -qx canvas.env '$P/canvas/.idstack/.gitignore'"
+  # A .gitignore with no newline at the end: the new line must not join the last one.
+  for s in course-export course-import; do
+    for last in 'exports/' 'canvas.env'; do
+      d="$P/gi-$s-${last%[./]*}"
+      mkdir -p "$d/.idstack" && (cd "$d" && git init -q) && printf '%s' "$last" > "$d/.idstack/.gitignore"
+      run "$d" "$(block $s "_TOKEN_LINE=" "<canvas url>=https://canvas.example.edu" "<course id>=123")" >/dev/null
+      check "[$sh] $s git-ignores canvas.env after a .gitignore that ends in '$last' with no newline" \
+        "(cd '$d' && git check-ignore -q .idstack/canvas.env && git check-ignore -q .idstack/$last)"
+      [ $s = course-export ] && check "[$sh] course-export git-ignores canvas-push/ after '$last' with no newline" \
+        "(cd '$d' && git check-ignore -q .idstack/canvas-push/x)"
+    done
+  done
+  # The token must not go over plain http.
+  for s in course-export course-import; do
+    for u in http://canvas.example.edu canvas.example.edu; do
+      mkdir -p "$P/canvas-http"
+      out=$(run "$P/canvas-http" "$(block $s "_TOKEN_LINE=" "<canvas url>=$u" "<course id>=123")")
+      check "[$sh] $s Canvas settings refuse $u" \
+        "printf '%s' \"\$out\" | grep -q '^CANVAS_URL_NOT_HTTPS' && [ ! -e '$P/canvas-http/.idstack/canvas.env' ]"
+    done
+  done
   # The user pastes the token between the quotes.
   sed "s/^CANVAS_TOKEN=''/CANVAS_TOKEN='secret-token-123'/" "$P/canvas/.idstack/canvas.env" > "$P/canvas/env.tmp" && mv "$P/canvas/env.tmp" "$P/canvas/.idstack/canvas.env"
   run "$P/canvas" "$(block course-export "_TOKEN_LINE=" "<canvas url>=https://canvas.example.edu" "<course id>=456")" >/dev/null
   check "[$sh] rewriting the Canvas settings keeps the token" \
     "grep -qx \"CANVAS_TOKEN='secret-token-123'\" '$P/canvas/.idstack/canvas.env'"
-  b=$(block course-export 'module[name]=')
+  b=$(block course-export 'module[name]@')
+  rm -f "$CURL_LOG" "$CURL_LOG.data"
+  mkdir -p "$P/canvas/.idstack/canvas-push"
+  printf '%s' "$HOSTILE" > "$P/canvas/.idstack/canvas-push/title.txt"
   out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas" "$b")
   check "[$sh] Canvas module block reads the token in a new shell and parses the id" \
     "printf '%s' \"\$out\" | grep -q 'HTTP: 200' && printf '%s' \"\$out\" | grep -qx 'MODULE_ID=42'"
   check "[$sh] Canvas module block does not print the token" \
     "! printf '%s' \"\$out\" | grep -q secret-token-123"
+  check "[$sh] Canvas module block keeps the token out of curl's argv" \
+    "[ -s '$CURL_LOG' ] && ! grep -q secret-token-123 '$CURL_LOG'"
+  check "[$sh] Canvas module block sends the title unchanged and deletes the push files" \
+    "[ \"\$(cat '$CURL_LOG.data')\" = \"\$HOSTILE\" ] && [ ! -e '$P/canvas/.idstack/canvas-push' ] && [ ! -e '$P/canvas/pwned' ]"
+  # Page: the title and the HTML body go from files, unchanged.
+  rm -f "$CURL_LOG" "$CURL_LOG.data"
+  mkdir -p "$P/canvas/.idstack/canvas-push"
+  printf '%s' "$HOSTILE" > "$P/canvas/.idstack/canvas-push/title.txt"
+  printf '<p>%s</p>' "$HOSTILE" > "$P/canvas/.idstack/canvas-push/body.html"
+  out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas" "$(block course-export 'wiki_page[body]@')")
+  check "[$sh] Canvas page block sends the title and body unchanged" \
+    "printf '%s' \"\$out\" | grep -q 'HTTP: 200' && [ \"\$(cat '$CURL_LOG.data')\" = \"\$(printf '%s\n<p>%s</p>' \"\$HOSTILE\" \"\$HOSTILE\")\" ] && [ ! -e '$P/canvas/pwned' ]"
+  out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas" "$(block course-export 'wiki_page[body]@')")
+  check "[$sh] Canvas page block stops with PUSH_FILE_MISSING when the files are not there" \
+    "printf '%s' \"\$out\" | grep -qx PUSH_FILE_MISSING && ! printf '%s' \"\$out\" | grep -q 'HTTP:'"
+  # A settings file from an older idstack can have an http URL.
+  sed "s|^CANVAS_BASE_URL=.*|CANVAS_BASE_URL='http://canvas.example.edu'|" "$P/canvas/.idstack/canvas.env" > "$P/canvas/old.env"
+  mkdir -p "$P/canvas-old/.idstack" && mv "$P/canvas/old.env" "$P/canvas-old/.idstack/canvas.env"
+  rm -f "$CURL_LOG"
+  out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas-old" "$(block course-export 'users/self')")
+  check "[$sh] Canvas validate block refuses an http URL and does not run curl" \
+    "printf '%s' \"\$out\" | grep -q '^CANVAS_URL_NOT_HTTPS' && [ ! -e '$CURL_LOG' ]"
+  # A token with a quotation mark or a backslash would break the curl config
+  # line that carries it, so the validate blocks refuse it before curl runs.
+  for bad in 'tok"en' 'tok\en'; do
+    mkdir -p "$P/canvas-badtok/.idstack"
+    BAD="$bad" python3 -c 'import os,sys; s=open(sys.argv[1]).read(); open(sys.argv[2],"w").write(s.replace("CANVAS_TOKEN='"'"'secret-token-123'"'"'", "CANVAS_TOKEN='"'"'"+os.environ["BAD"]+"'"'"'"))' \
+      "$P/canvas/.idstack/canvas.env" "$P/canvas-badtok/.idstack/canvas.env"
+    for s in course-import course-export; do
+      rm -f "$CURL_LOG"
+      out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas-badtok" "$(block $s 'users/self')")
+      check "[$sh] $s refuses a Canvas token that has $bad in it, before curl runs" \
+        "printf '%s' \"\$out\" | grep -q '^CANVAS_TOKEN_BAD' && [ ! -e '$CURL_LOG' ]"
+    done
+  done
   mkdir -p "$P/canvas-none"
   out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas-none" "$(block course-import 'users/self')")
   check "[$sh] Canvas block stops with CANVAS_ENV_MISSING when there is no settings file" \
     "printf '%s' \"\$out\" | grep -q CANVAS_ENV_MISSING"
+
+  # Learnings and timeline events: model text with an apostrophe, quotes, $
+  # and backticks reaches the log unchanged.
+  INSIGHT='LMS doesn'"'"'t keep \"rubrics\" at $50 or `id` $(id)'
+  for s in needs-analysis learning-objectives assessment-design course-builder course-quality-review accessibility-review red-team course-export course-import; do
+    mkdir -p "$P/learn-$s"
+    out=$(run "$P/learn-$s" "$(block $s 'idstack-learnings" log' "DESCRIPTION=$INSIGHT")")
+    check "[$sh] $s logs a learning with an apostrophe unchanged" \
+      "python3 -c 'import json,sys; r=json.loads(open(sys.argv[1]).read().splitlines()[-1]); sys.exit(r[\"insight\"]!=sys.argv[2])' '$P/learn-$s/.idstack/learnings.jsonl' \"\$(printf '%s' \"\$INSIGHT\" | sed 's/\\\\\"/\"/g')\""
+  done
+  # A learning that the model writes on two lines is logged whole, not cut at
+  # the first line.
+  mkdir -p "$P/learn-multi"
+  out=$(run "$P/learn-multi" "$(block needs-analysis 'idstack-learnings" log' '"source":"observed"}="source":"observed"
+}')")
+  check "[$sh] a learning on two lines is logged whole" \
+    "python3 -c 'import json,sys; r=json.loads(open(sys.argv[1]).read().splitlines()[-1]); sys.exit(r.get(\"source\")!=\"observed\")' '$P/learn-multi/.idstack/learnings.jsonl'"
+  # learn: the keyword and the key are user text: whole phrase, no command runs.
+  mkdir -p "$P/lrn"
+  PHRASE='rubric design $(touch pwned)'
+  for kv in "hit|use $PHRASE early" "miss|rubric only" "$PHRASE|gone"; do
+    (cd "$P/lrn" && "$IDSTACK_HOME/bin/idstack-learnings" log "$(python3 -c 'import json,sys; k,i=sys.argv[1].split("|"); print(json.dumps({"skill":"learn","type":"operational","key":k,"insight":i,"confidence":8,"source":"observed"}))' "$kv")")
+  done
+  out=$(run "$P/lrn" "$(block learn 'search --keyword "$_KEYWORD" --limit' "<keyword>=$PHRASE")")
+  check "[$sh] learn searches the whole keyword phrase" \
+    "printf '%s' \"\$out\" | grep -q '\"hit\"' && ! printf '%s' \"\$out\" | grep -q '\"miss\"'"
+  run "$P/lrn" "$(block learn 'delete "$_KEY"' "<key>=$PHRASE")" >/dev/null
+  check "[$sh] learn deletes a key with a space and \$( )" "! grep -qF '\"gone\"' '$P/lrn/.idstack/learnings.jsonl'"
+  check "[$sh] learn keyword and key do not run commands" "[ ! -e '$P/lrn/pwned' ]"
+  mkdir -p "$P/tl"
+  out=$(run "$P/tl" "$(block red-team 'idstack-timeline-log' '"event":"completed"="event":"completed","focus":"learner'"'"'s view"')")
+  check "[$sh] a timeline event with an apostrophe is logged" \
+    "grep -qF '\"focus\": \"learner'\"'\"'s view\"' '$P/tl/.idstack/timeline.jsonl' || grep -qF '\"focus\":\"learner'\"'\"'s view\"' '$P/tl/.idstack/timeline.jsonl'"
 
   # Report links: a real report block prints the relative path of the report.
   # An absolute path did not make a link in the Claude desktop app.

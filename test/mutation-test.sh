@@ -1081,10 +1081,11 @@ python3 - "$WORK/r/extension/sidepanel/sidepanel.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = ("renderResults(response.data, {\n"
-       "              url: `${origin}/courses/${courseId}`,\n"
+       "              // Not the course home's URL: a course-home page audit has that id in the dossier.\n"
+       "              url: `${origin}/courses/${courseId}#full-course`,\n"
        "              title: response.courseData?.title || 'Canvas Course',\n"
        "              courseTitle: response.courseData?.title || null,\n"
-       "              pageType: 'Canvas Course (Full Audit)'\n"
+       "              pageType: FULL_AUDIT_PAGE_TYPE\n"
        "            });")
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, "renderResults(response.data, activePayload);", 1)
@@ -1788,9 +1789,9 @@ fresh
 python3 - "$WORK/r/extension/shared/dossier-compiler.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "      md += `- **Recommendation:** ${f.recommendation || ''}\\n\\n`;\n    });"
+old = "      md += `- **Recommendation:** ${oneLine(f.recommendation || '')}\\n\\n`;\n    });"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "      md += `- **Actionable Recommendation:** ${f.recommendation || ''}; consider it before you publish.\\n\\n`;\n    });", 1)
+s = s.replace(old, "      md += `- **Actionable Recommendation:** ${oneLine(f.recommendation || '')}; consider it before you publish.\\n\\n`;\n    });", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "the Markdown export writes non-STE text" "$WORK/r/test/smoke-test.sh" "$WORK/r"
@@ -1915,8 +1916,8 @@ fresh
 python3 - "$WORK/r/skills/needs-analysis/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'\n<project name>\nIDSTACK_PROJECT_NAME\n"
-new = '''_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")\n'''
+old = "IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'\n<project name>\nIDSTACK_PROJECT_NAME\n_SLUG="
+new = '''_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")\n_SLUG='''
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, new, 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1929,8 +1930,8 @@ fresh
 python3 - "$WORK/r/skills/course-import/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'\n<project name>\nIDSTACK_PROJECT_NAME\n"
-new = '''_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")\n'''
+old = "IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'\n<project name>\nIDSTACK_PROJECT_NAME\n_SLUG="
+new = '''_PROJECT_NAME=$(python3 -c "import json; print(json.load(open('.idstack/project.json')).get('project_name',''))" 2>/dev/null || echo "")\n_SLUG='''
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, new, 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -2072,7 +2073,7 @@ shell_mutation "the manifest-merge example writes a /tmp payload again" \
   templates/manifest-schema.md "--payload - <<'PAYLOAD'" "--payload /tmp/payload.json <<'PAYLOAD'"
 shell_mutation "a Canvas block forgets to load canvas.env" \
   skills/course-import/SKILL.md.tmpl ". ./.idstack/canvas.env || { echo \"CANVAS_ENV_MISSING\"; exit 1; }
-curl -s" 'curl -s'
+printf 'header = \"Authorization: Bearer %s\"" "printf 'header = \"Authorization: Bearer %s\""
 shell_mutation "a report block stops printing the plugin template path" \
   skills/needs-analysis/SKILL.md.tmpl 'echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 ' ''

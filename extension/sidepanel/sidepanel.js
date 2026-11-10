@@ -1,5 +1,5 @@
-import { getSettings, saveSettings, getDossier, addToDossier, removeFromDossier, clearDossier } from '../shared/storage.js';
-import { renderAuditHTML, renderDossierListHTML } from './renderer-helper.js';
+import { getSettings, saveSettings, getDossier, addToDossier, removeFromDossier, clearDossier, FULL_AUDIT_PAGE_TYPE } from '../shared/storage.js';
+import { renderAuditHTML, renderDossierListHTML, escapeHtml } from './renderer-helper.js';
 import { detectCourseContext } from '../content/extractor-core.js';
 import { compileSingleAuditToMarkdown, compileDossierToMarkdown, dossierCourseLabel } from '../shared/dossier-compiler.js';
 
@@ -67,7 +67,11 @@ async function updateDossierUI() {
         e.stopPropagation();
         const id = btn.getAttribute('data-dossier-id');
         if (id) {
-          await removeFromDossier(id);
+          try {
+            await removeFromDossier(id);
+          } catch (err) {
+            // updateDossierUI shows what the dossier still holds.
+          }
           await updateDossierUI();
         }
       });
@@ -199,14 +203,7 @@ function renderError(errorMessage) {
   const container = document.getElementById('results-container');
   if (!container) return;
 
-  const safeError = errorMessage
-    ? String(errorMessage)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;')
-    : 'An unknown error occurred during the audit.';
+  const safeError = errorMessage ? escapeHtml(errorMessage) : 'An unknown error occurred during the audit.';
 
   container.innerHTML = `
     <div class="context-card error-card">
@@ -251,9 +248,13 @@ const addToDossierBtn = document.getElementById('add-to-dossier-btn');
 if (addToDossierBtn) {
   addToDossierBtn.addEventListener('click', async () => {
     if (!activeAuditItem) return;
-    await addToDossier(activeAuditItem);
+    try {
+      await addToDossier(activeAuditItem);
+      addToDossierBtn.textContent = '✓ Added to Dossier';
+    } catch (e) {
+      addToDossierBtn.textContent = 'Not added';
+    }
     await updateDossierBadge();
-    addToDossierBtn.textContent = '✓ Added to Dossier';
     setTimeout(() => {
       addToDossierBtn.textContent = '➕ Add to Dossier';
     }, 2000);
@@ -370,10 +371,11 @@ if (auditCourseBtn) {
           }
           if (response && response.success) {
             renderResults(response.data, {
-              url: `${origin}/courses/${courseId}`,
+              // Not the course home's URL: a course-home page audit has that id in the dossier.
+              url: `${origin}/courses/${courseId}#full-course`,
               title: response.courseData?.title || 'Canvas Course',
               courseTitle: response.courseData?.title || null,
-              pageType: 'Canvas Course (Full Audit)'
+              pageType: FULL_AUDIT_PAGE_TYPE
             });
           } else {
             renderError(response?.error || 'An unknown error occurred during the course audit.');
@@ -434,7 +436,12 @@ if (copyDossierMdBtn) {
 
 if (clearDossierBtn) {
   clearDossierBtn.addEventListener('click', async () => {
-    await clearDossier();
+    if (!confirm('Remove all audits from the dossier? You cannot undo this.')) return;
+    try {
+      await clearDossier();
+    } catch (e) {
+      // updateDossierUI shows what the dossier still holds.
+    }
     await updateDossierUI();
   });
 }

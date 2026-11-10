@@ -49,6 +49,7 @@ Exit codes:
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -178,6 +179,8 @@ def write_atomic(manifest_path, data):
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(data, handle, indent=2)
             handle.write("\n")
+        # mkstemp makes the file 0600. Keep the mode of the manifest.
+        shutil.copymode(manifest_path, tmp_path)
         os.replace(tmp_path, manifest_path)
     except Exception as exc:
         try:

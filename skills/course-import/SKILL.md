@@ -582,7 +582,9 @@ into this window."
 ### A2. Validate and extract
 
 ```bash
-CARTRIDGE_PATH="<file path from the user>"
+IFS= read -r CARTRIDGE_PATH <<'IDSTACK_PATH'
+<file path from the user>
+IDSTACK_PATH
 # Check file exists
 if [ ! -f "$CARTRIDGE_PATH" ]; then
   echo "FILE_NOT_FOUND"
@@ -602,7 +604,9 @@ path like `/var/folders/.../idstack-import.XXXXXX.suffix`. The bare `mktemp -d` 
 portable across macOS and Linux:
 
 ```bash
-CARTRIDGE_PATH="<file path from the user>"
+IFS= read -r CARTRIDGE_PATH <<'IDSTACK_PATH'
+<file path from the user>
+IDSTACK_PATH
 IMPORT_DIR=$(mktemp -d)
 unzip -q "$CARTRIDGE_PATH" -d "$IMPORT_DIR" 2>&1
 echo "IMPORT_DIR=$IMPORT_DIR"
@@ -740,7 +744,9 @@ The Read tool cannot read Word files (`.docx`). For a `.docx` file, first
 extract the text. Replace `<file path from the user>`, then run the command:
 
 ```bash
-DOCX_PATH="<file path from the user>"
+IFS= read -r DOCX_PATH <<'IDSTACK_PATH'
+<file path from the user>
+IDSTACK_PATH
 mkdir -p .idstack/import
 _OUT=".idstack/import/$(basename "$DOCX_PATH" .docx).txt"
 python3 - "$DOCX_PATH" "$_OUT" <<'PYEOF'
@@ -824,12 +830,31 @@ token that is already in the file:
 ```bash
 umask 077
 mkdir -p .idstack
+IFS= read -r _URL <<'IDSTACK_CANVAS_URL'
+<canvas url>
+IDSTACK_CANVAS_URL
+IFS= read -r _COURSE <<'IDSTACK_COURSE_ID'
+<course id>
+IDSTACK_COURSE_ID
+case "$_URL" in *\'*) echo "CANVAS_URL_BAD: $_URL"; exit 1 ;; https://*) ;; *) echo "CANVAS_URL_NOT_HTTPS: $_URL"; exit 1 ;; esac
+case "$_COURSE" in ''|*[!0-9]*) echo "CANVAS_COURSE_ID_BAD: $_COURSE"; exit 1 ;; esac
 _TOKEN_LINE=$(grep '^CANVAS_TOKEN=' .idstack/canvas.env 2>/dev/null || echo "CANVAS_TOKEN=''")
-printf "CANVAS_BASE_URL='%s'\nCANVAS_COURSE_ID='%s'\n%s\n" '<canvas url>' '<course id>' "$_TOKEN_LINE" > .idstack/canvas.env
+printf "CANVAS_BASE_URL='%s'\nCANVAS_COURSE_ID='%s'\n%s\n" "$_URL" "$_COURSE" "$_TOKEN_LINE" > .idstack/canvas.env
 chmod 600 .idstack/canvas.env
+[ -s .idstack/.gitignore ] && [ -n "$(tail -c1 .idstack/.gitignore)" ] && echo >> .idstack/.gitignore
 grep -qx 'canvas.env' .idstack/.gitignore 2>/dev/null || echo 'canvas.env' >> .idstack/.gitignore
 echo "Canvas settings file: $PWD/.idstack/canvas.env"
 ```
+
+If the command prints one of these codes, tell the user the text. Then ask for
+the correct value and run the command again.
+
+- `CANVAS_URL_NOT_HTTPS`: "The Canvas URL must start with `https://`. idstack
+  does not send your token on a connection that is not encrypted."
+- `CANVAS_URL_BAD`: "The Canvas URL cannot contain a quotation mark. Check the
+  address."
+- `CANVAS_COURSE_ID_BAD`: "The course ID must be a number. Check the course URL
+  in Canvas."
 
 Then tell the user:
 
@@ -847,8 +872,9 @@ revoke the token in Canvas."
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 [ -n "$CANVAS_TOKEN" ] || { echo "CANVAS_TOKEN_EMPTY: add the token to .idstack/canvas.env"; exit 1; }
-RESPONSE=$(curl -s -w "\n%{http_code}" \
-  -H "Authorization: Bearer $CANVAS_TOKEN" \
+case "$CANVAS_TOKEN" in *'"'*|*'\'*) echo "CANVAS_TOKEN_BAD: the token in .idstack/canvas.env has a quotation mark or a backslash"; exit 1 ;; esac
+case "$CANVAS_BASE_URL" in https://*) ;; *) echo "CANVAS_URL_NOT_HTTPS: $CANVAS_BASE_URL"; exit 1 ;; esac
+RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" \
   "$CANVAS_BASE_URL/api/v1/users/self" 2>&1)
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
 BODY=$(echo "$RESPONSE" | sed '$d')
@@ -857,6 +883,8 @@ echo "$BODY" | head -5
 ```
 
 Handle errors:
+- `CANVAS_URL_NOT_HTTPS`: "The Canvas URL in `.idstack/canvas.env` must start
+  with `https://`. Give me the correct address." Then run the settings command again.
 - HTTP 401: "Token rejected. Make sure you copied the full token. In Canvas:
   Account → Settings → Approved Integrations → New Access Token."
 - HTTP 403: "Access denied. Your token does not have the necessary permissions."
@@ -865,7 +893,8 @@ Handle errors:
 ### C3. Fetch course data
 
 **SECURITY RULE: The token is only in `.idstack/canvas.env`. Use
-`$CANVAS_TOKEN` ONLY in the curl `Authorization` header. NEVER show the file
+`$CANVAS_TOKEN` ONLY in the `printf` line that gives curl the `Authorization`
+header. NEVER put the token in a curl argument. NEVER show the file
 with `cat`, NEVER echo the token, and NEVER write it to the manifest, the
 report, or a different file.**
 
@@ -874,42 +903,54 @@ Fetch in this order (each is a separate curl call):
 **Course info:**
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+printf 'header = "Authorization: Bearer %s"
+proto = "=https"
+' "$CANVAS_TOKEN" | curl -K - -s \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID" | head -200
 ```
 
 **Modules with items:**
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+printf 'header = "Authorization: Bearer %s"
+proto = "=https"
+' "$CANVAS_TOKEN" | curl -K - -s \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules?include[]=items&per_page=50"
 ```
 
 **Assignments:**
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+printf 'header = "Authorization: Bearer %s"
+proto = "=https"
+' "$CANVAS_TOKEN" | curl -K - -s \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/assignments?per_page=50"
 ```
 
 **Pages (first page only for structure):**
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+printf 'header = "Authorization: Bearer %s"
+proto = "=https"
+' "$CANVAS_TOKEN" | curl -K - -s \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/pages?per_page=50"
 ```
 
 **Discussion topics:**
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+printf 'header = "Authorization: Bearer %s"
+proto = "=https"
+' "$CANVAS_TOKEN" | curl -K - -s \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/discussion_topics?per_page=50"
 ```
 
 **Outcomes (if available):**
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+printf 'header = "Authorization: Bearer %s"
+proto = "=https"
+' "$CANVAS_TOKEN" | curl -K - -s \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/outcome_groups?per_page=50"
 ```
 
@@ -917,7 +958,9 @@ For each outcome group found, fetch individual outcomes:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 GROUP_ID=<outcome group id from the response above>
-curl -s -H "Authorization: Bearer $CANVAS_TOKEN" \
+printf 'header = "Authorization: Bearer %s"
+proto = "=https"
+' "$CANVAS_TOKEN" | curl -K - -s \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/outcome_groups/$GROUP_ID/outcomes?per_page=50"
 ```
 
@@ -960,7 +1003,9 @@ Adobe Captivate, Lectora, iSpring, or any SCORM-compliant authoring tool."
 ### E2. Validate and extract
 
 ```bash
-SCORM_PATH="<file path from the user>"
+IFS= read -r SCORM_PATH <<'IDSTACK_PATH'
+<file path from the user>
+IDSTACK_PATH
 # Check file exists
 if [ ! -f "$SCORM_PATH" ]; then
   echo "FILE_NOT_FOUND"
@@ -976,7 +1021,9 @@ that your authoring tool exports."
 Extract the package:
 
 ```bash
-SCORM_PATH="<file path from the user>"
+IFS= read -r SCORM_PATH <<'IDSTACK_PATH'
+<file path from the user>
+IDSTACK_PATH
 IMPORT_DIR=$(mktemp -d)
 unzip -q "$SCORM_PATH" -d "$IMPORT_DIR" 2>&1
 echo "IMPORT_DIR=$IMPORT_DIR"
@@ -1028,14 +1075,22 @@ From `imsmanifest.xml`, extract:
 IMPORT_DIR=<IMPORT_DIR printed above>
 # For each SCO resource, read its launch file.
 # Put one SCO launch href on each line of SCO_HREFS.
-SCO_HREFS='<href of SCO 1>
-<href of SCO 2>'
+IFS= read -r -d '' SCO_HREFS <<'IDSTACK_SCO_HREFS' || true
+<href of SCO 1>
+<href of SCO 2>
+IDSTACK_SCO_HREFS
+_IMPORT_REAL=$(cd -P "$IMPORT_DIR" && pwd -P)
 printf '%s\n' "$SCO_HREFS" | while IFS= read -r sco_href; do
   [ -n "$sco_href" ] || continue
-  if [ -f "$IMPORT_DIR/$sco_href" ]; then
-    echo "=== SCO: $sco_href ==="
-    cat "$IMPORT_DIR/$sco_href"
-  fi
+  # The manifest is not trusted: read only files inside the import folder.
+  case "/$sco_href/" in //*|*/../*) echo "SCO_HREF_SKIPPED: $sco_href"; continue ;; esac
+  [ -f "$IMPORT_DIR/$sco_href" ] || continue
+  # The package can contain symlinks: refuse a symlink, and a folder outside the import folder.
+  _SCO_DIR=$(cd -P "$(dirname "$IMPORT_DIR/$sco_href")" && pwd -P)
+  case "$_SCO_DIR/" in "$_IMPORT_REAL"/*) ;; *) echo "SCO_HREF_SKIPPED: $sco_href"; continue ;; esac
+  [ -L "$IMPORT_DIR/$sco_href" ] && { echo "SCO_HREF_SKIPPED: $sco_href"; continue; }
+  echo "=== SCO: $sco_href ==="
+  cat "$IMPORT_DIR/$sco_href"
 done
 ```
 
@@ -1296,7 +1351,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="<project name>" \
+IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
+<project name>
+IDSTACK_PROJECT_NAME
+"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="$_PROJECT_NAME" \
   --section context --payload .idstack/.context-payload.json \
   --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
   --section learning_objectives --payload .idstack/.learning_objectives-payload.json \
@@ -1816,7 +1874,10 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-timeline-log" '{"skill":"course-import","event":"completed"}'
+IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
+{"skill":"course-import","event":"completed"}
+IDSTACK_EVENT
+"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -1836,5 +1897,8 @@ fi
 for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-learnings" log '{"skill":"course-import","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}'
+IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
+{"skill":"course-import","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
+IDSTACK_LEARNING
+"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
 ```

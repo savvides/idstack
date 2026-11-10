@@ -11,6 +11,7 @@ set -e
 
 JSON_ARG="${1:-}"
 [ -z "$JSON_ARG" ] && exit 0
+case "$JSON_ARG" in -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
 command -v python3 &>/dev/null || { echo "idstack-timeline-log: python3 is necessary" >&2; exit 0; }
 
 IDSTACK_DIR=".idstack"
