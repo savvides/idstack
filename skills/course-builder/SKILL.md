@@ -1064,8 +1064,9 @@ Write files with consistent naming:
 **Slugification rules:** lowercase, hyphens for spaces, strip special characters.
 "Critical Analysis Essay" becomes "critical-analysis-essay".
 
-Confirm each file as it is written. If any write fails, report the error and
-continue with remaining files.
+Do not write a chat line for each file. The Generated artifacts section of the
+report lists the files. If any write fails, report the error and continue with
+remaining files.
 
 **Writing standard check (course content).** Run this command on the course content folder. Do the check only on the files that you wrote in this run. If the folder has other files, replace `".idstack/course-content"` with the paths of the files that you wrote. Put each path in quotation marks.
 

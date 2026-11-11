@@ -576,19 +576,10 @@ starting point.
 
 ### Step 2: Present Pipeline Status
 
-Show the user a status table before starting:
+Tell the user the status in one line before starting. Do not show a list of the skills
+in the chat. The course dashboard has the list. For example:
 
-```
-Pipeline Status:
-  [done] /idstack:needs-analysis
-  [done] /idstack:learning-objectives
-  [next] /idstack:assessment-design      <-- the run starts here
-  [    ] /idstack:course-builder
-  [    ] /idstack:course-quality-review
-  [    ] /idstack:accessibility-review
-  [    ] /idstack:red-team
-  [    ] /idstack:course-export
-```
+"3 of 8 skills are complete. The next skill is `/idstack:assessment-design`."
 
 Ask: "Ready to continue the pipeline from /idstack:assessment-design?" (using AskUserQuestion
 with options: "Yes, continue" / "Start from a different skill" / "Re-run a completed skill")

@@ -920,35 +920,12 @@ Use only the approved rows of the report. `job_tasks` has the approved `T-` rows
 
 Write the manifest, then confirm. Write the message as Markdown text, not in a code block, so that the link works:
 
-```
-## Import Complete
+"The import is complete: {N} modules, {M} learning objectives, {P} assessments and {F} quality flags.
+Read the report: <the Report path, written as a link as the Report Links section of the preamble tells you>.
+Next step: `/idstack:course-quality-review`."
 
-**Source:** {input method}
-**Course:** {title}
-
-**Imported:**
-- {N} modules → {N} task analysis entries
-- {M} learning objectives (Bloom's pre-classified)
-- {P} assessments
-- {Q} activities/discussions
-- {R} content pages
-
-**Quality triage:** {F} flags found
-
-**Two artifacts:**
-- **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the import report
-  with evidence-backed quality flags, the Bloom's classification table, and recommended
-  next steps tied to specific findings. Click the link to open it.
-- System state: `.idstack/project.json` (the manifest — for downstream skills).
-
-**Recommended next steps:**
-1. `/idstack:course-quality-review` — Full evidence-based audit with QM standards and
-   CoI presence analysis
-2. `/idstack:learning-objectives` — Check the Bloom's classifications and the
-   bidirectional alignment (objectives ↔ activities ↔ assessments)
-3. `/idstack:needs-analysis` — Add organizational context and learner profile data
-   that idstack cannot find in the course structure alone
-```
+Do not repeat the counts by type, the quality flags or the list of next steps in the
+chat. The Summary, Imported structure and Next steps sections of the report have them.
 
 ---
 

@@ -1653,12 +1653,10 @@ Run the merge, then confirm. Start the message with <the Report path, written as
 
 "I saved your export metadata to `.idstack/project.json`.
 
-I exported your course. Make sure that the LMS import kept
-all of the content correctly. Look carefully at:
-- Quiz questions (idstack generated them. If necessary, edit them.)
-- Assignment rubrics (make sure that the format did not change in the transfer)
-- Discussion prompts (make sure that the instructions are clear)
-- Module sequence (make sure that the module sequence is correct)"
+I exported your course. The Next steps section of the report tells you what to
+examine in the LMS."
+
+Do not repeat the Next steps list in the chat.
 
 After this message, give the package path or the Canvas course URL in one line.
 

@@ -715,7 +715,7 @@ Use the assessment IDs from the manifest or from the inventory, for example `A-1
 
 Make one row for each rubric criterion and one row for each untested ILO. Use row IDs like `A-1-C1`. In the Status cell, write `aligned`, `Bloom's mismatch`, `untested ILO`, `orphaned criterion`, `missing rubric` or `no elaborated feedback`.
 
-4. **Recommendations.** Surface the top 1-3 fixes — usually rubric criterion edits, not new assessments. If the user wants to act on them, propose specific edits and apply via `Edit`. Track applied/deferred fixes in `assessments.audit_notes` (item shape in the manifest schema).
+4. **Recommendations.** Surface the top 1-3 fixes — usually rubric criterion edits, not new assessments. Write each proposed edit in the Change cell of the Audit actions table, not in the chat. If the user approves a row, apply it via `Edit`. Track applied/deferred fixes in `assessments.audit_notes` (item shape in the manifest schema).
 
 **Step review:** do the Step Review in the preamble. Section: `## Audit actions`. Columns: `ID | Change | Status | Justification | Evidence`.
 

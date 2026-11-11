@@ -12,6 +12,8 @@ idstack can now install in Cowork, and it has four new skills that work at any t
 - **`/idstack:question-bank` writes quiz and test questions from your objectives.** It makes a test blueprint, three-option questions with distractors from real errors, an answer key and feedback for each option.
 - **`/idstack:evaluation-plan` plans how to find out if the course worked.** It starts from the decisions that the results must support. Then it plans the measures of reaction, learning, behavior and results, the survey and checklist items, and the support that learners need to use the skills.
 - **`/idstack:start` asks for your experience level one time** and saves it. Before, you made `~/.idstack/profile.yaml` manually. It also offers the four new skills.
+- **The chat is shorter (#146).** `/idstack:pipeline` gives its status in one line. `/idstack:course-import` and `/idstack:course-export` give a short closing message with the report link. `/idstack:course-builder` does not write a line for each file. `/idstack:accessibility-review` and `/idstack:assessment-design` keep their details in the report.
+- **The link preview image shows the current study count (#141).**
 - **Eight new references, all peer-reviewed.** Five on test questions and practice tests ([Assessment-23] to [Assessment-27]) and three on training evaluation and transfer ([Evaluation-23] to [Evaluation-25]). The evidence base has 154 studies.
 
 Reports and the course dashboard are now Markdown files. Each skill gives a report link that opens in the Claude desktop app. Each skill now adds the output of each step to the report as a draft table, and you approve each section.

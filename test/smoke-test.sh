@@ -317,7 +317,14 @@ done
 # The preamble has no frontmatter — scan the whole file.
 check "preamble free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK_DIR/templates/preamble.md'"
 check "no '/idstack <skill>' space typos in templates" "! grep -rE '/idstack [a-z]' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
-check "pipeline status table uses /idstack: prefixes" "grep -qF '[done] /idstack:needs-analysis' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+# Chat output must not repeat the report (issue #146). Each of these once sent
+# a list or a table to the chat that the Markdown report already has.
+check "pipeline gives its status in one line" "grep -qF 'Do not show a list of the skills' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl' && ! grep -qF '[done] /idstack:' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+check "course-import closing message is short" "! grep -qF '## Import Complete' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl' && grep -qF 'Do not repeat the counts by type' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl'"
+check "course-export closing message does not repeat Next steps" "grep -qF 'Do not repeat the Next steps list in the chat.' '$IDSTACK_DIR/skills/course-export/SKILL.md.tmpl'"
+check "course-builder does not write a chat line for each file" "grep -qF 'Do not write a chat line for each file.' '$IDSTACK_DIR/skills/course-builder/SKILL.md.tmpl'"
+check "accessibility-review limits its course summary" "grep -qF 'in a maximum of two sentences' '$IDSTACK_DIR/skills/accessibility-review/SKILL.md.tmpl'"
+check "assessment-design puts rubric edits in the Audit actions table" "grep -qF 'in the Change cell of the Audit actions table, not in the chat' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
 check "pipeline invokes children with the idstack: namespace" "grep -qF 'skill: \"idstack:needs-analysis\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 check "start hands off with the idstack: namespace" "grep -qF 'skill: \"idstack:course-import\"' '$IDSTACK_DIR/skills/start/SKILL.md.tmpl'"
 # start runs before any course work. A timeline event from it would become
