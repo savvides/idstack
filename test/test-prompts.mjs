@@ -19,6 +19,9 @@ const prompt = buildAuditPrompt({
 assert.ok(prompt.includes('Biology 101'), 'Prompt should include content title');
 assert.ok(prompt.includes("Bloom's"), "Prompt should require Bloom's classification");
 assert.ok(prompt.includes('JSON'), 'Prompt should enforce JSON format');
+// The page prompt once gave the model no studies to cite, so it made up codes.
+assert.ok(prompt.includes('[Assessment-23] Rodriguez (2005) [T1]'), 'Prompt should give the model the studies to cite');
+assert.ok(prompt.includes('Cite only the studies in this list'), 'Prompt should limit citations to the list');
 
 assert.strictEqual(typeof buildCourseAuditPrompt, 'function');
 const coursePrompt = buildCourseAuditPrompt({

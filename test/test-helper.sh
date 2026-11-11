@@ -22,7 +22,7 @@ TOTAL=0
 # Runs <command> through eval with stderr folded into stdout. With no optional
 # arguments this is the plain "command must succeed" form every suite already
 # used. Pass expected_exit to assert a specific non-zero code (exit codes are
-# part of the contract for bin/idstack-manifest-merge and bin/idstack-doctor),
+# part of the contract for scripts/idstack-manifest-merge and scripts/idstack-doctor),
 # and expected_output_regex to also require matching output — an ERE, matched
 # with grep -qE.
 #

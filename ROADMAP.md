@@ -4,13 +4,21 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 
 ## Just shipped
 
+### Cowork, four companion skills & Markdown reports (v3.11.0.0)
+- **idstack installs in Cowork.** The tools moved from `bin/` to `scripts/`, because Cowork does not install a plugin that has a top-level `bin/` folder. Cowork support is new and not tested on every setup.
+- **`/idstack:quick-check` gives feedback on one item in one minute.** No setup, no report, no manifest.
+- **`/idstack:storyboard`, `/idstack:question-bank` and `/idstack:evaluation-plan`** make a storyboard, quiz and test questions, and an evaluation plan. Each works alone, at any time.
+- **Reports are Markdown, and you approve each section.** A skill adds each step to the report as a draft table. You approve it, change a row or remove a row.
+- **`/idstack:start` asks for your experience level one time.**
+- **The evidence base has 154 studies.** Eight new references cover test questions, practice tests, training evaluation and transfer.
+
 ### idstack in the Claude desktop app & `/idstack:start` (v3.10.0.0)
 - **You can use idstack with no terminal.** Install it in the Code tab of the Claude desktop app, then type `/idstack:start`.
 - **`/idstack:start` checks your setup and starts the correct skill.** It finds the macOS python3 stub and a session in your home folder before they cause a problem.
 - **Each skill gives you a link to its report.** Click the link to open the report in the app.
 
 ### A smaller idstack (v3.8.0.0–v3.9.0.0)
-- **idstack supports Claude Code only.** Without Claude Code, you can use the Chrome extension.
+- **idstack supports Claude Code only.** Without Claude Code, you can use the Chrome extension. _Since v3.11.0.0 idstack also installs in Cowork._
 - **idstack needs python3 3.9 or a later version.** `bin/idstack-learnings`, `bin/idstack-timeline-log`, `bin/idstack-status`, `bin/idstack-migrate` and `bin/idstack-slugify` tell you when python3 is missing, and `bin/idstack-doctor` reports a missing or older python3.
 - **The Consensus integration is removed.** You update `evidence/references.md` manually. The Chrome extension (1.2.1) does not keep an audit history.
 - **`./setup` does not remove old installs.** The CHANGELOG gives the commands to remove them manually.
@@ -145,12 +153,10 @@ _Since v3.7.0.0 the two tiers are "Necessary changes" (accessibility violations)
 ## Coming soon
 
 ### More skills
-Four more skills based on the research synthesis:
+Two of the four planned skills shipped in v3.11.0.0: media selection is in `/idstack:storyboard`, and evaluation design is `/idstack:evaluation-plan`. Two remain:
 
 - **Model selector** — recommends the right instructional design framework for your context (ADDIE, SAM, backward design, etc.) instead of defaulting to one
 - **Content sequencing** — organizes your modules and lessons to manage cognitive load, applying spacing, interleaving, and scaffolding principles
-- **Media selection** — flags multimedia principle violations (redundancy, split attention, coherence) and recommends when to use video, text, diagrams, or interactive elements
-- **Evaluation design** — plans how to measure whether the course met its learning outcomes, using Kirkpatrick's four levels and beyond
 
 ## Exploring
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Executes the Context Recovery bash block from templates/preamble.md against a
 # fixture timeline, on THIS machine's python3. The block runs
-# bin/idstack-status --context, which holds the Python. The block swallows
+# scripts/idstack-status --context, which holds the Python. The block swallows
 # errors with `2>/dev/null || true`, so a SyntaxError there surfaces as empty
 # output rather than a crash — the positive assertions below are what catch it.
 # (A same-type-quote f-string once broke the whole block on every Python < 3.12

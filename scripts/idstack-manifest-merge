@@ -29,7 +29,7 @@ Usage:
               repeat the pair to write several sections in one atomic write.
   --set       Set a top-level field. Only project_name. Unknown keys exit 3.
   --create    If the manifest is missing, make a canonical one first
-              (bin/idstack-migrate --init). Without it a missing manifest
+              (scripts/idstack-migrate --init). Without it a missing manifest
               exits 4, which catches a run in the wrong directory.
   --manifest  Path to the manifest. Default: .idstack/project.json
   --quiet     Suppress progress output. Errors still go to stderr.

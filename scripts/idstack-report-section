@@ -17,7 +17,7 @@ check   examines a draft section (the Step Review in templates/preamble.md):
         a table, the first column is ID, a cited table ends with Justification
         and Evidence, each Evidence cell has only
         citations whose tiers agree with evidence/references.md, a findings
-        table is in severity order, and the text obeys bin/idstack-ste-check.
+        table is in severity order, and the text obeys scripts/idstack-ste-check.
 append  runs check, then puts each section of the draft in the report, marked as a
         draft that waits for approval. A section with the same heading is
         replaced in place. A new section goes before the footer. A findings table

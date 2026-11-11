@@ -1,6 +1,6 @@
 ## Preamble: Interaction Conventions
 
-idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
+idstack runs in Claude Code and in Cowork. Skill bodies name these tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   present a single multiple-choice question (e.g., "Which of these best describes X?")
@@ -33,8 +33,8 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 
 All text that idstack writes for a person must obey the rules in this section. This
 includes chat text, AskUserQuestion questions and options, reports, the course
-dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
-reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
+dashboard, course content for learners, and export packages. `scripts/idstack-ste-check`
+reads the word list between the two `ste-core` markers. `scripts/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
 
 The rules also apply to the text that idstack writes in `.idstack/project.json` and in
@@ -143,7 +143,7 @@ Word list. Do not use the word in the first column. Use the word in the second c
 How to use the standard:
 
 1. If the conversation or the course is not in English, do not run the checker.
-2. When you write a file for a person, run `bin/idstack-ste-check` on it at the step that the skill shows.
+2. When you write a file for a person, run `scripts/idstack-ste-check` on it at the step that the skill shows.
 3. If the checker shows problems, write each sentence that it shows again. Then write the file again and run the checker again.
 4. Run the checker a maximum of three times. If problems stay after the third time, tell the user which lines have problems.
 5. If the output is `STE_CHECK_UNAVAILABLE`, python3 is not available. Continue the skill. Tell the user one time that the check did not run.
@@ -176,7 +176,7 @@ Before starting, check for an existing project manifest.
 {{IDSTACK_RESOLVE}}
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/scripts/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -234,8 +234,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
-with `experience_level: novice|intermediate|expert`."
+mention: "Note: To change how much information idstack gives, type `/idstack:start` and
+select your experience level."
 
 ## Preamble: Report Links
 
@@ -297,7 +297,7 @@ That line gives the section heading and the table columns.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" check .idstack/.report-section.md; fi
 ```
 
 3. If the output shows problems, correct the draft. Then do step 2 again. Do the
@@ -309,7 +309,7 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
 ```
 
 5. Tell the user about the section in a maximum of three short lines:
@@ -337,7 +337,7 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
 ```
 
 9. Go to the next step only if the output starts with `SECTION_APPROVED`.
@@ -367,7 +367,7 @@ if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MI
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" finish "<path>"; fi
 ```
 
 - If the skill stops after the report starts, for any reason, end the report
@@ -396,7 +396,7 @@ Check for session history and learnings from prior runs.
 ```bash
 # Context recovery: timeline + learnings
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-status" --context 2>/dev/null || true
+"$_IDSTACK/scripts/idstack-status" --context 2>/dev/null || true
 ```
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.

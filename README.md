@@ -1,21 +1,43 @@
 # idstack
 
-> **Status: beta (v3.10.0.0).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
+> **Status: beta (v3.11.0.0).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 
-idstack is an open source set of skills for evidence-based instructional design that brings peer-reviewed research into your workflow. Runs in Claude Code. Rather than summarizing papers, idstack audits alignment matrices, flags cognitive load issues, classifies objectives against Bloom's taxonomy, and references the empirical evidence behind every recommendation.
+idstack is an open source set of skills for evidence-based instructional design that brings peer-reviewed research into your workflow. Runs in Claude Code and Cowork. Rather than summarizing papers, idstack audits alignment matrices, flags cognitive load issues, classifies objectives against Bloom's taxonomy, and references the empirical evidence behind every recommendation.
 
 Skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
-Free, MIT licensed, open source. Available as a [Claude Code plugin](#install-30-seconds) and a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
+Free, MIT licensed, open source. Available as a plugin for [Claude Code](#install-30-seconds) and [Cowork](#cowork), and as a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 ## Quick start
 
 1. Install idstack (30 seconds, see below). No terminal? Use the [Claude desktop app](#claude-desktop-app-no-terminal).
 2. Run `/idstack:start` in a folder for your course. It checks your setup and starts the correct skill.
+   Or paste one item, for example a learning objective or a quiz question, and type `/idstack:quick-check`. You get feedback with citations in one minute, with no setup.
 3. If you imported a course, run `/idstack:course-quality-review` to see what the evidence says.
 4. Stop there. You'll know if this is for you.
+
+### What do you want to do?
+
+You can type the command, or tell Claude what you want in your own words.
+
+| I want to… | Type | Time | What you get |
+|------------|------|------|--------------|
+| Get feedback on one objective, quiz question, rubric, slide or page | `/idstack:quick-check` | 1 minute | A verdict, a maximum of five findings with citations, and a corrected version in the chat |
+| Audit a course that I have | `/idstack:course-import`, then `/idstack:course-quality-review` | 20–40 minutes | A quality score and a report of findings, each with its evidence tier |
+| Design a new course from the start | `/idstack:pipeline` | A few sessions | Needs analysis, objectives, assessments, course content, three reviews and an LMS package |
+| Write or repair learning objectives | `/idstack:learning-objectives` | 15 minutes | Measurable objectives with Bloom's levels and an alignment matrix |
+| Write quiz or test questions | `/idstack:question-bank` | 15 minutes | A test blueprint and questions with an answer key and feedback |
+| Storyboard a video, a module or slides | `/idstack:storyboard` | 20 minutes | Each screen with its narration, visual and learner action |
+| Find out if a course worked | `/idstack:evaluation-plan` | 20 minutes | Evaluation questions, measures, survey items and a schedule |
+| Check accessibility | `/idstack:accessibility-review` | 15 minutes | WCAG 2.1 AA violations and UDL recommendations |
+| Put a course in my LMS | `/idstack:course-export` | 10 minutes | A Common Cartridge or SCORM file, or a push to Canvas |
+| Not sure | `/idstack:start` | 1 minute | idstack asks two questions and starts the correct skill |
+
+The times are estimates. They change with the size of the course. Each skill asks one question at a time, and you can stop and continue later.
+
+Each skill that writes a report adds one section at a time to a Markdown file and gives you a link. You read the section, then approve it, change a row or remove a row. Nothing goes in the final report without your approval.
 
 ## See it work
 
@@ -62,13 +84,13 @@ idstack: QM structural review: 8 rows (3 pass, 5 flag).
 
 The chat shows a short note and one question for each section. The tables, scores and citations go into the Markdown report. For example, the report for this course has the finding "All 8 assessments are auto-graded quizzes with no rubrics", the citation `[Assessment-8] [T1]` and the recommendation to run `/idstack:assessment-design`.
 
-You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses, `learn` is a separate cross-project memory utility, and `start` is the first-run guide. These three, and pipeline itself, sit outside the linear chain, which is why pipeline runs 8 of the 12 skills).
+You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses, `learn` is a separate cross-project memory utility, and `start` is the first-run guide. These three, pipeline itself, and the four companion skills sit outside the linear chain, which is why pipeline runs 8 of the 16 skills).
 
 ## Install (30 seconds)
 
-**Requirements:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI — and python3 3.9 or later.
+**Requirements:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI — or [Cowork](#cowork), and python3 3.9 or later.
 
-**Not using Claude Code?** The idstack skills run in Claude Code only. Without Claude Code, use the [Chrome extension](#chrome-extension-no-terminal-mode). The skills are plain Markdown, so you can fork this repo and adapt it for a different agent, for example Codex or Antigravity. idstack does not support or test those forks. <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
+**Not using Claude Code or Cowork?** The idstack skills run in Claude Code and Cowork. Without them, use the [Chrome extension](#chrome-extension-no-terminal-mode). The skills are plain Markdown, so you can fork this repo and adapt it for a different agent, for example Codex or Antigravity. idstack does not support or test those forks. <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
 
 Paste this into your terminal:
 
@@ -175,6 +197,17 @@ Each skill that writes a report gives you a link to it. Click the link to open t
 
 **macOS asks you to install developer tools?** idstack needs python3. Click **Install** in the macOS window. When the installation is complete, type `/idstack:start` again.
 
+### Cowork
+
+You can use idstack in Cowork in the Claude desktop app.
+
+1. Open **Customize**, then **Plugins**.
+2. Select **Add marketplace** and enter `savvides/idstack`.
+3. Install **idstack** from the list.
+4. Start a Cowork task in a folder for your course and type `/idstack:start`.
+
+Cowork support is new. idstack keeps its tools in `scripts/`, because Cowork does not install a plugin that has a top-level `bin/` folder. If a skill cannot find its tools or python3 in Cowork, [tell us](https://github.com/savvides/idstack/issues).
+
 ### Chrome Extension (No-Terminal Mode)
 
 [![Available in the Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-idstack-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm)
@@ -223,7 +256,7 @@ Without a key, the extension runs in demo mode: every audit returns the same sam
 
 To create a distribution bundle:
 ```bash
-./bin/package-extension.sh
+./scripts/package-extension.sh
 ```
 Produces `build/idstack-chrome-extension-v<version>.zip` (version from `extension/manifest.json`), ready for submission to the Chrome Web Store Developer Console.
 
@@ -246,6 +279,14 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 | `/idstack:red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Runs in a clean-context sub-agent so the audit can't inherit build-bias from the parent. Five dimensions in parallel: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. The sub-agent writes its findings to `.idstack/.red-team-findings.json` and returns a summary. The parent then adds each findings table to `.idstack/exports/<course-slug>/red-team.md` for your approval, then runs a triage-and-fix loop (Critical only / Critical + Warning / All findings / Skip). Produces a confidence score. |
 | `/idstack:pipeline` | **Orchestrator** | Chains the 8-skill linear pipeline automatically. Auto-skips completed skills. Shows pipeline status. Pause anytime, resume later. Produces `.idstack/exports/<course-slug>/index.md`, a Markdown course dashboard linking to every per-skill report, with readiness scores, top recurring issues, evidence themes, and where to start. |
 | `/idstack:learn` | **Memory Manager** | Search, list, delete, promote, and export project learnings. Supports cross-project intelligence. |
+| `/idstack:quick-check` | **Second Opinion** | Paste or attach one item: an objective, a quiz question, a rubric, a slide, a script, an activity or a page. You get a verdict, a maximum of five findings with citations, and a corrected version. No setup, no report, no manifest. |
+| `/idstack:storyboard` | **Media Designer** | Storyboard and script for a video, an e-learning module, a slide lesson or a microlearning item. Segment outline, screen text, narration, visuals with alt text, learner actions, and a check against the multimedia learning principles. |
+| `/idstack:question-bank` | **Item Writer** | Quiz and test questions from your objectives. Test blueprint, three-option questions with distractors from real errors, scenario questions for the apply level and higher, an answer key, and feedback for each option. |
+| `/idstack:evaluation-plan` | **Evaluator** | A plan to find out if the course worked. Starts from the decisions that the results must support, then measures of reaction, learning, behavior and results (Kirkpatrick), the survey and checklist items, a schedule, and transfer support. |
+
+The last four are companion skills. Each one works alone, at any time, with or without a manifest. Each of the last three writes one Markdown file in `.idstack/exports/<course-slug>/`.
+
+You do not need to remember the commands. Tell Claude what you want, for example "check this quiz question", "storyboard a five-minute video on hand hygiene" or "how do I find out if this training worked", and Claude starts the correct skill.
 
 ## The workflow
 
@@ -307,6 +348,8 @@ EXISTING COURSE                           NEW COURSE
 
 Any skill works independently. Run `/idstack:pipeline` to chain them all, or invoke any skill directly. The pipeline adds context but isn't required.
 
+**At any time, outside this sequence:** `/idstack:quick-check` (feedback on one item), `/idstack:storyboard` (media scripts), `/idstack:question-bank` (quiz and test questions) and `/idstack:evaluation-plan` (how to find out if the course worked).
+
 ## Architecture
 
 ```
@@ -314,7 +357,7 @@ BUILD (./setup runs it on each install; marketplace installs use the committed S
 
   skills/<name>/SKILL.md.tmpl ──────────┐
   templates/preamble.md ────────────────┤
-  templates/manifest-schema.md ─────────┼──▶ bin/idstack-gen-skills
+  templates/manifest-schema.md ─────────┼──▶ scripts/idstack-gen-skills
   templates/snippets/idstack-resolve.sh ┘              │
                                                        ▼
                                              skills/<name>/SKILL.md
@@ -324,15 +367,15 @@ BUILD (./setup runs it on each install; marketplace installs use the committed S
 INSTALL
 
   ./setup ──▶ registers .claude-plugin/plugin.json with Claude Code
-                └─▶ 12 skills, invoked as /idstack:<skill>
-  bin/idstack-doctor   diagnoses the install
-                       (bin/lib/plugin-status.sh)
+                └─▶ 16 skills, invoked as /idstack:<skill>
+  scripts/idstack-doctor   diagnoses the install
+                       (scripts/lib/plugin-status.sh)
 
-RUN (Claude Code, inside your course project folder)
+RUN (Claude Code or Cowork, inside your course project folder)
 
   /idstack:<skill>
      │
-     ├─ preamble: manifest check (bin/idstack-migrate) · preferences ·
+     ├─ preamble: manifest check (scripts/idstack-migrate) · preferences ·
      │            designer profile (~/.idstack/profile.yaml) · context
      │            recovery (reads the timeline and learnings below)
      ▼
@@ -340,21 +383,21 @@ RUN (Claude Code, inside your course project folder)
      │  cites evidence/references.md as [Domain-N] [T1–T5]
      │
      ├──▶ .idstack/project.json        manifest: the system view (JSON)
-     │      written via bin/idstack-manifest-merge (atomic, section-scoped);
+     │      written via scripts/idstack-manifest-merge (atomic, section-scoped);
      │      needs-analysis, course-import and assessment-design write
      │      several sections in one merge call
-     │      └─▶ read by later skills, /idstack:pipeline, bin/idstack-status
+     │      └─▶ read by later skills, /idstack:pipeline, scripts/idstack-status
      │
-     ├──▶ .idstack/exports/<course-slug>/      (bin/idstack-slugify)
+     ├──▶ .idstack/exports/<course-slug>/      (scripts/idstack-slugify)
      │      <skill>.md            per-skill report: the human view, built one
-     │                            draft section at a time (bin/idstack-report-section)
+     │                            draft section at a time (scripts/idstack-report-section)
      │      index.md              course dashboard (/idstack:pipeline)
      │      course-export.imscc, scorm-export.zip   (/idstack:course-export)
      │      skeletons: templates/report.md.tmpl, index.md.tmpl
      │      content contract: templates/report-format.md
      │
-     └──▶ .idstack/timeline.jsonl   runs, scores (bin/idstack-timeline-log)
-          .idstack/learnings.jsonl  discoveries (bin/idstack-learnings log)
+     └──▶ .idstack/timeline.jsonl   runs, scores (scripts/idstack-timeline-log)
+          .idstack/learnings.jsonl  discoveries (scripts/idstack-learnings log)
             └─ /idstack:learn promote ─▶ ~/.idstack/global/learnings.jsonl
 
 CHROME EXTENSION (separate runtime: no Claude Code, no .idstack/ folder)
@@ -385,7 +428,7 @@ idstack functions as a design partner rather than an automated content generator
 - **Markdown report** at `.idstack/exports/<course-slug>/<skill>.md` — the human view. The skill gives you a link to it. Every finding follows the same structure: *what we saw* in your course, *what the evidence says* (with a citation tag like `[Assessment-8] [T1]`), *why it matters* for learners, and a *recommendation* for what to change. Recommendations, not orders: the designer owns the course, while idstack provides the analytical review.
 - **Manifest section** at `.idstack/project.json` — the system view. Same findings in JSON so other skills can read and act on them.
 
-After each step, the skill adds its output to the report at once, as a draft section with a table. Each row has a justification and a citation, except in the fact sections (for example Course information and Readiness), which have no Justification or Evidence columns. You read the table in the report file. The chat shows only a short note, a link to the draft and the question "Do you approve the <section> section?". You can approve the section, change a row or remove a row. When you approve, the draft mark goes away. If a session stops, the report keeps each section, and a section that you did not approve keeps its draft mark. The manifest gets only the rows that you approved. `bin/idstack-report-section` does these steps and checks each citation against `evidence/references.md`.
+After each step, the skill adds its output to the report at once, as a draft section with a table. Each row has a justification and a citation, except in the fact sections (for example Course information and Readiness), which have no Justification or Evidence columns. You read the table in the report file. The chat shows only a short note, a link to the draft and the question "Do you approve the <section> section?". You can approve the section, change a row or remove a row. When you approve, the draft mark goes away. If a session stops, the report keeps each section, and a section that you did not approve keeps its draft mark. The manifest gets only the rows that you approved. `scripts/idstack-report-section` does these steps and checks each citation against `evidence/references.md`.
 
 The report skeleton lives in [`templates/report.md.tmpl`](templates/report.md.tmpl). The content contract is in [`templates/report-format.md`](templates/report-format.md). Re-running a skill overwrites its report; the timeline at `.idstack/timeline.jsonl` carries the run history.
 
@@ -394,7 +437,7 @@ Every per-course artifact — every per-skill report, the pipeline dashboard, an
 When you run `/idstack:pipeline`, it also produces a course dashboard at `.idstack/exports/<course-slug>/index.md` — readiness scores, links to every per-skill report, top issues that recur across multiple stages, evidence themes, and where to start. Open this first if you've run multiple skills and want one entry point that synthesizes the whole audit.
 
 ### Course memory
-idstack remembers your design sessions. Each skill logs what it did to `.idstack/timeline.jsonl`, and project-specific discoveries (LMS quirks, format issues, course patterns) are stored in `.idstack/learnings.jsonl`. When you start a new session, idstack tells you where you left off: quality score trends, which skills have been completed, and what the next step is. To see your course health dashboard at any time, run `<your idstack clone>/bin/idstack-status` in your course folder. It reads `.idstack/` in the current folder.
+idstack remembers your design sessions. Each skill logs what it did to `.idstack/timeline.jsonl`, and project-specific discoveries (LMS quirks, format issues, course patterns) are stored in `.idstack/learnings.jsonl`. When you start a new session, idstack tells you where you left off: quality score trends, which skills have been completed, and what the next step is. To see your course health dashboard at any time, run `<your idstack clone>/scripts/idstack-status` in your course folder. It reads `.idstack/` in the current folder.
 
 ### Evidence tiers
 Every recommendation includes an evidence tier so you know how strong the backing is:
@@ -412,6 +455,8 @@ When the skill says "add elaborated feedback to your quizzes," it references T1 
 ### Using skills independently
 Any skill works on its own. `/idstack:course-quality-review` works without a manifest by asking you questions directly. `/idstack:learning-objectives` works without a needs analysis. The pipeline adds context and makes recommendations sharper, but every skill is self-contained.
 
+Four companion skills are not in the pipeline: `/idstack:quick-check`, `/idstack:storyboard`, `/idstack:question-bank` and `/idstack:evaluation-plan`. Run them at any time. When a manifest exists, they read your objectives and learner profile from it. They do not write to it.
+
 ## The evidence base
 
 idstack encodes findings from a literature synthesis spanning 11 domains of instructional design research. The full citation list (all 11 domains, 5 evidence tiers) is in [evidence/references.md](evidence/references.md). A selection:
@@ -420,7 +465,7 @@ idstack encodes findings from a literature synthesis spanning 11 domains of inst
 |--------|---------------------|------------|-------------|
 | Cognitive Load Theory | 19 (6) | T1–T5 | Manage working memory load through sequencing, segmenting, and integration |
 | Multimedia Learning | 14 (7) | T1–T5 | Spatial contiguity, signaling, and coherence reliably improve learning |
-| Formative Assessment | 14 (10) | T1–T5 | Feedback that explains what to do next outperforms correctness-only feedback |
+| Formative Assessment | 19 (14) | T1–T5 | Feedback that explains what to do next outperforms correctness-only feedback |
 | Constructive Alignment | 13 (2) | T1–T5 | Objectives, activities, and assessments must form a coherent chain |
 | Online Course Quality | 14 (3) | T1–T5 | QM standards + CoI presence predicts outcomes beyond compliance |
 | Needs Analysis | 11 (2) | T1–T3 | Multi-level analysis is necessary but rarely done |
@@ -440,6 +485,15 @@ The counts come from `evidence/references.md`. Most of the Constructive Alignmen
 **Do I need to know how to code?**
 No. You interact with idstack through conversation in Claude Code. It is a chat interface. In the [Claude desktop app](#claude-desktop-app-no-terminal) you do not need a terminal to install or use idstack. To update it, you run two commands in a terminal (see "How do I update idstack?").
 
+**Can I use this in Cowork?**
+Yes, from v3.11.0.0. See [Cowork](#cowork) for the install steps. Cowork support is new, so [tell us](https://github.com/savvides/idstack/issues) if something does not work.
+
+**Can I get feedback on one thing with no project?**
+Yes. Paste or attach the item and type `/idstack:quick-check`. It needs no setup and writes no file.
+
+**How do I change how much idstack explains?**
+The first time you run `/idstack:start` in a new course folder, it asks for your experience level and saves it in `~/.idstack/profile.yaml`. To change it, edit the `experience_level` line in that file to `novice`, `intermediate` or `expert`.
+
 **What is Claude Code?**
 Claude Code is Anthropic's coding tool. It's available as a [desktop app, web app, and CLI](https://claude.ai/code). You type `/idstack:needs-analysis` and have a conversation. No programming required.
 
@@ -453,10 +507,10 @@ Yes. Export your Rise course as a PDF (hover over the course card > `...` > Down
 That works. `/idstack:course-quality-review` asks you about your course directly if there's no manifest.
 
 **How do I check my course health without re-running a skill?**
-Run `<your idstack clone>/bin/idstack-status` in your course folder for the dashboard (quality score trends, dimensions, what skills have run, paths to every report under `.idstack/exports/<course-slug>/`). Add `--readiness` to get only the pre-export readiness check (quality ≥ 70, accessibility ≥ 80, zero critical red-team findings, zero WCAG Level-A violations). The check is advisory: `/idstack:course-export` shows it, but you can always export. After `/idstack:pipeline` writes the course dashboard (`index.md`), you can also run `/idstack:start` and select **Open the course dashboard**.
+Run `<your idstack clone>/scripts/idstack-status` in your course folder for the dashboard (quality score trends, dimensions, what skills have run, paths to every report under `.idstack/exports/<course-slug>/`). Add `--readiness` to get only the pre-export readiness check (quality ≥ 70, accessibility ≥ 80, zero critical red-team findings, zero WCAG Level-A violations). The check is advisory: `/idstack:course-export` shows it, but you can always export. After `/idstack:pipeline` writes the course dashboard (`index.md`), you can also run `/idstack:start` and select **Open the course dashboard**.
 
 **Do I need python3?**
-Yes, python3 3.9 or later. Each skill that produces results (all skills except `/idstack:start`, `/idstack:pipeline` and `/idstack:learn`) uses it to save those results to the project manifest. The status dashboard, learnings and timeline use it too. macOS and most Linux systems already have it. Run `bin/idstack-doctor` to check; it reports a missing or older python3 as a problem.
+Yes, python3 3.9 or later. Each skill that produces results (all skills except `/idstack:start`, `/idstack:pipeline` and `/idstack:learn`) uses it to save those results to the project manifest. The status dashboard, learnings and timeline use it too. macOS and most Linux systems already have it. Run `scripts/idstack-doctor` to check; it reports a missing or older python3 as a problem.
 
 **Is my data safe?**
 idstack runs locally on your machine. Course data stays in your project folder (`.idstack/project.json`). Session history (`.idstack/timeline.jsonl`) and learnings (`.idstack/learnings.jsonl`) are also local. In the Claude Code plugin, course data reaches external servers only when you explicitly invoke integration skills (such as Canvas API calls via `/idstack:course-import` or `/idstack:course-export`). `/idstack:red-team` also searches the web for newer research on the studies that your course cites. The search terms are about the studies, not your course text. Your Canvas token stays in `.idstack/canvas.env` in your course folder, which only you can read and git ignores. Delete the file when you are done. The Chrome extension sends page text to Google's API when you run an audit with your own API key saved; see [PRIVACY.md](PRIVACY.md). Claude Code's own privacy policy applies to the AI conversation.
@@ -493,7 +547,7 @@ cd <your idstack clone> && ./setup
 
 **Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Remove the old install, then clone fresh and run setup: `rm -rf ~/.claude/skills/idstack && git clone https://github.com/savvides/idstack.git && cd idstack && ./setup`. Setup no longer removes old installs for you; the CHANGELOG lists every path an older install can leave behind.
 
-**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `bin/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 12 SKILL.md files, and python3. It reports each problem it finds, and for a Claude Code install problem it prints the command that fixes it.
+**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `scripts/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 12 SKILL.md files, and python3. It reports each problem it finds, and for a Claude Code install problem it prints the command that fixes it.
 
 ## Contributing
 
@@ -501,7 +555,7 @@ Have feedback or a feature request? [Fill out this form](https://forms.gle/6LDgD
 
 Found a bug? You can also [open an issue on GitHub](https://github.com/savvides/idstack/issues).
 
-Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. The architecture is simple: create a directory with a `SKILL.md.tmpl` template, run `bin/idstack-gen-skills` to generate its `SKILL.md`, then `./setup`.
+Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. The architecture is simple: create a directory with a `SKILL.md.tmpl` template, run `scripts/idstack-gen-skills` to generate its `SKILL.md`, then `./setup`.
 
 ## More
 

@@ -1,5 +1,5 @@
 # Plugin-status parsing for `claude plugin list` output — the single definition
-# used by bin/idstack-doctor. Source this file; do not inline the awk program
+# used by scripts/idstack-doctor. Source this file; do not inline the awk program
 # (an inlined copy cannot be unit-tested, and the version-classifier drifted
 # three times for exactly that reason).
 #

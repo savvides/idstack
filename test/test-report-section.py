@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for bin/idstack-report-section.
+"""Unit tests for scripts/idstack-report-section.
 
 Each test runs the shipped script in a temporary course folder against the real
 evidence/references.md. [Alignment-14] is T1 and [Needs-8] is T3 there.
@@ -13,7 +13,7 @@ import tempfile
 import unittest
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-HELPER = os.path.join(REPO_ROOT, 'bin', 'idstack-report-section')
+HELPER = os.path.join(REPO_ROOT, 'scripts', 'idstack-report-section')
 REPORT = '.idstack/exports/bio-101/needs-analysis.md'
 DRAFT = '.idstack/.report-section.md'
 

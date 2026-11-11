@@ -22,7 +22,7 @@ done
 
 # Regenerate skill files so installs are always fresh against the current .tmpl
 # source. Cheap (<1s); the source-of-truth invariant is worth more than the cost.
-"$IDSTACK_DIR/bin/idstack-gen-skills" >/dev/null
+"$IDSTACK_DIR/scripts/idstack-gen-skills" >/dev/null
 echo "  regenerated skill files"
 
 echo "Setup installs idstack (scope: $CLAUDE_SCOPE)..."

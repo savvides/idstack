@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit tests for bin/idstack-doctor.
+# Unit tests for scripts/idstack-doctor.
 #
 # doctor's whole job is to tell a user why /idstack:<skill> isn't working, so
 # every branch it can print is a branch someone will act on. Before this suite
@@ -9,8 +9,8 @@
 # Two things this harness has to get right, both of which are easy to get
 # wrong:
 #
-#   1. doctor sources bin/lib/plugin-status.sh, so the fixture copies the
-#      whole bin/ tree. Copying just the one script gives a "No such file" on
+#   1. doctor sources scripts/lib/plugin-status.sh, so the fixture copies the
+#      whole scripts/ tree. Copying just the one script gives a "No such file" on
 #      the source line and every assertion below fails for the wrong reason.
 #
 #   2. PATH is replaced, not prepended. The "claude not found" case is only
@@ -29,13 +29,13 @@ trap 'rm -rf "$TEST_ROOT"' EXIT
 export HOME="$TEST_ROOT/home"
 mkdir -p "$HOME"
 
-# Fixture repo — whole bin/ tree, so the sourced libs resolve.
+# Fixture repo — whole scripts/ tree, so the sourced libs resolve.
 MOCK_IDSTACK_DIR="$TEST_ROOT/idstack"
-mkdir -p "$MOCK_IDSTACK_DIR/bin"
-cp -R "$REPO_DIR/bin/." "$MOCK_IDSTACK_DIR/bin/"
-DOCTOR_CMD="$MOCK_IDSTACK_DIR/bin/idstack-doctor"
+mkdir -p "$MOCK_IDSTACK_DIR/scripts"
+cp -R "$REPO_DIR/scripts/." "$MOCK_IDSTACK_DIR/scripts/"
+DOCTOR_CMD="$MOCK_IDSTACK_DIR/scripts/idstack-doctor"
 
-# The writing-standard check runs bin/idstack-ste-check from the real repo
+# The writing-standard check runs scripts/idstack-ste-check from the real repo
 # (the mock repo has no templates/ word list), with the python3 found here.
 PYTHON="$(command -v python3)"
 
@@ -50,7 +50,7 @@ export PATH="$MOCK_BIN"
 
 SKILLS="needs-analysis learning-objectives course-quality-review course-import \
 assessment-design course-builder course-export accessibility-review red-team \
-pipeline learn start"
+pipeline learn start quick-check storyboard question-bank evaluation-plan"
 
 setup_happy_path() {
   rm -rf "$MOCK_IDSTACK_DIR/.claude-plugin" "$MOCK_IDSTACK_DIR/skills" "$HOME/.claude"
@@ -223,7 +223,7 @@ cp "$TEST_ROOT/no-python.txt" "$STE_OUT/no-python.txt"
 cp "$TEST_ROOT/bad-arg.txt" "$STE_OUT/bad-arg.txt"
 
 check "doctor output obeys the writing standard (healthy and problem runs)" \
-  "'$PYTHON' '$REPO_DIR/bin/idstack-ste-check' --format text '$STE_OUT'/*.txt"
+  "'$PYTHON' '$REPO_DIR/scripts/idstack-ste-check' --format text '$STE_OUT'/*.txt"
 
 echo ""
 echo "  $PASS/$TOTAL passed"

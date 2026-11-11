@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # (see idstack-migrate --init coverage after Test 12 in this file)
-# Unit tests for bin/idstack-manifest-merge.
+# Unit tests for scripts/idstack-manifest-merge.
 # Run from the repo root, or through smoke-test.sh, which runs it.
 
 set -e
@@ -8,7 +8,7 @@ set -e
 . "$(dirname "$0")/test-helper.sh"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-MERGE="$REPO_ROOT/bin/idstack-manifest-merge"
+MERGE="$REPO_ROOT/scripts/idstack-manifest-merge"
 
 # Skip the suite if python3 is missing (the tool requires python3).
 if ! command -v python3 >/dev/null 2>&1; then
@@ -126,7 +126,7 @@ check "manifest with string root exits 2" "[ $EC -eq 2 ]"
 # --- idstack-migrate --init: the manifest bootstrap the merge tool depends on ---
 # Skills pass --create to the merge, which runs idstack-migrate --init when
 # no manifest exists; without --create the merge exits 4 and standalone results are never saved.
-MIGRATE="$(cd "$(dirname "$0")/.." && pwd -P)/bin/idstack-migrate"
+MIGRATE="$(cd "$(dirname "$0")/.." && pwd -P)/scripts/idstack-migrate"
 
 INIT_DIR="$WORK/initcase"
 mkdir -p "$INIT_DIR/.idstack"

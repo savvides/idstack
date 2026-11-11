@@ -33,7 +33,7 @@ check "plugin.json version matches VERSION ($VER)" "grep -qF '\"version\": \"$VE
 check "CHANGELOG.md has an entry for v$VER" "grep -qF '## v$VER' '$IDSTACK_DIR/CHANGELOG.md'"
 
 # Check all skill SKILL.md files are reachable under skills/
-SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn start"
+SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn start quick-check storyboard question-bank evaluation-plan"
 for skill in $SKILLS; do
   check "skills/$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md' ]"
 done
@@ -48,16 +48,20 @@ done
 # Check evidence file exists
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
-# Check bin scripts exist and are executable
+# Cowork and claude.ai chat refuse a plugin that has executables in a top-level
+# bin/ directory (https://claude.com/docs/plugins/platform-support.md). The
+# tools are in scripts/ for that reason.
+check "no top-level bin/ directory (Cowork refuses the plugin)" "[ ! -e '$IDSTACK_DIR/bin' ]"
+# Check scripts exist and are executable
 for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-ste-check idstack-report-section; do
-  check "bin/$script exists" "[ -f '$IDSTACK_DIR/bin/$script' ]"
-  check "bin/$script is executable" "[ -x '$IDSTACK_DIR/bin/$script' ]"
+  check "scripts/$script exists" "[ -f '$IDSTACK_DIR/scripts/$script' ]"
+  check "scripts/$script is executable" "[ -x '$IDSTACK_DIR/scripts/$script' ]"
 done
 
-# Bash syntax gate for most shell entry points. bin/idstack-timeline-log and
-# bin/package-extension.sh are not checked here; idstack-manifest-merge,
+# Bash syntax gate for most shell entry points. scripts/idstack-timeline-log and
+# scripts/package-extension.sh are not checked here; idstack-manifest-merge,
 # idstack-ste-check and idstack-report-section are python.
-for script in setup bin/idstack-doctor bin/idstack-gen-skills bin/idstack-learnings bin/idstack-status bin/idstack-migrate bin/idstack-slugify bin/lib/plugin-status.sh test/test-helper.sh; do
+for script in setup scripts/idstack-doctor scripts/idstack-gen-skills scripts/idstack-learnings scripts/idstack-status scripts/idstack-migrate scripts/idstack-slugify scripts/lib/plugin-status.sh test/test-helper.sh; do
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
 
@@ -182,13 +186,13 @@ check "og-template: no gradients" "! grep -q 'linear-gradient' '$OG_TEMPLATE'"
 # Slugify behavior — pinned cases protect the slug derivation rule that the manifest
 # schema and every skill's report-write block depend on.
 check "idstack-slugify: 'Introduction to Biology 101' → introduction-to-biology-101" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Introduction to Biology 101')\" = 'introduction-to-biology-101' ]"
+  "[ \"\$('$IDSTACK_DIR/scripts/idstack-slugify' 'Introduction to Biology 101')\" = 'introduction-to-biology-101' ]"
 check "idstack-slugify: empty input → untitled-course" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' '')\" = 'untitled-course' ]"
+  "[ \"\$('$IDSTACK_DIR/scripts/idstack-slugify' '')\" = 'untitled-course' ]"
 check "idstack-slugify: '!!!' → untitled-course" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' '!!!')\" = 'untitled-course' ]"
+  "[ \"\$('$IDSTACK_DIR/scripts/idstack-slugify' '!!!')\" = 'untitled-course' ]"
 check "idstack-slugify: unicode ASCII-folds — 'Géographie I' → geographie-i" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Géographie I')\" = 'geographie-i' ]"
+  "[ \"\$('$IDSTACK_DIR/scripts/idstack-slugify' 'Géographie I')\" = 'geographie-i' ]"
 # --from-manifest owns the project_name -> slug rule for the skills and the
 # dashboard; each once read the name with its own inline Python, and the copies
 # disagreed on the needs_analysis.project_name fallback.
@@ -196,24 +200,24 @@ SLUG_TMP=$(mktemp -d)
 printf '%s' '{"project_name": "Intro Bio"}' > "$SLUG_TMP/a.json"
 printf '%s' '{"needs_analysis": {"project_name": "Old Name"}}' > "$SLUG_TMP/b.json"
 check "idstack-slugify --from-manifest reads project_name" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' --from-manifest '$SLUG_TMP/a.json')\" = 'intro-bio' ]"
+  "[ \"\$('$IDSTACK_DIR/scripts/idstack-slugify' --from-manifest '$SLUG_TMP/a.json')\" = 'intro-bio' ]"
 check "idstack-slugify --from-manifest falls back to needs_analysis.project_name" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' --from-manifest '$SLUG_TMP/b.json')\" = 'old-name' ]"
+  "[ \"\$('$IDSTACK_DIR/scripts/idstack-slugify' --from-manifest '$SLUG_TMP/b.json')\" = 'old-name' ]"
 check "idstack-slugify --from-manifest on a missing manifest → untitled-course" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' --from-manifest '$SLUG_TMP/none.json')\" = 'untitled-course' ]"
+  "[ \"\$('$IDSTACK_DIR/scripts/idstack-slugify' --from-manifest '$SLUG_TMP/none.json')\" = 'untitled-course' ]"
 rm -rf "$SLUG_TMP"
 check "no skill template reads project_name with inline Python" \
   "! grep -l \"get('project_name'\" $IDSTACK_DIR/skills/*/SKILL.md.tmpl | grep -q ."
 check "idstack-slugify: implicit stdin pipeline" \
-  "[ \"\$(echo 'Course via Implicit Stdin' | '$IDSTACK_DIR/bin/idstack-slugify')\" = 'course-via-implicit-stdin' ]"
+  "[ \"\$(echo 'Course via Implicit Stdin' | '$IDSTACK_DIR/scripts/idstack-slugify')\" = 'course-via-implicit-stdin' ]"
 check "idstack-slugify: explicit dash stdin pipeline" \
-  "[ \"\$(echo 'Course via Dash Stdin' | '$IDSTACK_DIR/bin/idstack-slugify' -)\" = 'course-via-dash-stdin' ]"
+  "[ \"\$(echo 'Course via Dash Stdin' | '$IDSTACK_DIR/scripts/idstack-slugify' -)\" = 'course-via-dash-stdin' ]"
 check "idstack-slugify: emoji and non-ASCII characters stripped" \
-  "[ \"\$('$IDSTACK_DIR/bin/idstack-slugify' 'Course 🚀 101: Intro to AI ✨')\" = 'course-101-intro-to-ai' ]"
+  "[ \"\$('$IDSTACK_DIR/scripts/idstack-slugify' 'Course 🚀 101: Intro to AI ✨')\" = 'course-101-intro-to-ai' ]"
 
 # Skills that write per-skill Markdown reports must reference the new export folder pattern
 # and use the slugify helper (not the legacy .idstack/reports/<skill>.md path).
-REPORT_PRODUCING_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review red-team"
+REPORT_PRODUCING_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review red-team storyboard question-bank evaluation-plan"
 for skill in $REPORT_PRODUCING_SKILLS; do
   check "$skill SKILL.md.tmpl references .idstack/exports/" "grep -q '\.idstack/exports/' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl calls idstack-slugify" "grep -q 'idstack-slugify' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
@@ -231,7 +235,7 @@ done
 MANIFEST_WRITERS="needs-analysis course-import learning-objectives assessment-design course-builder course-quality-review accessibility-review red-team course-export"
 for skill in $MANIFEST_WRITERS; do
   check "$skill SKILL.md.tmpl uses idstack-manifest-merge" "grep -q 'idstack-manifest-merge\" --create' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
-  check "$skill SKILL.md.tmpl has no merge call without --create" "! grep 'bin/idstack-manifest-merge\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | grep -vq -- '--create'"
+  check "$skill SKILL.md.tmpl has no merge call without --create" "! grep 'scripts/idstack-manifest-merge\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | grep -vq -- '--create'"
   check "$skill SKILL.md.tmpl does not seed the manifest with idstack-migrate" "! grep -q 'idstack-migrate' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
 done
 for skill in needs-analysis course-import; do
@@ -304,7 +308,7 @@ done
 # preceded by a path character, so `.idstack/exports/<slug>/red-team.md`
 # stays legal, and it can't match `/idstack:<skill>` because the skill name
 # there does not follow the slash.
-BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn|start)\b'
+BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn|start|quick-check|storyboard|question-bank|evaluation-plan)\b'
 for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl (frontmatter and body) free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill description says when to use it" \
@@ -313,7 +317,14 @@ done
 # The preamble has no frontmatter — scan the whole file.
 check "preamble free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK_DIR/templates/preamble.md'"
 check "no '/idstack <skill>' space typos in templates" "! grep -rE '/idstack [a-z]' $IDSTACK_DIR/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
-check "pipeline status table uses /idstack: prefixes" "grep -qF '[done] /idstack:needs-analysis' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+# Chat output must not repeat the report (issue #146). Each of these once sent
+# a list or a table to the chat that the Markdown report already has.
+check "pipeline gives its status in one line" "grep -qF 'Do not show a list of the skills' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl' && ! grep -qF '[done] /idstack:' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
+check "course-import closing message is short" "! grep -qF '## Import Complete' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl' && grep -qF 'Do not repeat the counts by type' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl'"
+check "course-export closing message does not repeat Next steps" "grep -qF 'Do not repeat the Next steps list in the chat.' '$IDSTACK_DIR/skills/course-export/SKILL.md.tmpl'"
+check "course-builder does not write a chat line for each file" "grep -qF 'Do not write a chat line for each file.' '$IDSTACK_DIR/skills/course-builder/SKILL.md.tmpl'"
+check "accessibility-review limits its course summary" "grep -qF 'in a maximum of two sentences' '$IDSTACK_DIR/skills/accessibility-review/SKILL.md.tmpl'"
+check "assessment-design puts rubric edits in the Audit actions table" "grep -qF 'in the Change cell of the Audit actions table, not in the chat' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
 check "pipeline invokes children with the idstack: namespace" "grep -qF 'skill: \"idstack:needs-analysis\"' '$IDSTACK_DIR/skills/pipeline/SKILL.md.tmpl'"
 check "start hands off with the idstack: namespace" "grep -qF 'skill: \"idstack:course-import\"' '$IDSTACK_DIR/skills/start/SKILL.md.tmpl'"
 # start runs before any course work. A timeline event from it would become
@@ -342,7 +353,7 @@ check "no legacy .claude/plugins/idstack path in skill templates" "! grep -rF '.
 # variable, and a token with a default (":-") stays as it is. The chain used
 # that form until this check, so every skill fell through to the newest cache
 # dir: under --plugin-dir, and for a marketplace added from a local path, that
-# was an old install with no bin/idstack-ste-check. Do to the generated text
+# was an old install with no scripts/idstack-ste-check. Do to the generated text
 # what Claude Code does, then run the first chain with a stale cache present.
 RESOLVE_SIM=$(mktemp -d)
 mkdir -p "$RESOLVE_SIM/plugin" "$RESOLVE_SIM/home/.claude/plugins/cache/idstack/idstack/0.0.1.0"
@@ -350,6 +361,16 @@ RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$ID
     | sed "s|\${CLAUDE_PLUGIN_ROOT}|$RESOLVE_SIM/plugin|g"; echo 'printf "%s" "$_IDSTACK"'; } \
   | env -u CLAUDE_PLUGIN_ROOT -u IDSTACK_HOME HOME="$RESOLVE_SIM/home" bash)
 check "the substituted plugin root wins over a stale cache install" "[ '$RESOLVE_SIM_GOT' = '$RESOLVE_SIM/plugin' ]"
+# Cowork documents only the ${CLAUDE_SKILL_DIR} token. With no plugin root in
+# the text, the chain must find the plugin two levels above the skill folder.
+mkdir -p "$RESOLVE_SIM/plugin/skills/learn"
+RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$IDSTACK_DIR/skills/learn/SKILL.md" \
+    | sed "s|\${CLAUDE_SKILL_DIR}|$RESOLVE_SIM/plugin/skills/learn|g"; echo 'cd "$_IDSTACK" && pwd'; } \
+  | env -u CLAUDE_PLUGIN_ROOT -u CLAUDE_SKILL_DIR -u IDSTACK_HOME HOME="$RESOLVE_SIM/home" bash)
+check "the skill folder token finds the plugin root when the plugin root token is empty" "[ '$RESOLVE_SIM_GOT' = '$RESOLVE_SIM/plugin' ]"
+RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$IDSTACK_DIR/skills/learn/SKILL.md"; echo 'printf "%s" "$_IDSTACK"'; } \
+  | env -u CLAUDE_PLUGIN_ROOT -u CLAUDE_SKILL_DIR -u IDSTACK_HOME HOME="$RESOLVE_SIM/empty" bash)
+check "an empty skill folder token does not resolve to the disk root" "[ -z '$RESOLVE_SIM_GOT' ]"
 rm -rf "$RESOLVE_SIM"
 check "no resolve chain gives the plugin root a default" "! grep -rlF '\${CLAUDE_PLUGIN_ROOT:-' '$IDSTACK_DIR/templates' $IDSTACK_DIR/skills/*/SKILL.md.tmpl $IDSTACK_DIR/skills/*/SKILL.md"
 
@@ -387,17 +408,17 @@ for skill in $MODE_AWARE_SKILLS; do
 done
 
 # Manifest-merge tool must exist and be executable, and its unit tests must pass.
-check "bin/idstack-manifest-merge exists" "[ -f '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
-check "bin/idstack-manifest-merge is executable" "[ -x '$IDSTACK_DIR/bin/idstack-manifest-merge' ]"
+check "scripts/idstack-manifest-merge exists" "[ -f '$IDSTACK_DIR/scripts/idstack-manifest-merge' ]"
+check "scripts/idstack-manifest-merge is executable" "[ -x '$IDSTACK_DIR/scripts/idstack-manifest-merge' ]"
 if [ -x "$IDSTACK_DIR/test/test-manifest-merge.sh" ]; then
   check "manifest-merge unit tests pass" "'$IDSTACK_DIR/test/test-manifest-merge.sh'"
 fi
 
-# `claude plugin list` parsing, extracted to bin/lib/ so it is testable.
+# `claude plugin list` parsing, extracted to scripts/lib/ so it is testable.
 # A fixed-size window here once reported a disabled idstack as enabled.
-check "bin/lib/plugin-status.sh exists" "[ -f '$IDSTACK_DIR/bin/lib/plugin-status.sh' ]"
-check "idstack-doctor sources the shared plugin-status parser" "grep -q 'lib/plugin-status.sh' '$IDSTACK_DIR/bin/idstack-doctor'"
-check "idstack-doctor no longer uses a fixed -A4 window" "! grep -q 'grep -A4' '$IDSTACK_DIR/bin/idstack-doctor'"
+check "scripts/lib/plugin-status.sh exists" "[ -f '$IDSTACK_DIR/scripts/lib/plugin-status.sh' ]"
+check "idstack-doctor sources the shared plugin-status parser" "grep -q 'lib/plugin-status.sh' '$IDSTACK_DIR/scripts/idstack-doctor'"
+check "idstack-doctor no longer uses a fixed -A4 window" "! grep -q 'grep -A4' '$IDSTACK_DIR/scripts/idstack-doctor'"
 if [ -x "$IDSTACK_DIR/test/test-plugin-status.sh" ]; then
   check "plugin-status unit tests pass" "'$IDSTACK_DIR/test/test-plugin-status.sh'"
 fi
@@ -425,9 +446,9 @@ fi
 # the bash call itself, not the prose around it, so a step that loses its
 # command fails here even when the text that names the check stays.
 for skill in $SKILLS; do
-  case "$skill" in course-builder|course-export|red-team) want=2 ;; start) want=0 ;; *) want=1 ;; esac
+  case "$skill" in course-builder|course-export|red-team) want=2 ;; start|quick-check) want=0 ;; *) want=1 ;; esac
   # grep -c exits 1 on zero matches; without "|| true", set -e ends the run with no FAIL line.
-  got=$(grep -cF '"$_IDSTACK/bin/idstack-ste-check"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
+  got=$(grep -cF '"$_IDSTACK/scripts/idstack-ste-check"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
   check "$skill SKILL.md.tmpl runs the ste checker at all $want check steps" "[ '$got' -eq $want ]"
 done
 # A check step must tell an install with no checker apart from a missing
@@ -437,11 +458,11 @@ done
 STE_NOCHK=$(mktemp -d)
 for skill in $SKILLS; do
   check "$skill check steps name an install that has no checker" \
-    "grep -F '\"\$_IDSTACK/bin/idstack-ste-check\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | while IFS= read -r l; do _IDSTACK='$STE_NOCHK' bash -c \"\$l\" | grep -qxF 'STE_CHECK_MISSING: $STE_NOCHK' || exit 1; done"
+    "grep -F '\"\$_IDSTACK/scripts/idstack-ste-check\"' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | while IFS= read -r l; do _IDSTACK='$STE_NOCHK' bash -c \"\$l\" | grep -qxF 'STE_CHECK_MISSING: $STE_NOCHK' || exit 1; done"
 done
 rm -rf "$STE_NOCHK"
 
-# The Step Review. After each step, bin/idstack-report-section adds the output
+# The Step Review. After each step, scripts/idstack-report-section adds the output
 # to the report file as a draft section with a table. The user reads it there
 # and approves it, and `approve` removes the draft mark.
 if command -v python3 &>/dev/null; then
@@ -458,6 +479,7 @@ for skill in $REPORT_PRODUCING_SKILLS; do
     needs-analysis) want=7 ;; learning-objectives) want=5 ;; assessment-design) want=11 ;;
     course-builder) want=10 ;; course-quality-review) want=7 ;; accessibility-review) want=6 ;;
     red-team) want=10 ;; course-export) want=5 ;; course-import) want=6 ;;
+    storyboard) want=5 ;; question-bank) want=4 ;; evaluation-plan) want=6 ;;
   esac
   got=$(grep -c '^\*\*Step review:\*\*' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
   check "$skill SKILL.md.tmpl has all $want Step review lines" "[ '$got' -eq $want ]"
@@ -476,11 +498,11 @@ for skill in $REPORT_PRODUCING_SKILLS; do
     "grep -F 'idstack-report-section\" init' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl' | while IFS= read -r l; do _IDSTACK='$RS_NOHELPER' _REPORT_PATH=x.md bash -c \"\$l\" | grep -qxF 'REPORT_SECTION_MISSING: $RS_NOHELPER' || exit 1; done"
 done
 check "preamble has the four Step Review commands" \
-  "[ \"\$(grep -cF '\"\$_IDSTACK/bin/idstack-report-section\" ' '$IDSTACK_DIR/templates/preamble.md')\" -eq 4 ]"
+  "[ \"\$(grep -cF '\"\$_IDSTACK/scripts/idstack-report-section\" ' '$IDSTACK_DIR/templates/preamble.md')\" -eq 4 ]"
 check "preamble Step Review has the approve command" \
   "grep -qF 'idstack-report-section\" approve \"<path>\"' '$IDSTACK_DIR/templates/preamble.md'"
 check "preamble Step Review commands name an install that has no report helper" \
-  "grep -F '\"\$_IDSTACK/bin/idstack-report-section\" ' '$IDSTACK_DIR/templates/preamble.md' | while IFS= read -r l; do _IDSTACK='$RS_NOHELPER' bash -c \"\$l\" | grep -qxF 'REPORT_SECTION_MISSING: $RS_NOHELPER' || exit 1; done"
+  "grep -F '\"\$_IDSTACK/scripts/idstack-report-section\" ' '$IDSTACK_DIR/templates/preamble.md' | while IFS= read -r l; do _IDSTACK='$RS_NOHELPER' bash -c \"\$l\" | grep -qxF 'REPORT_SECTION_MISSING: $RS_NOHELPER' || exit 1; done"
 rm -rf "$RS_NOHELPER"
 # The user reads each table in the report file. A table in the chat or in the
 # question card is too dense to read, so the preamble forbids both.
@@ -519,7 +541,7 @@ check "red-team orchestrator brief does not write the report" \
 # templates, so one bad label puts a problem in every report.
 if command -v python3 &>/dev/null; then
   check "report and dashboard templates pass the ste checker" \
-    "'$IDSTACK_DIR/bin/idstack-ste-check' --format markdown '$IDSTACK_DIR/templates/report.md.tmpl' '$IDSTACK_DIR/templates/index.md.tmpl'"
+    "'$IDSTACK_DIR/scripts/idstack-ste-check' --format markdown '$IDSTACK_DIR/templates/report.md.tmpl' '$IDSTACK_DIR/templates/index.md.tmpl'"
 fi
 
 # ./setup is what a new user runs first; it is exercised against a repo copy
@@ -561,9 +583,9 @@ if command -v node &>/dev/null; then
   # the Markdown export, the rendered findings, the error messages and the side-panel
   # page. pipefail: a printer that crashes must fail here, not send empty text.
   if command -v python3 &>/dev/null; then
-    check "extension Markdown output passes the STE checker" "( set -o pipefail; node '$IDSTACK_DIR/test/print-extension-output.mjs' markdown | python3 '$IDSTACK_DIR/bin/idstack-ste-check' --format markdown - )"
-    check "extension HTML output passes the STE checker" "( set -o pipefail; node '$IDSTACK_DIR/test/print-extension-output.mjs' html | python3 '$IDSTACK_DIR/bin/idstack-ste-check' --format html - )"
-    check "side-panel page passes the STE checker" "python3 '$IDSTACK_DIR/bin/idstack-ste-check' '$IDSTACK_DIR/extension/sidepanel/index.html'"
+    check "extension Markdown output passes the STE checker" "( set -o pipefail; node '$IDSTACK_DIR/test/print-extension-output.mjs' markdown | python3 '$IDSTACK_DIR/scripts/idstack-ste-check' --format markdown - )"
+    check "extension HTML output passes the STE checker" "( set -o pipefail; node '$IDSTACK_DIR/test/print-extension-output.mjs' html | python3 '$IDSTACK_DIR/scripts/idstack-ste-check' --format html - )"
+    check "side-panel page passes the STE checker" "python3 '$IDSTACK_DIR/scripts/idstack-ste-check' '$IDSTACK_DIR/extension/sidepanel/index.html'"
   else
     echo "  SKIP: extension STE checks (python3 not installed)"
   fi
@@ -588,7 +610,7 @@ done
 
 # Check pipeline-originated skills have timeline logging (pipeline logs its
 # own completion so "the pipeline was run" is recoverable)
-TIMELINE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline"
+TIMELINE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline storyboard question-bank evaluation-plan"
 for skill in $TIMELINE_SKILLS; do
   check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
@@ -597,7 +619,7 @@ done
 # gets it from the {{IDSTACK_RESOLVE}} expansion)
 check "every generated SKILL.md supports CLAUDE_PLUGIN_ROOT" "! grep -L 'CLAUDE_PLUGIN_ROOT' $IDSTACK_DIR/skills/*/SKILL.md | grep -q ."
 
-# The preamble's Context Recovery block runs bin/idstack-status --context, whose
+# The preamble's Context Recovery block runs scripts/idstack-status --context, whose
 # Python must run on the oldest supported interpreter (macOS system python3 is
 # 3.9) — a SyntaxError there dies silently behind `2>/dev/null || true` in every
 # generated skill. (The Preferences block's inline python3 -c is not run here.)
@@ -615,45 +637,45 @@ if [ -d "$FIXTURE_DIR" ] && command -v python3 &>/dev/null; then
 
   # Test v1.0 → v1.4 chained migration
   MIG="$MIG_ROOT/v10"; mkdir -p "$MIG"
-  check "v1.0→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.0.json' '$MIG/project.json' && '$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null"
+  check "v1.0→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.0.json' '$MIG/project.json' && '$IDSTACK_DIR/scripts/idstack-migrate' '$MIG/project.json' >/dev/null"
   check "v1.0→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
   check "v1.0→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert 'preferences' in d\""
   check "v1.0→v1.4: preserves project_name" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['project_name']=='Test Course v1.0'\""
 
   # Test v1.1 → v1.4 migration (export_metadata.failed_items was an int count
-  # in v1.1; v1.2+ made it a list of item descriptors — see bin/idstack-migrate).
+  # in v1.1; v1.2+ made it a list of item descriptors — see scripts/idstack-migrate).
   MIG="$MIG_ROOT/v11"; mkdir -p "$MIG"
-  check "v1.1→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.1.json' '$MIG/project.json' && '$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null"
+  check "v1.1→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.1.json' '$MIG/project.json' && '$IDSTACK_DIR/scripts/idstack-migrate' '$MIG/project.json' >/dev/null"
   check "v1.1→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
   check "v1.1→v1.4: failed_items int converted to list" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert isinstance(d['export_metadata']['failed_items'], list)\""
 
   # Test v1.2 → v1.4 migration
   MIG="$MIG_ROOT/v12"; mkdir -p "$MIG"
-  check "v1.2→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.2.json' '$MIG/project.json' && '$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null"
+  check "v1.2→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.2.json' '$MIG/project.json' && '$IDSTACK_DIR/scripts/idstack-migrate' '$MIG/project.json' >/dev/null"
   check "v1.2→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
   check "v1.2→v1.4: has preferences" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['preferences']['verbosity']=='normal'\""
-  check "v1.2→v1.4: idempotent" "'$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null && python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
+  check "v1.2→v1.4: idempotent" "'$IDSTACK_DIR/scripts/idstack-migrate' '$MIG/project.json' >/dev/null && python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
 
   # Test v1.3-drifted → v1.4 cleanup migration (renames red_team_audit.summary.*_count
   # to red_team_audit.findings_summary.*, moves _import_quality_flags into
   # import_metadata.quality_flag_details).
   if [ -f "$FIXTURE_DIR/manifest-v1.3-drifted.json" ]; then
     MIG="$MIG_ROOT/v13"; mkdir -p "$MIG"
-    check "v1.3-drifted→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.3-drifted.json' '$MIG/project.json' && '$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json' >/dev/null"
+    check "v1.3-drifted→v1.4: migrate runs" "cp '$FIXTURE_DIR/manifest-v1.3-drifted.json' '$MIG/project.json' && '$IDSTACK_DIR/scripts/idstack-migrate' '$MIG/project.json' >/dev/null"
     check "v1.3-drifted→v1.4: version bumped" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert d['version']=='1.4'\""
     check "v1.3-drifted→v1.4: red_team summary renamed to findings_summary" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); rt=d['red_team_audit']; assert 'summary' not in rt; assert rt['findings_summary']=={'critical': 3, 'warning': 5, 'info': 2}\""
     check "v1.3-drifted→v1.4: _import_quality_flags moved into import_metadata" "python3 -c \"import json; d=json.load(open('$MIG/project.json')); assert '_import_quality_flags' not in d; details=d['import_metadata']['quality_flag_details']; assert len(details)==2 and details[0]['key']=='orphan_module_8'\""
   fi
 
-  # Test malformed manifest cat-fallback (bin/idstack-migrate, when the version read fails)
+  # Test malformed manifest cat-fallback (scripts/idstack-migrate, when the version read fails)
   MIG="$MIG_ROOT/malformed"; mkdir -p "$MIG"
   echo "INVALID { JSON" > "$MIG/project.json"
   check "migrate: malformed JSON falls back to raw cat and exits 0" \
-    "[ \"\$('$IDSTACK_DIR/bin/idstack-migrate' '$MIG/project.json')\" = 'INVALID { JSON' ]"
+    "[ \"\$('$IDSTACK_DIR/scripts/idstack-migrate' '$MIG/project.json')\" = 'INVALID { JSON' ]"
 fi
 
 # Template freshness check
-check "generated SKILL.md files are up to date" "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
+check "generated SKILL.md files are up to date" "'$IDSTACK_DIR/scripts/idstack-gen-skills' --dry-run"
 
 # Claude-Code-only invariant (v3.4.0.0). idstack shipped a second CLI target
 # from v2.5.0.0 to v3.3.0.4 and dropped it. The machinery is easy to reintroduce
@@ -664,8 +686,8 @@ check "generated SKILL.md files are up to date" "'$IDSTACK_DIR/bin/idstack-gen-s
 check "no second-CLI distribution bundle" "[ ! -e '$IDSTACK_DIR/dist' ]"
 check "no repo-root AGENTS.md" "[ ! -e '$IDSTACK_DIR/AGENTS.md' ]"
 check "no templates/agent-context.md" "[ ! -e '$IDSTACK_DIR/templates/agent-context.md' ]"
-check "generator takes no --target flag" "! grep -q -- '--target' '$IDSTACK_DIR/bin/idstack-gen-skills'"
-check "generator exits 2 on an unknown argument" "'$IDSTACK_DIR/bin/idstack-gen-skills' --bogus 2>/dev/null; [ \$? -eq 2 ]"
+check "generator takes no --target flag" "! grep -q -- '--target' '$IDSTACK_DIR/scripts/idstack-gen-skills'"
+check "generator exits 2 on an unknown argument" "'$IDSTACK_DIR/scripts/idstack-gen-skills' --bogus 2>/dev/null; [ \$? -eq 2 ]"
 check "resolve chain drops the ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/snippets/idstack-resolve.sh'"
 check "preamble embeds no ~/.agents fallbacks" "! grep -q '\.agents/' '$IDSTACK_DIR/templates/preamble.md'"
 

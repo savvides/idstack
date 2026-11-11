@@ -17,12 +17,12 @@ allowed-tools:
   - AskUserQuestion
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
-<!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->
+<!-- Edit the .tmpl file instead. Regenerate: scripts/idstack-gen-skills -->
 
 
 ## Preamble: Interaction Conventions
 
-idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
+idstack runs in Claude Code and in Cowork. Skill bodies name these tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   present a single multiple-choice question (e.g., "Which of these best describes X?")
@@ -55,8 +55,8 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 
 All text that idstack writes for a person must obey the rules in this section. This
 includes chat text, AskUserQuestion questions and options, reports, the course
-dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
-reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
+dashboard, course content for learners, and export packages. `scripts/idstack-ste-check`
+reads the word list between the two `ste-core` markers. `scripts/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
 
 The rules also apply to the text that idstack writes in `.idstack/project.json` and in
@@ -165,7 +165,7 @@ Word list. Do not use the word in the first column. Use the word in the second c
 How to use the standard:
 
 1. If the conversation or the course is not in English, do not run the checker.
-2. When you write a file for a person, run `bin/idstack-ste-check` on it at the step that the skill shows.
+2. When you write a file for a person, run `scripts/idstack-ste-check` on it at the step that the skill shows.
 3. If the checker shows problems, write each sentence that it shows again. Then write the file again and run the checker again.
 4. Run the checker a maximum of three times. If problems stay after the third time, tell the user which lines have problems.
 5. If the output is `STE_CHECK_UNAVAILABLE`, python3 is not available. Continue the skill. Tell the user one time that the check did not run.
@@ -202,12 +202,14 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/scripts/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -265,8 +267,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
-with `experience_level: novice|intermediate|expert`."
+mention: "Note: To change how much information idstack gives, type `/idstack:start` and
+select your experience level."
 
 ## Preamble: Report Links
 
@@ -334,10 +336,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" check .idstack/.report-section.md; fi
 ```
 
 3. If the output shows problems, correct the draft. Then do step 2 again. Do the
@@ -355,10 +359,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
 ```
 
 5. Tell the user about the section in a maximum of three short lines:
@@ -392,10 +398,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
 ```
 
 9. Go to the next step only if the output starts with `SECTION_APPROVED`.
@@ -431,10 +439,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" finish "<path>"; fi
 ```
 
 - If the skill stops after the report starts, for any reason, end the report
@@ -469,10 +479,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-status" --context 2>/dev/null || true
+"$_IDSTACK/scripts/idstack-status" --context 2>/dev/null || true
 ```
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
@@ -528,10 +540,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-status" --context 2>/dev/null | grep '^SKILLS_COMPLETED:' || echo "SKILLS_COMPLETED:"
+"$_IDSTACK/scripts/idstack-status" --context 2>/dev/null | grep '^SKILLS_COMPLETED:' || echo "SKILLS_COMPLETED:"
 ```
 
 ## Workflow
@@ -562,19 +576,10 @@ starting point.
 
 ### Step 2: Present Pipeline Status
 
-Show the user a status table before starting:
+Tell the user the status in one line before starting. Do not show a list of the skills
+in the chat. The course dashboard has the list. For example:
 
-```
-Pipeline Status:
-  [done] /idstack:needs-analysis
-  [done] /idstack:learning-objectives
-  [next] /idstack:assessment-design      <-- the run starts here
-  [    ] /idstack:course-builder
-  [    ] /idstack:course-quality-review
-  [    ] /idstack:accessibility-review
-  [    ] /idstack:red-team
-  [    ] /idstack:course-export
-```
+"3 of 8 skills are complete. The next skill is `/idstack:assessment-design`."
 
 Ask: "Ready to continue the pipeline from /idstack:assessment-design?" (using AskUserQuestion
 with options: "Yes, continue" / "Start from a different skill" / "Re-run a completed skill")
@@ -626,10 +631,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 mkdir -p "$_EXPORT_DIR"
 echo "Dashboard template: $_IDSTACK/templates/index.md.tmpl"
@@ -658,7 +665,7 @@ Also read `.idstack/project.json` for project_name, scores (`quality_review.over
   - The first paragraph gives the verdict.
   - The second paragraph gives the themes that occur in more than one skill.
   - The third paragraph tells where to start. It is optional. If you do not use it, remove its placeholder.
-- **Readiness table** — fill the one row of the Readiness pipe table (Quality, Accessibility, Red-team confidence, Verdict). Write the verdict as a text label: `Ready`, `Issues`, `Blocked`, or `Pending` (when the skill has not run). If a score is not available, replace the full cell, `/100` included, with `not run`. The quality (70) and accessibility (80) thresholds match `bin/idstack-status --readiness`. For red-team, `--readiness` checks the number of critical findings (it must be 0), not the confidence score.
+- **Readiness table** — fill the one row of the Readiness pipe table (Quality, Accessibility, Red-team confidence, Verdict). Write the verdict as a text label: `Ready`, `Issues`, `Blocked`, or `Pending` (when the skill has not run). If a score is not available, replace the full cell, `/100` included, with `not run`. The quality (70) and accessibility (80) thresholds match `scripts/idstack-status --readiness`. For red-team, `--readiness` checks the number of critical findings (it must be 0), not the confidence score.
 - **Skill reports table** — one pipe-table row per pipeline skill. In the Status column, write `Done` if the skill is in the SKILLS_COMPLETED line (run the Step 1 command again here, because a skill that this run completed is not in the first reading) and the per-skill report file exists without the in-progress line `**Status:** in progress. A section with a draft mark waits for your approval.`, and `Pending` in all other conditions. A skill that stopped early also has no in-progress line (`finish --stopped` removes it), but it logs no `completed` event. The Signal column carries a 1-line skill-specific summary (e.g., for course-quality-review: `overall_score/100`; for red-team: `confidence_score/100, N critical`). In the Report column, link the relative Markdown filename (e.g., `[needs-analysis.md](needs-analysis.md)`). If the report file is not in the folder, write `not run` in the Report column. Add the optional course-import row when that report is present.
 - **Top cross-cutting issues** (numbered list): 3–5 highest-impact findings that appear in or affect multiple per-skill reports. Each item shows the source skill(s) and the citation as plain text, for example `[Alignment-14] [T1]`.
 - **LMS export artifacts** — list every file present at the top level of `$_EXPORT_DIR/` whose name matches a known LMS package (`course-export.imscc`, `scorm-export.zip`). If none, write: "This folder has no LMS packages. To make them, run `/idstack:course-export`."
@@ -676,10 +683,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
@@ -701,10 +710,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-[ -n "$_IDSTACK" ] && "$_IDSTACK/bin/idstack-timeline-log" '{"skill":"pipeline","event":"completed"}'
+[ -n "$_IDSTACK" ] && "$_IDSTACK/scripts/idstack-timeline-log" '{"skill":"pipeline","event":"completed"}'
 ```
 
 ## Important Rules

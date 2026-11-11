@@ -1,8 +1,10 @@
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
 # available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then IDSTACK_HOME, then the Claude Code marketplace cache. Empty
-# if none found; guard "$_IDSTACK/bin/..." calls accordingly.
+# skill text, then the plugin root two levels above the skill folder (the
+# token that Claude Code and Cowork both write), then IDSTACK_HOME, then the
+# Claude Code marketplace cache. Empty
+# if none found; guard "$_IDSTACK/scripts/..." calls accordingly.
 _IDSTACK=""
 # Marketplace cache holds one dir per installed version. Sort the basenames by
 # numeric version fields, not lexically — plain sort ranks 3.9.0.0 above
@@ -15,6 +17,9 @@ if [ -d "$_idstack_cache_root" ]; then
 fi
 # CLAUDE_PLUGIN_ROOT has no ":-" default on purpose. Claude Code replaces only
 # the exact braced token in skill text. The Bash tool's shell does not have it.
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+# An empty CLAUDE_SKILL_DIR must stay empty: "/../.." is the disk root.
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done

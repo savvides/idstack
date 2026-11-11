@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for bin/idstack-ste-check.
+"""Unit tests for scripts/idstack-ste-check.
 
 The clean fixtures in test/fixtures/ste/ hold the hard cases of real idstack output:
 chained citations, "et al.", WCAG numbers, version strings, file names, placeholders,
@@ -15,7 +15,7 @@ import tempfile
 import unittest
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-CHECKER = os.path.join(REPO_ROOT, 'bin', 'idstack-ste-check')
+CHECKER = os.path.join(REPO_ROOT, 'scripts', 'idstack-ste-check')
 FIXTURES = os.path.join(REPO_ROOT, 'test', 'fixtures', 'ste')
 PREAMBLE = os.path.join(REPO_ROOT, 'templates', 'preamble.md')
 

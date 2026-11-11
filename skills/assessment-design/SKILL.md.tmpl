@@ -135,7 +135,7 @@ Find the mode with the conditions in Mode 1, Mode 2 and Mode 3 below. Then, befo
 ```bash
 {{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/assessment-design.md"
 mkdir -p "$_EXPORT_DIR"
@@ -143,7 +143,7 @@ echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
-if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill assessment-design --title "Assessment Design Report" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill assessment-design --title "Assessment Design Report" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
 Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
@@ -220,13 +220,13 @@ Use the assessment IDs from the manifest or from the inventory, for example `A-1
 
 Make one row for each rubric criterion and one row for each untested ILO. Use row IDs like `A-1-C1`. In the Status cell, write `aligned`, `Bloom's mismatch`, `untested ILO`, `orphaned criterion`, `missing rubric` or `no elaborated feedback`.
 
-4. **Recommendations.** Surface the top 1-3 fixes — usually rubric criterion edits, not new assessments. If the user wants to act on them, propose specific edits and apply via `Edit`. Track applied/deferred fixes in `assessments.audit_notes` (item shape in the manifest schema).
+4. **Recommendations.** Surface the top 1-3 fixes — usually rubric criterion edits, not new assessments. Write each proposed edit in the Change cell of the Audit actions table, not in the chat. If the user approves a row, apply it via `Edit`. Track applied/deferred fixes in `assessments.audit_notes` (item shape in the manifest schema).
 
 **Step review:** do the Step Review in the preamble. Section: `## Audit actions`. Columns: `ID | Change | Status | Justification | Evidence`.
 
 Make one row for each fix. Use the IDs `AN-1`, `AN-2` and so on. In the Status cell, write `applied` or `deferred`.
 
-When the audit actions are approved, do the Findings and the closing Step Reviews and the writing standard check (see the "Generate Report" section). Then write the manifest with `bin/idstack-manifest-merge` (see the "Write Manifest" section). Do not do the remaining steps of this skill (Steps 1-5 of the design workflow are for Mode 1 and Mode 2 only).
+When the audit actions are approved, do the Findings and the closing Step Reviews and the writing standard check (see the "Generate Report" section). Then write the manifest with `scripts/idstack-manifest-merge` (see the "Write Manifest" section). Do not do the remaining steps of this skill (Steps 1-5 of the design workflow are for Mode 1 and Mode 2 only).
 
 ---
 
@@ -410,7 +410,7 @@ Run the finish command of the Step Review.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
@@ -419,7 +419,7 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 ## Write Manifest
 
-Save results to `.idstack/project.json` via `bin/idstack-manifest-merge`. The merge tool
+Save results to `.idstack/project.json` via `scripts/idstack-manifest-merge`. The merge tool
 replaces only the named section, preserves every other section verbatim, validates JSON,
 and atomically updates the top-level `updated` timestamp. **This skill writes two
 top-level sections** — `assessments` and `learning_objectives` — in one atomic call
@@ -444,7 +444,7 @@ new `gaps[]` entries). Then:
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-manifest-merge" --create \
+"$_IDSTACK/scripts/idstack-manifest-merge" --create \
   --section assessments --payload .idstack/.assessments-payload.json \
   --section learning_objectives --payload .idstack/.learning_objectives-payload.json \
   && rm -f .idstack/.assessments-payload.json .idstack/.learning_objectives-payload.json
@@ -454,7 +454,7 @@ new `gaps[]` entries). Then:
 exist yet (the standalone case). It never replaces a manifest that exists. If either payload is malformed, the tool writes
 nothing.
 
-If `bin/idstack-manifest-merge` is unavailable: fall back to manual write (Read manifest, modify only the two sections, Write back, preserve all others).
+If `scripts/idstack-manifest-merge` is unavailable: fall back to manual write (Read manifest, modify only the two sections, Write back, preserve all others).
 
 **Populate the `assessments` section (payload contents, no enclosing `assessments` key):**
 
@@ -567,7 +567,7 @@ After the skill workflow completes successfully, log the session to the timeline
 IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
 {"skill":"assessment-design","event":"completed"}
 IDSTACK_EVENT
-"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
+"$_IDSTACK/scripts/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -581,5 +581,5 @@ import format issue, course structure pattern), also log it as a learning:
 IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
 {"skill":"assessment-design","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
 IDSTACK_LEARNING
-"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
+"$_IDSTACK/scripts/idstack-learnings" log "$_LEARNING"
 ```

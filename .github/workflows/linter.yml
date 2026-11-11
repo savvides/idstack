@@ -31,7 +31,7 @@ jobs:
           # fails this repo: jscpd uses a 0% duplicate threshold, so any
           # repeated block fails the job, and checkov flags the workflows'
           # missing permissions blocks. Bash is deliberately absent —
-          # shellcheck reports dozens of findings across bin/ and test/, which is a
+          # shellcheck reports dozens of findings across scripts/ and test/, which is a
           # cleanup of its own, not a merge gate.
           VALIDATE_GITHUB_ACTIONS: true
           VALIDATE_GITLEAKS: true

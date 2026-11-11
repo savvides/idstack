@@ -1,5 +1,5 @@
 // Print the fixed text that the shipped extension shows, so that smoke-test can
-// send it through bin/idstack-ste-check. Usage: node test/print-extension-output.mjs markdown|html
+// send it through scripts/idstack-ste-check. Usage: node test/print-extension-output.mjs markdown|html
 // The name does not start with "test-", so test/test-extension.sh does not run it as a test.
 import { getDemoAuditResult, getDemoCourseAuditResult } from '../extension/background/parser-helper.js';
 import { compileSingleAuditToMarkdown, compileDossierToMarkdown } from '../extension/shared/dossier-compiler.js';

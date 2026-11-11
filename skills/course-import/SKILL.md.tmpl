@@ -671,7 +671,7 @@ idstack adds each section to the import report as a draft. The user approves eac
 IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
 <project name>
 IDSTACK_PROJECT_NAME
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
 [ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."; exit 1; }
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/course-import.md"
@@ -680,7 +680,7 @@ echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
-if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill course-import --title "Course Import Report" --project "$_PROJECT_NAME" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill course-import --title "Course Import Report" --project "$_PROJECT_NAME" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
 Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
@@ -831,7 +831,7 @@ Run the finish command of the Step Review.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
@@ -840,7 +840,7 @@ For the result, do the steps in "How to use the standard" in the "Writing Standa
 
 ## Step 6: Write Manifest
 
-Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
+Create or update the project manifest with one atomic call to `scripts/idstack-manifest-merge`.
 course-import adds fields to sections that other skills also write (`context`,
 `needs_analysis`, `learning_objectives`), and it owns `import_metadata`. The merge tool
 replaces whole sections, so for each co-owned section: read the existing section from the
@@ -855,7 +855,7 @@ enclosing section key: `.idstack/.context-payload.json`, `.idstack/.needs_analys
 IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
 <project name>
 IDSTACK_PROJECT_NAME
-"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="$_PROJECT_NAME" \
+"$_IDSTACK/scripts/idstack-manifest-merge" --create --set project_name="$_PROJECT_NAME" \
   --section context --payload .idstack/.context-payload.json \
   --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
   --section learning_objectives --payload .idstack/.learning_objectives-payload.json \
@@ -920,35 +920,12 @@ Use only the approved rows of the report. `job_tasks` has the approved `T-` rows
 
 Write the manifest, then confirm. Write the message as Markdown text, not in a code block, so that the link works:
 
-```
-## Import Complete
+"The import is complete: {N} modules, {M} learning objectives, {P} assessments and {F} quality flags.
+Read the report: <the Report path, written as a link as the Report Links section of the preamble tells you>.
+Next step: `/idstack:course-quality-review`."
 
-**Source:** {input method}
-**Course:** {title}
-
-**Imported:**
-- {N} modules → {N} task analysis entries
-- {M} learning objectives (Bloom's pre-classified)
-- {P} assessments
-- {Q} activities/discussions
-- {R} content pages
-
-**Quality triage:** {F} flags found
-
-**Two artifacts:**
-- **Read this:** <the Report path, written as a link as the Report Links section of the preamble tells you> — the import report
-  with evidence-backed quality flags, the Bloom's classification table, and recommended
-  next steps tied to specific findings. Click the link to open it.
-- System state: `.idstack/project.json` (the manifest — for downstream skills).
-
-**Recommended next steps:**
-1. `/idstack:course-quality-review` — Full evidence-based audit with QM standards and
-   CoI presence analysis
-2. `/idstack:learning-objectives` — Check the Bloom's classifications and the
-   bidirectional alignment (objectives ↔ activities ↔ assessments)
-3. `/idstack:needs-analysis` — Add organizational context and learner profile data
-   that idstack cannot find in the course structure alone
-```
+Do not repeat the counts by type, the quality flags or the list of next steps in the
+chat. The Summary, Imported structure and Next steps sections of the report have them.
 
 ---
 
@@ -969,7 +946,7 @@ After the skill workflow completes successfully, log the session to the timeline
 IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
 {"skill":"course-import","event":"completed"}
 IDSTACK_EVENT
-"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
+"$_IDSTACK/scripts/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -983,5 +960,5 @@ import format issue, course structure pattern), also log it as a learning:
 IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
 {"skill":"course-import","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
 IDSTACK_LEARNING
-"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
+"$_IDSTACK/scripts/idstack-learnings" log "$_LEARNING"
 ```

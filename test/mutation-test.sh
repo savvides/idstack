@@ -9,7 +9,7 @@
 # Slower than the gate suites (it copies the repo for each mutation and runs
 # that mutation's guarding suite, often smoke-test), so it is NOT wired into
 # smoke-test.sh. Run it after touching a
-# test, a guard, or bin/lib/. CI runs it as a separate job.
+# test, a guard, or scripts/lib/. CI runs it as a separate job.
 #
 # Usage: test/mutation-test.sh [path-to-repo]   (defaults to this checkout)
 set -u
@@ -55,7 +55,7 @@ PY_LT_312=$(python3 -c 'import sys; print(1 if sys.version_info < (3,12) else 0)
 # against, so all three agree by construction even if $SRC is edited mid-run.
 # Copy only what the suites need; skip .git and any nested worktrees.
 mkdir -p "$WORK/base"
-for item in bin scripts skills templates test evidence docs extension .claude-plugin \
+for item in scripts skills templates test evidence docs extension .claude-plugin \
             VERSION CHANGELOG.md README.md PRIVACY.md CONTRIBUTING.md \
             DESIGN.md ROADMAP.md CLAUDE.md setup; do
   [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/base/"
@@ -76,7 +76,7 @@ fresh() {
 # trips the staleness gate instead of its own assertion, and GUARDED means
 # nothing. No mutation in this file is supposed to break generation.
 regen() {
-  if ! "$WORK/r/bin/idstack-gen-skills" >/dev/null 2>&1; then
+  if ! "$WORK/r/scripts/idstack-gen-skills" >/dev/null 2>&1; then
     echo "  ERROR: regen failed — a mutation broke generation; the GUARDED results below are meaningless" >&2
     exit 1
   fi
@@ -102,12 +102,12 @@ if ( expect_fail "no-op mutation" false ) >/dev/null 2>&1; then
   exit 1
 fi
 
-# 1. f-string bug in the context-recovery Python (bin/idstack-status --context)
+# 1. f-string bug in the context-recovery Python (scripts/idstack-status --context)
 # -> test-preamble-python must fail. Only meaningful on Python < 3.12; see
 # PY_LT_312 above.
 if [ "$PY_LT_312" = "1" ]; then
   fresh
-  python3 - "$WORK/r/bin/idstack-status" <<'PY'
+  python3 - "$WORK/r/scripts/idstack-status" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
 old = "print('SKILLS_COMPLETED: ' + ','.join(sorted(completed)))"
@@ -123,7 +123,7 @@ fi
 
 # 2. course-import dropped from SUGGESTED_NEXT -> test-preamble-python must fail
 fresh
-python3 - "$WORK/r/bin/idstack-status" <<'PY'
+python3 - "$WORK/r/scripts/idstack-status" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
 old = "    ('course-import', 'learning-objectives'),\n"
@@ -179,7 +179,7 @@ expect_fail "hand-rolled _IDSTACK regression" "$WORK/r/test/smoke-test.sh" "$WOR
 
 # 7. plugin-status fixed-window regression -> test-plugin-status must fail
 fresh
-python3 - "$WORK/r/bin/lib/plugin-status.sh" <<'PY'
+python3 - "$WORK/r/scripts/lib/plugin-status.sh" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
 s = s.replace('''plugin_entry_window() {
@@ -201,7 +201,7 @@ expect_fail "plugin-status fixed-window regression" "$WORK/r/test/test-plugin-st
 # reporting turns it into a script that always says everything is fine.
 fresh
 sed -i.bak 's|echo "  PROBLEM: idstack@idstack is installed but not enabled."|echo "  OK: installed"|' \
-  "$WORK/r/bin/idstack-doctor"
+  "$WORK/r/scripts/idstack-doctor"
 expect_fail "doctor silently passes a disabled install" "$WORK/r/test/test-doctor.sh"
 
 # 7c. readiness threshold drifts by one -> test-status must fail.
@@ -210,14 +210,14 @@ expect_fail "doctor silently passes a disabled install" "$WORK/r/test/test-docto
 # in test-status.sh hold the other two dimensions passing so the constant is
 # the only thing that can flip the verdict.
 fresh
-sed -i.bak 's|^READY_QUALITY_MIN=70|READY_QUALITY_MIN=69|' "$WORK/r/bin/idstack-status"
+sed -i.bak 's|^READY_QUALITY_MIN=70|READY_QUALITY_MIN=69|' "$WORK/r/scripts/idstack-status"
 expect_fail "readiness quality threshold off by one" "$WORK/r/test/test-status.sh"
 
 # 7d. WCAG Level-A override removed from the verdict -> test-status must fail.
 # The override exists in access_tier() and again in verdict(); deleting either
 # alone leaves the other reporting, so both are pinned.
 fresh
-python3 - "$WORK/r/bin/idstack-status" <<'PY'
+python3 - "$WORK/r/scripts/idstack-status" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
 s = s.replace("    if level_a_violations:\n        issues.append(f'{len(level_a_violations)} WCAG Level-A violation(s)')\n", "")
@@ -280,7 +280,7 @@ expect_fail "silent 'claude' failure" "$WORK/r/test/test-setup.sh" "$WORK/r"
 # This is the mutation that matters for the v3.4.0.0 removal: the 47 assertions
 # that used to name the second target are gone, so a green suite proves nothing
 # unless the repo-wide sweep that replaced them actually bites. Mutating README
-# rather than a code file also proves the sweep is not narrowed to bin/.
+# rather than a code file also proves the sweep is not narrowed to scripts/.
 fresh
 python3 - "$WORK/r/README.md" <<'PY'
 import sys
@@ -358,9 +358,9 @@ fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import io, sys
 p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
-old = 'data-tiers="1,0,4,1,6"'
+old = 'data-tiers="4,0,4,1,6"'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-io.open(p, 'w', encoding='utf-8').write(s.replace(old, 'data-tiers="2,0,3,1,6"'))
+io.open(p, 'w', encoding='utf-8').write(s.replace(old, 'data-tiers="5,0,3,1,6"'))
 PY
 expect_fail "tier-mix bar overstates a domain's T1 share" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
@@ -403,7 +403,7 @@ fresh
 python3 - "$WORK/r/README.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()
-s = s.replace("bin/idstack-doctor", "bin/idstack-fake-binary", 1)
+s = s.replace("scripts/idstack-doctor", "scripts/idstack-fake-binary", 1)
 open(p,'w').write(s)
 PY
 expect_fail "non-existent binary reference in README" "$WORK/r/test/smoke-test.sh" "$WORK/r"
@@ -1600,7 +1600,7 @@ expect_fail "the checker runs with an empty word list" python3 "$WORK/r/test/tes
 
 # 43b. The checker stops finding semicolons -> test-ste-check must fail.
 fresh
-python3 - "$WORK/r/bin/idstack-ste-check" <<'PY'
+python3 - "$WORK/r/scripts/idstack-ste-check" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "        if ';' in part:\n"
@@ -1612,13 +1612,13 @@ expect_fail "the checker misses a semicolon" python3 "$WORK/r/test/test-ste-chec
 
 # 43c. The description limit drifts from 25 to 26 words -> test-ste-check must fail.
 fresh
-sed -i.bak 's/^DESCRIPTIVE_MAX = 25$/DESCRIPTIVE_MAX = 26/' "$WORK/r/bin/idstack-ste-check"
+sed -i.bak 's/^DESCRIPTIVE_MAX = 25$/DESCRIPTIVE_MAX = 26/' "$WORK/r/scripts/idstack-ste-check"
 expect_fail "the checker accepts a 26-word description" python3 "$WORK/r/test/test-ste-check.py"
 
 # 43d. The checker loses its no-text guard -> test-ste-check must fail.
 # An empty input must give exit 2, not "no problems".
 fresh
-python3 - "$WORK/r/bin/idstack-ste-check" <<'PY'
+python3 - "$WORK/r/scripts/idstack-ste-check" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "    if not files or (read and not units):\n"
@@ -1631,7 +1631,7 @@ expect_fail "the checker accepts input that has no text" python3 "$WORK/r/test/t
 # 43e. The checker stops reporting an inline element that has no end tag -> test-ste-check
 # must fail. The text in that element is not examined, so a silent recovery lets it pass.
 fresh
-python3 - "$WORK/r/bin/idstack-ste-check" <<'PY'
+python3 - "$WORK/r/scripts/idstack-ste-check" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "            self.problems.append(Problem(self.skip_line, 'html', "
@@ -1654,9 +1654,9 @@ old = ('**Writing standard check.** Run this command on the export file. This ch
        'problems. Do not change the learnings in the export. Other sessions wrote them, many '
        'before the writing standard.\n\n'
        '```bash\n{{IDSTACK_RESOLVE}}\n'
-       'if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
+       'if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
        'elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; '
-       'else "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; fi\n```\n\n'
+       'else "$_IDSTACK/scripts/idstack-ste-check" ".idstack/learnings-export.md"; fi\n```\n\n'
        'If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do step 5 or step 6 '
        'of "How to use the standard" in the preamble. '
        'If the checker shows problems, show them to the user. Do not change the export file.\n\n')
@@ -1687,9 +1687,9 @@ python3 - "$WORK/r/skills/course-builder/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = ('```bash\n{{IDSTACK_RESOLVE}}\n'
-       'if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
+       'if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
        'elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; '
-       'else "$_IDSTACK/bin/idstack-ste-check" ".idstack/course-content"; fi\n```\n')
+       'else "$_IDSTACK/scripts/idstack-ste-check" ".idstack/course-content"; fi\n```\n')
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
 s = s.replace(old, '', 1)
 open(p, 'w', encoding='utf-8').write(s)
@@ -1717,7 +1717,7 @@ expect_fail "the learning_preferences_note copies drift apart" "$WORK/r/test/smo
 # only the writing-standard check of the suite can catch it.
 # 44a. A semicolon returns to a doctor PROBLEM explanation -> test-doctor must fail.
 fresh
-python3 - "$WORK/r/bin/idstack-doctor" <<'PY'
+python3 - "$WORK/r/scripts/idstack-doctor" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = 'echo "  Claude Code installs plugins through a marketplace manifest."'
@@ -1731,7 +1731,7 @@ expect_fail "a semicolon in a doctor PROBLEM explanation" "$WORK/r/test/test-doc
 # course-export reads this output. No pin matches the empty-state line, so only
 # the --readiness text check sees it.
 fresh
-python3 - "$WORK/r/bin/idstack-status" <<'PY'
+python3 - "$WORK/r/scripts/idstack-status" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = 'echo "No timeline data. Run the pipeline skills first."'
@@ -1782,7 +1782,7 @@ PY
 expect_fail "course prompt drops the STE rules" "$WORK/r/test/test-extension.sh"
 
 # 46a-46d. The extension's fixed text obeys ASD-STE100. smoke-test sends the printed
-# extension output and the side-panel page through bin/idstack-ste-check. Only the
+# extension output and the side-panel page through scripts/idstack-ste-check. Only the
 # STE checks catch 46a and 46b: every other suite still passes.
 # 46a. The Markdown export labels a recommendation in non-STE text again -> smoke-test must fail.
 fresh
@@ -1894,12 +1894,12 @@ fresh
 python3 - "$WORK/r/skills/learn/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = ('if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
+old = ('if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; '
        'elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; '
-       'else "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; fi')
+       'else "$_IDSTACK/scripts/idstack-ste-check" ".idstack/learnings-export.md"; fi')
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, 'if [ -x "$_IDSTACK/bin/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; '
-                   'then "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; '
+s = s.replace(old, 'if [ -x "$_IDSTACK/scripts/idstack-ste-check" ] && command -v python3 >/dev/null 2>&1; '
+                   'then "$_IDSTACK/scripts/idstack-ste-check" ".idstack/learnings-export.md"; '
                    'else echo "STE_CHECK_UNAVAILABLE"; fi', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
@@ -2021,9 +2021,9 @@ expect_fail "course-import makes a folder for an unreplaced course title" "$WORK
 # 54c. The citation-tier parser matches only codes in one line with spaces between
 # them again -> test-citation-tiers must fail. Then a code before a comma, or a
 # citation that a line break splits, gets no check. The parser is in
-# bin/lib/citations.py, which the checker and bin/idstack-report-section share.
+# scripts/lib/citations.py, which the checker and scripts/idstack-report-section share.
 fresh
-python3 - "$WORK/r/bin/lib/citations.py" <<'PY'
+python3 - "$WORK/r/scripts/lib/citations.py" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = 'SEP = r"[^\\S\\n]*(?:,[^\\S\\n]*)?(?:\\n[^\\S\\n]*)?"\n'
@@ -2105,7 +2105,7 @@ expect_fail "a skill merges without --create again" "$WORK/r/test/smoke-test.sh"
 
 # 55b. The merge tool ignores --create -> test-manifest-merge must fail.
 fresh
-python3 - "$WORK/r/bin/idstack-manifest-merge" <<'PY'
+python3 - "$WORK/r/scripts/idstack-manifest-merge" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = '    if args.create and not os.path.isfile(args.manifest):\n'
@@ -2119,7 +2119,7 @@ expect_fail "the merge tool ignores --create" "$WORK/r/test/test-manifest-merge.
 # test-manifest-merge suite must fail. A bad payload then leaves a seeded
 # manifest behind.
 fresh
-python3 - "$WORK/r/bin/idstack-manifest-merge" <<'PY'
+python3 - "$WORK/r/scripts/idstack-manifest-merge" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = '    payloads = [load_payload(path) for path in args.payload]\n\n'
@@ -2138,10 +2138,10 @@ fresh
 python3 - "$WORK/r/skills/red-team/SKILL.md.tmpl" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = '_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")'
+old = '_SLUG=$("$_IDSTACK/scripts/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")'
 assert s.count(old) == 1, 'anchor count %d' % s.count(old)
 s = s.replace(old, '_PROJECT_NAME=$(python3 -c "import json; print(json.load(open(\'.idstack/project.json\')).get(\'project_name\',\'\'))")\n'
-  '_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")', 1)
+  '_SLUG=$("$_IDSTACK/scripts/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")', 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 regen
@@ -2150,7 +2150,7 @@ expect_fail "a skill reads project_name with inline Python again" "$WORK/r/test/
 # 56b. slugify --from-manifest drops the needs_analysis.project_name fallback,
 # so skills and the dashboard disagree again -> smoke-test must fail.
 fresh
-python3 - "$WORK/r/bin/idstack-slugify" <<'PY'
+python3 - "$WORK/r/scripts/idstack-slugify" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = ' or (d.get("needs_analysis") or {}).get("project_name")'
@@ -2163,7 +2163,7 @@ expect_fail "slugify --from-manifest drops the needs_analysis fallback" "$WORK/r
 # 57. learnings promote splices the global path into its python source again,
 # so a quote in $HOME is a syntax error -> integration-test must fail.
 fresh
-python3 - "$WORK/r/bin/idstack-learnings" <<'PY'
+python3 - "$WORK/r/scripts/idstack-learnings" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = 'GLOBAL = os.environ["GLOBAL"]'
@@ -2179,7 +2179,7 @@ expect_fail "learnings promote splices \$HOME into its python source" "$WORK/r/t
 # 58. migrate falls back to cat without python3 again: it prints the manifest
 # unmigrated and exits 0 -> integration-test must fail.
 fresh
-python3 - "$WORK/r/bin/idstack-migrate" <<'PY'
+python3 - "$WORK/r/scripts/idstack-migrate" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = 'command -v python3 &>/dev/null || { echo "idstack-migrate: python3 is necessary" >&2; exit 3; }\n'
@@ -2210,7 +2210,7 @@ expect_fail "an update keeps the old audit history" "$WORK/r/test/test-extension
 # it instead, so a mode-600 log comes back 644 -> integration-test must fail.
 # PR #35 shipped exactly this.
 fresh
-python3 - "$WORK/r/bin/idstack-learnings" <<'PY'
+python3 - "$WORK/r/scripts/idstack-learnings" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = '        shutil.copymode(LOCAL, tmp_path)\n'
@@ -2224,7 +2224,7 @@ expect_fail "learnings delete drops the file mode" "$WORK/r/test/integration-tes
 # test-doctor must fail. A python.org python3 on a Mac with no Command Line
 # Tools would then be told to install the developer tools every time.
 fresh
-python3 - "$WORK/r/bin/idstack-doctor" <<'PY'
+python3 - "$WORK/r/scripts/idstack-doctor" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = '  if command -v python3 >/dev/null 2>&1 && python3 -c'
@@ -2237,7 +2237,7 @@ expect_fail "doctor --quick reports the stub before it tries python3" "$WORK/r/t
 # 61b. doctor --quick stops telling the stub apart from an old python3 ->
 # test-doctor must fail.
 fresh
-python3 - "$WORK/r/bin/idstack-doctor" <<'PY'
+python3 - "$WORK/r/scripts/idstack-doctor" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = '    echo "PYTHON_STUB"\n'
@@ -2293,13 +2293,13 @@ shell_mutation "start no longer refuses a Claude app scratch workspace" \
 ' ''
 
 # 62a-62n. The Step Review. Each report skill writes each step as a table, with a
-# citation in each row except in the fact sections. bin/idstack-report-section
+# citation in each row except in the fact sections. scripts/idstack-report-section
 # adds it to the report as a draft, the user reads it in the report file, and
 # when the user approves it, `approve` removes the draft mark.
 # 62a. The helper stops comparing a tier with evidence/references.md ->
 # test-report-section must fail. A row could then claim T1 for a T5 paper.
 fresh
-python3 - "$WORK/r/bin/lib/citations.py" <<'PY'
+python3 - "$WORK/r/scripts/lib/citations.py" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "            elif refs[code] != tier:\n"
@@ -2312,7 +2312,7 @@ expect_fail "the report helper skips the tier comparison" python3 "$WORK/r/test/
 # 62b. The helper accepts a row with an empty Justification -> test-report-section
 # must fail. Each row must tell why it is correct for the course.
 fresh
-python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+python3 - "$WORK/r/scripts/idstack-report-section" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "            if not row[-2].strip(' -'):\n"
@@ -2325,7 +2325,7 @@ expect_fail "the report helper accepts an empty Justification" python3 "$WORK/r/
 # 62c. append drops the footer when it replaces a section -> test-report-section
 # must fail. A second Step Review of one section would delete the footer.
 fresh
-python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+python3 - "$WORK/r/scripts/idstack-report-section" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "                sections[index] = (heading, section_lines)\n"
@@ -2368,12 +2368,12 @@ Always cite evidence in Step Review tables and in reports.' "Keep explanations b
 # install with no helper would then stop with "No such file" and no
 # REPORT_SECTION_MISSING, so the skill could not use the fallback.
 shell_mutation "a skill init line loses its REPORT_SECTION_MISSING guard" \
-  skills/course-export/SKILL.md.tmpl 'if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill course-export --title "Course Export Report"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi' '"$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill course-export --title "Course Export Report"'
+  skills/course-export/SKILL.md.tmpl 'if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill course-export --title "Course Export Report"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi' '"$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill course-export --title "Course Export Report"'
 
 # 62h. approve does not remove the draft mark -> test-report-section must fail.
 # The report would then show an approved section as a draft.
 fresh
-python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+python3 - "$WORK/r/scripts/idstack-report-section" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "    lines, _ = drop_marks(lines, DRAFT_LINE)\n"
@@ -2386,7 +2386,7 @@ expect_fail "report approve keeps the draft mark" python3 "$WORK/r/test/test-rep
 # 62i. finish accepts a draft section -> test-report-section must fail. A
 # section that the user did not approve would go into a complete report.
 fresh
-python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+python3 - "$WORK/r/scripts/idstack-report-section" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "    if empty or drafts:\n"
@@ -2405,7 +2405,7 @@ shell_mutation "the preamble lets the model show the table in the chat" \
 # The draft must stay until approve: if the user asks for a change, the model
 # edits the draft and appends it again.
 fresh
-python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+python3 - "$WORK/r/scripts/idstack-report-section" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "    write_atomic(report, render(head, sections, footer))\n"
@@ -2419,7 +2419,7 @@ expect_fail "report append deletes the draft file" python3 "$WORK/r/test/test-re
 # must fail. A skill that stopped early could then never finish a report that
 # has a score section (accessibility-review, course-quality-review, red-team).
 fresh
-python3 - "$WORK/r/bin/idstack-report-section" <<'PY'
+python3 - "$WORK/r/scripts/idstack-report-section" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 old = "                lines[i] = STOPPED_TEXT\n"

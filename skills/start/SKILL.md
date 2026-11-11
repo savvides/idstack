@@ -4,7 +4,8 @@ description: |
   The first idstack skill to run in a course folder. It makes sure that idstack
   can run, makes sure that the session is in a course folder, and then starts
   the correct skill. Use when the user is new to idstack, uses the Claude
-  desktop app, or asks "where do I start", "help me start" or "set up idstack". (idstack)
+  desktop app or Cowork, or asks "where do I start", "help me start", "what can
+  idstack do" or "set up idstack". (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -13,12 +14,12 @@ allowed-tools:
   - AskUserQuestion
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl -- do not edit directly -->
-<!-- Edit the .tmpl file instead. Regenerate: bin/idstack-gen-skills -->
+<!-- Edit the .tmpl file instead. Regenerate: scripts/idstack-gen-skills -->
 
 
 ## Preamble: Interaction Conventions
 
-idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
+idstack runs in Claude Code and in Cowork. Skill bodies name these tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   present a single multiple-choice question (e.g., "Which of these best describes X?")
@@ -51,8 +52,8 @@ idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
 
 All text that idstack writes for a person must obey the rules in this section. This
 includes chat text, AskUserQuestion questions and options, reports, the course
-dashboard, course content for learners, and export packages. `bin/idstack-ste-check`
-reads the word list between the two `ste-core` markers. `bin/idstack-gen-skills` writes
+dashboard, course content for learners, and export packages. `scripts/idstack-ste-check`
+reads the word list between the two `ste-core` markers. `scripts/idstack-gen-skills` writes
 `extension/shared/ste-rules.js` from the text between the markers.
 
 The rules also apply to the text that idstack writes in `.idstack/project.json` and in
@@ -161,7 +162,7 @@ Word list. Do not use the word in the first column. Use the word in the second c
 How to use the standard:
 
 1. If the conversation or the course is not in English, do not run the checker.
-2. When you write a file for a person, run `bin/idstack-ste-check` on it at the step that the skill shows.
+2. When you write a file for a person, run `scripts/idstack-ste-check` on it at the step that the skill shows.
 3. If the checker shows problems, write each sentence that it shows again. Then write the file again and run the checker again.
 4. Run the checker a maximum of three times. If problems stay after the third time, tell the user which lines have problems.
 5. If the output is `STE_CHECK_UNAVAILABLE`, python3 is not available. Continue the skill. Tell the user one time that the check did not run.
@@ -198,12 +199,14 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  "$_IDSTACK/bin/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/scripts/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -261,8 +264,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
-with `experience_level: novice|intermediate|expert`."
+mention: "Note: To change how much information idstack gives, type `/idstack:start` and
+select your experience level."
 
 ## Preamble: Report Links
 
@@ -330,10 +333,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" check .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" check .idstack/.report-section.md; fi
 ```
 
 3. If the output shows problems, correct the draft. Then do step 2 again. Do the
@@ -351,10 +356,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
 ```
 
 5. Tell the user about the section in a maximum of three short lines:
@@ -388,10 +395,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
 ```
 
 9. Go to the next step only if the output starts with `SECTION_APPROVED`.
@@ -427,10 +436,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ ! -x "$_IDSTACK/bin/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-report-section" finish "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" finish "<path>"; fi
 ```
 
 - If the skill stops after the report starts, for any reason, end the report
@@ -465,10 +476,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/bin/idstack-status" --context 2>/dev/null || true
+"$_IDSTACK/scripts/idstack-status" --context 2>/dev/null || true
 ```
 
 **If QUALITY_TREND is shown:** Synthesize a welcome-back message. Example: "Welcome back.
@@ -498,8 +511,8 @@ Do Step 1 and Step 2 before you act on the result of the Project Manifest check
 in the preamble.
 
 The steps of this skill do not write a report or the timeline. They do not
-write the manifest. The one exception is the repair in Step 3, with the user's
-yes. The preamble says "This skill will create or update the manifest during its
+write the manifest. The two exceptions are the repair in Step 3, with the user's
+yes, and the experience level that the user selects in Step 3. The preamble says "This skill will create or update the manifest during its
 workflow." That line is not true for this skill. The preamble can update an old
 manifest to the current schema. That is correct.
 
@@ -521,10 +534,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/bin/idstack-doctor" --quick; fi
+if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/scripts/idstack-doctor" --quick; fi
 ```
 
 - **OK:** Go to Step 2. Do not tell the user about this check.
@@ -578,13 +593,41 @@ Use the result of the Project Manifest check in the preamble.
 
 **If NO_MANIFEST:** Tell the user, in two sentences: "This folder is now your
 course folder. idstack keeps its notes in a hidden `.idstack` folder here, and
-gives you a link to each report that it writes." Then ask with AskUserQuestion:
-"How do you want to start?"
+gives you a link to each report that it writes."
+
+If the Designer Profile check in the preamble shows NO_PROFILE, ask with
+AskUserQuestion: "How much instructional design experience do you have? idstack
+asks this one time."
+
+- **I am new to it** — "idstack explains each step and each term."
+- **Some experience** — "idstack gives standard explanations."
+- **I am an expert** — "idstack is brief and shows the evidence and the edge cases."
+
+Then run this command. Replace `<level>` with `novice`, `intermediate` or
+`expert`, as the user selected. If the user selected "Other" or gave no answer,
+do not run the command.
+
+```bash
+mkdir -p "$HOME/.idstack" && printf 'experience_level: %s\n' "<level>" > "$HOME/.idstack/profile.yaml" && echo "PROFILE_SAVED"
+```
+
+Use the level for the remainder of this session, as the Designer Profile section
+of the preamble tells you. If the command fails, continue. Do not tell the user.
+
+Then ask with AskUserQuestion: "How do you want to start?"
 
 - **Import a course that I have** — "From Canvas, a course export file, a SCORM
   package or a document." Go to Step 4 with `idstack:course-import`.
 - **Design a new course** — "Start with a needs analysis." Go to Step 4 with
   `idstack:needs-analysis`.
+- **Get feedback on one item** — "An objective, a quiz question, a rubric, a
+  slide or a page. No setup." Go to Step 4 with `idstack:quick-check`.
+- **Make one item** — "A storyboard, a question bank or an evaluation plan."
+  Ask with AskUserQuestion: "What do you want to make?" The options are
+  "Storyboard" ("A script and screens for a video, a module or slides."),
+  "Question bank" ("Quiz and test questions from your objectives.") and
+  "Evaluation plan" ("How to find out if the course worked."). Go to Step 4 with
+  `idstack:storyboard`, `idstack:question-bank` or `idstack:evaluation-plan`.
 
 **If MANIFEST_EXISTS:** Run this block first.
 
@@ -622,6 +665,8 @@ the plugin-namespaced name. Use one of these:
 - `skill: "idstack:course-import"`
 - `skill: "idstack:needs-analysis"`
 - `skill: "idstack:pipeline"`
+- `skill: "idstack:quick-check"`, `skill: "idstack:storyboard"`,
+  `skill: "idstack:question-bank"` or `skill: "idstack:evaluation-plan"`
 - for Step 6, `skill: "idstack:<name>"` with the name that the user selected
 
 A bare name, for example `"course-import"`, does not resolve in Claude Code. If
@@ -638,10 +683,12 @@ if [ -d "$_idstack_cache_root" ]; then
   _idstack_v=$(ls "$_idstack_cache_root" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1)
   [ -n "$_idstack_v" ] && _idstack_cache="$_idstack_cache_root/$_idstack_v"
 fi
-for _p in "${CLAUDE_PLUGIN_ROOT}" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
+_idstack_skill="${CLAUDE_SKILL_DIR}"
+[ -n "$_idstack_skill" ] && _idstack_skill="$_idstack_skill/../.."
+for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 if [ -f "$_EXPORT_DIR/index.md" ]; then
   echo "Dashboard path: $_EXPORT_DIR/index.md"
@@ -678,6 +725,10 @@ Write this numbered list in chat, and ask the user to type a number:
 9. `/idstack:course-export` — make a package for the LMS
 10. `/idstack:pipeline` — run the 8 design stages in sequence
 11. `/idstack:learn` — see what idstack learned about your courses
+12. `/idstack:quick-check` — get feedback on one item, with no setup
+13. `/idstack:storyboard` — make a storyboard and script for media
+14. `/idstack:question-bank` — write quiz and test questions
+15. `/idstack:evaluation-plan` — plan how to find out if the course worked
 
 Then go to Step 4 with the skill that the user selected.
 
@@ -685,7 +736,8 @@ Then go to Step 4 with the skill that the user selected.
 
 - Ask one question at a time.
 - In Steps 1 to 6, do not write a file, a manifest section or a timeline event.
-  The one exception is the repair in Step 3, with the user's yes. This rule
+  The two exceptions are in Step 3: the repair, with the user's yes, and the
+  experience level. This rule
   does not apply to the skill that Step 4 starts.
 - Stop at each problem in Step 1 or Step 2. The user fixes the problem and
   types `/idstack:start` again.

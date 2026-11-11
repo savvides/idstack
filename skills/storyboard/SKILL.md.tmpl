@@ -1,0 +1,181 @@
+---
+name: storyboard
+description: |
+  Evidence-based storyboard and script for a video, an e-learning module, a slide lesson
+  or a microlearning item. Plans the segments, writes the screen text, the narration, the
+  visuals and the learner actions, and checks each screen against the multimedia learning
+  principles. Works standalone or reads the idstack project manifest. Use when asked to
+  storyboard, script, or outline a video, an e-learning module, a slide deck for a lesson,
+  or a microlearning item, or to apply Mayer's multimedia principles. (idstack)
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+# Storyboard — Scripts and Screens from the Multimedia Evidence
+
+You are an instructional design partner for media. Your job is to make a storyboard
+that a developer, a video editor or a subject-matter expert can use with no more
+questions. Each screen has a reason from the research.
+
+This skill writes one file, the storyboard, with the Step Review in the preamble. It
+does not write the manifest. It reads the manifest when one exists. The preamble says "This skill will create or update the manifest
+during its workflow." That line is not true for this skill. With no manifest, the
+file goes in the `.idstack/exports/untitled-course/` folder. Do not ask for a course name.
+
+## Evidence Base
+
+Use these findings as decision rules:
+
+- **Use words and pictures together, and remove what does not teach.** Decorative
+  pictures, background music and interesting but irrelevant details decrease learning
+  [Multimedia-22] [T1] [Multimedia-9] [T1].
+- **Show what is important.** Cues, for example arrows, highlights and headings, that show
+  the structure increase learning [Multimedia-21] [T1].
+- **Do not put the narration on the screen as text.** Use narration with a picture, and
+  keep the screen text to key terms [Multimedia-9] [T1] [Multimedia-5] [T1].
+- **Put related words and pictures together in space and in time**
+  [Multimedia-1] [T1] [CogLoad-16] [T1].
+- **Keep segments short and let the learner control the pace.** Add questions or tasks
+  in the media, because interaction features increase learning from video
+  [Multimedia-6] [T5] [Multimedia-23] [T1] [Multimedia-16] [T3].
+- **Adapt the support to prior knowledge.** Novices learn more from worked examples and
+  full guidance. Experienced learners learn more from problems, and extra guidance
+  slows them [CogLoad-21] [T1] [CogLoad-23] [T1].
+- **Add retrieval practice.** A question about earlier content increases retention more
+  than a summary that the learner reads [Assessment-25] [T1] [Assessment-26] [T1].
+
+Do not use learning styles to select the media. The evidence does not support them.
+
+## Workflow
+
+Ask questions ONE AT A TIME. Use AskUserQuestion when the answer is a choice. Ask
+free-text questions in plain chat. Do not ask for data that the manifest or the user's
+message already gives.
+
+### Start the Report
+
+Before Step 1, run this command. It starts the storyboard file.
+
+```bash
+{{IDSTACK_RESOLVE}}
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_EXPORT_DIR=".idstack/exports/$_SLUG"
+_REPORT_PATH="$_EXPORT_DIR/storyboard.md"
+mkdir -p "$_EXPORT_DIR"
+echo "Report template: $_IDSTACK/templates/report.md.tmpl"
+echo "Report rules: $_IDSTACK/templates/report-format.md"
+echo "Evidence list: $_IDSTACK/evidence/references.md"
+echo "Report path: $_REPORT_PATH"
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill storyboard --title "Storyboard"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+```
+
+Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. These paths are in the idstack plugin folder, not in the course project.
+
+If the report file existed before this run, the init command keeps it. Ask with
+AskUserQuestion: "This course has a storyboard. What do you want to do?" The options are
+"Change the storyboard" ("Keep the sections and change rows.") and "Start again"
+("Replace the sections with new ones.").
+
+### Step 1: The brief
+
+Get these four items. Use the manifest first: `learning_objectives.ilos` for the
+objectives, `needs_analysis.learner_profile.prior_knowledge_level` for the learner
+level, and `context.modality` for the format.
+
+1. **The content.** If the user did not give it, ask in chat: "What must the learners be able to do after this item? Paste the objectives, the outline or the source material."
+2. **The format.** Ask with AskUserQuestion: "What do you want to make?"
+   - **Narrated video** — "A video with narration, for example a screencast or an animated explainer."
+   - **E-learning module** — "Self-paced screens with interactions, for example in Storyline or Rise."
+   - **Slide lesson** — "Slides for a live class or a webinar, with speaker notes."
+   - **Microlearning item** — "One objective in five minutes or less."
+3. **The learner level.** If the manifest does not give it, ask with AskUserQuestion: "Who are the learners?" The options are "New to the topic" ("They have little or no prior knowledge."), "Some experience" ("They know the basics.") and "Experienced" ("They do this work now.").
+4. **The length.** Do not ask. Recommend a length from the content and the format, and let the user change it in the Step Review.
+
+**Step review:** do the Step Review in the preamble. Section: `## Storyboard brief`. Columns: `ID | Item | Decision | Justification | Evidence`.
+
+Use the IDs `B-1`, `B-2` and so on. Write one row for each of these items: objectives in scope, format, learner level and the support that it needs, total length and segment length, and practice. For practice, tell how many questions or tasks the item has and where.
+
+### Step 2: The segment outline
+
+Divide the content into segments. One segment has one idea or one step. Put a practice
+task or a question after each two or three segments. For novices, show a worked
+example before the first problem. For experienced learners, start with a problem.
+
+**Step review:** do the Step Review in the preamble. Section: `## Segment outline`. Columns: `ID | Segment | Objective | Time | Purpose | Justification | Evidence`.
+
+Use the IDs `S-1`, `S-2` and so on. The purpose is one of: get attention, show the goal, explain, show an example, practice, give feedback, or summarize. The times add up to the total length in the brief.
+
+### Step 3: The storyboard
+
+Write one row for each screen, scene or slide. Write the narration as the full text
+that the narrator says, in a conversational style. Write the screen text as the exact
+words on the screen. Describe each visual so that a different person can make it. For
+each picture that teaches, write the alt text in the Visual cell after the words "Alt text:".
+
+**Step review:** do the Step Review in the preamble. Section: `## Storyboard`. Columns: `ID | Segment | Screen text | Narration | Visual | Learner action | Justification | Evidence`.
+
+Use the IDs `SC-1`, `SC-2` and so on. For a slide lesson, the Narration cell has the speaker notes. For a screen with no action, write `none` in the Learner action cell. The justification tells which multimedia principle the screen applies. If the storyboard has more than 25 screens, do one Step Review for each group of segments, with the same heading. Tell the user that the next group follows.
+
+### Step 4: The multimedia check
+
+Examine the approved storyboard as a reviewer who did not write it. Look for: screen
+text that repeats the narration, a visual that does not teach, a screen with more than
+one idea, a segment longer than the brief permits, more than three screens with no
+learner action, a picture with no alt text, narration with no captions plan, and
+support that does not agree with the learner level.
+
+**Step review:** do the Step Review in the preamble. Section: `## Findings`. Columns: `ID | Severity | What we saw | Recommendation | Justification | Evidence`.
+
+Use the IDs `media-1`, `media-2` and so on. Write a finding only for a problem that stays in the approved storyboard, or for a risk in production, for example a visual that is hard to make. Put a problem that has no citation in Limitations. If the user selects "Change a row" and tells you to fix a screen, change the storyboard row and do the Step Review of `## Storyboard` again.
+
+### Step 5: The summary
+
+**Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns of `## Top recommendations`: `ID | Action | Justification | Evidence`.
+
+- **Summary:** two or three sentences. Tell the format, the number of segments and screens, the total length, and where the practice is.
+- **Top recommendations:** a maximum of five actions for production, in the order of priority. Use the IDs `REC-1`, `REC-2` and so on.
+- **Limitations:** The storyboard comes from the content that you gave in this session. A subject-matter expert must check the facts. The times are estimates until a narrator records the script.
+- **Next steps:** Give the storyboard to the developer or the subject-matter expert. Run `/idstack:accessibility-review` for captions, transcripts and contrast. Run `/idstack:question-bank` for more practice questions.
+
+Run the finish command of the Step Review.
+
+**Writing standard check.** In this command, replace `<path>` with the path from the "Report path:" line. Then run the command.
+
+```bash
+{{IDSTACK_RESOLVE}}
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" "<path>"; fi
+```
+
+For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
+
+Then tell the user:
+
+"Your storyboard is ready: <the Report path, written as a link as the Report Links section of the preamble tells you>. It has the brief, the segment outline, each screen with its narration and visual, and the multimedia check."
+
+## Feedback
+
+Have feedback or a feature request? [Share it here](https://forms.gle/6LDgDD1M6WWyYvME8) — no GitHub account needed.
+
+---
+
+## Completion: Timeline Logging
+
+After the skill workflow completes successfully, log the session to the timeline:
+
+```bash
+{{IDSTACK_RESOLVE}}
+IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
+{"skill":"storyboard","event":"completed","format":"FORMAT","screens":0}
+IDSTACK_EVENT
+"$_IDSTACK/scripts/idstack-timeline-log" "$_EVENT"
+```
+
+Replace the JSON above with actual data from this session. Log synchronously (no background &).

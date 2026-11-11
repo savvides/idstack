@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate documentation accuracy: version strings, the manifest schema version, bin/ and test/ path references, and removed date fields.
+"""Validate documentation accuracy: version strings, the manifest schema version, scripts/ and test/ path references, and removed date fields.
 
 Usage: check-doc-accuracy.py <repo-root>
 Prints diagnostic lines and exits 1 on mismatch; prints nothing and exits 0 when clean.
@@ -64,13 +64,13 @@ def check_binaries_and_flags(root, problems):
     with open(readme, "r", encoding="utf-8") as f:
         text = f.read()
 
-    # Look for bin/ paths referenced in README
-    bin_refs = set(re.findall(r"\bbin/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+(?:\.[a-z]+)?", text))
+    # Look for scripts/ paths referenced in README
+    bin_refs = set(re.findall(r"\bscripts/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+(?:\.[a-z]+)?", text))
     for ref in sorted(bin_refs):
         full_path = os.path.join(root, ref)
         if not os.path.isfile(full_path):
             problems.append("README.md references missing binary or file: %s" % ref)
-        elif not ref.startswith("bin/lib/") and not os.access(full_path, os.X_OK):
+        elif not ref.startswith("scripts/lib/") and not os.access(full_path, os.X_OK):
             problems.append("README.md references non-executable binary: %s" % ref)
 
 
