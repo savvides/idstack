@@ -101,6 +101,11 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Assessment-20] Yan, Z. et al. (2022). Effects of self-assessment and peer-assessment interventions on academic performance: A pairwise and network meta-analysis. *Educational Research Review*. T1
 - [Assessment-21] Hornstein, J. et al. (2025). Enhancing the Peer-Feedback Process Through Instructional Support: A Meta-Analysis. *Educational Psychology Review*. T1
 - [Assessment-22] Dignath, C. et al. (2023). Let Learners Monitor the Learning Content and Their Learning Behavior! A Meta-analysis on the Effectiveness of Tools to Foster Monitoring. *Educational Psychology Review*. T1
+- [Assessment-23] Rodriguez, M.C. (2005). Three Options Are Optimal for Multiple-Choice Items: A Meta-Analysis of 80 Years of Research. *Educational Measurement: Issues and Practice*. T1
+- [Assessment-24] Gierl, M.J. et al. (2017). Developing, Analyzing, and Using Distractors for Multiple-Choice Tests in Education: A Comprehensive Review. *Review of Educational Research*. T5
+- [Assessment-25] Yang, C. et al. (2021). Testing (Quizzing) Boosts Classroom Learning: A Systematic and Meta-Analytic Review. *Psychological Bulletin*. T1
+- [Assessment-26] Adesope, O. et al. (2017). Rethinking the Use of Tests: A Meta-Analysis of Practice Testing. *Review of Educational Research*. T1
+- [Assessment-27] Pan, S.C. & Rickard, T.C. (2018). Transfer of Test-Enhanced Learning: Meta-Analytic Review and Synthesis. *Psychological Bulletin*. T1
 
 ## Domain 6: Multimedia Learning Principles
 
@@ -147,6 +152,9 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Evaluation-20] Nordström, T. et al. (2023). Risk of bias and open science practices in systematic reviews of educational effectiveness: A meta-review. *Review of Education*. T3
 - [Evaluation-21] Gabbard, T. et al. (2021). The Accuracy of Health Professions Students' Self-Assessments Compared to Objective Measures of Competence. *American Journal of Pharmaceutical Education*. T3
 - [Evaluation-22] Kraft, M.A. (2020). Interpreting Effect Sizes of Education Interventions. *Educational Researcher*. T5
+- [Evaluation-23] Alliger, G.M. et al. (1997). A Meta-Analysis of the Relations Among Training Criteria. *Personnel Psychology*. T1
+- [Evaluation-24] Blume, B.D. et al. (2010). Transfer of Training: A Meta-Analytic Review. *Journal of Management*. T1
+- [Evaluation-25] Arthur, W. et al. (2003). Effectiveness of Training in Organizations: A Meta-Analysis of Design and Evaluation Features. *Journal of Applied Psychology*. T1
 
 ## Domain 9: Rapid Prototyping & Design-Based Research
 

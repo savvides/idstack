@@ -4,7 +4,8 @@ description: |
   The first idstack skill to run in a course folder. It makes sure that idstack
   can run, makes sure that the session is in a course folder, and then starts
   the correct skill. Use when the user is new to idstack, uses the Claude
-  desktop app, or asks "where do I start", "help me start" or "set up idstack". (idstack)
+  desktop app or Cowork, or asks "where do I start", "help me start", "what can
+  idstack do" or "set up idstack". (idstack)
 allowed-tools:
   - Bash
   - Read
@@ -18,7 +19,7 @@ allowed-tools:
 
 ## Preamble: Interaction Conventions
 
-idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
+idstack runs in Claude Code and in Cowork. Skill bodies name these tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   present a single multiple-choice question (e.g., "Which of these best describes X?")
@@ -263,8 +264,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
-with `experience_level: novice|intermediate|expert`."
+mention: "Note: To change how much information idstack gives, type `/idstack:start` and
+select your experience level."
 
 ## Preamble: Report Links
 
@@ -510,8 +511,8 @@ Do Step 1 and Step 2 before you act on the result of the Project Manifest check
 in the preamble.
 
 The steps of this skill do not write a report or the timeline. They do not
-write the manifest. The one exception is the repair in Step 3, with the user's
-yes. The preamble says "This skill will create or update the manifest during its
+write the manifest. The two exceptions are the repair in Step 3, with the user's
+yes, and the experience level that the user selects in Step 3. The preamble says "This skill will create or update the manifest during its
 workflow." That line is not true for this skill. The preamble can update an old
 manifest to the current schema. That is correct.
 
@@ -592,13 +593,41 @@ Use the result of the Project Manifest check in the preamble.
 
 **If NO_MANIFEST:** Tell the user, in two sentences: "This folder is now your
 course folder. idstack keeps its notes in a hidden `.idstack` folder here, and
-gives you a link to each report that it writes." Then ask with AskUserQuestion:
-"How do you want to start?"
+gives you a link to each report that it writes."
+
+If the Designer Profile check in the preamble shows NO_PROFILE, ask with
+AskUserQuestion: "How much instructional design experience do you have? idstack
+asks this one time."
+
+- **I am new to it** — "idstack explains each step and each term."
+- **Some experience** — "idstack gives standard explanations."
+- **I am an expert** — "idstack is brief and shows the evidence and the edge cases."
+
+Then run this command. Replace `<level>` with `novice`, `intermediate` or
+`expert`, as the user selected. If the user selected "Other" or gave no answer,
+do not run the command.
+
+```bash
+mkdir -p "$HOME/.idstack" && printf 'experience_level: %s\n' "<level>" > "$HOME/.idstack/profile.yaml" && echo "PROFILE_SAVED"
+```
+
+Use the level for the remainder of this session, as the Designer Profile section
+of the preamble tells you. If the command fails, continue. Do not tell the user.
+
+Then ask with AskUserQuestion: "How do you want to start?"
 
 - **Import a course that I have** — "From Canvas, a course export file, a SCORM
   package or a document." Go to Step 4 with `idstack:course-import`.
 - **Design a new course** — "Start with a needs analysis." Go to Step 4 with
   `idstack:needs-analysis`.
+- **Get feedback on one item** — "An objective, a quiz question, a rubric, a
+  slide or a page. No setup." Go to Step 4 with `idstack:quick-check`.
+- **Make one item** — "A storyboard, a question bank or an evaluation plan."
+  Ask with AskUserQuestion: "What do you want to make?" The options are
+  "Storyboard" ("A script and screens for a video, a module or slides."),
+  "Question bank" ("Quiz and test questions from your objectives.") and
+  "Evaluation plan" ("How to find out if the course worked."). Go to Step 4 with
+  `idstack:storyboard`, `idstack:question-bank` or `idstack:evaluation-plan`.
 
 **If MANIFEST_EXISTS:** Run this block first.
 
@@ -636,6 +665,8 @@ the plugin-namespaced name. Use one of these:
 - `skill: "idstack:course-import"`
 - `skill: "idstack:needs-analysis"`
 - `skill: "idstack:pipeline"`
+- `skill: "idstack:quick-check"`, `skill: "idstack:storyboard"`,
+  `skill: "idstack:question-bank"` or `skill: "idstack:evaluation-plan"`
 - for Step 6, `skill: "idstack:<name>"` with the name that the user selected
 
 A bare name, for example `"course-import"`, does not resolve in Claude Code. If
@@ -694,6 +725,10 @@ Write this numbered list in chat, and ask the user to type a number:
 9. `/idstack:course-export` — make a package for the LMS
 10. `/idstack:pipeline` — run the 8 design stages in sequence
 11. `/idstack:learn` — see what idstack learned about your courses
+12. `/idstack:quick-check` — get feedback on one item, with no setup
+13. `/idstack:storyboard` — make a storyboard and script for media
+14. `/idstack:question-bank` — write quiz and test questions
+15. `/idstack:evaluation-plan` — plan how to find out if the course worked
 
 Then go to Step 4 with the skill that the user selected.
 
@@ -701,7 +736,8 @@ Then go to Step 4 with the skill that the user selected.
 
 - Ask one question at a time.
 - In Steps 1 to 6, do not write a file, a manifest section or a timeline event.
-  The one exception is the repair in Step 3, with the user's yes. This rule
+  The two exceptions are in Step 3: the repair, with the user's yes, and the
+  experience level. This rule
   does not apply to the skill that Step 4 starts.
 - Stop at each problem in Step 1 or Step 2. The user fixes the problem and
   types `/idstack:start` again.

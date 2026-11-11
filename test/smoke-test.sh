@@ -33,7 +33,7 @@ check "plugin.json version matches VERSION ($VER)" "grep -qF '\"version\": \"$VE
 check "CHANGELOG.md has an entry for v$VER" "grep -qF '## v$VER' '$IDSTACK_DIR/CHANGELOG.md'"
 
 # Check all skill SKILL.md files are reachable under skills/
-SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn start"
+SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline learn start quick-check storyboard question-bank evaluation-plan"
 for skill in $SKILLS; do
   check "skills/$skill/SKILL.md reachable" "[ -f '$IDSTACK_DIR/skills/$skill/SKILL.md' ]"
 done
@@ -217,7 +217,7 @@ check "idstack-slugify: emoji and non-ASCII characters stripped" \
 
 # Skills that write per-skill Markdown reports must reference the new export folder pattern
 # and use the slugify helper (not the legacy .idstack/reports/<skill>.md path).
-REPORT_PRODUCING_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review red-team"
+REPORT_PRODUCING_SKILLS="needs-analysis learning-objectives assessment-design course-builder course-quality-review course-import course-export accessibility-review red-team storyboard question-bank evaluation-plan"
 for skill in $REPORT_PRODUCING_SKILLS; do
   check "$skill SKILL.md.tmpl references .idstack/exports/" "grep -q '\.idstack/exports/' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill SKILL.md.tmpl calls idstack-slugify" "grep -q 'idstack-slugify' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
@@ -308,7 +308,7 @@ done
 # preceded by a path character, so `.idstack/exports/<slug>/red-team.md`
 # stays legal, and it can't match `/idstack:<skill>` because the skill name
 # there does not follow the slash.
-BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn|start)\b'
+BARE_SLASH_RE='(^|[[:space:]"(`])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|learn|start|quick-check|storyboard|question-bank|evaluation-plan)\b'
 for skill in $SKILLS; do
   check "$skill SKILL.md.tmpl (frontmatter and body) free of bare /skill refs" "! grep -qE '$BARE_SLASH_RE' '$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl'"
   check "$skill description says when to use it" \
@@ -439,7 +439,7 @@ fi
 # the bash call itself, not the prose around it, so a step that loses its
 # command fails here even when the text that names the check stays.
 for skill in $SKILLS; do
-  case "$skill" in course-builder|course-export|red-team) want=2 ;; start) want=0 ;; *) want=1 ;; esac
+  case "$skill" in course-builder|course-export|red-team) want=2 ;; start|quick-check) want=0 ;; *) want=1 ;; esac
   # grep -c exits 1 on zero matches; without "|| true", set -e ends the run with no FAIL line.
   got=$(grep -cF '"$_IDSTACK/scripts/idstack-ste-check"' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
   check "$skill SKILL.md.tmpl runs the ste checker at all $want check steps" "[ '$got' -eq $want ]"
@@ -472,6 +472,7 @@ for skill in $REPORT_PRODUCING_SKILLS; do
     needs-analysis) want=7 ;; learning-objectives) want=5 ;; assessment-design) want=11 ;;
     course-builder) want=10 ;; course-quality-review) want=7 ;; accessibility-review) want=6 ;;
     red-team) want=10 ;; course-export) want=5 ;; course-import) want=6 ;;
+    storyboard) want=5 ;; question-bank) want=4 ;; evaluation-plan) want=6 ;;
   esac
   got=$(grep -c '^\*\*Step review:\*\*' "$IDSTACK_DIR/skills/$skill/SKILL.md.tmpl" || true)
   check "$skill SKILL.md.tmpl has all $want Step review lines" "[ '$got' -eq $want ]"
@@ -602,7 +603,7 @@ done
 
 # Check pipeline-originated skills have timeline logging (pipeline logs its
 # own completion so "the pipeline was run" is recoverable)
-TIMELINE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline"
+TIMELINE_SKILLS="needs-analysis learning-objectives course-quality-review course-import assessment-design course-builder course-export accessibility-review red-team pipeline storyboard question-bank evaluation-plan"
 for skill in $TIMELINE_SKILLS; do
   check "$skill has timeline logging" "grep -q 'idstack-timeline-log' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done

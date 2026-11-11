@@ -23,7 +23,7 @@ allowed-tools:
 
 ## Preamble: Interaction Conventions
 
-idstack runs only in Claude Code. Skill bodies name these Claude Code tools:
+idstack runs in Claude Code and in Cowork. Skill bodies name these tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   present a single multiple-choice question (e.g., "Which of these best describes X?")
@@ -268,8 +268,8 @@ instructional design concepts but explain idstack-specific patterns.
 **If EXPERIENCE:expert:** Be concise. Skip basic explanations. Focus on evidence
 tiers, edge cases, and advanced considerations. Trust the user's domain knowledge.
 **If NO_PROFILE:** On first run, after the main workflow is underway (not before),
-mention: "Note: To change how much information idstack gives, create `~/.idstack/profile.yaml`
-with `experience_level: novice|intermediate|expert`."
+mention: "Note: To change how much information idstack gives, type `/idstack:start` and
+select your experience level."
 
 ## Preamble: Report Links
 

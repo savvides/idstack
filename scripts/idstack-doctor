@@ -26,7 +26,7 @@ note_problem() { PROBLEMS=$((PROBLEMS + 1)); }
 
 SKILLS="needs-analysis learning-objectives course-quality-review course-import \
 assessment-design course-builder course-export accessibility-review red-team \
-pipeline learn start"
+pipeline learn start quick-check storyboard question-bank evaluation-plan"
 
 QUICK=0
 for arg in "$@"; do

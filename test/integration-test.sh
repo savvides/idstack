@@ -214,7 +214,7 @@ check "course-import alone suggests learning-objectives" \
 # the /idstack: prefix for the same reason skill templates do — a bare /skill
 # is not a valid command in Claude Code.
 check "idstack-status never prints a bare /skill command" \
-  "! '$IDSTACK_DIR/scripts/idstack-status' | grep -Eq '(^|[^:])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline)\b'"
+  "! '$IDSTACK_DIR/scripts/idstack-status' | grep -Eq '(^|[^:])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline|quick-check|storyboard|question-bank|evaluation-plan)\b'"
 
 rm -f .idstack/project.json
 

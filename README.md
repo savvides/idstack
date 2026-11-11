@@ -4,7 +4,7 @@
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 
-idstack is an open source set of skills for evidence-based instructional design that brings peer-reviewed research into your workflow. Runs in Claude Code. Rather than summarizing papers, idstack audits alignment matrices, flags cognitive load issues, classifies objectives against Bloom's taxonomy, and references the empirical evidence behind every recommendation.
+idstack is an open source set of skills for evidence-based instructional design that brings peer-reviewed research into your workflow. Runs in Claude Code and Cowork. Rather than summarizing papers, idstack audits alignment matrices, flags cognitive load issues, classifies objectives against Bloom's taxonomy, and references the empirical evidence behind every recommendation.
 
 Skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
@@ -14,6 +14,7 @@ Free, MIT licensed, open source. Available as a [Claude Code plugin](#install-30
 
 1. Install idstack (30 seconds, see below). No terminal? Use the [Claude desktop app](#claude-desktop-app-no-terminal).
 2. Run `/idstack:start` in a folder for your course. It checks your setup and starts the correct skill.
+   Or paste one item, for example a learning objective or a quiz question, and type `/idstack:quick-check`. You get feedback with citations in one minute, with no setup.
 3. If you imported a course, run `/idstack:course-quality-review` to see what the evidence says.
 4. Stop there. You'll know if this is for you.
 
@@ -62,13 +63,13 @@ idstack: QM structural review: 8 rows (3 pass, 5 flag).
 
 The chat shows a short note and one question for each section. The tables, scores and citations go into the Markdown report. For example, the report for this course has the finding "All 8 assessments are auto-graded quizzes with no rubrics", the citation `[Assessment-8] [T1]` and the recommendation to run `/idstack:assessment-design`.
 
-You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses, `learn` is a separate cross-project memory utility, and `start` is the first-run guide. These three, and pipeline itself, sit outside the linear chain, which is why pipeline runs 8 of the 12 skills).
+You had a course in Canvas. Now you have an evidence-based audit with specific recommendations, evidence tiers, and cross-references to the skills that fix each issue. Two commands. Or just run `/idstack:pipeline` and it chains the 8-skill linear pipeline automatically (`course-import` branches in for existing courses, `learn` is a separate cross-project memory utility, and `start` is the first-run guide. These three, pipeline itself, and the four companion skills sit outside the linear chain, which is why pipeline runs 8 of the 16 skills).
 
 ## Install (30 seconds)
 
-**Requirements:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI — and python3 3.9 or later.
+**Requirements:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI — or [Cowork](#cowork), and python3 3.9 or later.
 
-**Not using Claude Code?** The idstack skills run in Claude Code only. Without Claude Code, use the [Chrome extension](#chrome-extension-no-terminal-mode). The skills are plain Markdown, so you can fork this repo and adapt it for a different agent, for example Codex or Antigravity. idstack does not support or test those forks. <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
+**Not using Claude Code or Cowork?** The idstack skills run in Claude Code and Cowork. Without them, use the [Chrome extension](#chrome-extension-no-terminal-mode). The skills are plain Markdown, so you can fork this repo and adapt it for a different agent, for example Codex or Antigravity. idstack does not support or test those forks. <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
 
 Paste this into your terminal:
 
@@ -175,6 +176,17 @@ Each skill that writes a report gives you a link to it. Click the link to open t
 
 **macOS asks you to install developer tools?** idstack needs python3. Click **Install** in the macOS window. When the installation is complete, type `/idstack:start` again.
 
+### Cowork
+
+You can use idstack in Cowork in the Claude desktop app.
+
+1. Open **Customize**, then **Plugins**.
+2. Select **Add marketplace** and enter `savvides/idstack`.
+3. Install **idstack** from the list.
+4. Start a Cowork task in a folder for your course and type `/idstack:start`.
+
+Cowork support is new. idstack keeps its tools in `scripts/`, because Cowork does not install a plugin that has a top-level `bin/` folder. If a skill cannot find its tools or python3 in Cowork, [tell us](https://github.com/savvides/idstack/issues).
+
 ### Chrome Extension (No-Terminal Mode)
 
 [![Available in the Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-idstack-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm)
@@ -246,6 +258,14 @@ idstack turns Claude Code into an evidence-based instructional design team. Each
 | `/idstack:red-team` | **Adversarial Auditor** | Assumes your course is broken and tries to prove it. Runs in a clean-context sub-agent so the audit can't inherit build-bias from the parent. Five dimensions in parallel: alignment stress test, evidence verification, cognitive load analysis, learner persona simulation, prerequisite chain integrity. The sub-agent writes its findings to `.idstack/.red-team-findings.json` and returns a summary. The parent then adds each findings table to `.idstack/exports/<course-slug>/red-team.md` for your approval, then runs a triage-and-fix loop (Critical only / Critical + Warning / All findings / Skip). Produces a confidence score. |
 | `/idstack:pipeline` | **Orchestrator** | Chains the 8-skill linear pipeline automatically. Auto-skips completed skills. Shows pipeline status. Pause anytime, resume later. Produces `.idstack/exports/<course-slug>/index.md`, a Markdown course dashboard linking to every per-skill report, with readiness scores, top recurring issues, evidence themes, and where to start. |
 | `/idstack:learn` | **Memory Manager** | Search, list, delete, promote, and export project learnings. Supports cross-project intelligence. |
+| `/idstack:quick-check` | **Second Opinion** | Paste or attach one item: an objective, a quiz question, a rubric, a slide, a script, an activity or a page. You get a verdict, a maximum of five findings with citations, and a corrected version. No setup, no report, no manifest. |
+| `/idstack:storyboard` | **Media Designer** | Storyboard and script for a video, an e-learning module, a slide lesson or a microlearning item. Segment outline, screen text, narration, visuals with alt text, learner actions, and a check against the multimedia learning principles. |
+| `/idstack:question-bank` | **Item Writer** | Quiz and test questions from your objectives. Test blueprint, three-option questions with distractors from real errors, scenario questions for the apply level and higher, an answer key, and feedback for each option. |
+| `/idstack:evaluation-plan` | **Evaluator** | A plan to find out if the course worked. Starts from the decisions that the results must support, then measures of reaction, learning, behavior and results (Kirkpatrick), the survey and checklist items, a schedule, and transfer support. |
+
+The last four are companion skills. Each one works alone, at any time, with or without a manifest. Each of the last three writes one Markdown file in `.idstack/exports/<course-slug>/`.
+
+You do not need to remember the commands. Tell Claude what you want, for example "check this quiz question", "storyboard a five-minute video on hand hygiene" or "how do I find out if this training worked", and Claude starts the correct skill.
 
 ## The workflow
 
@@ -324,7 +344,7 @@ BUILD (./setup runs it on each install; marketplace installs use the committed S
 INSTALL
 
   ./setup ──▶ registers .claude-plugin/plugin.json with Claude Code
-                └─▶ 12 skills, invoked as /idstack:<skill>
+                └─▶ 16 skills, invoked as /idstack:<skill>
   scripts/idstack-doctor   diagnoses the install
                        (scripts/lib/plugin-status.sh)
 
@@ -420,7 +440,7 @@ idstack encodes findings from a literature synthesis spanning 11 domains of inst
 |--------|---------------------|------------|-------------|
 | Cognitive Load Theory | 19 (6) | T1–T5 | Manage working memory load through sequencing, segmenting, and integration |
 | Multimedia Learning | 14 (7) | T1–T5 | Spatial contiguity, signaling, and coherence reliably improve learning |
-| Formative Assessment | 14 (10) | T1–T5 | Feedback that explains what to do next outperforms correctness-only feedback |
+| Formative Assessment | 19 (14) | T1–T5 | Feedback that explains what to do next outperforms correctness-only feedback |
 | Constructive Alignment | 13 (2) | T1–T5 | Objectives, activities, and assessments must form a coherent chain |
 | Online Course Quality | 14 (3) | T1–T5 | QM standards + CoI presence predicts outcomes beyond compliance |
 | Needs Analysis | 11 (2) | T1–T3 | Multi-level analysis is necessary but rarely done |

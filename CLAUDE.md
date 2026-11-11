@@ -40,7 +40,7 @@ scripts/idstack-learnings log|search|delete|promote   # Project learnings in .id
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash, node and python suites, but not `mutation-test.sh`, which CI runs in its own job):
 
 ```bash
-./test/smoke-test.sh              # 542 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 644 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 57 behavioral tests across the scripts/ scripts; also proves the suite
@@ -93,6 +93,8 @@ The python `test-*.py` suites take no argument; only the `check-*.py` scripts ta
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9. The test, mutation and release jobs pin Node 22 for the extension and rendered-landing tests.
 
+The tools are in `scripts/`, not `bin/`: Cowork and claude.ai chat refuse a plugin that has executables in a top-level `bin/` directory (https://claude.com/docs/plugins/platform-support.md), and smoke-test fails if `bin/` comes back. Cowork documents only the `${CLAUDE_SKILL_DIR}` token, so the resolve snippet also tries two levels above it. Nobody has run idstack in Cowork end to end yet.
+
 No build step for users. No dependencies beyond bash and python3 3.9 or later; `scripts/idstack-doctor` reports a missing or older python3. Skills are plain Markdown files.
 
 ### Testing a branch in the desktop app
@@ -128,7 +130,7 @@ skills/{skill-name}/
 
 In a merge or rebase conflict on a generated `SKILL.md`, take either side, resolve the `.tmpl`, then run `scripts/idstack-gen-skills`.
 
-12 skills total. The 8-skill linear pipeline is the canonical sequence; `/idstack:course-import` joins it when there's an existing course to start from, `/idstack:learn` is a cross-project memory utility that runs outside the pipeline, and `/idstack:start` is the first-run guide that checks the setup and starts the correct skill. All invoked via `/idstack:<skill>`:
+16 skills total. The 8-skill linear pipeline is the canonical sequence; `/idstack:course-import` joins it when there's an existing course to start from, `/idstack:learn` is a cross-project memory utility that runs outside the pipeline, and `/idstack:start` is the first-run guide that checks the setup and starts the correct skill. Four companion skills run at any time, outside the pipeline: `/idstack:quick-check` (chat-only feedback on one item; writes no file), `/idstack:storyboard`, `/idstack:question-bank` and `/idstack:evaluation-plan`. The last three write one Markdown file with the Step Review and a timeline event. No companion skill writes a manifest section, so the manifest schema has no section for them. All invoked via `/idstack:<skill>`:
 
 ```
 /idstack:pipeline (orchestrates the 8-skill linear chain, auto-skips completed)
@@ -140,6 +142,8 @@ In a merge or rebase conflict on a generated `SKILL.md`, take either side, resol
 /idstack:learn (manage cross-project learnings)
 
 /idstack:start (first-run guide: setup check, folder check, then hands off)
+
+/idstack:quick-check, storyboard, question-bank, evaluation-plan (companion skills, any time)
 ```
 
 Adding a skill: update every hard-coded skill list and count. smoke-test catches some of them; `git grep -nE '(^|[^0-9])N skills'` finds the rest (`\b` does not work in `git grep -E` on macOS).
@@ -284,6 +288,10 @@ When working in this repo, route user requests to the appropriate idstack skill:
 - Adversarial pre-launch audit (5 dimensions, confidence score) → `/idstack:red-team`
 - Package for LMS (IMS Common Cartridge, Canvas API, SCORM) → `/idstack:course-export`
 - Search, prune, promote, or export cross-project learnings → `/idstack:learn`
+- Fast feedback on one objective, question, rubric, slide or page → `/idstack:quick-check`
+- Storyboard or script for a video, e-learning module or slides → `/idstack:storyboard`
+- Quiz questions, test items, knowledge checks → `/idstack:question-bank`
+- Evaluation plan, Kirkpatrick levels, training impact → `/idstack:evaluation-plan`
 
 Claude Code auto-discovers the skills from the plugin's default `skills/`
 directory (`skills/<name>/SKILL.md`). `.claude-plugin/plugin.json` registers
