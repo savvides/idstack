@@ -15,6 +15,8 @@ idstack can now install in Cowork, and it has four new skills that work at any t
 - **`/idstack:start` asks for your experience level one time** and saves it. Before, you made `~/.idstack/profile.yaml` manually. It also offers the four new skills.
 - **The chat is shorter (#146).** `/idstack:pipeline` gives its status in one line. `/idstack:course-import` and `/idstack:course-export` give a short closing message with the report link. `/idstack:course-builder` does not write a line for each file. `/idstack:accessibility-review` and `/idstack:assessment-design` keep their details in the report.
 - **The link preview image shows the current study count (#141).**
+- **The Chrome extension (1.2.3) cites real studies in a page audit.** The page audit gave the model no list of studies, so a citation code could be wrong. It now uses the same checks and the same studies as `/idstack:quick-check`, for objectives, quiz questions, rubrics, media and practice.
+- **idstack.org shows the sixteen skills and Cowork.** The text of the page is shorter and uses the active voice. It said "146 references" in one place. It now says 154.
 - **Eight new references, all peer-reviewed.** Five on test questions and practice tests ([Assessment-23] to [Assessment-27]) and three on training evaluation and transfer ([Evaluation-23] to [Evaluation-25]). The evidence base has 154 studies.
 
 Reports and the course dashboard are now Markdown files. Each skill gives a report link that opens in the Claude desktop app. Each skill now adds the output of each step to the report as a draft table, and you approve each section.

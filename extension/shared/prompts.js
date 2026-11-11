@@ -7,6 +7,16 @@ const TIER_SCALE = Object.entries(TIER_METADATA).map(([tier, m]) => `   ${tier}:
 const WRITING_STANDARD = `Obey the rules that follow when you write keyTakeaway, observation, evidence, recommendation and improvedDraft. Do not change JSON keys, severity and tier values, citations or quotations from the course.
 ${STE_RULES}`;
 
+// The same checks and studies as /idstack:quick-check. Without a list, the
+// model made up citation codes. test-evidence-labels.mjs checks each code,
+// author, year and tier against evidence/references.md.
+const ITEM_CHECKS = `   Learning objective: one measurable behavior; the cognitive level agrees with the task, not only with the verb. [Alignment-1] Biggs (1996) [T5], [Alignment-12] Larsen et al. (2022) [T4], [Alignment-14] Agarwal (2019) [T1]
+   Quiz or test question: one clear problem in the stem; three options that learners can believe; no "all of the above"; feedback that explains the answer. [Assessment-23] Rodriguez (2005) [T1], [Assessment-24] Gierl et al. (2017) [T5], [Assessment-25] Yang et al. (2021) [T1]
+   Rubric or assignment: criteria that describe quality; learners get the rubric before the task; feedback tells what to do next. [Assessment-19] Panadero et al. (2023) [T1], [Assessment-8] Wisniewski et al. (2020) [T1]
+   Slide, video or media page: no text that repeats the narration; no decoration that does not teach; cues that show what is important. [Multimedia-9] Noetel et al. (2021) [T1], [Multimedia-21] Alpizar et al. (2020) [T1], [Multimedia-22] Sundararajan (2020) [T1]
+   Activity or practice: worked examples for novices, problems for experienced learners; practice spread across time. [CogLoad-23] Barbieri et al. (2023) [T1], [CogLoad-21] Tetzlaff et al. (2025) [T1], [CogLoad-24] Mawson et al. (2025) [T1]
+   Do not recommend learning styles. Prior knowledge is the difference that changes the design. [Learner-21] Simonsmeier et al. (2021) [T1]`;
+
 export function buildAuditPrompt({ title, pageType, content = '' }) {
   return `You are idstack, an evidence-based instructional design co-pilot.
 Your mission is to audit the provided course page/document and give rigorous, research-backed recommendations.
@@ -23,9 +33,11 @@ Please audit this material against peer-reviewed instructional design evidence:
 1. Classify learning objectives or implied cognitive depth using Bloom's Revised Taxonomy (Remember, Understand, Apply, Analyze, Evaluate, Create).
 2. Check Constructive Alignment: Do activities and assessments match the stated or necessary cognitive depth?
 3. Flag Cognitive Load, Elaborated Feedback gaps, and Accessibility considerations.
-4. Rate each recommendation with an evidence tier:
+4. Use the checks for the type of item on the page. Cite only the studies in this list, with the code and the tier that the list gives. If no study in the list supports a finding, do not write the finding.
+${ITEM_CHECKS}
+5. Rate each recommendation with an evidence tier:
 ${TIER_SCALE}
-5. Provide a ready-to-use, improved version (rewritten rubric, upgraded learning outcome verbs, or enhanced prompt).
+6. Provide a ready-to-use, improved version (rewritten rubric, upgraded learning outcome verbs, or enhanced prompt).
 
 You MUST respond strictly with valid JSON conforming to this schema:
 {
@@ -38,7 +50,7 @@ You MUST respond strictly with valid JSON conforming to this schema:
     {
       "severity": "critical | warning | info",
       "tier": "T1 | T2 | T3 | T4 | T5",
-      "citation": "[Domain-Code] Short Citation",
+      "citation": "[Code-N] Author (Year), copied from the list in step 4",
       "observation": "What is in the current material",
       "evidence": "What peer-reviewed research shows",
       "recommendation": "One clear change that idstack recommends"
