@@ -31,7 +31,7 @@ import os
 import re
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "bin", "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts", "lib"))
 from citations import CODE_RE, GROUP_RE, load_refs  # noqa: E402  (the shipped parser)
 
 # The landing page shows a tier as <span class="tier tier-1">T1</span>.

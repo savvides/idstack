@@ -14,12 +14,12 @@
 
 set -u
 
-# This script lives at <repo>/bin/idstack-doctor — resolve the repo root from
+# This script lives at <repo>/scripts/idstack-doctor — resolve the repo root from
 # its own location so the diagnosis works regardless of where the repo sits.
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 
 # `claude plugin list` parsing (pinned by test/test-plugin-status.sh).
-. "$IDSTACK_DIR/bin/lib/plugin-status.sh"
+. "$IDSTACK_DIR/scripts/lib/plugin-status.sh"
 
 PROBLEMS=0
 note_problem() { PROBLEMS=$((PROBLEMS + 1)); }
@@ -127,7 +127,7 @@ echo "Claude Code install:"
 if command -v claude >/dev/null 2>&1; then
   plugin_list=$(claude plugin list 2>/dev/null || true)
   if echo "$plugin_list" | grep -q "idstack@idstack"; then
-    # Scoped to idstack's own entry — see bin/lib/plugin-status.sh. A fixed
+    # Scoped to idstack's own entry — see scripts/lib/plugin-status.sh. A fixed
     # -A4 window read a neighboring plugin's status line and called a disabled
     # idstack enabled. Pinned by test/test-plugin-status.sh.
     if echo "$plugin_list" | plugin_is_enabled "idstack@idstack"; then

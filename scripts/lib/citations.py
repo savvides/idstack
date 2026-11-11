@@ -1,6 +1,6 @@
 """Parse "[Code-N] [Tn]" citations and the tiers in evidence/references.md.
 
-bin/idstack-report-section and test/check-citation-tiers.py both import this
+scripts/idstack-report-section and test/check-citation-tiers.py both import this
 file, so the test checks the same code that the skills run. Runs on Python 3.9.
 """
 

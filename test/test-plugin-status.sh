@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Unit tests for bin/lib/plugin-status.sh — the `claude plugin list` parsing
-# that bin/idstack-doctor uses to decide whether idstack is enabled.
+# Unit tests for scripts/lib/plugin-status.sh — the `claude plugin list` parsing
+# that scripts/idstack-doctor uses to decide whether idstack is enabled.
 #
 # Why this test exists: the original implementation used `grep -A4`, a fixed
 # window that spills into the NEXT plugin's entry. With two plugins listed
@@ -15,7 +15,7 @@ set -e
 . "$(dirname "$0")/test-helper.sh"
 
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
-. "$IDSTACK_DIR/bin/lib/plugin-status.sh"
+. "$IDSTACK_DIR/scripts/lib/plugin-status.sh"
 
 # Domain-specific shape: feeds a `claude plugin list` listing to
 # plugin_is_enabled and compares the result. Takes only the counters from

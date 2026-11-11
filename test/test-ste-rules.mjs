@@ -1,6 +1,6 @@
 // The extension's model prompts carry the ASD-STE100 writing rules that
 // templates/preamble.md gives every skill, between the ste-core markers.
-// bin/idstack-gen-skills writes extension/shared/ste-rules.js from that block,
+// scripts/idstack-gen-skills writes extension/shared/ste-rules.js from that block,
 // and smoke-test's freshness check fails on a stale copy. This suite checks
 // that both prompts carry the rules.
 import assert from 'node:assert';

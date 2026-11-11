@@ -347,7 +347,7 @@ After the orchestrator returns:
 ```bash
 {{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/red-team.md"
 mkdir -p "$_EXPORT_DIR"
@@ -355,7 +355,7 @@ echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
-if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill red-team --title "Red Team Audit" --mode "<mode>" --reserve "Confidence score"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill red-team --title "Red Team Audit" --mode "<mode>" --reserve "Confidence score"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
 In the command, replace `<mode>` with the `mode` value from the JSON file, then ` · focus: `, then the FOCUS value. An example is `full · focus: Full sweep`.
@@ -433,7 +433,7 @@ If the user selects "Change a row" or "Remove a row" in the Step Review of the `
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Change only the sentences that you wrote or changed in this step. Do not change the other text in the file. Do the check a maximum of three times. If the checker shows problems only in sentences that you did not write or change, the check of that file is complete. Tell the user one time that these lines had problems before your changes.
@@ -461,14 +461,14 @@ Run the finish command of the Step Review.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
 
 ### Step 7: Update manifest
 
-Save results to `.idstack/project.json` via `bin/idstack-manifest-merge`, which replaces only
+Save results to `.idstack/project.json` via `scripts/idstack-manifest-merge`, which replaces only
 the `red_team_audit` section, preserves every other section verbatim, validates JSON, and
 atomically updates the top-level `updated` timestamp. Use only the approved rows of the
 report. Calculate `confidence_score`, `findings_summary` and each dimension `score` from the
@@ -476,7 +476,7 @@ approved findings. Set `report_path` to the path from the "Report path:" line.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-manifest-merge" --create --section red_team_audit --payload - <<'PAYLOAD'
+"$_IDSTACK/scripts/idstack-manifest-merge" --create --section red_team_audit --payload - <<'PAYLOAD'
 {
   "updated": "<ISO-8601 timestamp>",
   "confidence_score": 0,
@@ -509,7 +509,7 @@ the manifest is corrupt, or the section name is misspelled — never silently ov
 `--create` makes a canonical manifest first if `.idstack/project.json` does not
 exist yet (the standalone case). It never replaces a manifest that exists.
 
-**Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest, modify
+**Fallback (if `scripts/idstack-manifest-merge` is unavailable):** Read the full manifest, modify
 only the `red_team_audit` section, Write back. Preserve all other sections verbatim. The
 canonical schema for reference is in `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
@@ -542,7 +542,7 @@ After the skill workflow completes successfully, log the session to the timeline
 IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
 {"skill":"red-team","event":"completed"}
 IDSTACK_EVENT
-"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
+"$_IDSTACK/scripts/idstack-timeline-log" "$_EVENT"
 ```
 
 Include skill-specific fields where available (confidence_score, focus, fixes_applied count). Log synchronously (no background &).
@@ -554,5 +554,5 @@ If you discover a non-obvious project-specific quirk during this session (LMS be
 IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
 {"skill":"red-team","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
 IDSTACK_LEARNING
-"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
+"$_IDSTACK/scripts/idstack-learnings" log "$_LEARNING"
 ```

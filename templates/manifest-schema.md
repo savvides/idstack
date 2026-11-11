@@ -2,29 +2,29 @@
 
 The idstack manifest lives at `.idstack/project.json`. Schema version: **1.4**.
 
-This is the canonical schema. Every skill writes to its own section using the shapes documented here; **all other sections must be preserved verbatim**. There is one source of truth — this file. If the schema ever needs to change, edit `templates/manifest-schema.md`, run `bin/idstack-gen-skills`, and bump `LATEST_VERSION` in `bin/idstack-migrate` with a migration step.
+This is the canonical schema. Every skill writes to its own section using the shapes documented here; **all other sections must be preserved verbatim**. There is one source of truth — this file. If the schema ever needs to change, edit `templates/manifest-schema.md`, run `scripts/idstack-gen-skills`, and bump `LATEST_VERSION` in `scripts/idstack-migrate` with a migration step.
 
 ### Two outputs per skill: JSON manifest + Markdown report
 
 Every skill that produces findings emits **both**:
 
-- a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `bin/idstack-status`), and
+- a **JSON section** in this manifest (system state — read by other skills, the pipeline orchestrator, and `scripts/idstack-status`), and
 - a **Markdown report** at `.idstack/exports/<course-slug>/<skill>.md` (the human view — read by the instructional designer).
 
-The Markdown report follows the skeleton in `templates/report.md.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → recommendation, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`bin/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.md`, so the dashboard survives a stale `report_path`.)
+The Markdown report follows the skeleton in `templates/report.md.tmpl` and the content contract in `templates/report-format.md` (observation → evidence → why-it-matters → recommendation, with severity and evidence tier on every finding). The skill writes the report's relative path back into its own section's `report_path` field so other skills can find it. (`scripts/idstack-status` discovers reports independently by globbing `.idstack/exports/<course-slug>/*.md`, so the dashboard survives a stale `report_path`.)
 
-`<course-slug>` is derived from the top-level `project_name` field via `bin/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill Markdown reports, the pipeline dashboard at `index.md`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
+`<course-slug>` is derived from the top-level `project_name` field via `scripts/idstack-slugify` (rule: NFKD-fold, lowercase, kebab-case, ASCII-safe; empty input → `untitled-course`). The slug is computed deterministically — skills don't cache it in the manifest. All exports for a course — per-skill Markdown reports, the pipeline dashboard at `index.md`, and LMS packages (`course-export.imscc`, `scorm-export.zip`) — live under the same `.idstack/exports/<course-slug>/` folder so the deliverable is self-describing when zipped, emailed, or handed off.
 
 `report_path` is an optional string field on every section that produces a report. It is a path relative to the project root (typically `.idstack/exports/<course-slug>/<skill>.md`). Empty string means the skill hasn't run yet, or ran in a mode that didn't produce a report. Renaming a course's `project_name` changes the slug, which moves future exports to a new folder; older folders are left in place.
 
 ### Two ways to write to the manifest
 
-**1. Recommended — `bin/idstack-manifest-merge`:** write only your sections, the tool merges atomically.
+**1. Recommended — `scripts/idstack-manifest-merge`:** write only your sections, the tool merges atomically.
 
 ```bash
 # Run this in a block that starts with your skill's own idstack resolve lines,
 # so $_IDSTACK is set. Pass your skill's section on stdin (a heredoc), not a /tmp file:
-"$_IDSTACK/bin/idstack-manifest-merge" --create --section red_team_audit --payload - <<'PAYLOAD'
+"$_IDSTACK/scripts/idstack-manifest-merge" --create --section red_team_audit --payload - <<'PAYLOAD'
 { ...your section's JSON... }
 PAYLOAD
 ```
@@ -32,7 +32,7 @@ PAYLOAD
 (Skills also read this file raw, so it carries no `IDSTACK_RESOLVE` placeholder
 and no copy of the resolve lines.)
 
-The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. When there is no manifest, `--create` first makes one with `bin/idstack-migrate --init`. That manifest is at the current schema version and has every top-level section, but a section can lack fields until its skill writes it. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
+The merge tool replaces only the named top-level sections, preserves every other section, updates the top-level `updated` timestamp, validates JSON on read, and rejects unknown sections. When there is no manifest, `--create` first makes one with `scripts/idstack-migrate --init`. That manifest is at the current schema version and has every top-level section, but a section can lack fields until its skill writes it. Repeat `--section`/`--payload` to write several sections in one atomic write, and use `--set project_name=<value>` for the top-level name. Use this in preference to inlining the full manifest in `Edit` operations.
 
 **2. Fallback — manual full-manifest write:** if the merge tool is unavailable for some reason, Read the full manifest, modify only your section, Write back. Preserve all other sections verbatim. Use the full schema below as reference.
 
@@ -40,10 +40,10 @@ The merge tool replaces only the named top-level sections, preserves every other
 
 | Field | Owner skill(s) | Notes |
 |---|---|---|
-| `version` | (migrate) | Always equals current schema version. Auto-managed by `bin/idstack-migrate`. |
-| `project_name` | needs-analysis, course-import | `bin/idstack-migrate --init` writes `""`. needs-analysis and course-import write it with `--set project_name=<v>` on every run, so the last of them to run sets the name and the export folder. In audit-existing mode, needs-analysis reuses the name that course-import wrote. Other skills do not write it. |
+| `version` | (migrate) | Always equals current schema version. Auto-managed by `scripts/idstack-migrate`. |
+| `project_name` | needs-analysis, course-import | `scripts/idstack-migrate --init` writes `""`. needs-analysis and course-import write it with `--set project_name=<v>` on every run, so the last of them to run sets the name and the export folder. In audit-existing mode, needs-analysis reuses the name that course-import wrote. Other skills do not write it. |
 | `created` | (any, once) | ISO-8601 timestamp of first creation. Don't overwrite. |
-| `updated` | (any) | ISO-8601 of last write. Updated automatically by `bin/idstack-manifest-merge`. |
+| `updated` | (any) | ISO-8601 of last write. Updated automatically by `scripts/idstack-manifest-merge`. |
 | `context` | needs-analysis, course-import | Modality, timeline, class size, etc. Edited by skills that learn new context. |
 | `needs_analysis` | needs-analysis, course-import | Org context, task analysis, learner profile, training justification. |
 | `learning_objectives` | learning-objectives, course-import, assessment-design | ILOs, alignment matrix, expertise-reversal flags. assessment-design reads the section, adds its fields and writes the whole section. In Mode 2 (no ILOs), and in Mode 3 when its step 0 asked for the objectives, it also writes the `ilos` that it classified. |
@@ -51,10 +51,10 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `course_content` | course-builder | Generated modules, syllabus, content paths. |
 | `import_metadata` | course-import | Source, source LMS, import time, items imported, and the count of approved quality flags. The flag details are in the course-import report. |
 | `export_metadata` | course-export | Export destination, items exported, readiness check. |
-| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. No skill writes `review_history`. `bin/idstack-migrate` adds it as `[]`, and a /idstack:course-quality-review write replaces the whole section, so the field and its contents are removed. The timeline (`.idstack/timeline.jsonl`) keeps the score of each review. |
+| `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. No skill writes `review_history`. `scripts/idstack-migrate` adds it as `[]`, and a /idstack:course-quality-review write replaces the whole section, so the field and its contents are removed. The timeline (`.idstack/timeline.jsonl`) keeps the score of each review. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
 | `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
-| `preferences` | (user, by hand) | Verbosity, export format, preferred LMS, auto-advance. `bin/idstack-migrate` writes the defaults. No skill writes this section; the preamble reads `verbosity`. |
+| `preferences` | (user, by hand) | Verbosity, export format, preferred LMS, auto-advance. `scripts/idstack-migrate` writes the defaults. No skill writes this section; the preamble reads `verbosity`. |
 
 ### Full schema (canonical shape)
 
@@ -325,7 +325,7 @@ The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|mo
 }
 ```
 
-**`import_metadata.quality_flag_details[]`** — each item. No skill fills this array. `bin/idstack-migrate` creates it empty, or fills it when it moves a legacy `_import_quality_flags` root field. `/idstack:course-import` writes it as an empty array, which replaces any details that `bin/idstack-migrate` moved there, and writes the count in `quality_flags`. The flag details are in its report (Import quality triage section):
+**`import_metadata.quality_flag_details[]`** — each item. No skill fills this array. `scripts/idstack-migrate` creates it empty, or fills it when it moves a legacy `_import_quality_flags` root field. `/idstack:course-import` writes it as an empty array, which replaces any details that `scripts/idstack-migrate` moved there, and writes the count in `quality_flags`. The flag details are in its report (Import quality triage section):
 ```json
 {
   "key": "orphan_module_8",

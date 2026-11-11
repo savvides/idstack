@@ -13,7 +13,7 @@ body:
     id: where
     attributes:
       label: Skill, script or extension page
-      placeholder: /idstack:course-import, bin/idstack-status, Chrome extension side panel
+      placeholder: /idstack:course-import, scripts/idstack-status, Chrome extension side panel
   - type: input
     id: version
     attributes:

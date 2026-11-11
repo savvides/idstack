@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# idstack integration tests — behavioral tests for bin scripts
+# idstack integration tests — behavioral tests for the scripts/ tools
 set -e
 
 . "$(dirname "$0")/test-helper.sh"
@@ -24,32 +24,32 @@ cd "$TEST_DIR"
 echo "## idstack-timeline-log"
 
 check "creates .idstack/ and timeline.jsonl" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"test\",\"event\":\"completed\",\"score\":72}' && [ -f .idstack/timeline.jsonl ]"
+  "$IDSTACK_DIR/scripts/idstack-timeline-log '{\"skill\":\"test\",\"event\":\"completed\",\"score\":72}' && [ -f .idstack/timeline.jsonl ]"
 
 check "appends valid JSON with ts field" \
   "python3 -c \"import json; d=json.loads(open('.idstack/timeline.jsonl').readline()); assert 'ts' in d and d['skill']=='test'\""
 
 check "preserves caller-supplied ts field" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"test\",\"ts\":\"2020-01-01T00:00:00Z\"}' && grep -q '\"ts\": \"2020-01-01T00:00:00Z\"' .idstack/timeline.jsonl"
+  "$IDSTACK_DIR/scripts/idstack-timeline-log '{\"skill\":\"test\",\"ts\":\"2020-01-01T00:00:00Z\"}' && grep -q '\"ts\": \"2020-01-01T00:00:00Z\"' .idstack/timeline.jsonl"
 
 check "handles invalid JSON gracefully" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"bad\",}' && grep -q '\"raw\": \"{\\\\\\\"skill\\\\\\\":\\\\\\\"bad\\\\\\\",}\"' .idstack/timeline.jsonl"
+  "$IDSTACK_DIR/scripts/idstack-timeline-log '{\"skill\":\"bad\",}' && grep -q '\"raw\": \"{\\\\\\\"skill\\\\\\\":\\\\\\\"bad\\\\\\\",}\"' .idstack/timeline.jsonl"
 
 check "handles empty arg without error" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log ''"
+  "$IDSTACK_DIR/scripts/idstack-timeline-log ''"
 
 check "handles no arg without error" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log"
+  "$IDSTACK_DIR/scripts/idstack-timeline-log"
 
 # Exact count, not `-gt 1`. Every preceding write in this section contributes a
 # line (4 including this call); a loose comparison still passes when one or two
 # of the four are lost, which is the regression this assertion exists to catch.
 check "multiple appends create exactly one line each" \
-  "$IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 4 ]"
+  "$IDSTACK_DIR/scripts/idstack-timeline-log '{\"skill\":\"second\",\"event\":\"completed\"}' && [ \$(wc -l < .idstack/timeline.jsonl | tr -d ' ') -eq 4 ]"
 
 # --help was once logged as the event {"raw": "--help"}.
 check "--help prints usage and logs nothing" \
-  "mkdir -p '$TEST_DIR/help-tl' && out=\$(cd '$TEST_DIR/help-tl' && $IDSTACK_DIR/bin/idstack-timeline-log --help) && echo \"\$out\" | grep -q 'Usage: idstack-timeline-log' && [ ! -e '$TEST_DIR/help-tl/.idstack' ]"
+  "mkdir -p '$TEST_DIR/help-tl' && out=\$(cd '$TEST_DIR/help-tl' && $IDSTACK_DIR/scripts/idstack-timeline-log --help) && echo \"\$out\" | grep -q 'Usage: idstack-timeline-log' && [ ! -e '$TEST_DIR/help-tl/.idstack' ]"
 
 echo ""
 
@@ -57,17 +57,17 @@ echo ""
 echo "## idstack-learnings log"
 
 check "creates learnings.jsonl" \
-  "$IDSTACK_DIR/bin/idstack-learnings log '{\"skill\":\"import\",\"type\":\"operational\",\"key\":\"test\",\"insight\":\"test insight\",\"confidence\":8}' && [ -f .idstack/learnings.jsonl ]"
+  "$IDSTACK_DIR/scripts/idstack-learnings log '{\"skill\":\"import\",\"type\":\"operational\",\"key\":\"test\",\"insight\":\"test insight\",\"confidence\":8}' && [ -f .idstack/learnings.jsonl ]"
 
 check "appends valid JSON with ts field" \
   "python3 -c \"import json; d=json.loads(open('.idstack/learnings.jsonl').readline()); assert 'ts' in d and d['type']=='operational'\""
 
 check "handles empty arg without error" \
-  "$IDSTACK_DIR/bin/idstack-learnings log ''"
+  "$IDSTACK_DIR/scripts/idstack-learnings log ''"
 
 # --help was once logged as the learning {"raw": "--help"}.
 check "log --help prints usage and logs nothing" \
-  "mkdir -p '$TEST_DIR/help-learn' && out=\$(cd '$TEST_DIR/help-learn' && $IDSTACK_DIR/bin/idstack-learnings log --help) && echo \"\$out\" | grep -q 'Usage: idstack-learnings' && [ ! -e '$TEST_DIR/help-learn/.idstack' ]"
+  "mkdir -p '$TEST_DIR/help-learn' && out=\$(cd '$TEST_DIR/help-learn' && $IDSTACK_DIR/scripts/idstack-learnings log --help) && echo \"\$out\" | grep -q 'Usage: idstack-learnings' && [ ! -e '$TEST_DIR/help-learn/.idstack' ]"
 
 echo ""
 
@@ -75,39 +75,39 @@ echo ""
 echo "## idstack-learnings search"
 
 # Add a second learning of different type
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"review","type":"pattern","key":"test2","insight":"pattern insight","confidence":7}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"review","type":"pattern","key":"test2","insight":"pattern insight","confidence":7}'
 
 # Add more learnings to test keyword search
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"export","type":"technical","key":"canvas_export","insight":"Canvas requires specific API tokens","confidence":9}'
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"review","type":"pattern","key":"rubric_design","insight":"Rubrics should be simple","confidence":8}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"export","type":"technical","key":"canvas_export","insight":"Canvas requires specific API tokens","confidence":9}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"review","type":"pattern","key":"rubric_design","insight":"Rubrics should be simple","confidence":8}'
 
 check "returns results with --limit" \
-  "[ \$($IDSTACK_DIR/bin/idstack-learnings search --limit 1 | wc -l | tr -d ' ') -eq 1 ]"
+  "[ \$($IDSTACK_DIR/scripts/idstack-learnings search --limit 1 | wc -l | tr -d ' ') -eq 1 ]"
 
 check "returns all when limit exceeds count" \
-  "[ \$($IDSTACK_DIR/bin/idstack-learnings search --limit 99 | wc -l | tr -d ' ') -eq 4 ]"
+  "[ \$($IDSTACK_DIR/scripts/idstack-learnings search --limit 99 | wc -l | tr -d ' ') -eq 4 ]"
 
 check "filters by --type" \
-  "$IDSTACK_DIR/bin/idstack-learnings search --limit 10 --type operational | python3 -c \"import json,sys; d=json.loads(sys.stdin.readline()); assert d['type']=='operational'\""
+  "$IDSTACK_DIR/scripts/idstack-learnings search --limit 10 --type operational | python3 -c \"import json,sys; d=json.loads(sys.stdin.readline()); assert d['type']=='operational'\""
 
 check "filters by --keyword (hit)" \
-  "$IDSTACK_DIR/bin/idstack-learnings search --keyword canvas | grep -q 'canvas_export'"
+  "$IDSTACK_DIR/scripts/idstack-learnings search --keyword canvas | grep -q 'canvas_export'"
 
 check "filters by --keyword (case insensitive)" \
-  "$IDSTACK_DIR/bin/idstack-learnings search --keyword RuBrIc | grep -q 'rubric_design'"
+  "$IDSTACK_DIR/scripts/idstack-learnings search --keyword RuBrIc | grep -q 'rubric_design'"
 
 check "filters by --keyword (miss)" \
-  "[ -z \"\$($IDSTACK_DIR/bin/idstack-learnings search --keyword nonexistent_string)\" ]"
+  "[ -z \"\$($IDSTACK_DIR/scripts/idstack-learnings search --keyword nonexistent_string)\" ]"
 
 # Setup fake home and global learnings
 mkdir -p "$TEST_DIR/fake_home/.idstack/global"
 echo '{"skill":"import","type":"technical","key":"global_canvas","insight":"Global canvas insight","confidence":5}' > "$TEST_DIR/fake_home/.idstack/global/learnings.jsonl"
 
 check "cross-project includes global learnings" \
-  "HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/bin/idstack-learnings search --cross-project --keyword global_canvas | grep -q '\"_source\": \"global\"'"
+  "HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/scripts/idstack-learnings search --cross-project --keyword global_canvas | grep -q '\"_source\": \"global\"'"
 
 check "without cross-project excludes global learnings" \
-  "[ -z \"\$(HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/bin/idstack-learnings search --keyword global_canvas)\" ]"
+  "[ -z \"\$(HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/scripts/idstack-learnings search --keyword global_canvas)\" ]"
 
 # Setup multi-entry cross-project precedence test
 mkdir -p "$TEST_DIR/fake_home/.idstack/global"
@@ -115,31 +115,31 @@ cat > "$TEST_DIR/fake_home/.idstack/global/learnings.jsonl" <<'EOF'
 {"skill":"review","type":"pattern","key":"g1","insight":"prec_test global 1","confidence":5}
 {"skill":"review","type":"pattern","key":"g2","insight":"prec_test global 2","confidence":6}
 EOF
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"review","type":"pattern","key":"l1","insight":"prec_test local 1","confidence":8}'
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"review","type":"pattern","key":"l2","insight":"prec_test local 2","confidence":9}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"review","type":"pattern","key":"l1","insight":"prec_test local 1","confidence":8}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"review","type":"pattern","key":"l2","insight":"prec_test local 2","confidence":9}'
 
 check "cross-project: local learnings outrank global learnings on limit truncation" \
   "python3 -c \"
 import subprocess, json
-out = subprocess.check_output(['$IDSTACK_DIR/bin/idstack-learnings', 'search', '--cross-project', '--keyword', 'prec_test', '--limit', '2'], env={'HOME': '$TEST_DIR/fake_home', 'PATH': '$PATH'}).decode()
+out = subprocess.check_output(['$IDSTACK_DIR/scripts/idstack-learnings', 'search', '--cross-project', '--keyword', 'prec_test', '--limit', '2'], env={'HOME': '$TEST_DIR/fake_home', 'PATH': '$PATH'}).decode()
 keys = [json.loads(line)['key'] for line in out.strip().splitlines() if line.strip()]
 assert keys == ['l1', 'l2'], f'Expected local keys [l1, l2], got {keys}'
 \""
 
 # --limit 0 once printed every record (matches[-0:]).
 check "--limit 0 prints one record" \
-  "[ \$($IDSTACK_DIR/bin/idstack-learnings search --limit 0 | wc -l | tr -d ' ') -eq 1 ]"
+  "[ \$($IDSTACK_DIR/scripts/idstack-learnings search --limit 0 | wc -l | tr -d ' ') -eq 1 ]"
 
 # A null insight once raised a TypeError that the search swallowed, so the
 # record never matched a keyword.
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"review","type":"pattern","key":"null_insight_key","insight":null}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"review","type":"pattern","key":"null_insight_key","insight":null}'
 check "--keyword finds a record whose insight is null" \
-  "$IDSTACK_DIR/bin/idstack-learnings search --keyword null_insight_key | grep -q 'null_insight_key'"
+  "$IDSTACK_DIR/scripts/idstack-learnings search --keyword null_insight_key | grep -q 'null_insight_key'"
 
 # A flag with no value once made the option loop run forever (shift 2 fails).
 # perl's alarm stops the old loop, so the check fails and does not hang.
 check "--keyword with no value fails and says why" \
-  "out=\$(perl -e 'alarm 10; exec @ARGV' $IDSTACK_DIR/bin/idstack-learnings search --keyword 2>&1); [ \$? -eq 1 ] && echo \"\$out\" | grep -q -- '--keyword'"
+  "out=\$(perl -e 'alarm 10; exec @ARGV' $IDSTACK_DIR/scripts/idstack-learnings search --keyword 2>&1); [ \$? -eq 1 ] && echo \"\$out\" | grep -q -- '--keyword'"
 
 # --- python3 absent ---
 # python3 3.9 or later is a requirement. The scripts used to fall back to
@@ -153,22 +153,22 @@ done
 NOPY="PATH=\"$TEST_DIR/nopy\""
 
 check "no python3: learnings search exits 2 and says why" \
-  "out=\$($NOPY $IDSTACK_DIR/bin/idstack-learnings search --keyword canvas 2>&1); [ \$? -eq 2 ] && echo \"\$out\" | grep -q 'python3 is necessary' && ! echo \"\$out\" | grep -q canvas_export"
+  "out=\$($NOPY $IDSTACK_DIR/scripts/idstack-learnings search --keyword canvas 2>&1); [ \$? -eq 2 ] && echo \"\$out\" | grep -q 'python3 is necessary' && ! echo \"\$out\" | grep -q canvas_export"
 
 check "no python3: learnings log exits 0 and writes nothing" \
-  "n=\$(wc -l < .idstack/learnings.jsonl) && $NOPY $IDSTACK_DIR/bin/idstack-learnings log '{\"key\":\"nopy\"}' 2>/dev/null && [ \$(wc -l < .idstack/learnings.jsonl) -eq \$n ]"
+  "n=\$(wc -l < .idstack/learnings.jsonl) && $NOPY $IDSTACK_DIR/scripts/idstack-learnings log '{\"key\":\"nopy\"}' 2>/dev/null && [ \$(wc -l < .idstack/learnings.jsonl) -eq \$n ]"
 
 check "no python3: timeline-log exits 0 and writes nothing" \
-  "touch .idstack/timeline.jsonl && n=\$(wc -l < .idstack/timeline.jsonl) && $NOPY $IDSTACK_DIR/bin/idstack-timeline-log '{\"skill\":\"nopy\"}' 2>/dev/null && [ \$(wc -l < .idstack/timeline.jsonl) -eq \$n ]"
+  "touch .idstack/timeline.jsonl && n=\$(wc -l < .idstack/timeline.jsonl) && $NOPY $IDSTACK_DIR/scripts/idstack-timeline-log '{\"skill\":\"nopy\"}' 2>/dev/null && [ \$(wc -l < .idstack/timeline.jsonl) -eq \$n ]"
 
 check "no python3: migrate exits 3 and does not print the unmigrated manifest" \
-  "mkdir -p '$TEST_DIR/nopy-mig/.idstack' && echo '{\"version\":\"1.0\",\"marker\":\"unmigrated\"}' > '$TEST_DIR/nopy-mig/.idstack/project.json' && out=\$(cd '$TEST_DIR/nopy-mig' && $NOPY $IDSTACK_DIR/bin/idstack-migrate 2>&1); [ \$? -eq 3 ] && echo \"\$out\" | grep -q 'python3 is necessary' && ! echo \"\$out\" | grep -q unmigrated"
+  "mkdir -p '$TEST_DIR/nopy-mig/.idstack' && echo '{\"version\":\"1.0\",\"marker\":\"unmigrated\"}' > '$TEST_DIR/nopy-mig/.idstack/project.json' && out=\$(cd '$TEST_DIR/nopy-mig' && $NOPY $IDSTACK_DIR/scripts/idstack-migrate 2>&1); [ \$? -eq 3 ] && echo \"\$out\" | grep -q 'python3 is necessary' && ! echo \"\$out\" | grep -q unmigrated"
 
 check "no python3: status exits 2 and says why" \
-  "out=\$($NOPY $IDSTACK_DIR/bin/idstack-status 2>&1); [ \$? -eq 2 ] && echo \"\$out\" | grep -q 'python3 is necessary'"
+  "out=\$($NOPY $IDSTACK_DIR/scripts/idstack-status 2>&1); [ \$? -eq 2 ] && echo \"\$out\" | grep -q 'python3 is necessary'"
 
 check "no file returns empty" \
-  "rm -f .idstack/learnings.jsonl && [ -z \"\$($IDSTACK_DIR/bin/idstack-learnings search --limit 3)\" ]"
+  "rm -f .idstack/learnings.jsonl && [ -z \"\$($IDSTACK_DIR/scripts/idstack-learnings search --limit 3)\" ]"
 
 echo ""
 
@@ -176,20 +176,20 @@ echo ""
 echo "## idstack-status"
 
 check "no timeline shows empty state message" \
-  "rm -f .idstack/timeline.jsonl && $IDSTACK_DIR/bin/idstack-status | grep -q 'There is no course data'"
+  "rm -f .idstack/timeline.jsonl && $IDSTACK_DIR/scripts/idstack-status | grep -q 'There is no course data'"
 
 # Rebuild timeline for status tests
-$IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"needs-analysis","event":"completed","training_justified":true}'
-$IDSTACK_DIR/bin/idstack-timeline-log '{"skill":"course-quality-review","event":"completed","score":65,"dimensions":{"teaching_presence":7,"social_presence":3,"cognitive_presence":5}}'
+$IDSTACK_DIR/scripts/idstack-timeline-log '{"skill":"needs-analysis","event":"completed","training_justified":true}'
+$IDSTACK_DIR/scripts/idstack-timeline-log '{"skill":"course-quality-review","event":"completed","score":65,"dimensions":{"teaching_presence":7,"social_presence":3,"cognitive_presence":5}}'
 
 check "shows skills completed checkboxes (namespaced)" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q '\[x\] /idstack:needs-analysis'"
+  "$IDSTACK_DIR/scripts/idstack-status | grep -q '\[x\] /idstack:needs-analysis'"
 
 check "shows quality trend" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q 'Quality trend: 65'"
+  "$IDSTACK_DIR/scripts/idstack-status | grep -q 'Quality trend: 65'"
 
 check "suggests next skill" \
-  "$IDSTACK_DIR/bin/idstack-status | grep -q 'Recommended next'"
+  "$IDSTACK_DIR/scripts/idstack-status | grep -q 'Recommended next'"
 
 # Quote-injection regression: a project name with an apostrophe must render,
 # not blank the dashboard with a Python SyntaxError.
@@ -198,23 +198,23 @@ cat > .idstack/project.json <<'EOF'
 EOF
 
 check "apostrophe in project name renders" \
-  "'$IDSTACK_DIR/bin/idstack-status' | grep -qF \"Project: Bob's Advanced Course\""
+  "'$IDSTACK_DIR/scripts/idstack-status' | grep -qF \"Project: Bob's Advanced Course\""
 
 check "apostrophe in project name: no 'cannot read the timeline' error" \
-  "! '$IDSTACK_DIR/bin/idstack-status' | grep -q 'idstack cannot read the timeline'"
+  "! '$IDSTACK_DIR/scripts/idstack-status' | grep -q 'idstack cannot read the timeline'"
 
 # course-import is an alternative pipeline entry: with only course-import
 # completed, the suggestion must be learning-objectives, not nothing.
 mkdir -p importcase && ( cd importcase && \
-  "$IDSTACK_DIR/bin/idstack-timeline-log" '{"skill":"course-import","event":"completed"}' )
+  "$IDSTACK_DIR/scripts/idstack-timeline-log" '{"skill":"course-import","event":"completed"}' )
 check "course-import alone suggests learning-objectives" \
-  "( cd importcase && '$IDSTACK_DIR/bin/idstack-status' | grep -q 'Recommended next: /idstack:learning-objectives' )"
+  "( cd importcase && '$IDSTACK_DIR/scripts/idstack-status' | grep -q 'Recommended next: /idstack:learning-objectives' )"
 
 # Everything idstack-status prints is text a user may type back. It must carry
 # the /idstack: prefix for the same reason skill templates do — a bare /skill
 # is not a valid command in Claude Code.
 check "idstack-status never prints a bare /skill command" \
-  "! '$IDSTACK_DIR/bin/idstack-status' | grep -Eq '(^|[^:])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline)\b'"
+  "! '$IDSTACK_DIR/scripts/idstack-status' | grep -Eq '(^|[^:])/(needs-analysis|learning-objectives|assessment-design|course-builder|course-quality-review|accessibility-review|red-team|course-export|course-import|pipeline)\b'"
 
 rm -f .idstack/project.json
 
@@ -227,23 +227,23 @@ echo ""
 echo "## idstack-gen-skills"
 
 check "dry-run passes when fresh" \
-  "'$IDSTACK_DIR/bin/idstack-gen-skills' --dry-run"
+  "'$IDSTACK_DIR/scripts/idstack-gen-skills' --dry-run"
 
 SANDBOX="$TEST_DIR/repo"
 mkdir -p "$SANDBOX"
 # gen-skills writes into extension/shared/.
-cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/skills" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/extension" "$SANDBOX/"
+cp -R "$IDSTACK_DIR/scripts" "$IDSTACK_DIR/skills" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/extension" "$SANDBOX/"
 
 check "dry-run detects stale SKILL.md (sandbox)" \
-  "echo 'stale content' >> '$SANDBOX/skills/needs-analysis/SKILL.md' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run"
+  "echo 'stale content' >> '$SANDBOX/skills/needs-analysis/SKILL.md' && ! '$SANDBOX/scripts/idstack-gen-skills' --dry-run"
 
 check "regenerate fixes staleness (sandbox)" \
-  "'$SANDBOX/bin/idstack-gen-skills' && '$SANDBOX/bin/idstack-gen-skills' --dry-run"
+  "'$SANDBOX/scripts/idstack-gen-skills' && '$SANDBOX/scripts/idstack-gen-skills' --dry-run"
 
 # A template missing {{PREAMBLE}} must be an error, not a silent SKIP that
 # lets --dry-run pass green over an absent or stale output.
 check "missing {{PREAMBLE}} placeholder fails dry-run and generation (sandbox)" \
-  "sed -i.bak 's/{{PREAMBLE}}/PREAMBLE_GONE/' '$SANDBOX/skills/learn/SKILL.md.tmpl' && ! '$SANDBOX/bin/idstack-gen-skills' --dry-run && ! '$SANDBOX/bin/idstack-gen-skills'"
+  "sed -i.bak 's/{{PREAMBLE}}/PREAMBLE_GONE/' '$SANDBOX/skills/learn/SKILL.md.tmpl' && ! '$SANDBOX/scripts/idstack-gen-skills' --dry-run && ! '$SANDBOX/scripts/idstack-gen-skills'"
 
 check "real tree untouched by this suite" \
   "[ \"\$(git -C '$IDSTACK_DIR' status --porcelain 2>/dev/null || true)\" = \"\$TREE_BEFORE\" ]"
@@ -254,29 +254,29 @@ echo ""
 echo "## idstack-learnings delete"
 
 check "returns error if no arguments provided" \
-  "! $IDSTACK_DIR/bin/idstack-learnings delete"
+  "! $IDSTACK_DIR/scripts/idstack-learnings delete"
 
 check "returns error if no file exists" \
-  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/bin/idstack-learnings delete somekey"
+  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/scripts/idstack-learnings delete somekey"
 
 # Setup data for delete tests
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"test","type":"fact","key":"key1","insight":"one"}'
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"test","type":"fact","key":"key2","insight":"two"}'
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"test","type":"fact","key":"key1","insight":"three"}'
-$IDSTACK_DIR/bin/idstack-learnings log '{"skill":"test","type":"fact","key":"key3_mode","insight":"four"}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"test","type":"fact","key":"key1","insight":"one"}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"test","type":"fact","key":"key2","insight":"two"}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"test","type":"fact","key":"key1","insight":"three"}'
+$IDSTACK_DIR/scripts/idstack-learnings log '{"skill":"test","type":"fact","key":"key3_mode","insight":"four"}'
 chmod 600 .idstack/learnings.jsonl
 
 check "preserves file mode on delete (mode 600)" \
-  "$IDSTACK_DIR/bin/idstack-learnings delete key3_mode && python3 -c \"import os, stat; m = stat.S_IMODE(os.stat('.idstack/learnings.jsonl').st_mode); assert oct(m) == oct(0o600), f'Expected 0o600, got {oct(m)}'\""
+  "$IDSTACK_DIR/scripts/idstack-learnings delete key3_mode && python3 -c \"import os, stat; m = stat.S_IMODE(os.stat('.idstack/learnings.jsonl').st_mode); assert oct(m) == oct(0o600), f'Expected 0o600, got {oct(m)}'\""
 
 check "returns error if key not found" \
-  "! $IDSTACK_DIR/bin/idstack-learnings delete missingkey"
+  "! $IDSTACK_DIR/scripts/idstack-learnings delete missingkey"
 
 check "deletes the most recent entry with the key when there are duplicates" \
-  "$IDSTACK_DIR/bin/idstack-learnings delete key1 && python3 -c \"import json,sys; lines=[json.loads(l) for l in open('.idstack/learnings.jsonl')]; assert len(lines)==2 and lines[0]['key']=='key1' and lines[0]['insight']=='one' and lines[1]['key']=='key2'\""
+  "$IDSTACK_DIR/scripts/idstack-learnings delete key1 && python3 -c \"import json,sys; lines=[json.loads(l) for l in open('.idstack/learnings.jsonl')]; assert len(lines)==2 and lines[0]['key']=='key1' and lines[0]['insight']=='one' and lines[1]['key']=='key2'\""
 
 check "deletes a specific learning" \
-  "$IDSTACK_DIR/bin/idstack-learnings delete key2 && python3 -c \"import json,sys; lines=[json.loads(l) for l in open('.idstack/learnings.jsonl')]; assert len(lines)==1 and lines[0]['key']=='key1'\""
+  "$IDSTACK_DIR/scripts/idstack-learnings delete key2 && python3 -c \"import json,sys; lines=[json.loads(l) for l in open('.idstack/learnings.jsonl')]; assert len(lines)==1 and lines[0]['key']=='key1'\""
 
 echo ""
 # --- idstack-learnings promote ---
@@ -286,25 +286,25 @@ FAKE_HOME="$TEST_DIR/fake_home"
 mkdir -p "$FAKE_HOME"
 
 check "fails if no key provided" \
-  "! $IDSTACK_DIR/bin/idstack-learnings promote"
+  "! $IDSTACK_DIR/scripts/idstack-learnings promote"
 
 check "fails if no local learnings found" \
-  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/bin/idstack-learnings promote my-key"
+  "rm -f .idstack/learnings.jsonl && ! $IDSTACK_DIR/scripts/idstack-learnings promote my-key"
 
 mkdir -p .idstack
 echo '{"skill":"test-skill","key":"my-key","type":"pattern","insight":"hello"}' > .idstack/learnings.jsonl
 
 check "fails if key not found" \
-  "! $IDSTACK_DIR/bin/idstack-learnings promote wrong-key"
+  "! $IDSTACK_DIR/scripts/idstack-learnings promote wrong-key"
 
 check "promotes learning with unknown project" \
-  "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/bin/idstack-learnings promote my-key && [ -f \"$FAKE_HOME/.idstack/global/learnings.jsonl\" ] && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'unknown'\""
+  "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/scripts/idstack-learnings promote my-key && [ -f \"$FAKE_HOME/.idstack/global/learnings.jsonl\" ] && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'unknown'\""
 
 echo '{"project_name":"my-test-proj"}' > .idstack/project.json
 echo '{"skill":"test-skill","key":"key2","type":"pattern","insight":"hello2"}' >> .idstack/learnings.jsonl
 
 check "promotes learning with known project" \
-  "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/bin/idstack-learnings promote key2 && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'my-test-proj'\""
+  "HOME=\"$FAKE_HOME\" $IDSTACK_DIR/scripts/idstack-learnings promote key2 && python3 -c \"import json; d=json.loads(open('$FAKE_HOME/.idstack/global/learnings.jsonl').readlines()[-1]); assert d['_source_project'] == 'my-test-proj'\""
 
 # Carried over from PR #30, which was closed in favour of #37. #37 pins
 # _source_project but not the _promoted marker. The marker lets a reader tell a
@@ -316,10 +316,10 @@ check "promoted record carries the _promoted marker" \
 # $HOME was a syntax error.
 QUOTE_HOME="$TEST_DIR/o'neil home"
 check "promotes when HOME has a quote in it" \
-  "HOME=\"$QUOTE_HOME\" $IDSTACK_DIR/bin/idstack-learnings promote key2 && grep -q '\"key2\"' \"$QUOTE_HOME/.idstack/global/learnings.jsonl\""
+  "HOME=\"$QUOTE_HOME\" $IDSTACK_DIR/scripts/idstack-learnings promote key2 && grep -q '\"key2\"' \"$QUOTE_HOME/.idstack/global/learnings.jsonl\""
 
 check "an unknown subcommand fails with usage" \
-  "! $IDSTACK_DIR/bin/idstack-learnings frobnicate 2>&1 && $IDSTACK_DIR/bin/idstack-learnings frobnicate 2>&1 | grep -q '^Usage: idstack-learnings'"
+  "! $IDSTACK_DIR/scripts/idstack-learnings frobnicate 2>&1 && $IDSTACK_DIR/scripts/idstack-learnings frobnicate 2>&1 | grep -q '^Usage: idstack-learnings'"
 
 echo ""
 

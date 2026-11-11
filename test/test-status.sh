@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Behavioral tests for bin/idstack-status.
+# Behavioral tests for scripts/idstack-status.
 #
-# --readiness (the "Readiness table" block in bin/idstack-status) is the pre-export gate: it decides
+# --readiness (the "Readiness table" block in scripts/idstack-status) is the pre-export gate: it decides
 # whether a course is fit to ship. It had no coverage at all.
 #
 # Verdict-state tests alone are not enough here. A fixture that sits below
@@ -16,7 +16,7 @@ set -e
 . "$(dirname "$0")/test-helper.sh"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
-STATUS="$REPO_ROOT/bin/idstack-status"
+STATUS="$REPO_ROOT/scripts/idstack-status"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "test-status: python3 not available, skipping"
@@ -34,7 +34,7 @@ cd "$WORK"
 # A person reads the dashboard, and course-export reads --readiness. The
 # outputs of each state go to $STE_OUT, and the ASD-STE100 checker reads them
 # at the end of this suite.
-STE_CHECK="$REPO_ROOT/bin/idstack-ste-check"
+STE_CHECK="$REPO_ROOT/scripts/idstack-ste-check"
 STE_OUT="$WORK/ste-out"
 mkdir -p "$STE_OUT"
 ste_capture() { # <state name>

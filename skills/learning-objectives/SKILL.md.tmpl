@@ -129,7 +129,7 @@ the report as a draft. When the user approves the section, idstack removes the d
 ```bash
 {{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/learning-objectives.md"
 mkdir -p "$_EXPORT_DIR"
@@ -137,7 +137,7 @@ echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
-if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill learning-objectives --title "Learning Objectives Report"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill learning-objectives --title "Learning Objectives Report"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
 Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths in this section are in the idstack plugin folder, not in the course project.
@@ -346,7 +346,7 @@ Run the finish command of the Step Review.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
@@ -365,13 +365,13 @@ in the report agrees with an entry in `alignment_matrix.gaps` or in
 `expertise_reversal_flags`.
 
 Write the `learning_objectives` section via
-`bin/idstack-manifest-merge`. The merge tool replaces only the named section, preserves
+`scripts/idstack-manifest-merge`. The merge tool replaces only the named section, preserves
 every other section verbatim, validates JSON, writes atomically (tempfile + rename), and
 updates the top-level `updated` timestamp for you:
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-manifest-merge" --create --section learning_objectives --payload - <<'PAYLOAD'
+"$_IDSTACK/scripts/idstack-manifest-merge" --create --section learning_objectives --payload - <<'PAYLOAD'
 {
   "report_path": "<set to $_REPORT_PATH from the bash block above — e.g. .idstack/exports/<course-slug>/learning-objectives.md>",
   "ilos": [],
@@ -440,7 +440,7 @@ After the skill workflow completes successfully, log the session to the timeline
 IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
 {"skill":"learning-objectives","event":"completed"}
 IDSTACK_EVENT
-"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
+"$_IDSTACK/scripts/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -454,5 +454,5 @@ import format issue, course structure pattern), also log it as a learning:
 IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
 {"skill":"learning-objectives","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
 IDSTACK_LEARNING
-"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
+"$_IDSTACK/scripts/idstack-learnings" log "$_LEARNING"
 ```

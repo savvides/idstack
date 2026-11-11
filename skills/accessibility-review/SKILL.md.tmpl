@@ -91,7 +91,7 @@ Skip any question already answered by the manifest or the user's initial prompt.
 ```bash
 {{IDSTACK_RESOLVE}}
 # Compute the course slug from project_name and prepare the export folder.
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/accessibility-review.md"
 mkdir -p "$_EXPORT_DIR"
@@ -99,7 +99,7 @@ echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
-if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill accessibility-review --title "Accessibility Review" --reserve "Accessibility score"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill accessibility-review --title "Accessibility Review" --reserve "Accessibility score"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
 Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines.
@@ -343,7 +343,7 @@ Run the finish command of the Step Review.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
@@ -360,7 +360,7 @@ Use only the approved rows. Write one `wcag_violations` item for each approved `
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-manifest-merge" --create --section accessibility_review --payload - <<'PAYLOAD'
+"$_IDSTACK/scripts/idstack-manifest-merge" --create --section accessibility_review --payload - <<'PAYLOAD'
 {
   "updated": "<ISO-8601 timestamp>",
   "report_path": "<set to $_REPORT_PATH — e.g. .idstack/exports/<course-slug>/accessibility-review.md>",
@@ -398,7 +398,7 @@ never silently overwriting.
 For the full manifest schema (other sections you may need to read), Read
 `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
-**Fallback (if `bin/idstack-manifest-merge` is unavailable):** Read the full manifest,
+**Fallback (if `scripts/idstack-manifest-merge` is unavailable):** Read the full manifest,
 modify only the `accessibility_review` section, Write back. Preserve all other sections
 verbatim.
 
@@ -434,7 +434,7 @@ After the skill workflow completes successfully, log the session to the timeline
 IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
 {"skill":"accessibility-review","event":"completed"}
 IDSTACK_EVENT
-"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
+"$_IDSTACK/scripts/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -448,5 +448,5 @@ import format issue, course structure pattern), also log it as a learning:
 IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
 {"skill":"accessibility-review","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
 IDSTACK_LEARNING
-"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
+"$_IDSTACK/scripts/idstack-learnings" log "$_LEARNING"
 ```

@@ -22,7 +22,7 @@ trap 'rm -rf "$WORK"' EXIT
 setup_env() {
   rm -rf "$WORK/env"
   mkdir -p "$WORK/env/home" "$WORK/env/bin" "$WORK/env/idstack"
-  for item in bin skills templates evidence docs extension .claude-plugin \
+  for item in scripts skills templates evidence docs extension .claude-plugin \
               VERSION setup; do
     [ -e "$SRC/$item" ] && cp -R "$SRC/$item" "$WORK/env/idstack/"
   done
@@ -74,7 +74,7 @@ check "--help exits 0 and documents --local" \
 
 setup_env
 check "--help text obeys the writing standard (ASD-STE100)" \
-  "( set -o pipefail; raw_setup --help 2>&1 | python3 '$SRC/bin/idstack-ste-check' --format text - )"
+  "( set -o pipefail; raw_setup --help 2>&1 | python3 '$SRC/scripts/idstack-ste-check' --format text - )"
 
 # --- scope selection ---
 setup_env
@@ -104,16 +104,16 @@ check "a failing 'claude' call prints manual-recovery steps" \
 setup_env
 echo 'drift' >> "$WORK/env/idstack/skills/red-team/SKILL.md"
 check "fixture is genuinely stale before setup runs" \
-  "! '$WORK/env/idstack/bin/idstack-gen-skills' --dry-run"
+  "! '$WORK/env/idstack/scripts/idstack-gen-skills' --dry-run"
 run_setup
 check "setup regenerates stale generated files" \
-  "'$WORK/env/idstack/bin/idstack-gen-skills' --dry-run"
+  "'$WORK/env/idstack/scripts/idstack-gen-skills' --dry-run"
 
 # --- writing standard (ASD-STE100) ---
 # Every run_setup above: a normal install, --local, a failed 'claude' call and
 # a regeneration.
 check "setup output obeys the writing standard in every run of this suite" \
-  "python3 '$SRC/bin/idstack-ste-check' --format text '$WORK/ste-runs.txt'"
+  "python3 '$SRC/scripts/idstack-ste-check' --format text '$WORK/ste-runs.txt'"
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

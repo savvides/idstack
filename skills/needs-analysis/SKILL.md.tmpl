@@ -129,7 +129,7 @@ Store these in the `context` section of the manifest.
 IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
 <project name>
 IDSTACK_PROJECT_NAME
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" "$_PROJECT_NAME" 2>/dev/null || echo "untitled-course")
 [ "$_SLUG" = "project-name" ] && { echo "PROJECT_NAME_NOT_SET: replace <project name> with the course title and run this command again."; exit 1; }
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 _REPORT_PATH="$_EXPORT_DIR/needs-analysis.md"
@@ -138,7 +138,7 @@ echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
-if [ -x "$_IDSTACK/bin/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/bin/idstack-report-section" init "$_REPORT_PATH" --skill needs-analysis --title "Needs Analysis Report" --project "$_PROJECT_NAME" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill needs-analysis --title "Needs Analysis Report" --project "$_PROJECT_NAME" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
 Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
@@ -353,14 +353,14 @@ Run the finish command of the Step Review.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" "<path>"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" "<path>"; fi
 ```
 
 For the result, do the steps in "How to use the standard" in the "Writing Standard (ASD-STE100)" section of the preamble. Do the check a maximum of three times.
 
 ### Step 7: Write Manifest
 
-Create or update the project manifest with one atomic call to `bin/idstack-manifest-merge`.
+Create or update the project manifest with one atomic call to `scripts/idstack-manifest-merge`.
 This skill writes the `context` and `needs_analysis` sections and the top-level `project_name`.
 /idstack:course-import also writes them. The merge tool replaces each section whole.
 So for each of the two sections: read the existing section from the manifest (if any),
@@ -376,7 +376,7 @@ section. Each payload is the flat section contents, with no enclosing section ke
 IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
 <project name>
 IDSTACK_PROJECT_NAME
-"$_IDSTACK/bin/idstack-manifest-merge" --create --set project_name="$_PROJECT_NAME" \
+"$_IDSTACK/scripts/idstack-manifest-merge" --create --set project_name="$_PROJECT_NAME" \
   --section context --payload .idstack/.context-payload.json \
   --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
   && rm -f .idstack/.context-payload.json .idstack/.needs_analysis-payload.json
@@ -427,7 +427,7 @@ After the skill workflow completes successfully, log the session to the timeline
 IFS= read -r -d '' _EVENT <<'IDSTACK_EVENT' || true
 {"skill":"needs-analysis","event":"completed"}
 IDSTACK_EVENT
-"$_IDSTACK/bin/idstack-timeline-log" "$_EVENT"
+"$_IDSTACK/scripts/idstack-timeline-log" "$_EVENT"
 ```
 
 Replace the JSON above with actual data from this session. Include skill-specific fields
@@ -441,5 +441,5 @@ import format issue, course structure pattern), also log it as a learning:
 IFS= read -r -d '' _LEARNING <<'IDSTACK_LEARNING' || true
 {"skill":"needs-analysis","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":8,"source":"observed"}
 IDSTACK_LEARNING
-"$_IDSTACK/bin/idstack-learnings" log "$_LEARNING"
+"$_IDSTACK/scripts/idstack-learnings" log "$_LEARNING"
 ```

@@ -10,7 +10,7 @@
 # Each skill block is extracted from skills/<name>/SKILL.md (what ships), its
 # placeholders are filled in, and it runs in a scratch course project. The
 # preamble blocks come from templates/preamble.md, with the whole resolve
-# snippet spliced in (bin/idstack-gen-skills also leaves out the snippet's
+# snippet spliced in (scripts/idstack-gen-skills also leaves out the snippet's
 # comment lines, which does not change what runs). zsh runs with -f (no rc files),
 # so default options such as NOMATCH apply.
 set -u
@@ -28,7 +28,7 @@ command -v zsh >/dev/null 2>&1 || { echo ""; echo "Results: $PASS/$TOTAL passed,
 
 # A copy of the plugin, used as IDSTACK_HOME.
 mkdir -p "$WORK/plugin"
-cp -R "$IDSTACK_DIR/bin" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/evidence" "$IDSTACK_DIR/VERSION" "$WORK/plugin/"
+cp -R "$IDSTACK_DIR/scripts" "$IDSTACK_DIR/templates" "$IDSTACK_DIR/evidence" "$IDSTACK_DIR/VERSION" "$WORK/plugin/"
 export IDSTACK_HOME="$WORK/plugin"
 export HOME="$WORK/home"
 mkdir -p "$HOME"
@@ -281,7 +281,7 @@ PY
   mkdir -p "$P/lrn"
   PHRASE='rubric design $(touch pwned)'
   for kv in "hit|use $PHRASE early" "miss|rubric only" "$PHRASE|gone"; do
-    (cd "$P/lrn" && "$IDSTACK_HOME/bin/idstack-learnings" log "$(python3 -c 'import json,sys; k,i=sys.argv[1].split("|"); print(json.dumps({"skill":"learn","type":"operational","key":k,"insight":i,"confidence":8,"source":"observed"}))' "$kv")")
+    (cd "$P/lrn" && "$IDSTACK_HOME/scripts/idstack-learnings" log "$(python3 -c 'import json,sys; k,i=sys.argv[1].split("|"); print(json.dumps({"skill":"learn","type":"operational","key":k,"insight":i,"confidence":8,"source":"observed"}))' "$kv")")
   done
   out=$(run "$P/lrn" "$(block learn 'search --keyword "$_KEYWORD" --limit' "<keyword>=$PHRASE")")
   check "[$sh] learn searches the whole keyword phrase" \

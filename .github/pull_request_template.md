@@ -10,5 +10,5 @@ Closes #
 
 - [ ] `./test/smoke-test.sh`
 - [ ] `./test/integration-test.sh`
-- [ ] `bin/idstack-gen-skills --dry-run` is clean (if a template changed)
+- [ ] `scripts/idstack-gen-skills --dry-run` is clean (if a template changed)
 - [ ] Deferred findings have their own issue

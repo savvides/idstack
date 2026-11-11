@@ -14,7 +14,7 @@
 #
 #   --init   If there is no manifest, make a manifest that has each top-level
 #            section. If there is a manifest, migrate it.
-#            bin/idstack-manifest-merge --create uses this flag, so a skill
+#            scripts/idstack-manifest-merge --create uses this flag, so a skill
 #            that runs without the pipeline has a manifest on its first run.
 #            That tool replaces one or more sections. Without --create, it
 #            exits 4 when there is no manifest.

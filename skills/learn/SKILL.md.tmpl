@@ -38,7 +38,7 @@ this is the default.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings" search --limit 10
+"$_IDSTACK/scripts/idstack-learnings" search --limit 10
 ```
 
 Format the output as a readable table:
@@ -59,7 +59,7 @@ Search learnings by keyword. Supports `--cross-project` to include global learni
 IFS= read -r _KEYWORD <<'IDSTACK_KEYWORD'
 <keyword>
 IDSTACK_KEYWORD
-"$_IDSTACK/bin/idstack-learnings" search --keyword "$_KEYWORD" --limit 10
+"$_IDSTACK/scripts/idstack-learnings" search --keyword "$_KEYWORD" --limit 10
 ```
 
 For cross-project search:
@@ -68,7 +68,7 @@ For cross-project search:
 IFS= read -r _KEYWORD <<'IDSTACK_KEYWORD'
 <keyword>
 IDSTACK_KEYWORD
-"$_IDSTACK/bin/idstack-learnings" search --keyword "$_KEYWORD" --cross-project --limit 10
+"$_IDSTACK/scripts/idstack-learnings" search --keyword "$_KEYWORD" --cross-project --limit 10
 ```
 
 If results include global learnings (tagged `"_source": "global"`), show the project name from their `_source_project` field.
@@ -82,7 +82,7 @@ Delete the most recent local learning with this key. Older local entries with th
 IFS= read -r _KEY <<'IDSTACK_KEY'
 <key>
 IDSTACK_KEY
-"$_IDSTACK/bin/idstack-learnings" delete "$_KEY"
+"$_IDSTACK/scripts/idstack-learnings" delete "$_KEY"
 ```
 
 ### promote <key>
@@ -94,7 +94,7 @@ Copy a local learning to the global store so it's available across projects.
 IFS= read -r _KEY <<'IDSTACK_KEY'
 <key>
 IDSTACK_KEY
-"$_IDSTACK/bin/idstack-learnings" promote "$_KEY"
+"$_IDSTACK/scripts/idstack-learnings" promote "$_KEY"
 ```
 
 ### export
@@ -103,7 +103,7 @@ Export the local learnings of this project (the latest 1000) to a markdown file.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-"$_IDSTACK/bin/idstack-learnings" search --limit 1000
+"$_IDSTACK/scripts/idstack-learnings" search --limit 1000
 ```
 
 Format as markdown and write to `.idstack/learnings-export.md`. idstack skills log
@@ -114,7 +114,7 @@ every learning with the type `operational`. If the learnings have more than one
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/bin/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/bin/idstack-ste-check" ".idstack/learnings-export.md"; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "STE_CHECK_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-ste-check" ".idstack/learnings-export.md"; fi
 ```
 
 If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do step 5 or step 6 of "How to use the standard" in the preamble. If the checker shows problems, show them to the user. Do not change the export file.
@@ -129,6 +129,6 @@ If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do
 
 ## Important Rules
 
-- **Never modify learnings.jsonl directly.** Always use `bin/idstack-learnings`.
+- **Never modify learnings.jsonl directly.** Always use `scripts/idstack-learnings`.
 - **Confirm deletes.** Always ask before deleting.
 - **Show source for global learnings.** When cross-project results appear, show which project they came from.

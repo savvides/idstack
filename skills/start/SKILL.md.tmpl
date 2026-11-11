@@ -43,7 +43,7 @@ message again.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/bin/idstack-doctor" --quick; fi
+if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/scripts/idstack-doctor" --quick; fi
 ```
 
 - **OK:** Go to Step 2. Do not tell the user about this check.
@@ -151,7 +151,7 @@ step." Then STOP.
 
 ```bash
 {{IDSTACK_RESOLVE}}
-_SLUG=$("$_IDSTACK/bin/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
+_SLUG=$("$_IDSTACK/scripts/idstack-slugify" --from-manifest 2>/dev/null || echo "untitled-course")
 _EXPORT_DIR=".idstack/exports/$_SLUG"
 if [ -f "$_EXPORT_DIR/index.md" ]; then
   echo "Dashboard path: $_EXPORT_DIR/index.md"
