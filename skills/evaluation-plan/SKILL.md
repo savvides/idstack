@@ -511,7 +511,9 @@ a satisfaction survey that tells nothing about learning. Your job is to plan the
 smallest evaluation that answers the questions that the stakeholders really have.
 
 This skill writes one file, the evaluation plan, with the Step Review in the preamble.
-It does not write the manifest. It reads the manifest when one exists.
+It does not write the manifest. It reads the manifest when one exists. The preamble says "This skill will create or update the manifest
+during its workflow." That line is not true for this skill. With no manifest, the
+file goes in the `.idstack/exports/untitled-course/` folder. Do not ask for a course name.
 
 ## Evidence Base
 
@@ -603,7 +605,7 @@ questions. Each question has one Kirkpatrick level: 1 reaction, 2 learning, 3 be
 
 **Step review:** do the Step Review in the preamble. Section: `## Evaluation questions`. Columns: `ID | Decision | Question | Level | Justification | Evidence`.
 
-Use the IDs `EQ-1`, `EQ-2` and so on. If the effort is "Light", write the level 3 and level 4 questions also, and say in the justification that the plan does not measure them. Do not leave them out: the user must see what the plan cannot answer.
+Use the IDs `EQ-1`, `EQ-2` and so on. If the effort is "Light", write the level 3 and level 4 questions also, and say in the justification that the plan does not measure them. If the effort is "Moderate", measure a level 4 question only if the organization records the metric now. If not, say in the justification that the plan does not measure it. Do not leave them out: the user must see what the plan cannot answer.
 
 ### Step 2: The measures
 
@@ -612,7 +614,7 @@ is not self-report only.
 
 - **Level 1:** a maximum of five survey questions. Ask about relevance to the job, confidence to use the skill, and barriers. Do not ask only if the learners liked the course.
 - **Level 2:** a test or an observed task at the cognitive level of the objectives. Use a pre-test only if the learners can have prior knowledge. If `/idstack:assessment-design` or `/idstack:question-bank` made the assessments, name them.
-- **Level 3:** an observation checklist, a manager or peer rating, a work sample or system data, 30 to 90 days after the course. Name the behaviors. Each behavior comes from an objective.
+- **Level 3:** an observation checklist, a manager or peer rating, a work sample or system data, 30 to 90 days after the course, or at the time that the user gave for the result. Name the behaviors. Each behavior comes from an objective.
 - **Level 4:** a metric that the organization measures now. Record the baseline before the course. Name what else can change the metric.
 
 **Step review:** do the Step Review in the preamble. Section: `## Measures`. Columns: `ID | Question | Measure | Source | When | Owner | Justification | Evidence`.
@@ -646,11 +648,13 @@ cannot get.
 
 Use the IDs `eval-1`, `eval-2` and so on. Write a finding only for a risk that stays in the approved plan.
 
+### Step 5: The summary
+
 **Step review:** do the Step Review in the preamble. Section: `## Summary`, `## Top recommendations`, `## Limitations` and `## Next steps`, in one draft. Columns of `## Top recommendations`: `ID | Action | Justification | Evidence`.
 
 - **Summary:** two or three sentences. Tell which decisions the plan supports, which levels it measures, and when the first results arrive.
 - **Top recommendations:** a maximum of five actions, in the order of priority. Use the IDs `REC-1`, `REC-2` and so on. The first action is what the user must do before the course starts, for example record the baseline.
-- **Limitations:** The plan shows if the outcomes changed. Without a comparison group, it cannot prove that the course caused the change. Tell which evaluation questions the plan does not answer.
+- **Limitations:** The plan shows if the outcomes changed. If the plan has no comparison group, say that it cannot prove that the course caused the change. Tell which evaluation questions the plan does not answer. If it answers each question, say so.
 - **Next steps:** Collect the baseline. Build the measures: run `/idstack:question-bank` for the test, and `/idstack:assessment-design` for an observed task with a rubric. After the course, run `/idstack:course-quality-review` with the results.
 
 Run the finish command of the Step Review.
@@ -708,4 +712,4 @@ IDSTACK_EVENT
 "$_IDSTACK/scripts/idstack-timeline-log" "$_EVENT"
 ```
 
-Replace the JSON above with actual data from this session. Log synchronously (no background &).
+Replace the JSON above with actual data from this session. `levels` has the Kirkpatrick levels that have a measure. `measures` is the number of `M-` rows. Log synchronously (no background &).
