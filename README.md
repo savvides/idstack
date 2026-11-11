@@ -1,6 +1,6 @@
 # idstack
 
-> **Status: beta (v3.10.0.0).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
+> **Status: beta (v3.11.0.0).** Skills work end-to-end and ship behind a versioned plugin, but expect rough edges and breaking changes between minor versions while we shake out the rest of the workflow with real instructional designers. See [CHANGELOG.md](CHANGELOG.md) for what's new in the current release. [Tell us what's broken or missing.](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 
@@ -8,7 +8,7 @@ idstack is an open source set of skills for evidence-based instructional design 
 
 Skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
-Free, MIT licensed, open source. Available as a [Claude Code plugin](#install-30-seconds) and a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
+Free, MIT licensed, open source. Available as a plugin for [Claude Code](#install-30-seconds) and [Cowork](#cowork), and as a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 ## Quick start
 
@@ -17,6 +17,27 @@ Free, MIT licensed, open source. Available as a [Claude Code plugin](#install-30
    Or paste one item, for example a learning objective or a quiz question, and type `/idstack:quick-check`. You get feedback with citations in one minute, with no setup.
 3. If you imported a course, run `/idstack:course-quality-review` to see what the evidence says.
 4. Stop there. You'll know if this is for you.
+
+### What do you want to do?
+
+You can type the command, or tell Claude what you want in your own words.
+
+| I want to… | Type | Time | What you get |
+|------------|------|------|--------------|
+| Get feedback on one objective, quiz question, rubric, slide or page | `/idstack:quick-check` | 1 minute | A verdict, a maximum of five findings with citations, and a corrected version in the chat |
+| Audit a course that I have | `/idstack:course-import`, then `/idstack:course-quality-review` | 20–40 minutes | A quality score and a report of findings, each with its evidence tier |
+| Design a new course from the start | `/idstack:pipeline` | A few sessions | Needs analysis, objectives, assessments, course content, three reviews and an LMS package |
+| Write or repair learning objectives | `/idstack:learning-objectives` | 15 minutes | Measurable objectives with Bloom's levels and an alignment matrix |
+| Write quiz or test questions | `/idstack:question-bank` | 15 minutes | A test blueprint and questions with an answer key and feedback |
+| Storyboard a video, a module or slides | `/idstack:storyboard` | 20 minutes | Each screen with its narration, visual and learner action |
+| Find out if a course worked | `/idstack:evaluation-plan` | 20 minutes | Evaluation questions, measures, survey items and a schedule |
+| Check accessibility | `/idstack:accessibility-review` | 15 minutes | WCAG 2.1 AA violations and UDL recommendations |
+| Put a course in my LMS | `/idstack:course-export` | 10 minutes | A Common Cartridge or SCORM file, or a push to Canvas |
+| Not sure | `/idstack:start` | 1 minute | idstack asks two questions and starts the correct skill |
+
+The times are estimates. They change with the size of the course. Each skill asks one question at a time, and you can stop and continue later.
+
+Each skill that writes a report adds one section at a time to a Markdown file and gives you a link. You read the section, then approve it, change a row or remove a row. Nothing goes in the final report without your approval.
 
 ## See it work
 
@@ -327,6 +348,8 @@ EXISTING COURSE                           NEW COURSE
 
 Any skill works independently. Run `/idstack:pipeline` to chain them all, or invoke any skill directly. The pipeline adds context but isn't required.
 
+**At any time, outside this sequence:** `/idstack:quick-check` (feedback on one item), `/idstack:storyboard` (media scripts), `/idstack:question-bank` (quiz and test questions) and `/idstack:evaluation-plan` (how to find out if the course worked).
+
 ## Architecture
 
 ```
@@ -348,7 +371,7 @@ INSTALL
   scripts/idstack-doctor   diagnoses the install
                        (scripts/lib/plugin-status.sh)
 
-RUN (Claude Code, inside your course project folder)
+RUN (Claude Code or Cowork, inside your course project folder)
 
   /idstack:<skill>
      │
@@ -432,6 +455,8 @@ When the skill says "add elaborated feedback to your quizzes," it references T1 
 ### Using skills independently
 Any skill works on its own. `/idstack:course-quality-review` works without a manifest by asking you questions directly. `/idstack:learning-objectives` works without a needs analysis. The pipeline adds context and makes recommendations sharper, but every skill is self-contained.
 
+Four companion skills are not in the pipeline: `/idstack:quick-check`, `/idstack:storyboard`, `/idstack:question-bank` and `/idstack:evaluation-plan`. Run them at any time. When a manifest exists, they read your objectives and learner profile from it. They do not write to it.
+
 ## The evidence base
 
 idstack encodes findings from a literature synthesis spanning 11 domains of instructional design research. The full citation list (all 11 domains, 5 evidence tiers) is in [evidence/references.md](evidence/references.md). A selection:
@@ -459,6 +484,15 @@ The counts come from `evidence/references.md`. Most of the Constructive Alignmen
 
 **Do I need to know how to code?**
 No. You interact with idstack through conversation in Claude Code. It is a chat interface. In the [Claude desktop app](#claude-desktop-app-no-terminal) you do not need a terminal to install or use idstack. To update it, you run two commands in a terminal (see "How do I update idstack?").
+
+**Can I use this in Cowork?**
+Yes, from v3.11.0.0. See [Cowork](#cowork) for the install steps. Cowork support is new, so [tell us](https://github.com/savvides/idstack/issues) if something does not work.
+
+**Can I get feedback on one thing with no project?**
+Yes. Paste or attach the item and type `/idstack:quick-check`. It needs no setup and writes no file.
+
+**How do I change how much idstack explains?**
+The first time you run `/idstack:start` in a new course folder, it asks for your experience level and saves it in `~/.idstack/profile.yaml`. To change it, edit the `experience_level` line in that file to `novice`, `intermediate` or `expert`.
 
 **What is Claude Code?**
 Claude Code is Anthropic's coding tool. It's available as a [desktop app, web app, and CLI](https://claude.ai/code). You type `/idstack:needs-analysis` and have a conversation. No programming required.

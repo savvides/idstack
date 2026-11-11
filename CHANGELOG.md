@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v3.11.0.0 (2026-11-11)
 
 idstack can now install in Cowork, and it has four new skills that work at any time, outside the pipeline.
 
@@ -23,15 +23,15 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 - **Each skill writes its report as Markdown.** The report is at `.idstack/exports/<course-slug>/<skill>.md`. `/idstack:pipeline` writes the course dashboard at `.idstack/exports/<course-slug>/index.md`. Markdown has fewer parts than HTML, so a skill makes fewer errors when it writes a report.
 - **Each skill gives the report as a relative-path link.** The link was a full path. When the folder path had a space, the link did not open in the Claude desktop app. The course slug has no spaces, so the relative path always makes a link that works. The `Report link:` line is removed, and the skill links the `Report path:` line. The pipeline and `/idstack:start` link the `Dashboard path:` line.
 - **The HTML templates and the stylesheet are removed.** `templates/report.html.tmpl`, `templates/index.html.tmpl` and `templates/assets/idstack.css` are replaced by `templates/report.md.tmpl` and `templates/index.md.tmpl`. Skills do not copy a stylesheet into the export folder.
-- **Reports from earlier runs stay on disk.** idstack does not delete the `.html` reports, but `bin/idstack-status` no longer lists them. Run a skill again to make its `.md` report.
+- **Reports from earlier runs stay on disk.** idstack does not delete the `.html` reports, but `scripts/idstack-status` no longer lists them. Run a skill again to make its `.md` report.
 
 ### Changed — step tables and approval
 
 - **Each report skill adds the output of each step to the report as a table.** You read the table in the report file, where it shows as a draft. Each row has a one-sentence justification and a citation from `evidence/references.md`. Sections that give only facts, for example Project context, have no justification.
 - **idstack adds each section to the Markdown report at once, and you approve it.** The report grows one section at a time. When you approve a section, idstack removes its draft mark. If a session stops, the report keeps each section, and a section that you did not approve keeps its draft mark. The project manifest gets only the rows that you approved.
 - **A skill asks more approval questions.** The chat shows a short note of a maximum of three lines and the question. It does not show the table. A skill asks one question for each step. For the last draft, it asks one question for all of its sections. You can approve the section, change a row or remove a row.
-- **`bin/idstack-report-section` checks each section before idstack adds it.** It finds each citation in `evidence/references.md`. If the tier is not the same, it refuses the section. It also writes the findings blocks from the findings table. `approve` removes the draft marks, and `finish` refuses a report that has a draft section.
-- **`bin/idstack-status` shows "(in progress)" for a report that is not complete.**
+- **`scripts/idstack-report-section` checks each section before idstack adds it.** It finds each citation in `evidence/references.md`. If the tier is not the same, it refuses the section. It also writes the findings blocks from the findings table. `approve` removes the draft marks, and `finish` refuses a report that has a draft section.
+- **`scripts/idstack-status` shows "(in progress)" for a report that is not complete.**
 
 ### Fixed
 
@@ -41,10 +41,10 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
   - `/idstack:learn` reads the search word and the entry key with a quoted heredoc. Before, a search for two words found only the first word.
   - Each skill logs a learning or a timeline event with a quoted heredoc. Before, an apostrophe in a learning stopped the command, and idstack did not save the learning. JSON on more than one line is also logged.
 - **The Canvas token is safer.** The skills refuse a Canvas URL that does not start with `https://`. curl gets the token on its standard input, so the token is not in the process list. The skills refuse a token that has a quotation mark or a backslash. If `.idstack/.gitignore` has no newline at its end, the skills add one before they add `canvas.env`, so git ignores the token file.
-- **`bin/idstack-migrate` does not damage the manifest when a write fails.** It writes a temporary file and then replaces the manifest. If the write fails, the manifest does not change and the script exits with 1. Before, a failed write left a part of the manifest and the script exited with 0. If the manifest is a symbolic link, the script updates the file that the link points to.
-- **`bin/idstack-report-section` refuses a draft that has the same heading two times.** Before, the second section replaced the first, and the rows of the first section were lost.
-- **`bin/idstack-learnings search` does not stop when a flag has no value.** `--keyword`, `--limit` and `--type` with no value give an error. `--limit 0` shows one entry, and `--keyword` finds an entry that has no insight.
-- **`--help` is not logged.** `bin/idstack-timeline-log --help` and `bin/idstack-learnings log --help` show the usage. Before, they added `--help` to the log as an event.
+- **`scripts/idstack-migrate` does not damage the manifest when a write fails.** It writes a temporary file and then replaces the manifest. If the write fails, the manifest does not change and the script exits with 1. Before, a failed write left a part of the manifest and the script exited with 0. If the manifest is a symbolic link, the script updates the file that the link points to.
+- **`scripts/idstack-report-section` refuses a draft that has the same heading two times.** Before, the second section replaced the first, and the rows of the first section were lost.
+- **`scripts/idstack-learnings search` does not stop when a flag has no value.** `--keyword`, `--limit` and `--type` with no value give an error. `--limit 0` shows one entry, and `--keyword` finds an entry that has no insight.
+- **`--help` is not logged.** `scripts/idstack-timeline-log --help` and `scripts/idstack-learnings log --help` show the usage. Before, they added `--help` to the log as an event.
 - **The manifest and the reports keep their file mode.** Before, each write changed the mode to 600.
 - **The Chrome extension keeps each audit in the dossier.**
   - A full-course audit and an audit of the course home page are two items. Before, the second audit replaced the first. A new full-course audit replaces a full-course audit from an earlier version.
@@ -71,7 +71,7 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
   - `/idstack:learn` tells which entry `delete` removes.
   - `/idstack:red-team` tells you to run it again for a new score.
   - The demo of a full-course audit in the Chrome extension says that it is a sample.
-- **CONTRIBUTING.md, CLAUDE.md, ROADMAP.md and `templates/manifest-schema.md` are correct.** They describe what `bin/idstack-manifest-merge` checks and which skills write each manifest section. They also list the test suites and mark the features that a later release removed.
+- **CONTRIBUTING.md, CLAUDE.md, ROADMAP.md and `templates/manifest-schema.md` are correct.** They describe what `scripts/idstack-manifest-merge` checks and which skills write each manifest section. They also list the test suites and mark the features that a later release removed.
 
 ### Removed — the update check
 
@@ -79,7 +79,7 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 
 ### Fixed — a stopped skill and the extension feedback
 
-- **A skill that stops early can finish its report.** `/idstack:accessibility-review`, `/idstack:course-quality-review` and `/idstack:red-team` keep a section for the score. When the skill stopped before the score, `bin/idstack-report-section finish` refused the report, and no Step Review could fill the section. Now the skill runs `finish --stopped`, which writes "idstack did not write this section because the skill stopped." in that section. The Summary still gets its Step Review. Closes #151.
+- **A skill that stops early can finish its report.** `/idstack:accessibility-review`, `/idstack:course-quality-review` and `/idstack:red-team` keep a section for the score. When the skill stopped before the score, `scripts/idstack-report-section finish` refused the report, and no Step Review could fill the section. Now the skill runs `finish --stopped`, which writes "idstack did not write this section because the skill stopped." in that section. The Summary still gets its Step Review. Closes #151.
 - **The Chrome extension (1.2.2) has a link to the feedback form in place of the vote buttons.** The buttons showed "Thank you for your feedback!", but the extension sends no telemetry, so no vote went anywhere. Closes #152.
 - **`/idstack:needs-analysis` keeps the data that `/idstack:course-import` wrote.** The two skills write the same `context` and `needs_analysis` sections. needs-analysis now reads each section and adds its results. Before, it replaced the section, and the imported job tasks were lost.
 - **`/idstack:assessment-design` does not give a feedback score in audit mode.** Audit mode (Mode 3) has no feedback strategies, so it has no data for the score.

@@ -56,6 +56,12 @@ The bare `name` field becomes the slash-command suffix: `name: course-import` is
 
 **7. Writing standard check** — after each file that the skill writes for a person, a bash block runs `"$_IDSTACK/scripts/idstack-ste-check"` on that file. `test/smoke-test.sh` fails if a skill template does not have exactly the number of check steps that the smoke test sets for it. When you add or remove a check step, update that number. A skill that starts a sub-agent puts a copy of the preamble's "Writing Standard (ASD-STE100)" section in the sub-agent prompt.
 
+### Companion skills
+
+Four skills run outside the pipeline: `quick-check`, `storyboard`, `question-bank` and `evaluation-plan`. A companion skill reads the manifest when one exists and never writes a manifest section, so it needs no schema change. `quick-check` answers in the chat and writes no file. The other three write one Markdown file with the Step Review, run the writing standard check, and log a timeline event. To add one, copy `skills/question-bank/SKILL.md.tmpl`, then add the name to the skill lists in `test/smoke-test.sh`, `test/test-doctor.sh`, `test/integration-test.sh`, `scripts/idstack-doctor` and `skills/start/SKILL.md.tmpl`.
+
+Keep the tools in `scripts/`. Cowork does not install a plugin that has a top-level `bin/` folder, and smoke-test fails if one exists.
+
 ### Template system
 
 Skills use a template system to share common preamble code. Edit `skills/{skill}/SKILL.md.tmpl`, not `SKILL.md` directly. The generated `SKILL.md` files have an `<!-- AUTO-GENERATED -->` header.
