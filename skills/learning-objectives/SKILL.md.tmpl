@@ -5,7 +5,8 @@ description: |
   classification and a bidirectional alignment check. Reads the /idstack:needs-analysis
   output and extends the manifest with ILOs, an alignment matrix, and expertise reversal
   flags. Use when asked to write, refine, or classify learning objectives or outcomes,
-  or to check that objectives align with activities and assessments. (idstack)
+  or to check that objectives align with activities and assessments.
+  Framework phase: ADDIE Design, backward design Stage 1 (desired results), SAM iterative design. (idstack)
 allowed-tools:
   - Bash
   - Read

@@ -6,7 +6,8 @@ description: |
   visuals and the learner actions, and checks each screen against the multimedia learning
   principles. Works standalone or reads the idstack project manifest. Use when asked to
   storyboard, script, or outline a video, an e-learning module, a slide deck for a lesson,
-  or a microlearning item, or to apply Mayer's multimedia principles. (idstack)
+  or a microlearning item, or to apply Mayer's multimedia principles.
+  Framework phase: ADDIE Develop, backward design Stage 3 (learning plan), the SAM prototype. (idstack)
 allowed-tools:
   - Bash
   - Read

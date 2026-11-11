@@ -5,7 +5,8 @@ description: |
   course designs. Two-tier output: "Necessary changes" for accessibility violations and
   "Recommended changes" for UDL recommendations. Works standalone or reads the idstack
   project manifest. Use when asked to check a course for accessibility, WCAG, UDL,
-  captions, alt text or screen-reader problems. (idstack)
+  captions, alt text or screen-reader problems.
+  Framework phase: ADDIE Evaluate (formative), the backward design alignment check, a SAM review. (idstack)
 allowed-tools:
   - Bash
   - Read

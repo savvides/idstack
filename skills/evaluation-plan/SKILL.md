@@ -7,7 +7,8 @@ description: |
   and the support that learners need to use the skills after the course. Works
   standalone or reads the idstack project manifest. Use when asked to plan a course or
   training evaluation, measure training effectiveness or impact, write a learner survey,
-  show ROI, or apply Kirkpatrick. (idstack)
+  show ROI, or apply Kirkpatrick.
+  Framework phase: ADDIE Evaluate (summative). (idstack)
 allowed-tools:
   - Bash
   - Read

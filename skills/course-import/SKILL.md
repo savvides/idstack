@@ -5,7 +5,8 @@ description: |
   packages, PDF or Word files, pasted course documents, or the Canvas REST API. Maps
   course structure to the idstack manifest with quality flags, task analysis, and
   Bloom's classification. Use when the user has an existing course to improve or audit,
-  from Canvas, Blackboard, Moodle, D2L, Articulate, or a syllabus file. (idstack)
+  from Canvas, Blackboard, Moodle, D2L, Articulate, or a syllabus file.
+  Framework phase: ADDIE Analyze, backward design Stage 1 (desired results), SAM preparation. (idstack)
 allowed-tools:
   - Bash
   - Read

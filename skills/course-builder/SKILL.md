@@ -5,7 +5,8 @@ description: |
   assignment descriptions, and rubric documents. Content follows cognitive load
   principles and adapts to learner expertise level. Reads the full pipeline (needs,
   objectives, assessments) for the best output. Use when asked to write or generate
-  course content, a syllabus, module pages, or assignments. (idstack)
+  course content, a syllabus, module pages, or assignments.
+  Framework phase: ADDIE Develop, backward design Stage 3 (learning plan), SAM iterative development. (idstack)
 allowed-tools:
   - Bash
   - Read

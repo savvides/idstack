@@ -10,6 +10,10 @@ Skills covering the full lifecycle: analyze, design, build, export. One shared p
 
 Free, MIT licensed, open source. Available as a plugin for [Claude Code](#install-30-seconds) and [Cowork](#cowork), and as a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
 
+[![How to use idstack: add the plugin, open your course folder, type /idstack:start. The eight pipeline skills are shown in sequence below their ADDIE phases and above their backward design stages. The text version is in the section "Works with your framework".](docs/idstack-guide.svg)](docs/frameworks.md)
+
+Do you use ADDIE, backward design or SAM? [See where each skill is in your framework.](docs/frameworks.md)
+
 ## Quick start
 
 1. Install idstack (30 seconds, see below). No terminal? Use the [Claude desktop app](#claude-desktop-app-no-terminal).
@@ -350,6 +354,25 @@ Any skill works independently. Run `/idstack:pipeline` to chain them all, or inv
 
 **At any time, outside this sequence:** `/idstack:quick-check` (feedback on one item), `/idstack:storyboard` (media scripts), `/idstack:question-bank` (quiz and test questions) and `/idstack:evaluation-plan` (how to find out if the course worked).
 
+## Works with your framework
+
+idstack does not replace your design framework. Each skill does the work of one phase. The pipeline sequence (objectives, then assessments, then content) is backward design, in the phases of ADDIE.
+
+| Skill | ADDIE | Backward design | SAM |
+|-------|-------|-----------------|-----|
+| `/idstack:needs-analysis`, `/idstack:course-import` | Analyze | Stage 1: desired results | Preparation |
+| `/idstack:learning-objectives` | Design | Stage 1: desired results | Iterative design |
+| `/idstack:assessment-design` | Design | Stage 2: acceptable evidence | Iterative design |
+| `/idstack:question-bank` | Develop | Stage 2: acceptable evidence | Iterative development |
+| `/idstack:course-builder`, `/idstack:storyboard` | Develop | Stage 3: learning plan | Prototype, then iterative development |
+| `/idstack:course-quality-review`, `/idstack:accessibility-review`, `/idstack:red-team` | Evaluate (formative, before launch) | Alignment check | Review in each cycle |
+| `/idstack:course-export` | Implement | After the three stages | Release |
+| `/idstack:evaluation-plan` | Evaluate (summative, after launch) | Stage 2: acceptable evidence | After release |
+
+You can also name the phase: tell Claude "I am in the Design phase" or "do Stage 2 for this unit", and Claude starts the correct skill.
+
+[The framework guide](docs/frameworks.md) has a diagram for each framework, the check that tells you when to leave a phase, a table to help you select a framework, and what idstack does not do.
+
 ## Architecture
 
 ```
@@ -563,6 +586,7 @@ Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full gui
 - [CHANGELOG.md](CHANGELOG.md) — full version history
 - [ROADMAP.md](ROADMAP.md) — what's coming next
 - [PRIVACY.md](PRIVACY.md) — privacy policy (idstack collects nothing)
+- [Framework guide](docs/frameworks.md) — the skills in ADDIE, backward design and SAM
 - [Why AI-native?](docs/why-ai-native.md) — why idstack is built this way
 
 ## License

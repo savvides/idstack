@@ -96,6 +96,25 @@ esac
 
 Use the result of the Project Manifest check in the preamble.
 
+If the user named a phase of a design framework, do not ask "How do you want to
+start?" or "What do you want to do?". Go to Step 4 with the skill for that phase:
+
+| The user says | Skill |
+|---------------|-------|
+| ADDIE Analyze, or SAM preparation | `idstack:needs-analysis` (`idstack:course-import` for a course that exists) |
+| ADDIE Design, or backward design Stage 1 (desired results) | `idstack:learning-objectives` |
+| Backward design Stage 2 (acceptable evidence) | `idstack:assessment-design` |
+| ADDIE Develop, or backward design Stage 3 (learning plan) | `idstack:course-builder` |
+| ADDIE Evaluate before the launch, or a review | `idstack:course-quality-review` |
+| ADDIE Implement | `idstack:course-export` |
+| ADDIE Evaluate after the launch | `idstack:evaluation-plan` |
+| A SAM prototype | `idstack:storyboard` |
+
+If the user asks which framework to use, tell them in two sentences: "idstack
+works with ADDIE, backward design and SAM. `/idstack:pipeline` uses the ADDIE
+phases, with the backward design sequence in the Design phase." Then continue
+with this step.
+
 **If NO_MANIFEST:** Tell the user, in two sentences: "This folder is now your
 course folder. idstack keeps its notes in a hidden `.idstack` folder here, and
 gives you a link to each report that it writes."
@@ -173,6 +192,7 @@ the plugin-namespaced name. Use one of these:
 - `skill: "idstack:quick-check"`, `skill: "idstack:storyboard"`,
   `skill: "idstack:question-bank"` or `skill: "idstack:evaluation-plan"`
 - for Step 6, `skill: "idstack:<name>"` with the name that the user selected
+- for a framework phase, the skill from the table in Step 3
 
 A bare name, for example `"course-import"`, does not resolve in Claude Code. If
 the `Skill` tool fails, tell the user: "Type `/idstack:<name>` to start the next

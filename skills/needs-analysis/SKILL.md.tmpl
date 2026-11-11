@@ -5,7 +5,8 @@ description: |
   task, and learner analysis before you design a course. Creates the shared project
   manifest that /idstack:learning-objectives, /idstack:course-quality-review, and the
   other skills read and extend. Use when starting a new course design, or when asked for
-  a needs analysis or a learner analysis. (idstack)
+  a needs analysis or a learner analysis.
+  Framework phase: ADDIE Analyze, backward design Stage 1 (desired results), SAM preparation. (idstack)
 allowed-tools:
   - Bash
   - Read

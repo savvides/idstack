@@ -155,7 +155,7 @@ _Since v3.7.0.0 the two tiers are "Necessary changes" (accessibility violations)
 ### More skills
 Two of the four planned skills shipped in v3.11.0.0: media selection is in `/idstack:storyboard`, and evaluation design is `/idstack:evaluation-plan`. Two remain:
 
-- **Model selector** — recommends the right instructional design framework for your context (ADDIE, SAM, backward design, etc.) instead of defaulting to one
+- **Model selector** — recommends the right instructional design framework for your context (ADDIE, SAM, backward design, etc.) instead of defaulting to one. The [framework guide](docs/frameworks.md) already maps each skill to these three frameworks and has a table to help you select one; the skill that asks about your context is not built
 - **Content sequencing** — organizes your modules and lessons to manage cognitive load, applying spacing, interleaving, and scaffolding principles
 
 ## Exploring

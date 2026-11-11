@@ -813,6 +813,11 @@ check "assessment-design Mode 3 asks for ILOs when an import found none" \
 check "assessment-design Mode 2 saves the ILOs it classifies" \
   "grep -qF 'In Mode 2, also put each approved \`## Learning objectives\` row in' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
 
+# docs/frameworks.md is the one map of skills to framework phases (ADDIE,
+# backward design, SAM). A new skill must have a row in it.
+check "every skill is in the framework map (docs/frameworks.md)" \
+  "for s in $SKILLS; do grep -qF \"| \\\`\$s\\\` |\" '$IDSTACK_DIR/docs/frameworks.md' || exit 1; done"
+
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
