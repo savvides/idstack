@@ -4,7 +4,7 @@
 
 ### Changed — landing page
 
-- **The landing page says first that idstack is a copilot for instructional designers.** The headline, the first paragraph, the page title and the share card now name the two kinds of help: the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation.
+- **The landing page says first that idstack is a copilot for instructional designers.** The headline, the first paragraph, the page title and the share card now name the two kinds of help. They are the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation. The README introduction has the same message.
 
 ### Added — evidence base
 
