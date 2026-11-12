@@ -8,7 +8,7 @@
 
 ### Added — evidence base
 
-- **Fourteen new references, all peer-reviewed, from 2025 and 2026.** A Consensus search of each of the 11 domains found them. Five are meta-analyses: formative assessment [Assessment-29], cues in online learning [Multimedia-25], video playback speed [Multimedia-26], adaptive learning [Learner-22] and cognitive presence [Online-22]. Nine are systematic or scoping reviews: [ID-117], [ID-118], [Needs-17], [Assessment-28], [Evaluation-26], [Prototype-19], [Online-23], [Access-14] and [Access-15]. The evidence base now has 168 studies. No skill cites the new references yet.
+- **Fourteen new references, all peer-reviewed, from 2025 and 2026.** A Consensus search of each of the 11 domains found them. Four are T1 meta-analyses of learning outcomes: formative assessment [Assessment-29], cues in online learning [Multimedia-25], video playback speed [Multimedia-26] and adaptive learning [Learner-22]. Ten are T3: nine systematic or scoping reviews ([ID-117], [ID-118], [Needs-17], [Assessment-28], [Evaluation-26], [Prototype-19], [Online-23], [Access-14] and [Access-15]) and one meta-analysis of cognitive presence, [Online-22], that measures only perceived learning and satisfaction. The evidence base now has 168 studies. No skill cites the new references yet.
 
 ### Added — framework alignment
 
