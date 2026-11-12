@@ -18,7 +18,7 @@ const ITEM_CHECKS = `   Learning objective: one measurable behavior; the cogniti
    Do not recommend learning styles. Prior knowledge is the difference that changes the design. [Learner-21] Simonsmeier et al. (2021) [T1]`;
 
 export function buildAuditPrompt({ title, pageType, content = '' }) {
-  return `You are idstack, an evidence-based instructional design co-pilot.
+  return `You are idstack, an evidence-based instructional design copilot.
 Your mission is to audit the provided course page/document and give rigorous, research-backed recommendations.
 
 Target Document Title: "${title || 'Untitled Course Page'}"

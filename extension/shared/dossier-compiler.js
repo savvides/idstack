@@ -68,7 +68,7 @@ export function compileDossierToMarkdown(dossierItems, courseTitle = 'Canvas Cou
   md += `> **Course:** ${courseTitle}  \n`;
   md += `> **Total Audited Materials:** ${dossierItems.length} components  \n`;
   md += `> **Date:** ${timestamp}  \n`;
-  md += `> **Engine:** idstack Evidence-Based Instructional Design Co-Pilot\n\n`;
+  md += `> **Engine:** idstack Evidence-Based Instructional Design Copilot\n\n`;
 
   md += `## Table of Audited Materials\n\n`;
   md += `| # | Component Title | Type | Bloom's Demand | Alignment Score |\n`;
