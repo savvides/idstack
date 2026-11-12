@@ -37,6 +37,8 @@ scripts/idstack-timeline-log '<json>'          # Append one event to .idstack/ti
 scripts/idstack-learnings log|search|delete|promote   # Project learnings in .idstack/learnings.jsonl; promote copies to ~/.idstack/global/
 ```
 
+`docs/cli-reference.md` is the reference for these tools (options, exit codes, files). When you change a tool's flags or exit codes, update it.
+
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash, node and python suites, but not `mutation-test.sh`, which CI runs in its own job):
 
 ```bash

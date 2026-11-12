@@ -589,6 +589,7 @@ Want to add a new skill? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full gui
 - [ROADMAP.md](ROADMAP.md) — what's coming next
 - [PRIVACY.md](PRIVACY.md) — privacy policy (idstack collects nothing)
 - [Framework guide](docs/frameworks.md) — the skills in ADDIE, backward design and SAM
+- [CLI reference](docs/cli-reference.md) — each tool in `scripts/`: options, exit codes and files
 - [Why AI-native?](docs/why-ai-native.md) — why idstack is built this way
 
 ## License

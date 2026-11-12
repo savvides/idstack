@@ -88,6 +88,8 @@ Logic used by more than one script — or worth a unit test — belongs in `scri
 
 Point the test at the shipped file, never at a copy of the logic. The version classifier drifted across three PRs while a mirrored copy inside its own test kept passing green.
 
+For the options, exit codes and files of each tool in `scripts/`, see [`docs/cli-reference.md`](docs/cli-reference.md).
+
 ## The dual-output contract
 
 Every skill that produces findings writes **both**:
