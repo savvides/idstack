@@ -4,7 +4,13 @@
 
 ### Changed — landing page
 
-- **The landing page says first that idstack is a copilot for instructional designers.** The headline, the first paragraph, the page title and the share card now name the two kinds of help. They are the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation. The README introduction has the same message.
+- **The landing page names the two kinds of help.** The first paragraph and the share card now name them. They are the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation. The README introduction has the same message, and it says that idstack is a copilot for instructional designers.
+- **idstack.org names "AI instructional design" in the page title, the description and the headings.** The title is "AI instructional design tool, backed by 168 studies | idstack". The headline is "The AI instructional design tool that cites its research." The share card (`docs/og-image.png`) has the same headline. Four section headings also name the search terms. The `keywords` meta tag is gone, because search engines do not use it.
+- **The first paragraph has 40 words, not 84, and the hero links to the desktop app steps.** Below the install command, the link "No terminal? Use the Claude desktop app" goes to the Claude Desktop App card in the Install section.
+- **Install is now the third section.** It comes after "Why" and before the skills. The navigation has the same order as the sections.
+- **A new FAQ section answers six questions.** The questions cover the meaning of the term, the role of the designer, the frameworks, the sources, the LMS formats and the cost.
+- **You can read the file paths in the sample session.** The paths in the hero sample were light text in a light box. The box is now transparent.
+- **No text on idstack.org is smaller than 12px.** 148 text elements were smaller than 13px, and the smallest was about 10px. The page is a little taller.
 
 ### Changed — Chrome extension
 
@@ -24,6 +30,11 @@
 ### Added — documentation
 
 - **A CLI reference at `docs/cli-reference.md` gives the options, exit codes and files of `./setup` and each tool in `scripts/`.**
+- **`docs/404.html` and `docs/llms.txt` are new.** GitHub Pages shows `404.html` for an address that does not exist. It has a `noindex` tag and links to the home page and to the install steps. `llms.txt` is a short Markdown summary of idstack for AI assistants. It links to the README, the frameworks guide, the evidence references and the Chrome extension.
+
+### Tests
+
+- `test/check-doc-accuracy.py` checks the landing page. `docs/index.html` must have one `<h1>` that names instructional design, a title of 65 characters maximum and a description of 160 maximum. The `<title>`, `og:title` and `twitter:title` must be equal, and the study count in the title must be the count in the hero. A `keywords` tag, or a plain `rem` or `px` font size below 12px, fails the check. Install must come before the skills. `docs/404.html` needs a `noindex` tag, and `docs/llms.txt` must exist.
 
 ### Fixed — skill count in setup and doctor
 

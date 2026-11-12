@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>idstack: A copilot for instructional designers, with frameworks and research</title>
-  <meta name="description" content="idstack is an open-source copilot for instructional designers. It helps you analyze, design, build and review a course in ADDIE, backward design or SAM. Every recommendation cites one of 168 peer-reviewed studies and its evidence tier. Runs in Claude Code, Cowork and Chrome.">
-  <meta name="keywords" content="instructional design, evidence-based, course design, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, WCAG, UDL, open source, Claude Code">
+  <title>AI instructional design tool, backed by 168 studies | idstack</title>
+  <meta name="description" content="AI instructional design tool for ADDIE, backward design or SAM. It cites 168 studies with an evidence tier. Open source. Runs in Claude Code, Cowork and Chrome.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://idstack.org/">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -19,8 +18,8 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="idstack: A copilot for instructional designers, with frameworks and research">
-  <meta property="og:description" content="A copilot for instructional designers. It helps you apply ADDIE, backward design or SAM, and supports each recommendation with 168 peer-reviewed studies. Open source. Runs in Claude Code, Cowork and Chrome.">
+  <meta property="og:title" content="AI instructional design tool, backed by 168 studies | idstack">
+  <meta property="og:description" content="idstack is an open-source AI instructional design tool. It helps you apply ADDIE, backward design or SAM. It supports each recommendation with 168 peer-reviewed studies. It runs in Claude Code, Cowork and Chrome.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://idstack.org/">
   <meta property="og:site_name" content="idstack">
@@ -28,14 +27,14 @@
   <meta property="og:image" content="https://idstack.org/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="idstack: A copilot for instructional designers.">
+  <meta property="og:image:alt" content="The AI instructional design tool that cites its research.">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="idstack: A copilot for instructional designers, with frameworks and research">
-  <meta name="twitter:description" content="A copilot for instructional designers: your framework (ADDIE, backward design or SAM), 168 peer-reviewed studies, and an evidence tier on every recommendation. Open source.">
+  <meta name="twitter:title" content="AI instructional design tool, backed by 168 studies | idstack">
+  <meta name="twitter:description" content="AI instructional design tool: your framework (ADDIE, backward design or SAM), 168 peer-reviewed studies, and an evidence tier on every recommendation. Open source.">
   <meta name="twitter:image" content="https://idstack.org/og-image.png">
-  <meta name="twitter:image:alt" content="idstack: A copilot for instructional designers.">
+  <meta name="twitter:image:alt" content="The AI instructional design tool that cites its research.">
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -43,7 +42,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "idstack",
-    "description": "An open-source copilot for instructional designers. It helps you do each job of course design in ADDIE, backward design or SAM. It supports every recommendation with peer-reviewed research across 11 domains. Runs in Claude Code, Cowork and Chrome.",
+    "description": "idstack is an open-source AI instructional design tool. It helps you do each job of course design in ADDIE, backward design or SAM. It supports every recommendation with peer-reviewed research across 11 domains. It runs in Claude Code, Cowork and Chrome.",
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
@@ -198,7 +197,7 @@
       border: 1px solid var(--rule);
       padding: 0.08em 0.35em;
       border-radius: 2px;
-      font-size: 0.85em;
+      font-size: max(0.85em, 0.75rem);
     }
 
     h1, h2, h3 {
@@ -241,7 +240,7 @@
     .brand:hover { text-decoration: none; }
     .brand-beta {
       font-family: var(--font-ui);
-      font-size: 0.62rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -454,7 +453,7 @@
     .hero .btn-chrome:hover { background: var(--hero-soft); color: var(--hero-bg); }
     .hero .btn-chrome:focus-visible { outline-color: var(--hero-ink); }
     .btn-chrome .btn-badge {
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       border: 1px solid currentColor;
       padding: 0.05rem 0.4rem;
       border-radius: 2px;
@@ -474,6 +473,11 @@
     }
     .hero .cta-secondary { color: var(--hero-soft); }
     .hero .cta-secondary:hover { color: var(--hero-ink); text-decoration: underline; }
+    /* Keeps the full stop with the chip; a break before it is legal after an inline-flex box. */
+    .nowrap { white-space: nowrap; }
+    .cta-tap { display: inline-flex; align-items: center; min-height: var(--tap-min); }
+    /* The topbar is sticky (93px at 375px), so a jump to the card must stop below it. */
+    #install-desktop { scroll-margin-top: 6rem; }
 
     @media (max-width: 480px) {
       .cta-actions { flex-direction: column; align-items: stretch; gap: 0.6rem; }
@@ -495,7 +499,7 @@
     .session-head {
       padding: 0.55rem 0.9rem;
       border-bottom: 1px solid var(--hero-rule);
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       letter-spacing: 0.02em;
       overflow-x: auto;
       white-space: nowrap;
@@ -505,6 +509,8 @@
     .session-line + .session-line { margin-top: 0.35rem; }
     .session-who { color: var(--hero-soft); opacity: 1; }
     .session-you .session-said { color: var(--hero-ink); }
+    /* The base code box is light; on the dark session panel it hid the text. */
+    .session-said code { background: transparent; border-color: var(--hero-rule); }
     .session-finding {
       margin-top: 0.9rem;
       background: var(--bg);
@@ -525,7 +531,7 @@
     .session-finding p + p { margin-top: 0.45rem; }
     .session-finding .finding-label {
       font-family: var(--font-ui);
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -541,7 +547,7 @@
       align-items: center;
       justify-content: center;
       font-family: var(--font-mono);
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.04em;
       padding: 0.18em 0.5em;
@@ -568,7 +574,7 @@
 
     .severity {
       font-family: var(--font-ui);
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -690,7 +696,7 @@
 
     .pipeline-track-label {
       font-family: var(--font-ui);
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -740,7 +746,7 @@
       top: 0.6rem;
       right: 0.6rem;
       font-family: var(--font-mono);
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: var(--ink-muted);
     }
     .pipeline-node .node-num::before { content: counter(step); }
@@ -893,7 +899,7 @@
       display: block;
       margin: -0.85rem -0.85rem 0.7rem;
       font-family: var(--font-ui);
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       font-weight: 700;
       line-height: 1.3;
       color: var(--on-accent);
@@ -906,7 +912,8 @@
     .node-phase { margin-inline: -0.7rem; }
     .node-phase [data-fw] { padding-inline: 0.7rem 1.6rem; min-height: calc(2.6em + 0.7rem); }
     .pipeline-node .node-num { top: 0.35rem; right: 0.6rem; color: var(--on-accent); font-weight: 700; line-height: 1.3; }
-    .pipeline-node .node-label { padding-right: 0; font-size: 0.72rem; word-break: normal; overflow-wrap: anywhere; }
+    /* -0.02em keeps the 14-character names on one line in the 8-column row at 12px. */
+    .pipeline-node .node-label { padding-right: 0; font-size: 0.75rem; letter-spacing: -0.02em; word-break: normal; overflow-wrap: anywhere; }
     .pipeline-node .node-desc { display: block; }
     @media (max-width: 480px) {
       .pipeline-aside { flex-wrap: wrap; }
@@ -953,7 +960,7 @@
       border-bottom: 1px solid var(--rule);
       background: color-mix(in srgb, var(--bg) 50%, transparent);
       font-family: var(--font-mono);
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       color: var(--ink-muted);
       letter-spacing: 0.02em;
       overflow-x: auto;
@@ -998,6 +1005,24 @@
       font-size: 0.92rem;
       color: var(--ink-muted);
       max-width: var(--prose);
+    }
+
+    /* ──────────────────────────────────────────────
+       FAQ: hairline rows, as in the Why list
+       ────────────────────────────────────────────── */
+    .faq-list { max-width: var(--prose); }
+    .faq-list > div {
+      padding-block: 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .faq-list h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .faq-list p {
+      margin-top: 0.35rem;
+      color: var(--ink-soft);
     }
 
     /* ──────────────────────────────────────────────
@@ -1208,9 +1233,9 @@
       <a class="brand" href="/">idstack<sup class="brand-beta">beta</sup></a>
       <div class="nav-links">
         <a href="#why">Why</a>
+        <a href="#install">Install</a>
         <a href="#pipeline">Frameworks</a>
         <a href="#evidence">Evidence</a>
-        <a href="#install">Install</a>
         <a href="https://github.com/savvides/idstack" rel="noopener">GitHub&nbsp;↗</a>
       </div>
     </nav>
@@ -1222,8 +1247,8 @@
     <div class="hero-band">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-text">
-        <h1 id="hero-title">A copilot for instructional designers.</h1>
-        <p class="lede">idstack helps you do the job of an instructional designer: the needs analysis, the objectives, the assessments, the course content, the reviews and the export. It helps you apply the framework that you already use: ADDIE, backward design or SAM. It supports each recommendation with the literature: the study and how strong its evidence is, from <span class="tier tier-1">T1</span> meta-analyses and RCTs to <span class="tier tier-5">T5</span> expert opinion. 168 peer-reviewed studies across 11 research domains. It runs in Claude Code, Cowork or Chrome.</p>
+        <h1 id="hero-title">The AI instructional design tool that cites its research.</h1>
+        <p class="lede">idstack helps you do each job of an instructional designer, in ADDIE, backward design or SAM. Each recommendation cites its study and its evidence tier, from <span class="tier tier-1">T1</span> to <span class="nowrap"><span class="tier tier-5">T5</span>.</span> 168 peer-reviewed studies. It runs in Claude Code, Cowork or Chrome.</p>
 
         <div class="cta-row">
           <div class="cta-actions">
@@ -1245,6 +1270,7 @@
             <code id="install-cmd">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
             <button class="copy-btn" type="button" data-copy-target="install-cmd" aria-label="Copy install command">Copy</button>
           </div>
+          <a class="cta-secondary cta-tap" href="#install-desktop">No terminal? Use the Claude desktop app</a>
           <a class="cta-secondary" href="#evidence">→&nbsp; See the 168 studies</a>
           <a class="cta-secondary" href="#pipeline">→&nbsp; Find your ADDIE or backward design phase</a>
         </div>
@@ -1283,7 +1309,7 @@
     <!-- ────────── Why ────────── -->
     <section class="section" id="why" aria-labelledby="why-title">
       <header class="section-header">
-        <h2 id="why-title">Help with the jobs that you do each day.</h2>
+        <h2 id="why-title">AI help for each instructional design job</h2>
         <p class="lede">You are the designer, and idstack is the copilot. It does the first draft, the review and the search for the research. Each skill does the work of one phase of your framework. You make each decision.</p>
       </header>
 
@@ -1311,10 +1337,74 @@
       <p class="why-foot">Free and open source. idstack keeps the course files in a folder on your computer.</p>
     </section>
 
+    <!-- ────────── Install ────────── -->
+    <section class="section" id="install" aria-labelledby="install-title">
+      <header class="section-header">
+        <h2 id="install-title">Three ways to install idstack</h2>
+      </header>
+
+      <div class="install-tracks">
+        <div class="install-track-card">
+          <div class="install-track-header">
+            <h3>Chrome Extension</h3>
+            <span class="track-badge">In-Browser (Canvas / Docs)</span>
+          </div>
+          <p class="install-prose">Audit Canvas modules and assignments, Google Docs syllabi and web course pages in the Chrome side panel. No command line.</p>
+          <a class="btn-chrome" href="https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm" target="_blank" rel="noopener">
+            <svg class="chrome-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="4" fill="currentColor"/>
+              <path d="M12 2a10 10 0 0 1 8.66 5H12" stroke="currentColor" stroke-width="2"/>
+              <path d="M20.66 7A10 10 0 0 1 12 22l4.33-7.5" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 22A10 10 0 0 1 3.34 7L12 12" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Install from Chrome Web Store</span>
+            <span class="btn-badge">Free</span>
+          </a>
+        </div>
+
+        <div class="install-track-card" id="install-desktop">
+          <div class="install-track-header">
+            <h3>Claude Desktop App</h3>
+            <span class="track-badge">No Terminal</span>
+          </div>
+          <p class="install-prose">In the Code tab of the Claude desktop app, select a folder for your course. Then paste this line in the message box:</p>
+          <div class="install-block" role="group" aria-label="Desktop install command">
+            <span class="prompt" aria-hidden="true">›</span>
+            <code id="install-cmd-3">/plugin marketplace add savvides/idstack</code>
+            <button class="copy-btn" type="button" data-copy-target="install-cmd-3" aria-label="Copy desktop install command">Copy</button>
+          </div>
+          <p class="install-prose">Click <strong>+</strong>, then <strong>Add plugins</strong>, and install idstack. Then start a new session and select the course folder again, because Claude Code loads a plugin only when a session starts. Type <code>/idstack:start</code>. Each skill that writes a report gives you a link to open it in the app. In Cowork, open <strong>Customize</strong>, then <strong>Plugins</strong>, select <strong>Add marketplace</strong> and enter <code>savvides/idstack</code>.</p>
+        </div>
+
+        <div class="install-track-card">
+          <div class="install-track-header">
+            <h3>Claude Code Plugin</h3>
+            <span class="track-badge">All 16 Skills</span>
+          </div>
+          <div class="install-block" role="group" aria-label="Install command">
+            <span class="prompt" aria-hidden="true">$</span>
+            <code id="install-cmd-2">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
+            <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
+          </div>
+
+          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 16 skills. Re-run it after a <code>git pull</code> to update.</p>
+
+          <p class="install-prose">You need a bash shell (Terminal on macOS or Linux, WSL or Git Bash on Windows). <code>./setup</code> does not run in PowerShell or <code>cmd</code>. You also need Python 3.9 or later, because the skills save their results with it. <code>scripts/idstack-doctor</code> checks for it.</p>
+
+          <p class="install-prose">To check the install, run <code>scripts/idstack-doctor</code>. To see the health of a course, run <code>scripts/idstack-status</code>.</p>
+
+          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/code" rel="noopener">Install the Claude Code command-line tool</a> first, then paste the command above in a terminal. In the Claude desktop app, use the steps in the Claude Desktop App card. When Claude Code starts, run <code>/idstack:start</code>.</p>
+
+          <p class="install-prose">Not using Claude Code or Cowork? The idstack skills run in Claude Code and Cowork. Use the Chrome extension, or fork the repo and adapt the skills for a different agent, for example Codex or Antigravity. idstack does not support or test those forks.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
+        </div>
+      </div>
+    </section>
+
     <!-- ────────── Pipeline ────────── -->
     <section class="section" id="pipeline" aria-labelledby="pipeline-title">
       <header class="section-header">
-        <h2 id="pipeline-title">Sixteen skills, in the framework you already use.</h2>
+        <h2 id="pipeline-title">AI course design skills for ADDIE, backward design and SAM</h2>
         <p class="lede">Eight skills run in sequence through <code>/idstack:pipeline</code>. Three more handle first-run setup, course import and course memory. Four companion skills work at any time: feedback on one item, a storyboard, a question bank and an evaluation plan. You can run any skill alone, with no manifest.</p>
       </header>
 
@@ -1424,7 +1514,7 @@
     <!-- ────────── Evidence ────────── -->
     <section class="section" id="evidence" aria-labelledby="evidence-title">
       <header class="section-header">
-        <h2 id="evidence-title">Every recommendation cites its source.</h2>
+        <h2 id="evidence-title">Evidence-based instructional design: 168 studies</h2>
         <p class="lede">The 11 research domains below are ranked by study count. Each bar shows the tier mix of that domain's references. You can see where idstack rests on trials and where it rests on reviews or expert opinion. When findings conflict, the stronger tier wins. All 168 references are in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a>. Every source is public, and you can check every citation.</p>
       </header>
 
@@ -1549,66 +1639,36 @@
       <p class="output-foot">The report is plain text that you can send to faculty and curriculum committees. The manifest keeps the state of the course for the skills. The timeline at <code>.idstack/timeline.jsonl</code> records each run. <code>/idstack:pipeline</code> writes an <code>index.md</code> dashboard with readiness scores, the issues that recur across skills, and a link to each report.</p>
     </section>
 
-    <!-- ────────── Install ────────── -->
-    <section class="section" id="install" aria-labelledby="install-title">
+    <!-- ────────── FAQ ────────── -->
+    <section class="section" id="faq" aria-labelledby="faq-title">
       <header class="section-header">
-        <h2 id="install-title">Three ways to install.</h2>
+        <h2 id="faq-title">AI instructional design FAQ</h2>
       </header>
 
-      <div class="install-tracks">
-        <div class="install-track-card">
-          <div class="install-track-header">
-            <h3>Chrome Extension</h3>
-            <span class="track-badge">In-Browser (Canvas / Docs)</span>
-          </div>
-          <p class="install-prose">Audit Canvas modules and assignments, Google Docs syllabi and web course pages in the Chrome side panel. No command line.</p>
-          <a class="btn-chrome" href="https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm" target="_blank" rel="noopener">
-            <svg class="chrome-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-              <circle cx="12" cy="12" r="4" fill="currentColor"/>
-              <path d="M12 2a10 10 0 0 1 8.66 5H12" stroke="currentColor" stroke-width="2"/>
-              <path d="M20.66 7A10 10 0 0 1 12 22l4.33-7.5" stroke="currentColor" stroke-width="2"/>
-              <path d="M12 22A10 10 0 0 1 3.34 7L12 12" stroke="currentColor" stroke-width="2"/>
-            </svg>
-            <span>Install from Chrome Web Store</span>
-            <span class="btn-badge">Free</span>
-          </a>
+      <div class="faq-list">
+        <div>
+          <h3>What is an AI instructional design tool?</h3>
+          <p>It is software that uses AI to help you do the work of an instructional designer. idstack has 16 skills that run in Claude Code and Cowork, and a Chrome extension that audits Canvas, Google Docs and web pages. Each skill does one job, for example a needs analysis, learning objectives, a rubric or a quality review.</p>
         </div>
-
-        <div class="install-track-card">
-          <div class="install-track-header">
-            <h3>Claude Desktop App</h3>
-            <span class="track-badge">No Terminal</span>
-          </div>
-          <p class="install-prose">In the Code tab of the Claude desktop app, select a folder for your course. Then paste this line in the message box:</p>
-          <div class="install-block" role="group" aria-label="Desktop install command">
-            <span class="prompt" aria-hidden="true">›</span>
-            <code id="install-cmd-3">/plugin marketplace add savvides/idstack</code>
-            <button class="copy-btn" type="button" data-copy-target="install-cmd-3" aria-label="Copy desktop install command">Copy</button>
-          </div>
-          <p class="install-prose">Click <strong>+</strong>, then <strong>Add plugins</strong>, and install idstack. Then start a new session and select the course folder again, because Claude Code loads a plugin only when a session starts. Type <code>/idstack:start</code>. Each skill that writes a report gives you a link to open it in the app. In Cowork, open <strong>Customize</strong>, then <strong>Plugins</strong>, select <strong>Add marketplace</strong> and enter <code>savvides/idstack</code>.</p>
+        <div>
+          <h3>Does idstack replace an instructional designer?</h3>
+          <p>No. You are the designer, and idstack is the copilot. It writes a first draft and finds the research, but you make each decision: you approve, change or remove each row.</p>
         </div>
-
-        <div class="install-track-card">
-          <div class="install-track-header">
-            <h3>Claude Code Plugin</h3>
-            <span class="track-badge">All 16 Skills</span>
-          </div>
-          <div class="install-block" role="group" aria-label="Install command">
-            <span class="prompt" aria-hidden="true">$</span>
-            <code id="install-cmd-2">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
-            <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
-          </div>
-
-          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 16 skills. Re-run it after a <code>git pull</code> to update.</p>
-
-          <p class="install-prose">You need a bash shell (Terminal on macOS or Linux, WSL or Git Bash on Windows). <code>./setup</code> does not run in PowerShell or <code>cmd</code>. You also need Python 3.9 or later, because the skills save their results with it. <code>scripts/idstack-doctor</code> checks for it.</p>
-
-          <p class="install-prose">To check the install, run <code>scripts/idstack-doctor</code>. To see the health of a course, run <code>scripts/idstack-status</code>.</p>
-
-          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/code" rel="noopener">Install the Claude Code command-line tool</a> first, then paste the command above in a terminal. In the Claude desktop app, use the steps in the Claude Desktop App card. When Claude Code starts, run <code>/idstack:start</code>.</p>
-
-          <p class="install-prose">Not using Claude Code or Cowork? The idstack skills run in Claude Code and Cowork. Use the Chrome extension, or fork the repo and adapt the skills for a different agent, for example Codex or Antigravity. idstack does not support or test those forks.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
+        <div>
+          <h3>Which instructional design frameworks does idstack support?</h3>
+          <p>idstack helps you apply ADDIE, backward design or SAM. Each skill does the work of one phase, for example Analyze in ADDIE or Stage 1 in backward design. You can also name the phase, for example "I am in the Design phase", and Claude starts the correct skill.</p>
+        </div>
+        <div>
+          <h3>Where do the recommendations come from?</h3>
+          <p>Each recommendation cites a study from a list of 168 studies in 11 domains of instructional design research. Each citation has an evidence tier, from <span class="tier tier-1">T1</span> (meta-analyses and randomized controlled trials) to <span class="tier tier-5">T5</span> (expert opinion). The full list is in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a>, so you can check each citation.</p>
+        </div>
+        <div>
+          <h3>Does idstack work with Canvas, Blackboard and Moodle?</h3>
+          <p>Yes. <code>/idstack:course-import</code> reads a Common Cartridge file from Canvas, Blackboard, Moodle or D2L, and it can connect to Canvas through the Canvas API. <code>/idstack:course-export</code> writes a Common Cartridge file for these four systems or a SCORM 1.2 package, or it sends the course to Canvas.</p>
+        </div>
+        <div>
+          <h3>Is idstack free, and what do I need to run it?</h3>
+          <p>idstack is free and open source, with the MIT license. The skills need Claude Code or Cowork, and Python 3.9 or later. The Chrome extension needs a free Google AI Studio API key for real audits, and without a key it shows sample findings.</p>
         </div>
       </div>
     </section>
