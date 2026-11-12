@@ -11,7 +11,7 @@
 <text x="1235" y="110" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="15" font-weight="700" fill="#faf8f3" text-anchor="end" letter-spacing="1.5">SAM</text>
 <text x="45" y="186" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" font-weight="700" fill="#7a1f1f" text-anchor="start">01</text>
 <text x="79" y="186" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="20" font-weight="700" fill="#1a1815" text-anchor="start">Start in three steps</text>
-<rect x="45.0" y="204" width="383.3333333333333" height="112" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="45.0" y="204" width="383.3333333333333" height="112" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <circle cx="75.0" cy="234" r="15" fill="#7a1f1f"/>
 <text x="75.0" y="239.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="15" font-weight="700" fill="#faf8f3" text-anchor="middle">1</text>
 <text x="101.0" y="240" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="17" font-weight="700" fill="#1a1815" text-anchor="start">Add the plugin</text>
@@ -19,7 +19,7 @@
 <text x="101.0" y="280" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="13" font-weight="400" fill="#3a352e" text-anchor="start">idstack plugin. You do not need a</text>
 <text x="101.0" y="296" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="13" font-weight="400" fill="#3a352e" text-anchor="start">terminal or code.</text>
 <text x="438.3333333333333" y="266" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="26" font-weight="400" fill="#6b6358" text-anchor="middle">›</text>
-<rect x="448.3333333333333" y="204" width="383.3333333333333" height="112" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="448.3333333333333" y="204" width="383.3333333333333" height="112" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <circle cx="478.3333333333333" cy="234" r="15" fill="#7a1f1f"/>
 <text x="478.3333333333333" y="239.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="15" font-weight="700" fill="#faf8f3" text-anchor="middle">2</text>
 <text x="504.3333333333333" y="240" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="17" font-weight="700" fill="#1a1815" text-anchor="start">Open your course folder</text>
@@ -27,7 +27,7 @@
 <text x="504.3333333333333" y="280" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="13" font-weight="400" fill="#3a352e" text-anchor="start">idstack keeps the reports and your</text>
 <text x="504.3333333333333" y="296" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="13" font-weight="400" fill="#3a352e" text-anchor="start">design decisions there.</text>
 <text x="841.6666666666666" y="266" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="26" font-weight="400" fill="#6b6358" text-anchor="middle">›</text>
-<rect x="851.6666666666666" y="204" width="383.3333333333333" height="112" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="851.6666666666666" y="204" width="383.3333333333333" height="112" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <circle cx="881.6666666666666" cy="234" r="15" fill="#7a1f1f"/>
 <text x="881.6666666666666" y="239.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="15" font-weight="700" fill="#faf8f3" text-anchor="middle">3</text>
 <text x="907.6666666666666" y="240" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="17" font-weight="700" fill="#1a1815" text-anchor="start">Type /idstack:start</text>
@@ -38,17 +38,17 @@
 <text x="79" y="366" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="20" font-weight="700" fill="#1a1815" text-anchor="start">Find your phase, run the skill</text>
 <text x="1235" y="366" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" font-weight="400" fill="#6b6358" text-anchor="end">Type /idstack: before each skill name</text>
 <text x="45" y="398" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#1d4a5e" text-anchor="start" letter-spacing="1.5">ADDIE</text>
-<rect x="45" y="406" width="140" height="28" rx="4" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
+<rect x="45" y="406" width="140" height="28" rx="2" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
 <text x="115.0" y="424.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#faf8f3" text-anchor="middle" letter-spacing="0.6">ANALYZE</text>
-<rect x="195" y="406" width="290" height="28" rx="4" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
+<rect x="195" y="406" width="290" height="28" rx="2" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
 <text x="340.0" y="424.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#faf8f3" text-anchor="middle" letter-spacing="0.6">DESIGN</text>
-<rect x="495" y="406" width="140" height="28" rx="4" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
+<rect x="495" y="406" width="140" height="28" rx="2" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
 <text x="565.0" y="424.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#faf8f3" text-anchor="middle" letter-spacing="0.6">DEVELOP</text>
-<rect x="645" y="406" width="440" height="28" rx="4" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
+<rect x="645" y="406" width="440" height="28" rx="2" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
 <text x="865.0" y="424.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#faf8f3" text-anchor="middle" letter-spacing="0.6">EVALUATE · before launch</text>
-<rect x="1095" y="406" width="140" height="28" rx="4" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
+<rect x="1095" y="406" width="140" height="28" rx="2" fill="#1d4a5e" stroke="#1d4a5e" stroke-width="1"/>
 <text x="1165.0" y="424.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#faf8f3" text-anchor="middle" letter-spacing="0.6">IMPLEMENT</text>
-<rect x="45" y="444" width="140" height="128" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="45" y="444" width="140" height="128" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="55" y="466" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="start">1</text>
 <text x="71" y="466" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="14.5" font-weight="700" fill="#1a1815" text-anchor="start">Needs analysis</text>
 <text x="55" y="486" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="500" fill="#1d4a5e" text-anchor="start">needs-analysis</text>
@@ -57,7 +57,7 @@
 <text x="55" y="532" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">answer? Tasks and</text>
 <text x="55" y="548" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">learner profile</text>
 <text x="190.0" y="512" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="18" font-weight="400" fill="#6b6358" text-anchor="middle">›</text>
-<rect x="195" y="444" width="140" height="128" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="195" y="444" width="140" height="128" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="205" y="466" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="start">2</text>
 <text x="221" y="466" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="14.5" font-weight="700" fill="#1a1815" text-anchor="start">Objectives</text>
 <text x="205" y="486" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="500" fill="#1d4a5e" text-anchor="start">learning-objectives</text>
@@ -66,7 +66,7 @@
 <text x="205" y="532" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">objectives with</text>
 <text x="205" y="548" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">Bloom's levels</text>
 <text x="340.0" y="512" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="18" font-weight="400" fill="#6b6358" text-anchor="middle">›</text>
-<rect x="345" y="444" width="140" height="128" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="345" y="444" width="140" height="128" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="355" y="466" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="start">3</text>
 <text x="371" y="466" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="14.5" font-weight="700" fill="#1a1815" text-anchor="start">Assessments</text>
 <text x="355" y="486" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="500" fill="#1d4a5e" text-anchor="start">assessment-design</text>
@@ -75,7 +75,7 @@
 <text x="355" y="532" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">rubrics and a</text>
 <text x="355" y="548" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">feedback plan</text>
 <text x="490.0" y="512" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="18" font-weight="400" fill="#6b6358" text-anchor="middle">›</text>
-<rect x="495" y="444" width="140" height="128" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="495" y="444" width="140" height="128" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="505" y="466" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="start">4</text>
 <text x="521" y="466" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="14.5" font-weight="700" fill="#1a1815" text-anchor="start">Course content</text>
 <text x="505" y="486" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="500" fill="#1d4a5e" text-anchor="start">course-builder</text>
@@ -84,7 +84,7 @@
 <text x="505" y="532" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">assignments and</text>
 <text x="505" y="548" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">rubric documents</text>
 <text x="640.0" y="512" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="18" font-weight="400" fill="#6b6358" text-anchor="middle">›</text>
-<rect x="645" y="444" width="140" height="128" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="645" y="444" width="140" height="128" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="655" y="466" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="start">5</text>
 <text x="671" y="466" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="14.5" font-weight="700" fill="#1a1815" text-anchor="start">Quality review</text>
 <text x="655" y="486" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="500" fill="#1d4a5e" text-anchor="start">course-quality-review</text>
@@ -93,7 +93,7 @@
 <text x="655" y="532" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">audit with a</text>
 <text x="655" y="548" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">score</text>
 <text x="790.0" y="512" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="18" font-weight="400" fill="#6b6358" text-anchor="middle">›</text>
-<rect x="795" y="444" width="140" height="128" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="795" y="444" width="140" height="128" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="805" y="466" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="start">6</text>
 <text x="821" y="466" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="14.5" font-weight="700" fill="#1a1815" text-anchor="start">Accessibility</text>
 <text x="805" y="486" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="500" fill="#1d4a5e" text-anchor="start">accessibility-review</text>
@@ -102,7 +102,7 @@
 <text x="805" y="532" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">and UDL review</text>
 <text x="805" y="548" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">with a score</text>
 <text x="940.0" y="512" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="18" font-weight="400" fill="#6b6358" text-anchor="middle">›</text>
-<rect x="945" y="444" width="140" height="128" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="945" y="444" width="140" height="128" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="955" y="466" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="start">7</text>
 <text x="971" y="466" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="14.5" font-weight="700" fill="#1a1815" text-anchor="start">Red team</text>
 <text x="955" y="486" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="500" fill="#1d4a5e" text-anchor="start">red-team</text>
@@ -111,7 +111,7 @@
 <text x="955" y="532" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">tries to break</text>
 <text x="955" y="548" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">the design</text>
 <text x="1090.0" y="512" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="18" font-weight="400" fill="#6b6358" text-anchor="middle">›</text>
-<rect x="1095" y="444" width="140" height="128" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="1095" y="444" width="140" height="128" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="1105" y="466" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="start">8</text>
 <text x="1121" y="466" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="14.5" font-weight="700" fill="#1a1815" text-anchor="start">LMS export</text>
 <text x="1105" y="486" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="500" fill="#1d4a5e" text-anchor="start">course-export</text>
@@ -119,43 +119,43 @@
 <text x="1105" y="516" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">Common Cartridge,</text>
 <text x="1105" y="532" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">SCORM or a push</text>
 <text x="1105" y="548" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="400" fill="#3a352e" text-anchor="start">to Canvas</text>
-<rect x="45" y="582" width="290" height="28" rx="4" fill="#7a1f1f" stroke="#7a1f1f" stroke-width="1"/>
+<rect x="45" y="582" width="290" height="28" rx="2" fill="#7a1f1f" stroke="#7a1f1f" stroke-width="1"/>
 <text x="190.0" y="600.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#faf8f3" text-anchor="middle" letter-spacing="0.6">STAGE 1 · desired results</text>
-<rect x="345" y="582" width="140" height="28" rx="4" fill="#7a1f1f" stroke="#7a1f1f" stroke-width="1"/>
+<rect x="345" y="582" width="140" height="28" rx="2" fill="#7a1f1f" stroke="#7a1f1f" stroke-width="1"/>
 <text x="415.0" y="600.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#faf8f3" text-anchor="middle" letter-spacing="0.6">STAGE 2 · evidence</text>
-<rect x="495" y="582" width="140" height="28" rx="4" fill="#7a1f1f" stroke="#7a1f1f" stroke-width="1"/>
+<rect x="495" y="582" width="140" height="28" rx="2" fill="#7a1f1f" stroke="#7a1f1f" stroke-width="1"/>
 <text x="565.0" y="600.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#faf8f3" text-anchor="middle" letter-spacing="0.6">STAGE 3 · lessons</text>
-<rect x="645" y="582" width="440" height="28" rx="4" fill="#faf8f3" stroke="#7a1f1f" stroke-width="1"/>
+<rect x="645" y="582" width="440" height="28" rx="2" fill="#faf8f3" stroke="#7a1f1f" stroke-width="1"/>
 <text x="865.0" y="600.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="middle" letter-spacing="0.6">ALIGNMENT CHECK</text>
-<rect x="1095" y="582" width="140" height="28" rx="4" fill="#faf8f3" stroke="#7a1f1f" stroke-width="1"/>
+<rect x="1095" y="582" width="140" height="28" rx="2" fill="#faf8f3" stroke="#7a1f1f" stroke-width="1"/>
 <text x="1165.0" y="600.5" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="middle" letter-spacing="0.6">PUBLISH</text>
 <text x="45" y="630" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12" font-weight="700" fill="#7a1f1f" text-anchor="start" letter-spacing="1.5">BACKWARD DESIGN</text>
 <text x="195" y="630" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#3a352e" text-anchor="start">Results first, then the evidence, then the lessons. The pipeline uses this sequence.</text>
 <text x="1235" y="630" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="400" fill="#6b6358" text-anchor="end">/idstack:pipeline runs all eight in sequence and continues where you stopped</text>
 <text x="45" y="684" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" font-weight="700" fill="#7a1f1f" text-anchor="start">03</text>
 <text x="79" y="684" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="20" font-weight="700" fill="#1a1815" text-anchor="start">Use these at any time</text>
-<rect x="45.0" y="702" width="290.0" height="122" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="45.0" y="702" width="290.0" height="122" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="57.0" y="726" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="15" font-weight="700" fill="#1a1815" text-anchor="start">Quick check</text>
 <text x="323.0" y="726" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10.5" font-weight="500" fill="#1d4a5e" text-anchor="end">quick-check</text>
 <text x="57.0" y="750" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#3a352e" text-anchor="start">Paste one objective, question, rubric</text>
 <text x="57.0" y="767" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#3a352e" text-anchor="start">or slide. Feedback in one minute.</text>
 <line x1="57.0" y1="790" x2="323.0" y2="790" stroke="#e6e0d2"/>
 <text x="57.0" y="809" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="11" font-weight="600" fill="#6b6358" text-anchor="start" letter-spacing="0.3">Each phase · each SAM review</text>
-<rect x="345.0" y="702" width="290.0" height="122" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="345.0" y="702" width="290.0" height="122" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="357.0" y="726" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="15" font-weight="700" fill="#1a1815" text-anchor="start">Storyboard</text>
 <text x="623.0" y="726" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10.5" font-weight="500" fill="#1d4a5e" text-anchor="end">storyboard</text>
 <text x="357.0" y="750" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#3a352e" text-anchor="start">Screens, narration and visuals for a</text>
 <text x="357.0" y="767" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#3a352e" text-anchor="start">video, a module or slides.</text>
 <line x1="357.0" y1="790" x2="623.0" y2="790" stroke="#e6e0d2"/>
 <text x="357.0" y="809" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="11" font-weight="600" fill="#6b6358" text-anchor="start" letter-spacing="0.3">Develop · Stage 3 · SAM prototype</text>
-<rect x="645.0" y="702" width="290.0" height="122" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="645.0" y="702" width="290.0" height="122" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="657.0" y="726" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="15" font-weight="700" fill="#1a1815" text-anchor="start">Question bank</text>
 <text x="923.0" y="726" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10.5" font-weight="500" fill="#1d4a5e" text-anchor="end">question-bank</text>
 <text x="657.0" y="750" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#3a352e" text-anchor="start">A test blueprint and questions with</text>
 <text x="657.0" y="767" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#3a352e" text-anchor="start">an answer key and feedback.</text>
 <line x1="657.0" y1="790" x2="923.0" y2="790" stroke="#e6e0d2"/>
 <text x="657.0" y="809" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="11" font-weight="600" fill="#6b6358" text-anchor="start" letter-spacing="0.3">Develop · Stage 2</text>
-<rect x="945.0" y="702" width="290.0" height="122" rx="6" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
+<rect x="945.0" y="702" width="290.0" height="122" rx="0" fill="#ffffff" stroke="#d4cdb9" stroke-width="1"/>
 <text x="957.0" y="726" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="15" font-weight="700" fill="#1a1815" text-anchor="start">Evaluation plan</text>
 <text x="1223.0" y="726" font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10.5" font-weight="500" fill="#1d4a5e" text-anchor="end">evaluation-plan</text>
 <text x="957.0" y="750" font-family="'Public Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#3a352e" text-anchor="start">How to find out if the course worked:</text>
