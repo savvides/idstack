@@ -43,7 +43,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "idstack",
-    "description": "Open-source instructional design skills backed by peer-reviewed research across 11 domains. Every recommendation cites its evidence tier. Runs in Claude Code, Cowork and Chrome.",
+    "description": "Open-source instructional design skills backed by peer-reviewed research across 11 domains. Every recommendation cites its evidence tier. The skills map to ADDIE, backward design and SAM. Runs in Claude Code, Cowork and Chrome.",
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
@@ -786,6 +786,139 @@
       margin-top: 0.1rem;
     }
 
+    /* ──────────────────────────────────────────────
+       Why (one designer / a design team)
+       ────────────────────────────────────────────── */
+    .why-pair {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2.5rem clamp(2rem, 5vw, 4rem);
+    }
+    @media (max-width: 760px) {
+      .why-pair { grid-template-columns: minmax(0, 1fr); }
+    }
+    .why-col h3 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      padding-bottom: 0.7rem;
+      border-bottom: 2px solid var(--ink);
+    }
+    .why-list > div {
+      padding-block: 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .why-list dt {
+      font-family: var(--font-ui);
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+    .why-list dd {
+      margin: 0.2rem 0 0;
+      font-size: 0.98rem;
+      line-height: 1.55;
+      color: var(--ink-soft);
+    }
+    .why-foot {
+      margin-top: 1.75rem;
+      font-family: var(--font-ui);
+      font-size: 0.92rem;
+      color: var(--ink-muted);
+    }
+
+    /* ──────────────────────────────────────────────
+       Framework switch: the same eight skills, with the phase names of
+       the selected framework. Radio inputs + :has(), no script. Without
+       :has() the ADDIE names show (the default rules below).
+       ────────────────────────────────────────────── */
+    .fw-switch {
+      border: 0;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-ui);
+    }
+    .fw-switch legend {
+      float: left;
+      padding: 0;
+      margin-right: 0.5rem;
+      font-size: 0.95rem;
+      color: var(--ink-soft);
+      line-height: var(--tap-min);
+    }
+    .fw-switch label {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--tap-min);
+      padding: 0 1.1rem;
+      border: 1px solid var(--rule-strong);
+      background: var(--raised);
+      color: var(--ink);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .fw-switch input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+    .fw-switch label:has(input:checked) {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: var(--on-accent);
+    }
+    .fw-switch label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .fw-notes p {
+      max-width: var(--prose);
+      font-size: 0.98rem;
+      color: var(--ink-soft);
+    }
+    .fw-notes [data-fw], .node-phase [data-fw] { display: none; }
+    .fw-notes [data-fw="addie"], .node-phase [data-fw="addie"] { display: block; }
+    .pipeline-canvas:has(#fw-ubd:checked) [data-fw="addie"],
+    .pipeline-canvas:has(#fw-sam:checked) [data-fw="addie"] { display: none; }
+    .pipeline-canvas:has(#fw-ubd:checked) [data-fw="ubd"],
+    .pipeline-canvas:has(#fw-sam:checked) [data-fw="sam"] { display: block; }
+
+    .node-phase {
+      display: block;
+      margin: -0.85rem -0.85rem 0.7rem;
+      font-family: var(--font-ui);
+      font-size: 0.74rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--on-accent);
+    }
+    .node-phase [data-fw] { padding: 0.35rem 0.85rem; }
+    .node-phase .g-a { background: var(--accent-blue); }
+    .node-phase .g-b { background: var(--accent); }
+    /* The step number sits in the phase strip, so the skill name has the full width. */
+    .pipeline-node { padding-inline: 0.7rem; }
+    .node-phase { margin-inline: -0.7rem; }
+    .node-phase [data-fw] { padding-inline: 0.7rem 1.6rem; min-height: calc(2.6em + 0.7rem); }
+    .pipeline-node .node-num { top: 0.35rem; right: 0.6rem; color: var(--on-accent); font-weight: 700; line-height: 1.3; }
+    .pipeline-node .node-label { padding-right: 0; font-size: 0.72rem; word-break: normal; overflow-wrap: anywhere; }
+    .pipeline-node .node-desc { display: block; }
+    @media (max-width: 480px) {
+      .pipeline-aside { flex-wrap: wrap; }
+    }
+    .aside-phase {
+      margin-left: 0.5em;
+      padding-left: 0.5em;
+      border-left: 1px solid var(--rule-strong);
+      font-family: var(--font-ui);
+      color: var(--ink-muted);
+    }
+
     .pipeline-foot {
       margin-top: 1.75rem;
       font-size: 0.95rem;
@@ -1073,8 +1206,9 @@
     <nav class="nav" aria-label="Primary">
       <a class="brand" href="/">idstack<sup class="brand-beta">beta</sup></a>
       <div class="nav-links">
+        <a href="#why">Why</a>
+        <a href="#pipeline">Frameworks</a>
         <a href="#evidence">Evidence</a>
-        <a href="#pipeline">Pipeline</a>
         <a href="#install">Install</a>
         <a href="https://github.com/savvides/idstack" rel="noopener">GitHub&nbsp;↗</a>
       </div>
@@ -1088,7 +1222,7 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-text">
         <h1 id="hero-title">Course design advice that shows its sources.</h1>
-        <p class="lede">idstack reviews your course in Claude Code, Cowork or Chrome. Each recommendation names the study behind it and how strong that evidence is, from <span class="tier tier-1">T1</span> meta-analyses and RCTs to <span class="tier tier-5">T5</span> expert opinion. 154 peer-reviewed studies across 11 research domains.</p>
+        <p class="lede">idstack reviews your course in Claude Code, Cowork or Chrome. Each recommendation names the study behind it and how strong that evidence is, from <span class="tier tier-1">T1</span> meta-analyses and RCTs to <span class="tier tier-5">T5</span> expert opinion. 154 peer-reviewed studies across 11 research domains. The skills follow the framework that you already use: ADDIE, backward design or SAM.</p>
 
         <div class="cta-row">
           <div class="cta-actions">
@@ -1111,6 +1245,7 @@
             <button class="copy-btn" type="button" data-copy-target="install-cmd" aria-label="Copy install command">Copy</button>
           </div>
           <a class="cta-secondary" href="#evidence">→&nbsp; See the 154 studies</a>
+          <a class="cta-secondary" href="#pipeline">→&nbsp; Find your ADDIE or backward design phase</a>
         </div>
 
         <p class="hero-meta">
@@ -1143,6 +1278,147 @@
       </figure>
     </section>
     </div>
+
+    <!-- ────────── Why ────────── -->
+    <section class="section" id="why" aria-labelledby="why-title">
+      <header class="section-header">
+        <h2 id="why-title">What it does for you, and for your team.</h2>
+        <p class="lede">You are the designer. idstack does the first draft, the review and the search for the research, and you make each decision.</p>
+      </header>
+
+      <div class="why-pair">
+        <div class="why-col">
+          <h3>For one designer</h3>
+          <dl class="why-list">
+            <div><dt>A second opinion in one minute</dt><dd>Paste an objective, a quiz question, a rubric or a slide. You get a maximum of five findings, each with its study, and a corrected version.</dd></div>
+            <div><dt>A first draft to start from</dt><dd>Objectives with Bloom's levels, rubrics, question banks, storyboards and module pages. You approve, change or remove each row.</dd></div>
+            <div><dt>An answer to "why?"</dt><dd>When a subject matter expert disagrees, you show the study and how strong its evidence is.</dd></div>
+            <div><dt>A full course audit in one afternoon</dt><dd>Import a course from your LMS. You get a quality score, an accessibility score and a list of what to correct first.</dd></div>
+          </dl>
+        </div>
+        <div class="why-col">
+          <h3>For a design team</h3>
+          <dl class="why-list">
+            <div><dt>One standard of review</dt><dd>Each course is examined against the same standards: Quality Matters, WCAG 2.1 AA and constructive alignment.</dd></div>
+            <div><dt>Reports that you can send</dt><dd>Each skill writes a plain Markdown report for faculty, clients and curriculum committees. Each finding has its evidence tier.</dd></div>
+            <div><dt>Design decisions stay with the course</dt><dd>The needs, the objectives and the alignment are saved in the course folder. A different designer continues where the first one stopped.</dd></div>
+            <div><dt>New designers learn the reasons</dt><dd>idstack explains each step and each term to a new designer, and it is brief with an expert.</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <p class="why-foot">Free and open source. idstack keeps the course files in a folder on your computer.</p>
+    </section>
+
+    <!-- ────────── Pipeline ────────── -->
+    <section class="section" id="pipeline" aria-labelledby="pipeline-title">
+      <header class="section-header">
+        <h2 id="pipeline-title">Sixteen skills, in the framework you already use.</h2>
+        <p class="lede">Eight skills run in sequence through <code>/idstack:pipeline</code>. Three more handle first-run setup, course import and course memory. Four companion skills work at any time: feedback on one item, a storyboard, a question bank and an evaluation plan. You can run any skill alone, with no manifest.</p>
+      </header>
+
+      <div class="pipeline-canvas">
+        <fieldset class="fw-switch">
+          <legend>Show the phases of</legend>
+          <label><input type="radio" name="fw" id="fw-addie" checked> ADDIE</label>
+          <label><input type="radio" name="fw" id="fw-ubd"> Backward design</label>
+          <label><input type="radio" name="fw" id="fw-sam"> SAM</label>
+        </fieldset>
+        <div class="fw-notes">
+          <p data-fw="addie">ADDIE evaluates two times. The three review skills are the formative evaluation, before the launch. <code>/idstack:evaluation-plan</code> plans the summative evaluation, after it.</p>
+          <p data-fw="ubd">Results first, then the evidence, then the lessons. The pipeline uses this sequence, so <code>/idstack:course-builder</code> writes no lesson before the objectives and the assessments are there.</p>
+          <p data-fw="sam">Each skill can run again, and the course folder keeps your decisions. Storyboard one module as the prototype, review it with <code>/idstack:quick-check</code>, and start the next cycle.</p>
+        </div>
+        <p class="pipeline-track-label">Sequence (left to right) under <span class="track-mono">/idstack:pipeline</span></p>
+        <ol class="pipeline-flow" role="list">
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 1: needs-analysis. Three-level needs assessment and training-decision gate. After a course import, the pipeline skips this skill.">
+            <span class="node-phase"><span data-fw="addie" class="g-a">Analyze</span><span data-fw="ubd" class="g-a">Stage 1: results</span><span data-fw="sam" class="g-a">Preparation</span></span>
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">needs-analysis</span>
+            <span class="node-desc">Three-level needs assessment and training-decision gate. Skipped after a course import.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 2: learning-objectives. Bloom's classification and bidirectional alignment.">
+            <span class="node-phase"><span data-fw="addie" class="g-b">Design</span><span data-fw="ubd" class="g-a">Stage 1: results</span><span data-fw="sam" class="g-b">Iterative design</span></span>
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">learning-objectives</span>
+            <span class="node-desc">Bloom's classification and bidirectional alignment.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 3: assessment-design. Rubrics, formative checkpoints, Nicol's seven feedback principles.">
+            <span class="node-phase"><span data-fw="addie" class="g-b">Design</span><span data-fw="ubd" class="g-b">Stage 2: evidence</span><span data-fw="sam" class="g-b">Iterative design</span></span>
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">assessment-design</span>
+            <span class="node-desc">Rubrics, checkpoints, Nicol's 7 feedback principles.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 4: course-builder. Cognitive-load-aware content generation.">
+            <span class="node-phase"><span data-fw="addie" class="g-a">Develop</span><span data-fw="ubd" class="g-a">Stage 3: lessons</span><span data-fw="sam" class="g-a">Iterative development</span></span>
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">course-builder</span>
+            <span class="node-desc">Cognitive-load-aware content generation.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 5: course-quality-review. Quality Matters eight standards plus Community of Inquiry.">
+            <span class="node-phase"><span data-fw="addie" class="g-b">Evaluate</span><span data-fw="ubd" class="g-b">Alignment check</span><span data-fw="sam" class="g-a">Iterative development</span></span>
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">course-quality-review</span>
+            <span class="node-desc">QM 8 standards + Community of Inquiry.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 6: accessibility-review. WCAG 2.1 AA and UDL 3.0 audit.">
+            <span class="node-phase"><span data-fw="addie" class="g-b">Evaluate</span><span data-fw="ubd" class="g-b">Alignment check</span><span data-fw="sam" class="g-a">Iterative development</span></span>
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">accessibility-review</span>
+            <span class="node-desc">WCAG 2.1 AA + UDL 3.0 audit.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 7: red-team. Adversarial pre-launch audit across five dimensions.">
+            <span class="node-phase"><span data-fw="addie" class="g-b">Evaluate</span><span data-fw="ubd" class="g-b">Alignment check</span><span data-fw="sam" class="g-a">Iterative development</span></span>
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">red-team</span>
+            <span class="node-desc">Adversarial audit across 5 dimensions.</span>
+          </li>
+          <li class="pipeline-node" tabindex="0" aria-label="Skill 8: course-export. Common Cartridge, SCORM 1.2, or Canvas API.">
+            <span class="node-phase"><span data-fw="addie" class="g-a">Implement</span><span data-fw="ubd" class="g-a">Publish</span><span data-fw="sam" class="g-a">Iterative development</span></span>
+            <span class="node-num" aria-hidden="true"></span>
+            <span class="node-label">course-export</span>
+            <span class="node-desc">Common Cartridge, SCORM 1.2, or Canvas API.</span>
+          </li>
+        </ol>
+
+        <div class="pipeline-aside-row" aria-label="Skills outside the linear pipeline">
+          <div class="pipeline-aside">
+            <span class="aside-tag">start</span>
+            <span>Checks that idstack can run in a course folder, then starts the correct skill. The first skill to run.</span>
+          </div>
+          <div class="pipeline-aside">
+            <span class="aside-tag">course-import<span class="aside-phase">Analyze</span></span>
+            <span>Extracts existing modules, assignments, and syllabi from an IMSCC or SCORM package, a PDF or Word file, pasted documents, or the Canvas API.</span>
+          </div>
+          <div class="pipeline-aside">
+            <span class="aside-tag">learn</span>
+            <span>Searches, deletes, promotes, and exports the learnings that skills save, in this course and across courses.</span>
+          </div>
+        </div>
+
+        <p class="pipeline-track-label">Companion skills, at any time</p>
+        <div class="pipeline-aside-row" aria-label="Companion skills that run at any time">
+          <div class="pipeline-aside">
+            <span class="aside-tag">quick-check<span class="aside-phase">Each phase</span></span>
+            <span>Feedback on one objective, quiz question, rubric, slide or page in one minute. A maximum of five cited findings and a corrected version. No setup.</span>
+          </div>
+          <div class="pipeline-aside">
+            <span class="aside-tag">storyboard<span class="aside-phase">Develop</span></span>
+            <span>Script and screens for a video, an e-learning module or slides, checked against the multimedia learning principles.</span>
+          </div>
+          <div class="pipeline-aside">
+            <span class="aside-tag">question-bank<span class="aside-phase">Develop</span></span>
+            <span>Quiz and test questions from your objectives, with three options, an answer key and feedback for each option.</span>
+          </div>
+          <div class="pipeline-aside">
+            <span class="aside-tag">evaluation-plan<span class="aside-phase">Evaluate</span></span>
+            <span>Measures of reaction, learning, behavior and results, with the survey items and a schedule.</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="pipeline-foot">The <a href="https://github.com/savvides/idstack/blob/main/docs/frameworks.md" rel="noopener">framework guide</a> has a diagram for each framework, the check that tells you when to leave a phase, and a table to help you select a framework. Run the complete workflow with <code>/idstack:pipeline</code>. It tracks course state, skips completed skills, and continues from where you stopped when you run it again.</p>
+    </section>
 
     <!-- ────────── Evidence ────────── -->
     <section class="section" id="evidence" aria-labelledby="evidence-title">
@@ -1229,97 +1505,6 @@
       </ol>
 
       <p class="evidence-foot">Every recommendation has a research domain code and an evidence tier, for example <code>[Alignment-14] [T1]</code>. The code points to the paper in <code>evidence/references.md</code>.</p>
-    </section>
-
-    <!-- ────────── Pipeline ────────── -->
-    <section class="section" id="pipeline" aria-labelledby="pipeline-title">
-      <header class="section-header">
-        <h2 id="pipeline-title">Sixteen skills. Pipeline optional.</h2>
-        <p class="lede">Eight skills run in sequence through <code>/idstack:pipeline</code>. Three more handle first-run setup, course import and course memory. Four companion skills work at any time: feedback on one item, a storyboard, a question bank and an evaluation plan. You can run any skill alone, with no manifest.</p>
-      </header>
-
-      <div class="pipeline-canvas">
-        <p class="pipeline-track-label">Sequence (left to right) under <span class="track-mono">/idstack:pipeline</span></p>
-        <ol class="pipeline-flow" role="list">
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 1: needs-analysis. Three-level needs assessment and training-decision gate. After a course import, the pipeline skips this skill.">
-            <span class="node-num" aria-hidden="true"></span>
-            <span class="node-label">needs-analysis</span>
-            <span class="node-desc">Three-level needs assessment and training-decision gate. Skipped after a course import.</span>
-          </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 2: learning-objectives. Bloom's classification and bidirectional alignment.">
-            <span class="node-num" aria-hidden="true"></span>
-            <span class="node-label">learning-objectives</span>
-            <span class="node-desc">Bloom's classification and bidirectional alignment.</span>
-          </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 3: assessment-design. Rubrics, formative checkpoints, Nicol's seven feedback principles.">
-            <span class="node-num" aria-hidden="true"></span>
-            <span class="node-label">assessment-design</span>
-            <span class="node-desc">Rubrics, checkpoints, Nicol's 7 feedback principles.</span>
-          </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 4: course-builder. Cognitive-load-aware content generation.">
-            <span class="node-num" aria-hidden="true"></span>
-            <span class="node-label">course-builder</span>
-            <span class="node-desc">Cognitive-load-aware content generation.</span>
-          </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 5: course-quality-review. Quality Matters eight standards plus Community of Inquiry.">
-            <span class="node-num" aria-hidden="true"></span>
-            <span class="node-label">course-quality-review</span>
-            <span class="node-desc">QM 8 standards + Community of Inquiry.</span>
-          </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 6: accessibility-review. WCAG 2.1 AA and UDL 3.0 audit.">
-            <span class="node-num" aria-hidden="true"></span>
-            <span class="node-label">accessibility-review</span>
-            <span class="node-desc">WCAG 2.1 AA + UDL 3.0 audit.</span>
-          </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 7: red-team. Adversarial pre-launch audit across five dimensions.">
-            <span class="node-num" aria-hidden="true"></span>
-            <span class="node-label">red-team</span>
-            <span class="node-desc">Adversarial audit across 5 dimensions.</span>
-          </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 8: course-export. Common Cartridge, SCORM 1.2, or Canvas API.">
-            <span class="node-num" aria-hidden="true"></span>
-            <span class="node-label">course-export</span>
-            <span class="node-desc">Common Cartridge, SCORM 1.2, or Canvas API.</span>
-          </li>
-        </ol>
-
-        <div class="pipeline-aside-row" aria-label="Skills outside the linear pipeline">
-          <div class="pipeline-aside">
-            <span class="aside-tag">start</span>
-            <span>Checks that idstack can run in a course folder, then starts the correct skill. The first skill to run.</span>
-          </div>
-          <div class="pipeline-aside">
-            <span class="aside-tag">course-import</span>
-            <span>Extracts existing modules, assignments, and syllabi from an IMSCC or SCORM package, a PDF or Word file, pasted documents, or the Canvas API.</span>
-          </div>
-          <div class="pipeline-aside">
-            <span class="aside-tag">learn</span>
-            <span>Searches, deletes, promotes, and exports the learnings that skills save, in this course and across courses.</span>
-          </div>
-        </div>
-
-        <p class="pipeline-track-label">Companion skills, at any time</p>
-        <div class="pipeline-aside-row" aria-label="Companion skills that run at any time">
-          <div class="pipeline-aside">
-            <span class="aside-tag">quick-check</span>
-            <span>Feedback on one objective, quiz question, rubric, slide or page in one minute. A maximum of five cited findings and a corrected version. No setup.</span>
-          </div>
-          <div class="pipeline-aside">
-            <span class="aside-tag">storyboard</span>
-            <span>Script and screens for a video, an e-learning module or slides, checked against the multimedia learning principles.</span>
-          </div>
-          <div class="pipeline-aside">
-            <span class="aside-tag">question-bank</span>
-            <span>Quiz and test questions from your objectives, with three options, an answer key and feedback for each option.</span>
-          </div>
-          <div class="pipeline-aside">
-            <span class="aside-tag">evaluation-plan</span>
-            <span>Measures of reaction, learning, behavior and results, with the survey items and a schedule.</span>
-          </div>
-        </div>
-      </div>
-
-      <p class="pipeline-foot">Run the complete workflow with <code>/idstack:pipeline</code>. It tracks course state, skips completed skills, and continues from where you stopped when you run it again.</p>
     </section>
 
     <!-- ────────── Output ────────── -->
