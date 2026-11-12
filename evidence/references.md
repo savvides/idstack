@@ -195,7 +195,7 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Online-19] Martin, F. et al. (2022). Examining research on the impact of distance and online learning: A second-order meta-analysis study. *Educational Research Review*. T1
 - [Online-20] Sailer, M. et al. (2024). Learning activities in technology-enhanced learning: A systematic review of meta-analyses and second-order meta-analysis in higher education. *Learning and Individual Differences*. T1
 - [Online-21] Lee, J.E. et al. (2020). The Validity and Instructional Value of a Rubric for Evaluating Online Course Quality: An Empirical Study. *Online Learning*. T4
-- [Online-22] Yang, D. et al. (2025). Relationships between cognitive presence and students' learning outcomes in online higher education: a meta-analysis. *Distance Education*. T1
+- [Online-22] Yang, D. et al. (2025). Relationships between cognitive presence and students' learning outcomes in online higher education: a meta-analysis. *Distance Education*. T3
 - [Online-23] Martin, F. et al. (2025). Mapping the Research Landscape of Online Learning: Evidence Gap Map Analysis of Meta-Analytic Studies. *American Journal of Distance Education*. T3
 
 ## Domain 11: Accessibility & Universal Design for Learning

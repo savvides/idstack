@@ -491,7 +491,7 @@ idstack encodes findings from a literature synthesis spanning 11 domains of inst
 | Multimedia Learning | 16 (9) | T1–T5 | Spatial contiguity, signaling, and coherence reliably improve learning |
 | Formative Assessment | 21 (15) | T1–T5 | Feedback that explains what to do next outperforms correctness-only feedback |
 | Constructive Alignment | 13 (2) | T1–T5 | Objectives, activities, and assessments must form a coherent chain |
-| Online Course Quality | 16 (4) | T1–T5 | QM standards + CoI presence predicts outcomes beyond compliance |
+| Online Course Quality | 16 (3) | T1–T5 | QM standards + CoI presence predicts outcomes beyond compliance |
 | Needs Analysis | 12 (2) | T1–T3 | Multi-level analysis is necessary but rarely done |
 | Accessibility & UDL | 15 (2) | T1–T5 | WCAG 2.1 AA is the legal baseline; UDL 3.0 extends to design for learner variation |
 
