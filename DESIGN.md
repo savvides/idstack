@@ -1,17 +1,18 @@
 # Design System — idstack
 
-This file is the source of truth for idstack's visual system. Any visual or UI decision (font, color, spacing, radius, motion) must be grounded here. Per-skill reports and the course dashboard are plain Markdown and carry no styling (see Decisions log, 2026-11-02), so this system has no report stylesheet to keep in sync. The token, type and report-layout sections below record the report identity that the retired HTML reports used. The idstack.org landing page (`docs/index.html`), its OG card template (`docs/og-template.html`, which renders `docs/og-image.png`) and the Chrome extension side panel (`extension/sidepanel/`) are now the only styled surfaces. All three use these tokens and fonts. The landing page has its own prussian hero, and the side panel has its own dark mode; see § Landing page and the Decisions log, 2026-11-01.
+This file is the source of truth for idstack's visual system. Any visual or UI decision (font, color, spacing, radius, motion) must be grounded here. Per-skill reports and the course dashboard are plain Markdown and carry no styling (see Decisions log, 2026-11-02), so this system has no report stylesheet to keep in sync. The token, type and report-layout sections below record the report identity that the retired HTML reports used. The idstack.org landing page (`docs/index.html`), its OG card template (`docs/og-template.html`, which renders `docs/og-image.png`) the Chrome extension side panel (`extension/sidepanel/`) and the README infographic (`docs/idstack-guide.svg`) are now the only styled surfaces. All four use these tokens and fonts. The landing page has its own prussian hero, and the side panel has its own dark mode; see § Landing page and the Decisions log, 2026-11-01.
 
 ## Product context
 
 - **What this is:** Open-source set of skills for evidence-based instructional design. Runs in Claude Code and Cowork. 16 skills, 154 peer-reviewed studies across 11 research domains, every recommendation tagged with its evidence tier T1–T5.
 - **Who it's for:** Instructional designers (university, K-12, corporate L&D), faculty doing their own course design, course-design teams. **Downstream stakeholders:** deans, faculty senates, accreditation reviewers — they read the Markdown reports the designer hands them.
 - **Space:** Edtech / instructional design. Adjacent inspiration: open-access academic publishing (eLife), evidence-based-medicine reference (UpToDate, Cochrane), modern dev tools (Linear, Cursor).
-- **Project type:** Hybrid — four surfaces share one system:
+- **Project type:** Hybrid — five surfaces share one system:
   1. Marketing landing (`idstack.org`) — drives discovery + install. Uses the Proof tokens with a prussian hero; see § Landing page.
   2. CLI tool — terminal interaction, text-only, design-irrelevant.
   3. Stakeholder deliverables — plain Markdown reports + `index.md` course dashboard under `.idstack/exports/<course-slug>/`. Audience: designer + their stakeholders. No visual system: the content contract in `templates/report-format.md` sets their structure.
   4. Chrome extension side panel (`extension/sidepanel/`) — audits Canvas, Google Docs and web pages. Uses the Proof tokens (ivory background, tier and severity palettes, Source Serif 4 / Public Sans / JetBrains Mono), copied into `extension/sidepanel/sidepanel.css`.
+  5. README infographic (`docs/idstack-guide.svg`) — a static guide to the first steps and to the skills in ADDIE and backward design. Uses the Proof tokens (prussian for ADDIE, oxblood for backward design, ivory ground) with system-font fallbacks, because GitHub does not load web fonts in an SVG image.
 
 ## Memorable thing
 

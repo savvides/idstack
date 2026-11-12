@@ -364,10 +364,11 @@ idstack does not replace your design framework. Each skill does the work of one 
 | `/idstack:learning-objectives` | Design | Stage 1: desired results | Iterative design |
 | `/idstack:assessment-design` | Design | Stage 2: acceptable evidence | Iterative design |
 | `/idstack:question-bank` | Develop | Stage 2: acceptable evidence | Iterative development |
-| `/idstack:course-builder`, `/idstack:storyboard` | Develop | Stage 3: learning plan | Prototype, then iterative development |
-| `/idstack:course-quality-review`, `/idstack:accessibility-review`, `/idstack:red-team` | Evaluate (formative, before launch) | Alignment check | Review in each cycle |
-| `/idstack:course-export` | Implement | After the three stages | Release |
-| `/idstack:evaluation-plan` | Evaluate (summative, after launch) | Stage 2: acceptable evidence | After release |
+| `/idstack:storyboard` | Develop | Stage 3: learning plan | Iterative design (the prototype) |
+| `/idstack:course-builder` | Develop | Stage 3: learning plan | Iterative development |
+| `/idstack:course-quality-review`, `/idstack:accessibility-review`, `/idstack:red-team` | Evaluate (formative, before launch) | Alignment check | Iterative development (review) |
+| `/idstack:course-export` | Implement | After the three stages | Iterative development (release) |
+| `/idstack:evaluation-plan` | Evaluate (summative, after launch) | Stage 2: acceptable evidence | Preparation, then after release |
 
 You can also name the phase: tell Claude "I am in the Design phase" or "do Stage 2 for this unit", and Claude starts the correct skill.
 

@@ -18,7 +18,7 @@ An instructional designer who knows ADDIE, backward design or SAM can find the i
 | course-builder | Develop | Stage 3 | Iterative development |
 | course-quality-review, accessibility-review, red-team | Evaluate (formative) | Alignment check | Review |
 | course-export | Implement | After the stages | Release |
-| evaluation-plan | Evaluate (summative) | Stage 2 | After release |
+| evaluation-plan | Evaluate (summative) | Stage 2 | Preparation, then after release |
 
 Decisions:
 

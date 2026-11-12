@@ -882,8 +882,8 @@
       font-size: 0.98rem;
       color: var(--ink-soft);
     }
-    .fw-notes [data-fw], .node-phase [data-fw] { display: none; }
-    .fw-notes [data-fw="addie"], .node-phase [data-fw="addie"] { display: block; }
+    .fw-notes [data-fw], .node-phase [data-fw], .aside-phase [data-fw] { display: none; }
+    .fw-notes [data-fw="addie"], .node-phase [data-fw="addie"], .aside-phase [data-fw="addie"] { display: block; }
     .pipeline-canvas:has(#fw-ubd:checked) [data-fw="addie"],
     .pipeline-canvas:has(#fw-sam:checked) [data-fw="addie"] { display: none; }
     .pipeline-canvas:has(#fw-ubd:checked) [data-fw="ubd"],
@@ -912,6 +912,7 @@
       .pipeline-aside { flex-wrap: wrap; }
     }
     .aside-phase {
+      display: inline-block;
       margin-left: 0.5em;
       padding-left: 0.5em;
       border-left: 1px solid var(--rule-strong);
@@ -1331,49 +1332,49 @@
         </div>
         <p class="pipeline-track-label">Sequence (left to right) under <span class="track-mono">/idstack:pipeline</span></p>
         <ol class="pipeline-flow" role="list">
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 1: needs-analysis. Three-level needs assessment and training-decision gate. After a course import, the pipeline skips this skill.">
+          <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-a">Analyze</span><span data-fw="ubd" class="g-a">Stage 1: results</span><span data-fw="sam" class="g-a">Preparation</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">needs-analysis</span>
             <span class="node-desc">Three-level needs assessment and training-decision gate. Skipped after a course import.</span>
           </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 2: learning-objectives. Bloom's classification and bidirectional alignment.">
+          <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-b">Design</span><span data-fw="ubd" class="g-a">Stage 1: results</span><span data-fw="sam" class="g-b">Iterative design</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">learning-objectives</span>
             <span class="node-desc">Bloom's classification and bidirectional alignment.</span>
           </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 3: assessment-design. Rubrics, formative checkpoints, Nicol's seven feedback principles.">
+          <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-b">Design</span><span data-fw="ubd" class="g-b">Stage 2: evidence</span><span data-fw="sam" class="g-b">Iterative design</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">assessment-design</span>
             <span class="node-desc">Rubrics, checkpoints, Nicol's 7 feedback principles.</span>
           </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 4: course-builder. Cognitive-load-aware content generation.">
+          <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-a">Develop</span><span data-fw="ubd" class="g-a">Stage 3: lessons</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">course-builder</span>
             <span class="node-desc">Cognitive-load-aware content generation.</span>
           </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 5: course-quality-review. Quality Matters eight standards plus Community of Inquiry.">
+          <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-b">Evaluate</span><span data-fw="ubd" class="g-b">Alignment check</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">course-quality-review</span>
             <span class="node-desc">QM 8 standards + Community of Inquiry.</span>
           </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 6: accessibility-review. WCAG 2.1 AA and UDL 3.0 audit.">
+          <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-b">Evaluate</span><span data-fw="ubd" class="g-b">Alignment check</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">accessibility-review</span>
             <span class="node-desc">WCAG 2.1 AA + UDL 3.0 audit.</span>
           </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 7: red-team. Adversarial pre-launch audit across five dimensions.">
+          <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-b">Evaluate</span><span data-fw="ubd" class="g-b">Alignment check</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">red-team</span>
             <span class="node-desc">Adversarial audit across 5 dimensions.</span>
           </li>
-          <li class="pipeline-node" tabindex="0" aria-label="Skill 8: course-export. Common Cartridge, SCORM 1.2, or Canvas API.">
+          <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-a">Implement</span><span data-fw="ubd" class="g-a">Publish</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">course-export</span>
@@ -1387,7 +1388,7 @@
             <span>Checks that idstack can run in a course folder, then starts the correct skill. The first skill to run.</span>
           </div>
           <div class="pipeline-aside">
-            <span class="aside-tag">course-import<span class="aside-phase">Analyze</span></span>
+            <span class="aside-tag">course-import<span class="aside-phase"><span data-fw="addie">Analyze</span><span data-fw="ubd">Stage 1: results</span><span data-fw="sam">Preparation</span></span></span>
             <span>Extracts existing modules, assignments, and syllabi from an IMSCC or SCORM package, a PDF or Word file, pasted documents, or the Canvas API.</span>
           </div>
           <div class="pipeline-aside">
@@ -1399,19 +1400,19 @@
         <p class="pipeline-track-label">Companion skills, at any time</p>
         <div class="pipeline-aside-row" aria-label="Companion skills that run at any time">
           <div class="pipeline-aside">
-            <span class="aside-tag">quick-check<span class="aside-phase">Each phase</span></span>
+            <span class="aside-tag">quick-check<span class="aside-phase"><span data-fw="addie">Each phase</span><span data-fw="ubd">Each stage</span><span data-fw="sam">Each review</span></span></span>
             <span>Feedback on one objective, quiz question, rubric, slide or page in one minute. A maximum of five cited findings and a corrected version. No setup.</span>
           </div>
           <div class="pipeline-aside">
-            <span class="aside-tag">storyboard<span class="aside-phase">Develop</span></span>
+            <span class="aside-tag">storyboard<span class="aside-phase"><span data-fw="addie">Develop</span><span data-fw="ubd">Stage 3: lessons</span><span data-fw="sam">Iterative design</span></span></span>
             <span>Script and screens for a video, an e-learning module or slides, checked against the multimedia learning principles.</span>
           </div>
           <div class="pipeline-aside">
-            <span class="aside-tag">question-bank<span class="aside-phase">Develop</span></span>
+            <span class="aside-tag">question-bank<span class="aside-phase"><span data-fw="addie">Develop</span><span data-fw="ubd">Stage 2: evidence</span><span data-fw="sam">Iterative development</span></span></span>
             <span>Quiz and test questions from your objectives, with three options, an answer key and feedback for each option.</span>
           </div>
           <div class="pipeline-aside">
-            <span class="aside-tag">evaluation-plan<span class="aside-phase">Evaluate</span></span>
+            <span class="aside-tag">evaluation-plan<span class="aside-phase"><span data-fw="addie">Evaluate</span><span data-fw="ubd">Stage 2: evidence</span><span data-fw="sam">After release</span></span></span>
             <span>Measures of reaction, learning, behavior and results, with the survey items and a schedule.</span>
           </div>
         </div>

@@ -25,7 +25,7 @@ Type `/idstack:` before each skill name, or tell Claude what you want in your ow
 | `course-export` | Common Cartridge, SCORM or Canvas push | Implement | After the three stages | Iterative development (release) |
 | `evaluation-plan` | Measures of reaction, learning, behavior and results | Evaluate (summative) | Stage 2: acceptable evidence | Preparation, then after release |
 | `quick-check` | Feedback on one item in one minute | Evaluate (formative), in each phase | In each stage | Each review |
-| `pipeline` | Runs the eight main skills in sequence | All phases | All stages | One full cycle |
+| `pipeline` | Runs the eight main skills in sequence | Analyze to Implement | All stages | One full cycle |
 | `start` | Checks the setup and starts the correct skill | Before Analyze | Before Stage 1 | Before Preparation |
 | `learn` | What idstack learned on your earlier courses | Each phase | Each stage | Each cycle |
 
@@ -180,7 +180,7 @@ No framework is the best one for every project. Reviews of the models find that 
 | The requirements change each time people see a draft | SAM | A short `/idstack:needs-analysis`, then `/idstack:storyboard` |
 | Not sure | Any | `/idstack:start` |
 
-You can mix them. Many experienced designers use ADDIE for the project phases and backward design for the sequence in the Design phase. They use short SAM cycles in the Develop phase. The idstack pipeline is that mix.
+You can mix them. Many experienced designers use ADDIE for the project phases and backward design for the sequence in the Design and Develop phases. They use short SAM cycles in the Develop phase. The idstack pipeline is that mix.
 
 **Dick and Carey, ASSURE, Kemp, 4C/ID or a different model?** The phases have different names, but the work is the same: analyze, set objectives, plan the evidence, build, review, deliver, evaluate. Find your step in the "What you get" column of the [one-page map](#one-page-map).
 
