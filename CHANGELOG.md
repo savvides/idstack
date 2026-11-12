@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed — landing page
+
+- **The landing page says first that idstack is a copilot for instructional designers.** The headline, the first paragraph, the page title and the share card now name the two kinds of help. They are the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation. The README introduction has the same message.
+
 ### Added — evidence base
 
 - **Fourteen new references, all peer-reviewed, from 2025 and 2026.** A Consensus search of each of the 11 domains found them. Four are T1 meta-analyses of learning outcomes: formative assessment [Assessment-29], cues in online learning [Multimedia-25], video playback speed [Multimedia-26] and adaptive learning [Learner-22]. Ten are T3: nine systematic or scoping reviews ([ID-117], [ID-118], [Needs-17], [Assessment-28], [Evaluation-26], [Prototype-19], [Online-23], [Access-14] and [Access-15]) and one meta-analysis of cognitive presence, [Online-22], that measures only perceived learning and satisfaction. The evidence base now has 168 studies. No skill cites the new references yet.
