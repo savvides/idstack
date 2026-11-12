@@ -32,6 +32,8 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [ID-114] Costa, J.M. et al. (2021). Four-component instructional design (4C/ID) model: a meta-analysis on use and effect. *Learning Environments Research*. T1
 - [ID-115] Bai, S. et al. (2020). Does gamification improve student learning outcome? Evidence from a meta-analysis and synthesis of qualitative data in educational contexts. *Educational Research Review*. T1
 - [ID-116] Alé, J. et al. (2025). Emerging Technology-Based Motivational Strategies: A Systematic Review with Meta-Analysis. *Education Sciences*. T1
+- [ID-117] Neck, M. et al. (2025). Implementing the four-component instructional design model in professional development programs: a systematic review with a focus on teachers. *Frontiers in Education*. T3
+- [ID-118] Qi, G. et al. (2026). The Four-Component Instructional Design (4C/ID) Model in Higher Education: A Systematic Literature Review. *Journal of University Teaching and Learning Practice*. T3
 
 ## Domain 2: Constructive Alignment & Learning Objectives
 
@@ -62,6 +64,7 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Needs-14] León, S.P. et al. (2023). How Accurate Are Our Students? A Meta-analytic Systematic Review on Self-assessment Scoring Accuracy. *Educational Psychology Review*. T3
 - [Needs-15] Forsetlund, L. et al. (2021). Continuing education meetings and workshops: effects on professional practice and healthcare outcomes. *Cochrane Database of Systematic Reviews*. T1
 - [Needs-16] Knight, C. et al. (2021). How work redesign interventions affect performance: An evidence-based model from a systematic review. *Human Relations*. T3
+- [Needs-17] Nunes, D.F. et al. (2025). Training Needs Analysis in Management: A Critical Look at the Field. *Management and Labour Studies*. T3
 
 ## Domain 4: Cognitive Load Theory & Instructional Sequencing
 
@@ -106,6 +109,8 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Assessment-25] Yang, C. et al. (2021). Testing (Quizzing) Boosts Classroom Learning: A Systematic and Meta-Analytic Review. *Psychological Bulletin*. T1
 - [Assessment-26] Adesope, O. et al. (2017). Rethinking the Use of Tests: A Meta-Analysis of Practice Testing. *Review of Educational Research*. T1
 - [Assessment-27] Pan, S.C. & Rickard, T.C. (2018). Transfer of Test-Enhanced Learning: Meta-Analytic Review and Synthesis. *Psychological Bulletin*. T1
+- [Assessment-28] Maskos, K. et al. (2025). Formative Assessment in Mathematics Education: A Systematic Review. *ZDM*. T3
+- [Assessment-29] Gençaslan, D. et al. (2026). Formative Assessment in K-12 Education in Türkiye: A Meta-Analysis of Cognitive and Affective Learning Outcomes. *SAGE Open*. T1
 
 ## Domain 6: Multimedia Learning Principles
 
@@ -123,6 +128,8 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Multimedia-22] Sundararajan, N. & Adesope, O. (2020). Keep it Coherent: A Meta-Analysis of the Seductive Details Effect. *Educational Psychology Review*. T1
 - [Multimedia-23] Ploetzner, R. (2022). The effectiveness of enhanced interaction features in educational videos: a meta-analysis. *Interactive Learning Environments*. T1
 - [Multimedia-24] Noetel, M. et al. (2021). Video Improves Learning in Higher Education: A Systematic Review. *Review of Educational Research*. T1
+- [Multimedia-25] Ma, Y. et al. (2026). Effects of cueing interventions on online learning outcomes: a meta-analytic review of 40 studies. *Frontiers in Psychology*. T1
+- [Multimedia-26] Huang, G. et al. (2025). Facilitating or hindering learning - a meta-analysis of acceleration on video learning. *Frontiers in Psychology*. T1
 
 ## Domain 7: Learner Analysis & Differentiation
 
@@ -137,6 +144,7 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Learner-19] Wang, X. et al. (2024). The Efficacy of Artificial Intelligence-Enabled Adaptive Learning Systems From 2010 to 2022 on Learner Outcomes: A Meta-Analysis. *Journal of Educational Computing Research*. T1
 - [Learner-20] Chernikova, O. et al. (2024). Personalization through Adaptivity or Adaptability? A Meta-analysis on Simulation-based Learning in Higher Education. *Educational Research Review*. T1
 - [Learner-21] Simonsmeier, B.A. et al. (2021). Domain-specific prior knowledge and learning: A meta-analysis. *Educational Psychologist*. T1
+- [Learner-22] Wang, J. et al. (2025). A Meta-Analysis of Moderators of the Effects of Technology-Enhanced Adaptive Learning on Primary and Secondary Students' Learning Outcomes. *Journal of Computer Assisted Learning*. T1
 
 ## Domain 8: Evaluation Models
 
@@ -155,6 +163,7 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Evaluation-23] Alliger, G.M. et al. (1997). A Meta-Analysis of the Relations Among Training Criteria. *Personnel Psychology*. T1
 - [Evaluation-24] Blume, B.D. et al. (2010). Transfer of Training: A Meta-Analytic Review. *Journal of Management*. T1
 - [Evaluation-25] Arthur, W. et al. (2003). Effectiveness of Training in Organizations: A Meta-Analysis of Design and Evaluation Features. *Journal of Applied Psychology*. T1
+- [Evaluation-26] Gallant, N.L. et al. (2026). Applications of the Kirkpatrick Model in Post-secondary Health Sciences Education: A Scoping Review. *International Journal of Health Policy and Management*. T3
 
 ## Domain 9: Rapid Prototyping & Design-Based Research
 
@@ -168,6 +177,7 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Prototype-16] Toker, S. (2021). The progress of 21st-century skills throughout instructional design projects: a quasi-experimental comparison of rapid prototyping and Dick and Carey models. *Education and Information Technologies*. T2
 - [Prototype-17] Anderson, T. & Shattuck, J. (2012). Design-Based Research: A Decade of Progress? *Educational Researcher*. T3
 - [Prototype-18] Vlachogianni, P. & Tselios, N. (2021). Perceived usability evaluation of educational technology using the System Usability Scale (SUS): A systematic review. *Journal of Research on Technology in Education*. T3
+- [Prototype-19] Kager, K. et al. (2026). Potentials and pitfalls of design-based research on lesson study: A systematic review. *Teaching and Teacher Education*. T3
 
 ## Domain 10: Online Course Quality Frameworks
 
@@ -185,6 +195,8 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Online-19] Martin, F. et al. (2022). Examining research on the impact of distance and online learning: A second-order meta-analysis study. *Educational Research Review*. T1
 - [Online-20] Sailer, M. et al. (2024). Learning activities in technology-enhanced learning: A systematic review of meta-analyses and second-order meta-analysis in higher education. *Learning and Individual Differences*. T1
 - [Online-21] Lee, J.E. et al. (2020). The Validity and Instructional Value of a Rubric for Evaluating Online Course Quality: An Empirical Study. *Online Learning*. T4
+- [Online-22] Yang, D. et al. (2025). Relationships between cognitive presence and students' learning outcomes in online higher education: a meta-analysis. *Distance Education*. T1
+- [Online-23] Martin, F. et al. (2025). Mapping the Research Landscape of Online Learning: Evidence Gap Map Analysis of Meta-Analytic Studies. *American Journal of Distance Education*. T3
 
 ## Domain 11: Accessibility & Universal Design for Learning
 
@@ -201,6 +213,8 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Access-11] Zhang, L. et al. (2024). Unraveling Challenges with the Implementation of Universal Design for Learning: A Systematic Literature Review. *Educational Psychology Review*. T3
 - [Access-12] Yang, M. et al. (2024). Universal design in online education: A systematic review. *Distance Education*. T3
 - [Access-13] Boysen, G. (2024). A critical analysis of the research evidence behind CAST's universal design for learning guidelines. *Policy Futures in Education*. T5
+- [Access-14] Saenen, L. et al. (2026). From principles to practice: Universal design in higher education—A systematic review. *Review of Education*. T3
+- [Access-15] Ren, N. et al. (2026). Integrating Universal Design for Learning in higher education: a scoping review of empirical studies. *Higher Education Research & Development*. T3
 
 ---
 
