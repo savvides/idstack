@@ -5,7 +5,8 @@ description: |
   Community of Inquiry framework. Reviews structural quality, teaching/social/cognitive
   presence, and constructive alignment. Works standalone or reads the idstack project
   manifest for richer analysis. Use when asked to review, audit, or score the quality of
-  a course design. (idstack)
+  a course design.
+  Framework phase: ADDIE Evaluate (formative), the backward design alignment check, a SAM review. (idstack)
 allowed-tools:
   - Bash
   - Read

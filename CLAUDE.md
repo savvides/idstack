@@ -40,7 +40,7 @@ scripts/idstack-learnings log|search|delete|promote   # Project learnings in .id
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash, node and python suites, but not `mutation-test.sh`, which CI runs in its own job):
 
 ```bash
-./test/smoke-test.sh              # 649 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 650 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 57 behavioral tests across the scripts/ scripts; also proves the suite
@@ -146,7 +146,9 @@ In a merge or rebase conflict on a generated `SKILL.md`, take either side, resol
 /idstack:quick-check, storyboard, question-bank, evaluation-plan (companion skills, any time)
 ```
 
-Adding a skill: update every hard-coded skill list and count. smoke-test catches some of them; `git grep -nE '(^|[^0-9])N skills'` finds the rest (`\b` does not work in `git grep -E` on macOS).
+`docs/frameworks.md` is the one map of skills to framework phases (ADDIE, backward design, SAM). The README table, `docs/idstack-guide.svg` (the README infographic, a hand-edited SVG), the `Framework phase:` line in each skill description and the phase table in `skills/start/SKILL.md.tmpl` follow it. Change them together.
+
+Adding a skill: add a row to the one-page map in `docs/frameworks.md` (smoke-test fails without it), and update every hard-coded skill list and count. smoke-test catches some of them; `git grep -nE '(^|[^0-9])N skills'` finds the rest (`\b` does not work in `git grep -E` on macOS).
 
 Any skill also works standalone (asks questions directly if no manifest exists).
 

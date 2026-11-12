@@ -5,7 +5,8 @@ description: |
   Canvas, Blackboard, Moodle, and D2L, a SCORM 1.2 package, or pushes directly to Canvas
   through the REST API. Reads the /idstack:course-builder output and the idstack
   manifest. Use when asked to export, package, upload, or publish a course to an LMS or
-  to Canvas. (idstack)
+  to Canvas.
+  Framework phase: ADDIE Implement. (idstack)
 allowed-tools:
   - Bash
   - Read

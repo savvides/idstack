@@ -6,7 +6,8 @@ description: |
   distractors, an answer key and feedback for each option, and checks each question
   against the item-writing research. Works standalone or reads the idstack project
   manifest. Use when asked to write quiz questions, a question bank, a knowledge check,
-  practice questions, test items, distractors, or retrieval practice. (idstack)
+  practice questions, test items, distractors, or retrieval practice.
+  Framework phase: ADDIE Develop, backward design Stage 2 (acceptable evidence). (idstack)
 allowed-tools:
   - Bash
   - Read

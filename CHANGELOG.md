@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added — framework alignment
+
+- **A framework guide shows where each skill is in ADDIE, backward design and SAM.** `docs/frameworks.md` has a one-page map, a diagram for each framework, the check that tells you when to leave a phase, and a table to help you select a framework.
+- **The README has an infographic on how to use idstack.** It shows the three steps to start and the eight pipeline skills with their ADDIE phases and backward design stages.
+- **idstack.org shows the value for one designer and for a design team, and the skills in your framework.** A new section lists what idstack does for one designer and for a team. In the skills section, select ADDIE, backward design or SAM to see the eight pipeline skills with the phase names of that framework.
+- **You can name a phase.** Tell Claude "I am in the Design phase" or "do Stage 2", and Claude starts the correct skill. Each skill description has its framework phase, and `/idstack:start` has a phase table.
+
 ## v3.11.0.0 (2026-11-11)
 
 idstack can now install in Cowork, and it has four new skills that work at any time, outside the pipeline.

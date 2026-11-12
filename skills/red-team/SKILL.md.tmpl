@@ -5,7 +5,8 @@ description: |
   verification, cognitive load analysis, learner persona simulation, and prerequisite
   chain integrity. Produces a confidence score (0-100). Runs in a clean-context
   sub-agent, so the build history does not change the result. Use when asked to
-  stress-test, red-team, or do a pre-launch check of a course design. (idstack)
+  stress-test, red-team, or do a pre-launch check of a course design.
+  Framework phase: ADDIE Evaluate (formative), the backward design alignment check, a SAM review. (idstack)
 allowed-tools:
   - Bash
   - Read

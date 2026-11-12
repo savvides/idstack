@@ -5,7 +5,8 @@ description: |
   /idstack:course-export in the evidence-based sequence, and skips the skills that are
   complete. Handles fresh starts (no manifest) and resumption (partial pipeline). Use
   when asked to design a full course from start to finish, run the idstack pipeline, or
-  continue an idstack course from where it stopped. (idstack)
+  continue an idstack course from where it stopped.
+  Framework phases: ADDIE Analyze to Implement, and the three stages of backward design. (idstack)
 allowed-tools:
   - Bash
   - Read

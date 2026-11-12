@@ -6,7 +6,8 @@ description: |
   applies Nicol's 7 principles of good feedback practice. Reads the
   /idstack:learning-objectives output and extends the manifest with assessment specs.
   Use when asked to design assessments, write rubrics, plan feedback, or add formative
-  checks. (idstack)
+  checks.
+  Framework phase: ADDIE Design, backward design Stage 2 (acceptable evidence), SAM iterative design. (idstack)
 allowed-tools:
   - Bash
   - Read
