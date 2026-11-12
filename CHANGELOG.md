@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added — evidence base
+
+- **Fourteen new references, all peer-reviewed, from 2025 and 2026.** A Consensus search of each of the 11 domains found them. Five are meta-analyses: formative assessment [Assessment-29], cues in online learning [Multimedia-25], video playback speed [Multimedia-26], adaptive learning [Learner-22] and cognitive presence [Online-22]. Nine are systematic or scoping reviews: [ID-117], [ID-118], [Needs-17], [Assessment-28], [Evaluation-26], [Prototype-19], [Online-23], [Access-14] and [Access-15]. The evidence base now has 168 studies. No skill cites the new references yet.
+
 ### Added — framework alignment
 
 - **A framework guide shows where each skill is in ADDIE, backward design and SAM.** `docs/frameworks.md` has a one-page map, a diagram for each framework, the check that tells you when to leave a phase, and a table to help you select a framework.
