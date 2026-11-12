@@ -178,7 +178,8 @@ Setup installed idstack in Claude Code (scope: user).
 
   All skills: start, needs-analysis, learning-objectives, assessment-design,
     course-builder, course-quality-review, accessibility-review,
-    red-team, course-export, course-import, pipeline, learn
+    red-team, course-export, course-import, pipeline, learn,
+    quick-check, storyboard, question-bank, evaluation-plan
 
   More information: https://idstack.org
 ```
@@ -571,7 +572,7 @@ cd <your idstack clone> && ./setup
 
 **Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Remove the old install, then clone fresh and run setup: `rm -rf ~/.claude/skills/idstack && git clone https://github.com/savvides/idstack.git && cd idstack && ./setup`. Setup no longer removes old installs for you; the CHANGELOG lists every path an older install can leave behind.
 
-**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `scripts/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 12 SKILL.md files, and python3. It reports each problem it finds, and for a Claude Code install problem it prints the command that fixes it.
+**`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `scripts/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 16 SKILL.md files, and python3. It reports each problem it finds, and for a Claude Code install problem it prints the command that fixes it.
 
 ## Contributing
 
