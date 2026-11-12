@@ -21,6 +21,14 @@
 - **idstack.org shows the value for one designer and for a design team, and the skills in your framework.** A new section lists what idstack does for one designer and for a team. In the skills section, select ADDIE, backward design or SAM to see the eight pipeline skills with the phase names of that framework.
 - **You can name a phase.** Tell Claude "I am in the Design phase" or "do Stage 2", and Claude starts the correct skill. Each skill description has its framework phase, and `/idstack:start` has a phase table.
 
+### Added — documentation
+
+- **A CLI reference at `docs/cli-reference.md` gives the options, exit codes and files of `./setup` and each tool in `scripts/`.**
+
+### Fixed — skill count in setup and doctor
+
+- **`./setup` now lists all 16 skills, and `scripts/idstack-doctor` says that it found 16 SKILL.md files.** Before, the two messages and the README said 12.
+
 ## v3.11.0.0 (2026-11-11)
 
 idstack can now install in Cowork, and it has four new skills that work at any time, outside the pipeline.
