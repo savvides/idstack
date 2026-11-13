@@ -1010,9 +1010,9 @@ fresh
 python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "if (studentRecordUrl.test(url)) {"
+old = "if (studentRecordUrl.test(url.replace("
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "if (false && studentRecordUrl.test(url)) {", 1)
+s = s.replace(old, "if (false && studentRecordUrl.test(url.replace(", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "student-record page guard disabled" "$WORK/r/test/test-extension.sh"
@@ -2567,17 +2567,30 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "old API key not deleted from sync" "$WORK/r/test/test-extension.sh"
 
-# 69c. A New Quizzes moderation or reporting page is read again -> test-extension must fail.
+# 69c. Only the named pages under an assignment are refused again, so New Quizzes taking,
+# observing and exports are read -> test-extension must fail.
 fresh
 python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = r"(?:submissions|anonymous_submissions|moderate|moderation|reporting)"
+old = r"(?!(?:edit|build)\/?(?:[?#]|$))[^/?#][^?#]*"
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "submissions", 1)
+s = s.replace(old, "(?:submissions|anonymous_submissions|moderate|moderation|reporting)", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "New Quizzes student pages not blocked" "$WORK/r/test/test-extension.sh"
+
+# 69d. The New Quizzes host (quiz-lti) is read again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = r"(?:[^/?#]*quiz-lti|"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "(?:", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "New Quizzes host not blocked" "$WORK/r/test/test-extension.sh"
 
 # 70a-70i. Script bugs (#173, #172, #171, #190, #178, #179). Each case puts
 # back one defect -> the named suite must fail.
