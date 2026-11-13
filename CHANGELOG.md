@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **The export readiness check does not pass a red-team section that has no critical count.** Before, `scripts/idstack-status --readiness` used 0 when `red_team_audit.findings_summary.critical` was missing, and the verdict was `READY TO EXPORT`. Now the red-team row is `NEEDS-WORK` with `Critical: none`, and the verdict gives the reason "no red-team critical count".
+- **The Chrome extension (1.2.5) does not read Classic Quizzes pages that show student answers.** These pages are the quiz history, the submissions and their versions, moderate and the quiz data pages. Before, an audit sent the text of these pages to the AI model.
+- **`scripts/idstack-status` shows "unknown" when the project name is empty.** It reads the name in the same sequence as `scripts/idstack-slugify`.
+
+### Tests
+
+- `test/test-status.sh` has 4 new tests for the readiness check and the project name. `test/test-extractor.mjs` tests the quiz pages. `test/mutation-test.sh` has cases 65a and 65b.
+
 ## v3.11.1.0 (2026-11-13)
 
 This release makes idstack safer and more reliable before it is shared in public. A cartridge cannot show your files through a symlink, and a skill stops when it cannot save. The docs no longer say that idstack runs in Cowork. It also has the landing page and documentation changes that the v3.11.0.0 release did not publish.
