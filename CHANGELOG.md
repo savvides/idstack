@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## v3.11.1.0 (2026-11-13)
+
+This release makes idstack safer and more reliable before it is shared in public. A cartridge cannot show your files through a symlink, and a skill stops when it cannot save. The docs no longer say that idstack runs in Cowork. It also has the landing page and documentation changes that the v3.11.0.0 release did not publish.
 
 ### Changed — docs before the public release
 
