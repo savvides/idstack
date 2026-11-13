@@ -1,23 +1,26 @@
 /**
- * idstack storage helper for Chrome sync and local storage.
+ * idstack storage helper for Chrome local storage.
  */
 // The side panel saves a full-course audit with this page type.
 export const FULL_AUDIT_PAGE_TYPE = 'Canvas Course (Full Audit)';
 
+const area = (name, method, arg) => new Promise((resolve) => chrome.storage[name][method](arg, resolve));
+
+// The key lives in storage.local: Chrome copies storage.sync to the user's Google account.
 export async function getSettings() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(['apiKey'], (result) => {
-      resolve({
-        apiKey: result.apiKey || ''
-      });
-    });
-  });
+  const local = await area('local', 'get', ['apiKey']);
+  const old = await area('sync', 'get', ['apiKey']);
+  if (old.apiKey) {
+    // One-time move of a key that an older version saved in sync. Local wins if both exist.
+    if (!local.apiKey) await area('local', 'set', { apiKey: old.apiKey });
+    await area('sync', 'remove', 'apiKey');
+  }
+  return { apiKey: local.apiKey || old.apiKey || '' };
 }
 
 export async function saveSettings(settings) {
-  return new Promise((resolve) => {
-    chrome.storage.sync.set(settings, () => resolve(true));
-  });
+  await area('local', 'set', settings);
+  return true;
 }
 
 export async function getDossier() {

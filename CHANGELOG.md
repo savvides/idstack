@@ -6,6 +6,8 @@
 
 - **The export readiness check does not pass a red-team section that has no critical count.** Before, `scripts/idstack-status --readiness` used 0 when `red_team_audit.findings_summary.critical` was missing, and the verdict was `READY TO EXPORT`. Now the red-team row is `NEEDS-WORK` with `Critical: none`, and the verdict gives the reason "no red-team critical count".
 - **The Chrome extension (1.2.5) does not read Classic Quizzes pages that show student answers.** These pages are the quiz history, the submissions and their versions, moderate and the quiz data pages. Before, an audit sent the text of these pages to the AI model.
+- **The Chrome extension (1.2.6) keeps your API key on this device.** Before, it saved the key in `chrome.storage.sync`, and Chrome copied it to your Google account. A key that an older version saved there moves to `chrome.storage.local`, and Chrome deletes the old copy. Closes #177.
+- **The Chrome extension (1.2.6) does not read the New Quizzes moderation and reporting pages, the moderated grading page and the anonymous submission page.** These pages show the answers or grades of single students. The other New Quizzes routes in Canvas (`taking`, `observing`, `exports`) are not blocked, because their content is not confirmed. This is a partial fix for #191.
 - **`scripts/idstack-status` shows "unknown" when the project name is empty.** It reads the name in the same sequence as `scripts/idstack-slugify`.
 
 ### Tests
