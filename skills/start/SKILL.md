@@ -4,7 +4,7 @@ description: |
   The first idstack skill to run in a course folder. It makes sure that idstack
   can run, makes sure that the session is in a course folder, and then starts
   the correct skill. Use when the user is new to idstack, uses the Claude
-  desktop app or Cowork, or asks "where do I start", "help me start", "what can
+  desktop app, or asks "where do I start", "help me start", "what can
   idstack do" or "set up idstack". (idstack)
 allowed-tools:
   - Bash
@@ -19,7 +19,7 @@ allowed-tools:
 
 ## Preamble: Interaction Conventions
 
-idstack runs in Claude Code and in Cowork. Skill bodies name these tools:
+idstack runs in Claude Code. Skill bodies name these tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   present a single multiple-choice question (e.g., "Which of these best describes X?")

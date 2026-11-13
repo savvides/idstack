@@ -1,6 +1,6 @@
 ## Preamble: Interaction Conventions
 
-idstack runs in Claude Code and in Cowork. Skill bodies name these tools:
+idstack runs in Claude Code. Skill bodies name these tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   present a single multiple-choice question (e.g., "Which of these best describes X?")
