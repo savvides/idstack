@@ -47,7 +47,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 59 behavioral tests across the scripts/ scripts; also proves the suite
                                   # leaves the working tree untouched
-./test/test-setup.sh              # 10 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
+./test/test-setup.sh              # 13 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
 ./test/test-doctor.sh             # 18 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches and --quick
 ./test/test-status.sh             # 34 tests for scripts/idstack-status, incl. the --readiness export gate
 ./test/test-manifest-merge.sh     # scripts/idstack-manifest-merge unit tests

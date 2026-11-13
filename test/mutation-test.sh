@@ -2519,7 +2519,31 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "quiz answer pages not blocked" "$WORK/r/test/test-extension.sh"
 
-# 66a-66i. Script bugs (#173, #172, #171, #190, #178, #179). Each case puts
+# 66a. Setup exits 0 with the banner when `claude` is missing -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = '--scope $CLAUDE_SCOPE" >&2\n  exit 1\nfi'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '--scope $CLAUDE_SCOPE" >&2\nfi', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "setup exits 0 when claude is missing" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 66b. Setup skips the python3 check -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = '_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) ||'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) || true ||', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "setup ignores a bad python3" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 70a-70i. Script bugs (#173, #172, #171, #190, #178, #179). Each case puts
 # back one defect -> the named suite must fail.
 suite_mutation() { # <name> <file> <old> <new> <suite>
   fresh
@@ -2533,31 +2557,31 @@ PY
   regen
   case "$5" in *.py) expect_fail "$1" python3 "$WORK/r/test/$5" ;; *) expect_fail "$1" "$WORK/r/test/$5" ;; esac
 }
-# 66a. A folder scan skips .markdown files again.
+# 70a. A folder scan skips .markdown files again.
 suite_mutation "ste-check skips .markdown files in a folder" \
   scripts/idstack-ste-check "'.md', '.markdown')" "'.md')" test-ste-check.py
-# 66b. A completed review with a 0 score in the manifest has no reason again.
+# 70b. A completed review with a 0 score in the manifest has no reason again.
 suite_mutation "readiness counts a 0 manifest score as a score" \
   scripts/idstack-status "quality_known = type(quality_score) is int and quality_score > 0" "quality_known = True" test-status.sh
-# 66c. learnings log replaces a ts from the caller again.
+# 70c. learnings log replaces a ts from the caller again.
 suite_mutation "learnings log replaces the caller's ts" \
   scripts/idstack-learnings 'd.setdefault("ts", ts)' 'd["ts"] = ts' integration-test.sh
-# 66d. migrate --init writes its seed at mode 0600 again.
+# 70d. migrate --init writes its seed at mode 0600 again.
 suite_mutation "migrate --init seed ignores the umask" \
   scripts/idstack-migrate 'os.chmod(tmp, 0o666 & ~umask)' 'pass' test-manifest-merge.sh
-# 66e. merge writes a manifest in the home folder again.
+# 70e. merge writes a manifest in the home folder again.
 suite_mutation "merge writes in the home folder" \
   scripts/idstack-manifest-merge 'os.path.realpath(folder) == os.path.realpath(os.environ["HOME"])' 'False' test-manifest-merge.sh
-# 66f. migrate --init makes a manifest in the home folder again.
+# 70f. migrate --init makes a manifest in the home folder again.
 suite_mutation "migrate --init makes a manifest in the home folder" \
   scripts/idstack-migrate "sys.exit(0 if os.environ.get('HOME')" "sys.exit(1 if os.environ.get('HOME')" test-manifest-merge.sh
-# 66g. The merge takes no lock again.
+# 70g. The merge takes no lock again.
 suite_mutation "merge takes no lock" \
   scripts/idstack-manifest-merge 'fcntl.flock(lock, fcntl.LOCK_EX)  # held until the process exits' 'pass' test-manifest-merge.sh
-# 66h. --expect-updated stops checking.
+# 70h. --expect-updated stops checking.
 suite_mutation "--expect-updated does not check" \
   scripts/idstack-manifest-merge 'args.expect_updated is not None and manifest.get("updated") != args.expect_updated' 'False' test-manifest-merge.sh
-# 66i. The draft goes back to the one scratch name for all skills.
+# 70i. The draft goes back to the one scratch name for all skills.
 suite_mutation "the report draft uses one scratch name for every skill" \
   templates/preamble.md ' .idstack/.report-section.<skill>.md;' ' .idstack/.report-section.md;' test-skill-shell-zsh.sh
 

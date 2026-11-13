@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- **`./setup` fails when `claude` is missing, and checks python3.** Before, setup printed a warning, showed the "how to use" banner and exited 0 when `claude` was not on PATH. Now it prints an error and exits 1 with no banner. It also runs `scripts/idstack-doctor --quick` first, and stops with an error when python3 is missing or older than 3.9.
 - **The export readiness check does not pass a red-team section that has no critical count.** Before, `scripts/idstack-status --readiness` used 0 when `red_team_audit.findings_summary.critical` was missing, and the verdict was `READY TO EXPORT`. Now the red-team row is `NEEDS-WORK` with `Critical: none`, and the verdict gives the reason "no red-team critical count".
 - **The Chrome extension (1.2.5) does not read Classic Quizzes pages that show student answers.** These pages are the quiz history, the submissions and their versions, moderate and the quiz data pages. Before, an audit sent the text of these pages to the AI model.
 - **`scripts/idstack-status` shows "unknown" when the project name is empty.** It reads the name in the same sequence as `scripts/idstack-slugify`.
@@ -17,7 +18,7 @@
 ### Tests
 
 - `test/test-status.sh` has 4 new tests for the readiness check and the project name. `test/test-extractor.mjs` tests the quiz pages. `test/mutation-test.sh` has cases 65a and 65b.
-- New tests: `test/test-ste-check.py` (1), `test/test-status.sh` (2), `test/integration-test.sh` (1) and `test/test-manifest-merge.sh` (9: file mode, home folder, the lock, `--expect-updated`). `test/mutation-test.sh` has cases 66a to 66i.
+- New tests: `test/test-ste-check.py` (1), `test/test-status.sh` (2), `test/integration-test.sh` (1) and `test/test-manifest-merge.sh` (9: file mode, home folder, the lock, `--expect-updated`). `test/mutation-test.sh` has cases 70a to 70i.
 
 ## v3.11.1.0 (2026-11-13)
 
