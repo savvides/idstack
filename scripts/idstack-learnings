@@ -103,18 +103,21 @@ elif cmd == "delete":
         print(f"idstack found no learning with the key: {key}", file=sys.stderr)
         sys.exit(1)
     lines.pop(i)
-    directory = os.path.dirname(os.path.abspath(LOCAL)) or "."
-    fd, tmp_path = tempfile.mkstemp(prefix=".learnings-delete.", dir=directory, suffix=".tmp")
+    # Rename onto the real file, so a symlinked learnings file stays a link.
+    real = os.path.realpath(LOCAL)
+    tmp_path = None
     try:
+        fd, tmp_path = tempfile.mkstemp(prefix=".learnings-delete.", dir=os.path.dirname(real), suffix=".tmp")
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.writelines(lines)
-        shutil.copymode(LOCAL, tmp_path)
-        os.replace(tmp_path, LOCAL)
+        shutil.copymode(real, tmp_path)
+        os.replace(tmp_path, real)
     except Exception as exc:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
         print(f"idstack cannot write the learnings file {LOCAL}: {exc}", file=sys.stderr)
         sys.exit(1)
     print(f"idstack removed the learning: {key}")

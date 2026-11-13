@@ -178,7 +178,7 @@ The readiness table uses the skill completion from the timeline and the scores f
 
 The verdict is `INCOMPLETE (run <skills>)` if a review is not run, `NOT-READY (<reasons>)` if a row fails, and `READY TO EXPORT` in other cases. The constants at the top of the script set the thresholds.
 
-The dashboard reads the last 200 lines of the timeline. The readiness table reads all of the lines. Without a timeline, the dashboard prints `There is no course data.` and the commands to start.
+The dashboard and the readiness table read all of the lines of the timeline. Without a timeline, the dashboard prints `There is no course data.` and the commands to start.
 
 | Exit | Meaning |
 |------|---------|
@@ -228,9 +228,10 @@ scripts/idstack-migrate [--init] [path]
 | Missing, no `--init` | No output |
 | Version 1.4 | The manifest on stdout, not changed |
 | Version 1.0 to 1.3 | Each step runs. The new manifest goes to the file and to stdout. stderr gets `MIGRATED <from> 1.4`. |
+| A version above 1.4 | The file on stdout, not changed. stderr gets `NEWER_SCHEMA <version>`. |
 | Other version, or not valid JSON | The file on stdout, not changed |
 
-The steps add sections and fields with defaults, and keep the values that exist. The full shape is in [`templates/manifest-schema.md`](../templates/manifest-schema.md).
+A section with the value `null` is treated as absent, so a step fills its defaults. The steps add sections and fields with defaults, and keep the values that exist. The full shape is in [`templates/manifest-schema.md`](../templates/manifest-schema.md).
 
 | Step | Change |
 |------|--------|
@@ -291,8 +292,9 @@ The merge replaces each named section. It does not merge the fields inside a sec
 | 4 | The manifest is missing and there is no `--create` |
 | 5 | A payload file is missing |
 | 6 | A read or write error, or `--create` cannot make the manifest |
+| 7 | The manifest version is above the latest version that `idstack-migrate` knows: a newer idstack wrote it. Nothing is written. |
 
-Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads the payloads and the manifest. Writes the manifest through a tempfile in its folder and a rename. A symlinked manifest becomes a regular file.
+Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads the payloads, the manifest, and `LATEST_VERSION` in `scripts/idstack-migrate`. Writes the manifest through a tempfile in the folder of the real file and a rename. A symlinked manifest stays a link.
 
 ```bash
 $ echo '{"audience":"New teachers"}' > ctx.json
@@ -376,8 +378,9 @@ The fact sections are Project context, Course information, Imported structure, R
 | 1 | `check` or `append` found problems, `approve` found no draft, or `finish` found a placeholder or a draft. The problems go to stdout, and the report does not change. |
 | 2 | No subcommand, a bad argument, or a `<placeholder>` left in `--title`, `--project` or `--mode`. Also: a missing draft, a missing or empty `evidence/references.md`, or `idstack-ste-check` did not run. |
 | 3 | The report does not exist (`append`, `approve`, `finish`) |
+| 4 | A write error. stdout gets `REPORT_WRITE_FAILED: <error>`, and the report does not change. |
 
-`append` examines the draft file before the report. A missing draft thus gives 2, not 3. Files: reads `evidence/references.md` and `VERSION` in the clone, and runs `scripts/idstack-ste-check`. Writes the report through a tempfile and a rename, and makes its folder (`init`). A symlinked report becomes a regular file.
+`append` examines the draft file before the report. A missing draft thus gives 2, not 3. Files: reads `evidence/references.md` and `VERSION` in the clone, and runs `scripts/idstack-ste-check`. Writes the report through a tempfile in the folder of the real file and a rename, and makes its folder (`init`). A symlinked report stays a link.
 
 ```bash
 $ cat draft.md
