@@ -60,11 +60,11 @@
 
 ## v3.11.0.0 (2026-11-11)
 
-idstack can now install in Cowork, and it has four new skills that work at any time, outside the pipeline.
+idstack has four new skills that work at any time, outside the pipeline.
 
-### Added — Cowork and four companion skills
+### Added — four companion skills
 
-- **idstack installs in Cowork.** Cowork does not install a plugin that has a top-level `bin/` folder, so the tools moved from `bin/` to `scripts/`. If you call a tool by its path, change `bin/idstack-…` to `scripts/idstack-…`. The skills also find the plugin folder from the skill folder, which is the path that Cowork gives. Nobody tested idstack in Cowork end to end. Tell us what you find.
+- **The tools moved from `bin/` to `scripts/`.** Some Claude apps do not install a plugin that has a top-level `bin/` folder. If you call a tool by its path, change `bin/idstack-…` to `scripts/idstack-…`. The skills also find the plugin folder from the skill folder.
 - **`/idstack:quick-check` gives feedback on one item in one minute.** Paste or attach an objective, a quiz question, a rubric, a slide, a script, an activity or a page. You get a verdict, a maximum of five findings with citations, and a corrected version. It needs no setup and writes no file.
 - **`/idstack:storyboard` makes a storyboard and a script.** It plans the segments and writes the screen text, the narration, the visuals and the learner actions for a video, an e-learning module, a slide lesson or a microlearning item. It checks each screen against the multimedia learning principles.
 - **`/idstack:question-bank` writes quiz and test questions from your objectives.** It makes a test blueprint, three-option questions with distractors from real errors, an answer key and feedback for each option.
@@ -74,7 +74,7 @@ idstack can now install in Cowork, and it has four new skills that work at any t
 - **The chat is shorter (#146).** `/idstack:pipeline` gives its status in one line. `/idstack:course-import` and `/idstack:course-export` give a short closing message with the report link. `/idstack:course-builder` does not write a line for each file. `/idstack:accessibility-review` and `/idstack:assessment-design` keep their details in the report.
 - **The link preview image shows the current study count (#141).**
 - **The Chrome extension (1.2.3) cites real studies in a page audit.** The page audit gave the model no list of studies, so a citation code could be wrong. It now uses the same checks and the same studies as `/idstack:quick-check`, for objectives, quiz questions, rubrics, media and practice.
-- **idstack.org shows the sixteen skills and Cowork.** The text of the page is shorter and uses the active voice. It said "146 references" in one place. It now says 154.
+- **idstack.org shows the sixteen skills.** The text of the page is shorter and uses the active voice. It said "146 references" in one place. It now says 154.
 - **Eight new references, all peer-reviewed.** Five on test questions and practice tests ([Assessment-23] to [Assessment-27]) and three on training evaluation and transfer ([Evaluation-23] to [Evaluation-25]). The evidence base has 154 studies.
 
 Reports and the course dashboard are now Markdown files. Each skill gives a report link that opens in the Claude desktop app. Each skill now adds the output of each step to the report as a draft table, and you approve each section.
