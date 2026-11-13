@@ -1008,7 +1008,9 @@ nothing.
 
 Replace `<updated value>` with the value that you wrote down. If the line had no
 value, leave it empty. If the command exits with code 8, another session changed
-the manifest after you read it, and the tool wrote nothing. The payload files stay
+the manifest after you read it, and the tool wrote nothing.
+
+The payload files stay
 in `.idstack/`. Run the stamp command again and read `.idstack/project.json` again.
 For each section that changed, add your changes to the new section and write the
 payload file again. Then run the merge command one more time with the new value.

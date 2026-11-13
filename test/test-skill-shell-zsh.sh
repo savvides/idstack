@@ -190,6 +190,20 @@ PY
   check "[$sh] course-import refuses a .docx with a DOCTYPE or ENTITY" \
     "printf '%s' \"\$out\" | grep -q '^DOCX_READ_FAILED: the document has a DOCTYPE' && [ ! -e '$P/docx/.idstack/import/Laughs.txt' ]"
 
+  # The same refusal holds for a UTF-16 document, where NUL bytes sit between the ASCII bytes.
+  python3 - "$P/docx/Wide.docx" <<'PY'
+import sys, zipfile
+doc = ('<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE lolz [<!ENTITY a "ha">]>'
+       '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+       '<w:body><w:p><w:r><w:t>&a;</w:t></w:r></w:p></w:body></w:document>')
+with zipfile.ZipFile(sys.argv[1], 'w') as z:
+    z.writestr('word/document.xml', doc.encode('utf-16'))
+PY
+  b=$(block course-import 'read -r DOCX_PATH' "<file path from the user>=Wide.docx")
+  out=$(run "$P/docx" "$b")
+  check "[$sh] course-import refuses a UTF-16 .docx with a DOCTYPE" \
+    "printf '%s' \"\$out\" | grep -q '^DOCX_READ_FAILED: the document has a DOCTYPE' && [ ! -e '$P/docx/.idstack/import/Wide.txt' ]"
+
   # course-export: IMSCC staging, then packaging in a later, separate shell.
   mkdir -p "$P/exp/.idstack/exports/demo-course"
   b=$(block course-export 'mkdir -p "$_STAGE/modules"' "<export folder>=.idstack/exports/demo-course")
@@ -340,6 +354,14 @@ PY
   FAKE_LIST="$WORK/list.json" push "$db" "$P/canvas" "title.txt=$HOSTILE" "body.html=B"
   check "[$sh] Canvas discussion block on a re-run makes no second topic and no second module item" \
     "[ \"\$(posts)\" = 0 ]"
+  # JSON escapes (\n and \\) in a list body must reach the parser unchanged in bash and zsh.
+  HOSTILE="$HOSTILE" python3 -c 'import json,os; h=os.environ["HOSTILE"]; print(json.dumps([{"id":78,"name":h,"title":h,"description":"line1\nline2 back\\slash","message":"a\nb"}]))' > "$WORK/esc.json"
+  FAKE_LIST="$WORK/esc.json" push "$ab" "$P/canvas" "title.txt=$HOSTILE" "body.html=B"
+  check "[$sh] Canvas assignment block finds the item when the list body has JSON escapes" \
+    "printf '%s' \"\$out\" | grep -q '^ASSIGNMENT_EXISTS' && [ \"\$(posts)\" = 0 ]"
+  FAKE_LIST="$WORK/esc.json" push "$db" "$P/canvas" "title.txt=$HOSTILE" "body.html=B"
+  check "[$sh] Canvas discussion block finds the item when the list body has JSON escapes" \
+    "printf '%s' \"\$out\" | grep -q '^DISCUSSION_EXISTS' && [ \"\$(posts)\" = 0 ]"
   # A settings file from an older idstack can have an http URL.
   sed "s|^CANVAS_BASE_URL=.*|CANVAS_BASE_URL='http://canvas.example.edu'|" "$P/canvas/.idstack/canvas.env" > "$P/canvas/old.env"
   mkdir -p "$P/canvas-old/.idstack" && mv "$P/canvas/old.env" "$P/canvas-old/.idstack/canvas.env"

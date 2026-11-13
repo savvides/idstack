@@ -1130,10 +1130,10 @@ case "$CANVAS_TOKEN" in *'"'*|*'\'*) echo "CANVAS_TOKEN_BAD: the token in .idsta
 case "$CANVAS_BASE_URL" in https://*) ;; *) echo "CANVAS_URL_NOT_HTTPS: $CANVAS_BASE_URL"; exit 1 ;; esac
 RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" \
   "$CANVAS_BASE_URL/api/v1/users/self" 2>&1)
-HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | sed '$d')
+HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
 echo "HTTP: $HTTP_CODE"
-echo "$BODY" | head -5
+printf '%s\n' "$BODY" | head -5
 ```
 
 Handle errors:
@@ -1188,6 +1188,10 @@ Canvas fails. If you run a block again, it first looks for the item by its
 title. It does not create an item that exists. The first 100 matches of the
 search are used.
 
+The lookup is by title only. A page and an assignment with one
+title in one module share a module-item match. A title with a space at the start
+or the end can be made twice on a re-run.
+
 For each module in the course content, write the module title to
 `.idstack/canvas-push/title.txt`. Replace `<position>` with the number of the
 module in the course, starting at 1. Then run:
@@ -1202,8 +1206,8 @@ case "$_POS" in ''|*[!0-9]*) echo "PUSH_VALUE_BAD: position $_POS"; rm -rf .idst
 _CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
   _WHAT=$1; shift
   RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
-  HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-  BODY=$(echo "$RESPONSE" | sed '$d')
+  HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+  BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
   case "$_RC:$HTTP_CODE" in
     0:2??) ;;
     28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
@@ -1227,7 +1231,7 @@ else
     --data-urlencode "module[name]@.idstack/canvas-push/title.txt" \
     -d "module[position]=$_POS" \
     "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules"
-  MODULE_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+  MODULE_ID=$(printf '%s\n' "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 fi
 _CALL "$_KIND \"$_NAME\" publish" -X PUT -d "module[published]=true" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID"
@@ -1251,8 +1255,8 @@ MODULE_ID=<module id printed in B4>
 _CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
   _WHAT=$1; shift
   RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
-  HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-  BODY=$(echo "$RESPONSE" | sed '$d')
+  HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+  BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
   case "$_RC:$HTTP_CODE" in
     0:2??) ;;
     28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
@@ -1277,7 +1281,7 @@ else
     --data-urlencode "wiki_page[body]@.idstack/canvas-push/body.html" \
     -d "wiki_page[published]=true" \
     "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/pages"
-  PAGE_URL=$(echo "$BODY" | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
+  PAGE_URL=$(printf '%s\n' "$BODY" | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
 fi
 _KIND="module item for page"
 _FIND modules/$MODULE_ID/items title id
@@ -1312,8 +1316,8 @@ case "$_POINTS" in ''|*[!0-9.]*) echo "PUSH_VALUE_BAD: points $_POINTS"; rm -rf 
 _CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
   _WHAT=$1; shift
   RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
-  HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-  BODY=$(echo "$RESPONSE" | sed '$d')
+  HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+  BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
   case "$_RC:$HTTP_CODE" in
     0:2??) ;;
     28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
@@ -1341,7 +1345,7 @@ else
     -d "assignment[submission_types][]=online_upload" \
     -d "assignment[published]=false" \
     "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/assignments"
-  ASSIGN_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+  ASSIGN_ID=$(printf '%s\n' "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 fi
 _KIND="module item for assignment"
 _FIND modules/$MODULE_ID/items title id
@@ -1373,8 +1377,8 @@ MODULE_ID=<module id printed in B4>
 _CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
   _WHAT=$1; shift
   RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
-  HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-  BODY=$(echo "$RESPONSE" | sed '$d')
+  HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+  BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
   case "$_RC:$HTTP_CODE" in
     0:2??) ;;
     28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
@@ -1399,7 +1403,7 @@ else
     --data-urlencode "message@.idstack/canvas-push/body.html" \
     -d "published=false" \
     "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/discussion_topics"
-  TOPIC_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+  TOPIC_ID=$(printf '%s\n' "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 fi
 _KIND="module item for discussion"
 _FIND modules/$MODULE_ID/items title id
@@ -1440,7 +1444,7 @@ cases:
 - **HTTP 429:** Rate limited. Wait 10 seconds and run the same block once more.
   If it is still 429, wait 30 seconds and run it once more. If it still fails,
   handle it like the cases below.
-- **Timeout, curl error or other HTTP code:** Canvas may have made the item
+- **Timeout, curl error or other HTTP code:** Canvas can have made the item
   before the call failed.
 
 For each case except 401 and 429: stop the push. Tell the user, in plain words,
