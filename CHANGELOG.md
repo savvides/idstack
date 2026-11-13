@@ -8,6 +8,10 @@
 - **A skill tells you when it cannot find the idstack files.** The skill shows the commands that install idstack again, and stops. Before, the scripts failed with "No such file".
 - **A skill stops when it cannot save to the manifest.** It shows the error, and it does not tell you that it saved the results. The skills no longer write `.idstack/project.json` by hand.
 - **`/idstack:needs-analysis` logs a timeline event when you stop after idstack recommends against training.** Closes #147.
+- **A symlinked manifest, report or learnings file stays a link.** `idstack-manifest-merge`, `idstack-report-section` and `idstack-learnings delete` now write to the real file. Before, they replaced the link with a regular file. Closes #168.
+- **A write error in a read-only folder gives a clear message, not a Python traceback.** `idstack-manifest-merge` exits 6. `idstack-report-section` exits 4 and prints `REPORT_WRITE_FAILED`, and the skill stops. Before, the skill changed the draft and tried again.
+- **idstack does not write a manifest that a newer idstack wrote.** `idstack-migrate` prints `NEWER_SCHEMA`, the skill tells you to update idstack, and `idstack-manifest-merge` exits 7. `idstack-migrate` also accepts a section with the value `null`.
+- **The dashboard reads the full timeline.** Before, it read only the last 200 lines. In a long project, the pipeline could then run an early skill again. This is the first part of #172.
 
 ### Changed — landing page
 

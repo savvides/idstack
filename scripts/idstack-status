@@ -53,7 +53,7 @@ timeline_summary() {
 import json, sys, os
 
 mode = os.environ['MODE']
-lines = open(sys.argv[1]).readlines()[-200:]
+lines = open(sys.argv[1]).readlines()
 events = []
 for line in lines:
     try:

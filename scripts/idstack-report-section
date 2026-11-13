@@ -32,7 +32,8 @@ finish  makes sure that no placeholder and no draft section remain, and removes
         placeholder is not changed: the last Step Review writes the Summary.
 
 Exit codes: 0 OK; 1 problems (the report did not change); 2 an error in the
-command, or a missing file that the script needs; 3 the report does not exist.
+command, or a missing file that the script needs; 3 the report does not exist;
+4 a write error (REPORT_WRITE_FAILED on stdout; the report did not change).
 Runs on Python 3.9.
 """
 
@@ -256,9 +257,11 @@ def trim(section_lines):
 
 
 def write_atomic(path, text):
-    folder = os.path.dirname(os.path.abspath(path))
-    fd, tmp = tempfile.mkstemp(dir=folder, prefix='.report-section-', suffix='.tmp')
+    # Rename onto the real file, so a symlinked report stays a link.
+    path = os.path.realpath(path)
+    tmp = None
     try:
+        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix='.report-section-', suffix='.tmp')
         with os.fdopen(fd, 'w', encoding='utf-8') as handle:
             handle.write(text)
         # mkstemp makes the file 0600. Keep the mode of the report, or use the umask.
@@ -270,7 +273,7 @@ def write_atomic(path, text):
             os.chmod(tmp, 0o666 & ~umask)
         os.replace(tmp, path)
     except BaseException:
-        if os.path.exists(tmp):
+        if tmp and os.path.exists(tmp):
             os.remove(tmp)
         raise
 
@@ -482,4 +485,9 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except OSError as exc:
+        # A write error is not a problem in the draft: the skill must stop, not edit the draft.
+        print('REPORT_WRITE_FAILED: %s' % exc)
+        sys.exit(fail(4, 'cannot write the report: %s. The report did not change.' % exc))

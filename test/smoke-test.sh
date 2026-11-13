@@ -509,6 +509,8 @@ check "preamble Project Manifest block prints IDSTACK_NOT_FOUND with no install"
   "awk '/^## Preamble: Project Manifest/{f=1} f&&/^\`\`\`bash/{b=1;next} b&&/^\`\`\`/{exit} b' '$IDSTACK_DIR/templates/preamble.md' | grep -qxF '[ -n \"\$_IDSTACK\" ] || echo \"IDSTACK_NOT_FOUND\"'"
 check "preamble tells skills to stop when the manifest merge fails" \
   "grep -qF 'If the merge command shows an error, or its' '$IDSTACK_DIR/templates/preamble.md'"
+check "preamble stops on a manifest from a newer idstack and on a report write error" \
+  "grep -qF 'If the output has a \`NEWER_SCHEMA\` line:' '$IDSTACK_DIR/templates/preamble.md' && grep -qF 'starts with \`REPORT_WRITE_FAILED:\`' '$IDSTACK_DIR/templates/preamble.md' && grep -qF 'idstack-migrate\" .idstack/project.json 2>&1 ||' '$IDSTACK_DIR/templates/preamble.md'"
 check "no skill writes the manifest by hand when the merge tool is unavailable" \
   "! grep -lE 'Fallback \(if .scripts/idstack-manifest-merge|fall back to manual write' '$IDSTACK_DIR'/skills/*/SKILL.md.tmpl"
 check "needs-analysis stop branch logs the timeline event" \

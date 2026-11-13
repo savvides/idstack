@@ -265,6 +265,34 @@ class ReportSectionTest(unittest.TestCase):
         self.append(TASKS)
         self.assertEqual(os.stat(self.path(REPORT)).st_mode & 0o777, 0o640)
 
+    def test_append_writes_through_a_symlinked_report(self):
+        # #168: the rename once replaced the link with a regular file.
+        self.init()
+        real = self.path('real-report.md')
+        os.replace(self.path(REPORT), real)
+        os.symlink(real, self.path(REPORT))
+        result = self.append(TASKS)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(os.path.islink(self.path(REPORT)))
+        with open(real, encoding='utf-8') as f:
+            self.assertIn('## Task analysis', f.read())
+
+    @unittest.skipIf(os.geteuid() == 0, 'root can write a read-only folder')
+    def test_a_write_error_exits_4_with_no_traceback(self):
+        self.init()
+        before = self.read(REPORT)
+        self.write(DRAFT, TASKS)
+        folder = os.path.dirname(self.path(REPORT))
+        os.chmod(folder, 0o555)
+        try:
+            result = self.run_helper('append', REPORT, DRAFT)
+        finally:
+            os.chmod(folder, 0o755)
+        self.assertEqual(result.returncode, 4, result.stdout + result.stderr)
+        self.assertIn('REPORT_WRITE_FAILED', result.stdout + result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(self.read(REPORT), before)
+
     def test_append_leaves_no_temporary_file(self):
         self.init()
         self.append(TASKS)
