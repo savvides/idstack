@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Assert the landing page's evidence index agrees with evidence/references.md.
 
-docs/index.html carries one row per research domain, each restating three facts
-from evidence/references.md: how many studies the domain holds, how many sit at
-each tier (the tier-mix bar's data-tiers attribute; nothing renders it, since the bar
-is drawn by the inline segment widths, which this check does not compare), and the span
-of evidence tiers across them. The earlier per-domain cards were hand-typed, and
-three had drifted by v3.4.0.0 — two advertised T2 for domains whose strongest
-reference is T3.
+docs/index.html carries one row per research domain, each restating facts from
+evidence/references.md: how many studies sit at each tier (the tier-mix bar's
+data-tiers attribute; nothing renders it, since the bar is drawn by the inline segment
+widths, which this check does not compare), the same mix as whole-number shares in the
+bar's aria-label, and the span of evidence tiers across them. The page shows no number
+of studies, because a literature review changes the numbers; the per-tier counts in
+data-tiers, and their sum, are still compared with the reference file. The earlier
+per-domain cards were hand-typed, and three had drifted by v3.4.0.0 — two advertised
+T2 for domains whose strongest reference is T3.
 
 Overstating tier strength is the one inaccuracy idstack cannot afford: the
 product's entire claim is that it labels evidence honestly. So the cards are
@@ -30,18 +32,20 @@ DOMAIN_RE = re.compile(r"^## Domain \d+: (.+?)\s*$")
 # A reference key: "[Alignment-14]" — one per study.
 CITATION_RE = re.compile(r"\[[A-Za-z][A-Za-z-]*-\d+\]")
 TIER_RE = re.compile(r"\bT([1-5])\b")
-# One index row: title, study count, per-tier counts, tier range. Order-independent;
-# matched by title. The title, count and per-tier fields are bounded by the row's own
-# markup, so a row missing one of them cannot borrow the next row's value. The tier-range
-# field is reached with '.*?', so a row with no evidence-row-tiers span takes the next
-# row's range.
+# One index row: title, the tier-mix bar's opening tag, tier range. Order-independent;
+# matched by title. The title and the bar tag are bounded by the row's own markup, so a
+# row missing one of them cannot borrow the next row's value (a row with anything between
+# the title and the bar, such as a count span, does not match and is reported missing).
+# The tier-range field is reached with '.*?', so a row with no evidence-row-tiers span
+# takes the next row's range.
 CARD_RE = re.compile(
     r'evidence-row-title">([^<]*)</h3>'
-    r'[^<]*<span class="evidence-row-count">(\d+)\s+studies</span>'
-    r'[^<]*<span class="tier-mix"[^>]*data-tiers="([0-9,]*)"'
+    r'[^<]*(<span class="tier-mix"[^>]*>)'
     r'.*?evidence-row-tiers">([^<]*)</span>',
     re.S,
 )
+DATA_TIERS_RE = re.compile(r'\bdata-tiers="([0-9,]*)"')
+ARIA_LABEL_RE = re.compile(r'\baria-label="([^"]*)"')
 
 
 def tier_span(tiers):
@@ -50,6 +54,15 @@ def tier_span(tiers):
     if lo == hi:
         return "T%d" % lo
     return "T%d–T%d" % (lo, hi)
+
+
+def shares_label(per_tier):
+    """The bar's aria-label for per-tier counts: each tier's whole-number share, half up."""
+    total = sum(per_tier)
+    return "Tier mix: " + ", ".join(
+        "%d%% at T%d" % ((200 * n + total) // (2 * total), i + 1)
+        for i, n in enumerate(per_tier)
+    )
 
 
 def parse_domains(path):
@@ -96,12 +109,23 @@ def main():
         print("no '## Domain N:' sections found in evidence/references.md")
         return 1
 
-    cards = CARD_RE.findall(io.open(landing, encoding="utf-8").read())
+    page = io.open(landing, encoding="utf-8").read()
+    cards = CARD_RE.findall(page)
     by_title = {}
-    for raw_title, count, mix, tier in cards:
-        by_title[html.unescape(raw_title).strip()] = (int(count), mix, tier.strip())
+    for raw_title, bar, tier in cards:
+        mix = DATA_TIERS_RE.search(bar)
+        label = ARIA_LABEL_RE.search(bar)
+        by_title[html.unescape(raw_title).strip()] = (
+            mix.group(1) if mix else "",
+            html.unescape(label.group(1)) if label else "",
+            tier.strip(),
+        )
 
     problems = []
+    if 'class="evidence-row-count"' in page:
+        problems.append(
+            "docs/index.html has an evidence-row-count span; the cards show no number of studies"
+        )
     if len(cards) != len(domains):
         problems.append(
             "index row count %d != domain count %d — a domain was added or removed "
@@ -112,18 +136,32 @@ def main():
         if name not in by_title:
             problems.append("no evidence index row for domain %r" % name)
             continue
-        card_count, card_mix, card_tier = by_title.pop(name)
-        if card_count != count:
-            problems.append(
-                "%s: row says %d studies, references.md has %d"
-                % (name, card_count, count)
-            )
+        card_mix, card_label, card_tier = by_title.pop(name)
         want_mix = ",".join(str(n) for n in per_tier)
         if card_mix != want_mix:
             problems.append(
                 "%s: tier-mix bar says %s (T1..T5), references.md has %s"
                 % (name, card_mix, want_mix)
             )
+        # A reference line with no tier is in count but in no tier, so per_tier alone
+        # would not see it.
+        if sum(per_tier) != count:
+            problems.append(
+                "%s: references.md has %d references, but only %d have a tier"
+                % (name, count, sum(per_tier))
+            )
+        # Shares come from the card's own data-tiers, so a label that disagrees with
+        # the bar is reported even when data-tiers itself is wrong. The exact string
+        # also rules out a count ("15 at T1") in the label. A data-tiers value that
+        # is not five numbers is already reported above.
+        card_counts = [int(n) for n in card_mix.split(",") if n]
+        if len(card_counts) == 5 and sum(card_counts):
+            want_label = shares_label(card_counts)
+            if card_label != want_label:
+                problems.append(
+                    "%s: tier-mix aria-label says %r, data-tiers gives %r"
+                    % (name, card_label, want_label)
+                )
         if not tiers:
             problems.append("%s: references.md lists no evidence tiers" % name)
             continue

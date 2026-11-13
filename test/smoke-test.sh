@@ -137,7 +137,7 @@ check "landing: no transparent text (no bare 'color: transparent')" \
   "! grep -Eq '[^-]color: *transparent' '$LANDING'"
 
 # The landing page's evidence index restates evidence/references.md: one row per
-# domain with a study count, the count at each tier and a tier range. The earlier
+# domain with the count at each tier (data-tiers), its shares (aria-label) and a tier range. The earlier
 # per-domain cards were hand-maintained and three had drifted —
 # two advertised T2 for domains whose strongest evidence is T3, which is the one
 # error idstack cannot afford, since tier honesty is the whole product. Derived

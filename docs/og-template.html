@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>idstack OG card</title>
   <!-- Source for og-image.png (1200x630). Render with headless Chrome:
-       chrome --headless --hide-scrollbars --window-size=1200,630 --screenshot=og-image.png og-template.html
+       chrome --headless --hide-scrollbars --window-size=1200,630 --virtual-time-budget=10000 --screenshot=og-image.png og-template.html
        Fonts and colors follow docs/index.html (DESIGN.md § Landing page). -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
   <style>
@@ -80,7 +80,7 @@
     }
 
     .rail { border-top: 1px solid var(--hero-rule); padding-top: 22px; }
-    /* 168 studies by tier (T1 52, T2 6, T3 49, T4 25, T5 36), from evidence/references.md. */
+    /* The bar shows the share of each tier, from evidence/references.md. */
     .mix { display: flex; height: 14px; margin-bottom: 16px; }
     .mix span { display: block; height: 100%; }
     .rail-row {
@@ -100,8 +100,8 @@
     <span class="brand">idstack<sup class="brand-beta">beta</sup></span>
 
     <div>
-      <h1 class="hero-title">The AI instructional design tool that cites its research.</h1>
-      <p class="lede">Your framework: ADDIE, backward design or SAM. The literature: 168 peer-reviewed studies across 11 research domains. Every recommendation names its study and evidence tier, like <span class="cite">[Assessment-8] [T1]</span>.</p>
+      <h1 class="hero-title">An AI copilot for instructional design.</h1>
+      <p class="lede">Your framework: ADDIE, backward design or SAM. The literature: peer-reviewed studies across 11 research domains. Every recommendation names its study and evidence tier, like <span class="cite">[Assessment-8] [T1]</span>.</p>
     </div>
 
     <div class="rail">
@@ -114,11 +114,11 @@
       </div>
       <div class="rail-row">
         <span class="legend">
-          <span><b style="color:var(--tier-1)">T1</b>52</span>
-          <span><b style="color:var(--tier-2)">T2</b>6</span>
-          <span><b style="color:var(--tier-3)">T3</b>49</span>
-          <span><b style="color:var(--tier-4)">T4</b>25</span>
-          <span><b style="color:var(--tier-5)">T5</b>36</span>
+          <span><b style="color:var(--tier-1)">T1</b></span>
+          <span><b style="color:var(--tier-2)">T2</b></span>
+          <span><b style="color:var(--tier-3)">T3</b></span>
+          <span><b style="color:var(--tier-4)">T4</b></span>
+          <span><b style="color:var(--tier-5)">T5</b></span>
         </span>
         <span>idstack.org</span>
       </div>

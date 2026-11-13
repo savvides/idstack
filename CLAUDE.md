@@ -63,13 +63,15 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # scripts/idstack-ste-check unit tests (smoke-test also runs them)
 python3 test/test-report-section.py     # 39 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
-python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md
+python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md: titles, data-tiers,
+                                       # the aria-label shares and tier ranges. Fails on a card that shows a number of studies
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
 python3 test/test-citation-tiers.py   # check-citation-tiers.py unit tests: comma lists, line-split citations (smoke-test also runs them)
 python3 test/check-doc-accuracy.py .   # Verifies version strings, the schema version, that each scripts/ path in README exists and,
                                        # outside scripts/lib/, is executable, and that each test/*.sh, *.py and *.js file named in CLAUDE.md and CONTRIBUTING.md exists
                                        # Also checks the landing page: one h1, title and description length, equal titles, no keywords tag,
-                                       # the study count in the title and hero, no font below 12px, Install before Skills, 404.html and llms.txt
+                                       # no number of studies in the visible text or meta tags, no font below 12px, Install before Skills,
+                                       # 404.html and llms.txt
 ./test/mutation-test.sh           # Reintroduces each fixed defect and asserts its guarding test fails.
                                   # The full run takes ~2.5 h: run it in the background.
                                   # Run a frozen copy (cp test/mutation-test.sh "$S/m.sh"; bash "$S/m.sh" "$(pwd -P)"):
@@ -257,11 +259,12 @@ Every recommendation in a skill must cite its evidence tier using domain codes f
 Format: `[DomainCode-Number] [Tier]` (e.g., `[Alignment-14] [T1]`). Stronger evidence takes precedence when tiers conflict.
 
 Editing `evidence/references.md`:
+- Do not write a specific number of studies (a total, a count for a domain or a tier, or a count of new references) in documentation or site copy: the README, `DESIGN.md`, `CHANGELOG.md`, `docs/`. A literature review changes the numbers. Write "peer-reviewed studies" or link to `evidence/references.md`.
 - Add each new reference with the next free number in its domain. Never renumber or reuse a number.
 - When a tier changes, update every `[Code-N] [Tn]` that cites it, then run `scripts/idstack-gen-skills`. If a grouped citation (`[A] [B] [T1]`) now has mixed tiers, split it (`[A] [T1] [B] [T2]`).
 - `check-citation-tiers.py` does not scan `extension/`. `test/test-evidence-labels.mjs` (run by `test-extension.sh`) checks the codes and tiers in `extension/shared/prompts.js`, `extension/background/parser-helper.js` (the demo findings) and `extension/shared/evidence-base.js`.
-- The total study count is hand-typed: 11 places in `docs/index.html` (the title, `og:title`, `twitter:title`, the three descriptions, the hero lede, the "See the 168 studies" link, the evidence heading and lede, and one FAQ answer), plus `DESIGN.md` and `docs/og-template.html`. `check-doc-accuracy.py` checks that the title count equals the hero count. `docs/og-image.png` is a screenshot of `docs/og-template.html`: after you change the template, render the image again with the command in its header comment. The README evidence table has hand-typed study counts, T1 counts and tier ranges for 7 domains. `check-evidence-cards.py` checks only the per-domain cards.
-- `test/mutation-test.sh` quotes literal citation lines and needs one card tier range that is unique on the page (case 18). After changing tiers, grep it for the old strings.
+- The landing page and the share card give no number of studies, and `check-doc-accuracy.py` fails on one. `docs/og-image.png` is a screenshot of `docs/og-template.html`: after you change the template, render the image again with the command in its header comment. The README evidence table has a hand-typed tier range for each of 7 domains, and no count of studies. `check-evidence-cards.py` checks only the per-domain cards: the per-tier counts in `data-tiers` (and their sum), the shares in the bar's `aria-label` and the tier range. When a domain gains a reference, update its `data-tiers`, `aria-label`, bar width and segment widths.
+- `test/mutation-test.sh` quotes literal citation lines and needs one card tier range that is unique on the page (case 18). Cases 18b and 18c quote card `data-tiers` and `aria-label` values. After changing tiers, grep it for the old strings.
 - The Consensus MCP server, if connected, can verify references and find newer ones. Run at most 3 searches at a time. idstack itself has no Consensus integration since v3.9.0.0.
 
 ### Interaction pattern

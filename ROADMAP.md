@@ -10,7 +10,7 @@ What's coming next for idstack. Priorities are shaped by user feedback. [Tell us
 - **`/idstack:storyboard`, `/idstack:question-bank` and `/idstack:evaluation-plan`** make a storyboard, quiz and test questions, and an evaluation plan. Each works alone, at any time.
 - **Reports are Markdown, and you approve each section.** A skill adds each step to the report as a draft table. You approve it, change a row or remove a row.
 - **`/idstack:start` asks for your experience level one time.**
-- **The evidence base has 154 studies.** Eight new references cover test questions, practice tests, training evaluation and transfer.
+- **The evidence base has new references.** They cover test questions, practice tests, training evaluation and transfer.
 
 ### idstack in the Claude desktop app & `/idstack:start` (v3.10.0.0)
 - **You can use idstack with no terminal.** Install it in the Code tab of the Claude desktop app, then type `/idstack:start`.

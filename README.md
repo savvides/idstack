@@ -486,17 +486,17 @@ Four companion skills are not in the pipeline: `/idstack:quick-check`, `/idstack
 
 idstack encodes findings from a literature synthesis spanning 11 domains of instructional design research. The full citation list (all 11 domains, 5 evidence tiers) is in [evidence/references.md](evidence/references.md). A selection:
 
-| Domain | Studies (T1 studies) | Tier range | Key Finding |
-|--------|---------------------|------------|-------------|
-| Cognitive Load Theory | 19 (6) | T1–T5 | Manage working memory load through sequencing, segmenting, and integration |
-| Multimedia Learning | 16 (9) | T1–T5 | Spatial contiguity, signaling, and coherence reliably improve learning |
-| Formative Assessment | 21 (15) | T1–T5 | Feedback that explains what to do next outperforms correctness-only feedback |
-| Constructive Alignment | 13 (2) | T1–T5 | Objectives, activities, and assessments must form a coherent chain |
-| Online Course Quality | 16 (3) | T1–T5 | QM standards + CoI presence predicts outcomes beyond compliance |
-| Needs Analysis | 12 (2) | T1–T3 | Multi-level analysis is necessary but rarely done |
-| Accessibility & UDL | 15 (2) | T1–T5 | WCAG 2.1 AA is the legal baseline; UDL 3.0 extends to design for learner variation |
+| Domain | Tier range | Key Finding |
+|--------|------------|-------------|
+| Cognitive Load Theory | T1–T5 | Manage working memory load through sequencing, segmenting, and integration |
+| Multimedia Learning | T1–T5 | Spatial contiguity, signaling, and coherence reliably improve learning |
+| Formative Assessment | T1–T5 | Feedback that explains what to do next outperforms correctness-only feedback |
+| Constructive Alignment | T1–T5 | Objectives, activities, and assessments must form a coherent chain |
+| Online Course Quality | T1–T5 | QM standards + CoI presence predicts outcomes beyond compliance |
+| Needs Analysis | T1–T3 | Multi-level analysis is necessary but rarely done |
+| Accessibility & UDL | T1–T5 | WCAG 2.1 AA is the legal baseline; UDL 3.0 extends to design for learner variation |
 
-The counts come from `evidence/references.md`. Most of the Constructive Alignment references are T4 and T5, and most of the Needs Analysis references are T3.
+The tier ranges come from `evidence/references.md`. Most of the Constructive Alignment references are T4 and T5, and most of the Needs Analysis references are T3.
 
 **Cross-domain principles** (each is in 2 or more domains):
 1. Alignment is non-negotiable

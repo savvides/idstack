@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate documentation accuracy: version strings, the manifest schema version, scripts/ and test/ path references, removed date fields, and the landing page's search tags, headings and text size.
+"""Validate documentation accuracy: version strings, the manifest schema version, scripts/ and test/ path references, removed date fields, and the landing page's search tags, headings, text size and that it gives no number of studies.
 
 Usage: check-doc-accuracy.py <repo-root>
 Prints diagnostic lines and exits 1 on mismatch; prints nothing and exits 0 when clean.
@@ -175,10 +175,15 @@ def check_landing_page(root, problems):
     if '<meta name="keywords"' in page:
         problems.append("docs/index.html has a keywords meta tag; it was removed on purpose")
 
-    in_title = re.search(r"backed by (\d+) studies", title or "")
-    in_hero = re.search(r'id="hero-title".*?<p class="lede">.*?(\d+) peer-reviewed studies', page, re.S)
-    if not (in_title and in_hero and in_title.group(1) == in_hero.group(1)):
-        problems.append("docs/index.html: the study count in the title does not equal the count in the hero")
+    # No number of studies: a literature review changes the numbers.
+    body = re.search(r"<body\b[^>]*>(.*)</body>", page, re.S)
+    body = re.sub(r"<(script|style)\b.*?</\1>|<!--.*?-->", " ", body.group(1) if body else "", flags=re.S | re.I)
+    visible = [re.sub(r"<[^>]+>", " ", body), title or ""]
+    visible += re.findall(r'<meta (?:name="description"|property="og:[^"]*"|name="twitter:[^"]*") content="([^"]*)"', page)
+    for text in visible:
+        m = re.search(r"\b\d[\d,]*\s+(?:peer-reviewed\s+)?(?:studies|references|papers)\b", html.unescape(text), re.I)
+        if m:
+            problems.append('docs/index.html gives a number of studies: "%s"' % m.group(0))
 
     for size, unit in re.findall(r"font-size:\s*([\d.]+)(rem|px)\b", page):
         if float(size) < (0.75 if unit == "rem" else 12):
