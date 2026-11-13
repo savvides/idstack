@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- **`./setup` fails when `claude` is missing, and checks python3.** Before, setup printed a warning, showed the "how to use" banner and exited 0 when `claude` was not on PATH. Now it prints an error and exits 1 with no banner. It also runs `scripts/idstack-doctor --quick` first, and stops with an error when python3 is missing or older than 3.9.
 - **The export readiness check does not pass a red-team section that has no critical count.** Before, `scripts/idstack-status --readiness` used 0 when `red_team_audit.findings_summary.critical` was missing, and the verdict was `READY TO EXPORT`. Now the red-team row is `NEEDS-WORK` with `Critical: none`, and the verdict gives the reason "no red-team critical count".
 - **The Chrome extension (1.2.5) does not read Classic Quizzes pages that show student answers.** These pages are the quiz history, the submissions and their versions, moderate and the quiz data pages. Before, an audit sent the text of these pages to the AI model.
 - **The Chrome extension (1.2.6) keeps your API key on this device.** Before, it saved the key in `chrome.storage.sync`, and Chrome copied it to your Google account. Now it saves the key in `chrome.storage.local`, and Chrome does not copy it to other devices. A key that an older version saved in `chrome.storage.sync` is not lost. The extension moves it to this device and deletes the old copy. Closes #177.

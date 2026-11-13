@@ -97,6 +97,26 @@ STUB_EXIT=1 run_setup
 check "a failing 'claude' call prints manual-recovery steps" \
   "grep -q 'marketplace add' '$WORK/env/out.log'"
 
+# --- missing prerequisites: no banner, nonzero exit (#184) ---
+# Hide the real `claude`: a PATH of only the system dirs, with python3 from the real PATH.
+setup_env
+_bin="$WORK/env/nobin"; mkdir -p "$_bin"
+for d in /usr/bin /bin; do for f in "$d"/*; do ln -sf "$f" "$_bin/$(basename "$f")"; done; done
+rm -f "$_bin/claude"; ln -sf "$(command -v python3)" "$_bin/python3"
+check "no 'claude' on PATH: exit 1 and no banner" \
+  "( export HOME='$WORK/env/home' PATH='$_bin'; cd '$WORK/env/idstack' && ./setup ) >'$WORK/env/out.log' 2>&1; [ \$? -eq 1 ] && grep -q 'claude' '$WORK/env/out.log' && ! grep -q 'To use a skill' '$WORK/env/out.log'"
+cat "$WORK/env/out.log" >> "$WORK/ste-runs.txt"
+
+setup_env
+printf '#!/bin/sh\nexit 1\n' > "$WORK/env/bin/python3"; chmod +x "$WORK/env/bin/python3"
+check "python3 too old or missing: nonzero exit and no banner" \
+  "raw_setup >'$WORK/env/out.log' 2>&1; [ \$? -ne 0 ] && ! grep -q 'To use a skill' '$WORK/env/out.log'"
+cat "$WORK/env/out.log" >> "$WORK/ste-runs.txt"
+
+setup_env
+check "happy path exits 0 and shows the banner" \
+  "raw_setup >'$WORK/env/out.log' 2>&1 && grep -q 'To use a skill' '$WORK/env/out.log'"
+
 # --- regeneration invariant ---
 # The fixture is copied from a tree the smoke test already gates as fresh, so
 # asserting freshness after a plain run proves nothing. Dirty a generated file

@@ -2519,7 +2519,31 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "quiz answer pages not blocked" "$WORK/r/test/test-extension.sh"
 
-# 66a. The API key goes back to chrome.storage.sync -> test-extension must fail.
+# 66a. Setup exits 0 with the banner when `claude` is missing -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = '--scope $CLAUDE_SCOPE" >&2\n  exit 1\nfi'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '--scope $CLAUDE_SCOPE" >&2\nfi', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "setup exits 0 when claude is missing" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 66b. Setup skips the python3 check -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = '_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) ||'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) || true ||', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "setup ignores a bad python3" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 69a. The API key goes back to chrome.storage.sync -> test-extension must fail.
 fresh
 python3 - "$WORK/r/extension/shared/storage.js" <<'PY'
 import sys
@@ -2531,7 +2555,7 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "API key saved in chrome.storage.sync" "$WORK/r/test/test-extension.sh"
 
-# 66b. The migration leaves the old key in sync -> test-extension must fail.
+# 69b. The migration leaves the old key in sync -> test-extension must fail.
 fresh
 python3 - "$WORK/r/extension/shared/storage.js" <<'PY'
 import sys
@@ -2543,7 +2567,7 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "old API key not deleted from sync" "$WORK/r/test/test-extension.sh"
 
-# 66c. A New Quizzes moderation or reporting page is read again -> test-extension must fail.
+# 69c. A New Quizzes moderation or reporting page is read again -> test-extension must fail.
 fresh
 python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
 import sys
