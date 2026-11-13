@@ -16,11 +16,16 @@
 - **A new manifest has the mode of the umask, not 0600.** `idstack-migrate --init` makes the seed with the umask mode. A merge keeps the mode of the manifest (#190).
 - **`idstack-manifest-merge` and `idstack-migrate --init` do not make or write a manifest when the course folder is your home folder.** Exit code 9. The check is in the scripts, not in the preamble, so each skill has it (#178).
 - **Two sessions in one course folder do not lose manifest updates.** `idstack-manifest-merge` holds an exclusive lock on `.idstack/.manifest.lock` from its read to its write. The new option `--expect-updated <ts>` writes nothing and exits 8 if the manifest changed after the skill read it. Each skill writes its report draft to `.idstack/.report-section.<skill>.md`. Two sessions that run the same skill in one folder still share a draft (#179).
+- **`/idstack:course-import` refuses a .docx that has a DOCTYPE or ENTITY declaration (#182).** Before, the block parsed it with the XML parser of macOS python3 3.9, which has no limit on entity expansion. A crafted file could stop the session. Now the block prints `DOCX_READ_FAILED` and stops before it parses.
+- **Model-filled values in the skills no longer go into a double-quoted shell string (#183).** These are the `--mode` value of each report block, the experience level in `/idstack:start`, and the module position and the assignment points in `/idstack:course-export`. Each now uses a quoted heredoc. The experience level, the position and the points stop with `LEVEL_BAD` or `PUSH_VALUE_BAD` when the value is wrong.
+- **The Canvas push in `/idstack:course-export` stops on an error and does not make duplicates (#180).** Each call has `--max-time 60` and reads the HTTP code. A code that is not 2xx, a timeout or a curl error stops the block with `PUSH_FAILED` and the item name. Each block now uses an item that exists with the same title, and a second push does not make it again. A block also adds a new page, assignment or discussion to its module. Only a fake curl tested this, not a live Canvas.
+- **`/idstack:course-import` and `/idstack:assessment-design` note the manifest stamp and pass it to the merge (#179, skill side).** The merge command gets `--expect-updated`. On exit code 8, the skill reads the manifest again, adds its changes to the sections that changed, and tries one more time. The flag itself comes with the change to `scripts/idstack-manifest-merge`.
 
 ### Tests
 
 - `test/test-status.sh` has 4 new tests for the readiness check and the project name. `test/test-extractor.mjs` tests the quiz pages. `test/mutation-test.sh` has cases 65a and 65b.
 - New tests: `test/test-ste-check.py` (1), `test/test-status.sh` (2), `test/integration-test.sh` (1) and `test/test-manifest-merge.sh` (9: file mode, home folder, the lock, `--expect-updated`). `test/mutation-test.sh` has cases 70a to 70i.
+- `test/test-skill-shell-zsh.sh` has a fake curl that answers 500, times out and lists existing items. It has hostile-text checks for the changed blocks and a .docx with a DOCTYPE. `test/mutation-test.sh` has cases 68a to 68l.
 
 ## v3.11.1.0 (2026-11-13)
 

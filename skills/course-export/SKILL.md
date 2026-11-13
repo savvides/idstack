@@ -1130,12 +1130,12 @@ revoke the token in Canvas."
 [ -n "$CANVAS_TOKEN" ] || { echo "CANVAS_TOKEN_EMPTY: add the token to .idstack/canvas.env"; exit 1; }
 case "$CANVAS_TOKEN" in *'"'*|*'\'*) echo "CANVAS_TOKEN_BAD: the token in .idstack/canvas.env has a quotation mark or a backslash"; exit 1 ;; esac
 case "$CANVAS_BASE_URL" in https://*) ;; *) echo "CANVAS_URL_NOT_HTTPS: $CANVAS_BASE_URL"; exit 1 ;; esac
-RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" \
+RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" \
   "$CANVAS_BASE_URL/api/v1/users/self" 2>&1)
-HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | sed '$d')
+HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
 echo "HTTP: $HTTP_CODE"
-echo "$BODY" | head -5
+printf '%s\n' "$BODY" | head -5
 ```
 
 Handle errors:
@@ -1151,7 +1151,7 @@ Handle errors:
 Verify course access:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" \
+printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID" 2>&1
 ```
 
@@ -1185,34 +1185,64 @@ Write only the value, with no newline at the end. Write the files again before t
 
 ### B4. Create Modules
 
+A block in B4 to B7 stops with `PUSH_FAILED: <item>: <reason>` when a call to
+Canvas fails. If you run a block again, it first looks for the item by its
+title. It does not create an item that exists. The first 100 matches of the
+search are used.
+
+The lookup is by title only. A page and an assignment with one
+title in one module share a module-item match. A title with a space at the start
+or the end can be made twice on a re-run.
+
 For each module in the course content, write the module title to
-`.idstack/canvas-push/title.txt`. Then run:
+`.idstack/canvas-push/title.txt`. Replace `<position>` with the number of the
+module in the course, starting at 1. Then run:
 
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 [ -f .idstack/canvas-push/title.txt ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" -X POST \
-  --data-urlencode "module[name]@.idstack/canvas-push/title.txt" \
-  -d "module[position]={position}" \
-  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules" 2>&1)
+IFS= read -r _POS <<'IDSTACK_POSITION'
+<position>
+IDSTACK_POSITION
+case "$_POS" in ''|*[!0-9]*) echo "PUSH_VALUE_BAD: position $_POS"; rm -rf .idstack/canvas-push; exit 1 ;; esac
+_CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
+  _WHAT=$1; shift
+  RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
+  HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+  BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
+  case "$_RC:$HTTP_CODE" in
+    0:2??) ;;
+    28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
+    0:*) echo "PUSH_FAILED: $_WHAT: HTTP $HTTP_CODE"; rm -rf .idstack/canvas-push; exit 1 ;;
+    *) echo "PUSH_FAILED: $_WHAT: curl error $_RC"; rm -rf .idstack/canvas-push; exit 1 ;;
+  esac
+}
+_FIND() { # _FIND <list path> <name field> <result field>: sets _FOUND to the result of the item that has the title, or to nothing
+  _CALL "$_KIND \"$_NAME\" lookup" -G --data-urlencode "search_term@.idstack/canvas-push/title.txt" -d "per_page=100" "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/$1"
+  # shortcut: the first 100 matches only, enough when a title is not in 100 other titles
+  _FOUND=$(BODY="$BODY" python3 -c 'import json,os,sys
+n=open(".idstack/canvas-push/title.txt",encoding="utf-8").read().rstrip("\n")
+print(next((x[sys.argv[2]] for x in json.loads(os.environ["BODY"]) if x.get(sys.argv[1])==n),""))' "$2" "$3") || { echo "PUSH_FAILED: $_KIND \"$_NAME\" lookup: idstack cannot read the list from Canvas"; rm -rf .idstack/canvas-push; exit 1; }
+}
+_KIND=module; _NAME=$(cat .idstack/canvas-push/title.txt)
+_FIND modules name id
+if [ -n "$_FOUND" ]; then
+  MODULE_ID=$_FOUND; echo "MODULE_EXISTS: $_NAME"
+else
+  _CALL "$_KIND \"$_NAME\"" -X POST \
+    --data-urlencode "module[name]@.idstack/canvas-push/title.txt" \
+    -d "module[position]=$_POS" \
+    "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules"
+  MODULE_ID=$(printf '%s\n' "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+fi
+_CALL "$_KIND \"$_NAME\" publish" -X PUT -d "module[published]=true" \
+  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID"
 rm -rf .idstack/canvas-push
-HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | sed '$d')
 echo "HTTP: $HTTP_CODE"
-MODULE_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 echo "MODULE_ID=$MODULE_ID"
 ```
 
-Publish the module:
-```bash
-. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-MODULE_ID=<module id printed in B4>
-printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -X PUT \
-  -d "module[published]=true" \
-  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID"
-```
-
-Store the returned module ID for adding items in subsequent steps.
+Keep the `MODULE_ID` for adding items in the next steps.
 
 ### B5. Create Pages and Add to Modules
 
@@ -1223,73 +1253,115 @@ For each module page (content, syllabus), write the page title to
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 [ -f .idstack/canvas-push/title.txt ] && [ -f .idstack/canvas-push/body.html ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-# Create the page
-RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" -X POST \
-  --data-urlencode "wiki_page[title]@.idstack/canvas-push/title.txt" \
-  --data-urlencode "wiki_page[body]@.idstack/canvas-push/body.html" \
-  -d "wiki_page[published]=true" \
-  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/pages" 2>&1)
+MODULE_ID=<module id printed in B4>
+_CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
+  _WHAT=$1; shift
+  RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
+  HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+  BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
+  case "$_RC:$HTTP_CODE" in
+    0:2??) ;;
+    28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
+    0:*) echo "PUSH_FAILED: $_WHAT: HTTP $HTTP_CODE"; rm -rf .idstack/canvas-push; exit 1 ;;
+    *) echo "PUSH_FAILED: $_WHAT: curl error $_RC"; rm -rf .idstack/canvas-push; exit 1 ;;
+  esac
+}
+_FIND() { # _FIND <list path> <name field> <result field>: sets _FOUND to the result of the item that has the title, or to nothing
+  _CALL "$_KIND \"$_NAME\" lookup" -G --data-urlencode "search_term@.idstack/canvas-push/title.txt" -d "per_page=100" "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/$1"
+  # shortcut: the first 100 matches only, enough when a title is not in 100 other titles
+  _FOUND=$(BODY="$BODY" python3 -c 'import json,os,sys
+n=open(".idstack/canvas-push/title.txt",encoding="utf-8").read().rstrip("\n")
+print(next((x[sys.argv[2]] for x in json.loads(os.environ["BODY"]) if x.get(sys.argv[1])==n),""))' "$2" "$3") || { echo "PUSH_FAILED: $_KIND \"$_NAME\" lookup: idstack cannot read the list from Canvas"; rm -rf .idstack/canvas-push; exit 1; }
+}
+_KIND=page; _NAME=$(cat .idstack/canvas-push/title.txt)
+_FIND pages title url
+if [ -n "$_FOUND" ]; then
+  PAGE_URL=$_FOUND; echo "PAGE_EXISTS: $_NAME"
+else
+  _CALL "$_KIND \"$_NAME\"" -X POST \
+    --data-urlencode "wiki_page[title]@.idstack/canvas-push/title.txt" \
+    --data-urlencode "wiki_page[body]@.idstack/canvas-push/body.html" \
+    -d "wiki_page[published]=true" \
+    "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/pages"
+  PAGE_URL=$(printf '%s\n' "$BODY" | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
+fi
+_KIND="module item for page"
+_FIND modules/$MODULE_ID/items title id
+if [ -n "$_FOUND" ]; then
+  echo "ITEM_EXISTS: $_NAME"
+else
+  _CALL "$_KIND \"$_NAME\"" -X POST \
+    --data-urlencode "module_item[title]@.idstack/canvas-push/title.txt" \
+    -d "module_item[type]=Page" -d "module_item[page_url]=$PAGE_URL" -d "module_item[published]=true" \
+    "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
+fi
 rm -rf .idstack/canvas-push
-HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | sed '$d')
-PAGE_URL=$(echo "$BODY" | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
 echo "HTTP: $HTTP_CODE"
 echo "PAGE_URL=$PAGE_URL"
-```
-
-Then write the page title to `.idstack/canvas-push/title.txt` again and add the
-page to its module:
-```bash
-. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-[ -f .idstack/canvas-push/title.txt ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-MODULE_ID=<module id printed in B4>
-IFS= read -r PAGE_URL <<'IDSTACK_PAGE_URL'
-<PAGE_URL printed above>
-IDSTACK_PAGE_URL
-printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -X POST \
-  --data-urlencode "module_item[title]@.idstack/canvas-push/title.txt" \
-  -d "module_item[type]=Page" -d "module_item[page_url]=$PAGE_URL" -d "module_item[published]=true" \
-  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
-rm -rf .idstack/canvas-push
 ```
 
 ### B6. Create Assignments
 
 For each assessment (essay, project, upload type), write the title to
 `.idstack/canvas-push/title.txt` and the HTML description with the rubric to
-`.idstack/canvas-push/body.html`. Then run:
+`.idstack/canvas-push/body.html`. Replace `<points>` with the points for the
+assignment. Then run:
 
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 [ -f .idstack/canvas-push/title.txt ] && [ -f .idstack/canvas-push/body.html ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" -X POST \
-  --data-urlencode "assignment[name]@.idstack/canvas-push/title.txt" \
-  --data-urlencode "assignment[description]@.idstack/canvas-push/body.html" \
-  -d "assignment[points_possible]={points}" \
-  -d "assignment[submission_types][]=online_text_entry" \
-  -d "assignment[submission_types][]=online_upload" \
-  -d "assignment[published]=false" \
-  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/assignments" 2>&1)
+MODULE_ID=<module id printed in B4>
+IFS= read -r _POINTS <<'IDSTACK_POINTS'
+<points>
+IDSTACK_POINTS
+case "$_POINTS" in ''|*[!0-9.]*) echo "PUSH_VALUE_BAD: points $_POINTS"; rm -rf .idstack/canvas-push; exit 1 ;; esac
+_CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
+  _WHAT=$1; shift
+  RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
+  HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+  BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
+  case "$_RC:$HTTP_CODE" in
+    0:2??) ;;
+    28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
+    0:*) echo "PUSH_FAILED: $_WHAT: HTTP $HTTP_CODE"; rm -rf .idstack/canvas-push; exit 1 ;;
+    *) echo "PUSH_FAILED: $_WHAT: curl error $_RC"; rm -rf .idstack/canvas-push; exit 1 ;;
+  esac
+}
+_FIND() { # _FIND <list path> <name field> <result field>: sets _FOUND to the result of the item that has the title, or to nothing
+  _CALL "$_KIND \"$_NAME\" lookup" -G --data-urlencode "search_term@.idstack/canvas-push/title.txt" -d "per_page=100" "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/$1"
+  # shortcut: the first 100 matches only, enough when a title is not in 100 other titles
+  _FOUND=$(BODY="$BODY" python3 -c 'import json,os,sys
+n=open(".idstack/canvas-push/title.txt",encoding="utf-8").read().rstrip("\n")
+print(next((x[sys.argv[2]] for x in json.loads(os.environ["BODY"]) if x.get(sys.argv[1])==n),""))' "$2" "$3") || { echo "PUSH_FAILED: $_KIND \"$_NAME\" lookup: idstack cannot read the list from Canvas"; rm -rf .idstack/canvas-push; exit 1; }
+}
+_KIND=assignment; _NAME=$(cat .idstack/canvas-push/title.txt)
+_FIND assignments name id
+if [ -n "$_FOUND" ]; then
+  ASSIGN_ID=$_FOUND; echo "ASSIGNMENT_EXISTS: $_NAME"
+else
+  _CALL "$_KIND \"$_NAME\"" -X POST \
+    --data-urlencode "assignment[name]@.idstack/canvas-push/title.txt" \
+    --data-urlencode "assignment[description]@.idstack/canvas-push/body.html" \
+    -d "assignment[points_possible]=$_POINTS" \
+    -d "assignment[submission_types][]=online_text_entry" \
+    -d "assignment[submission_types][]=online_upload" \
+    -d "assignment[published]=false" \
+    "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/assignments"
+  ASSIGN_ID=$(printf '%s\n' "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+fi
+_KIND="module item for assignment"
+_FIND modules/$MODULE_ID/items title id
+if [ -n "$_FOUND" ]; then
+  echo "ITEM_EXISTS: $_NAME"
+else
+  _CALL "$_KIND \"$_NAME\"" -X POST \
+    --data-urlencode "module_item[title]@.idstack/canvas-push/title.txt" \
+    -d "module_item[type]=Assignment" -d "module_item[content_id]=$ASSIGN_ID" -d "module_item[published]=true" \
+    "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
+fi
 rm -rf .idstack/canvas-push
-HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | sed '$d')
-ASSIGN_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 echo "HTTP: $HTTP_CODE"
 echo "ASSIGN_ID=$ASSIGN_ID"
-```
-
-Write the assignment title to `.idstack/canvas-push/title.txt` again, then add the
-assignment to its module:
-```bash
-. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-[ -f .idstack/canvas-push/title.txt ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-MODULE_ID=<module id printed in B4>
-ASSIGN_ID=<ASSIGN_ID printed above>
-printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -X POST \
-  --data-urlencode "module_item[title]@.idstack/canvas-push/title.txt" \
-  -d "module_item[type]=Assignment" -d "module_item[content_id]=$ASSIGN_ID" -d "module_item[published]=true" \
-  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
-rm -rf .idstack/canvas-push
 ```
 
 Note: Assignments are created unpublished by default. The instructional designer
@@ -1303,38 +1375,63 @@ and the HTML discussion prompt to `.idstack/canvas-push/body.html`. Then run:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 [ -f .idstack/canvas-push/title.txt ] && [ -f .idstack/canvas-push/body.html ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -w "\n%{http_code}" -X POST \
-  --data-urlencode "title@.idstack/canvas-push/title.txt" \
-  --data-urlencode "message@.idstack/canvas-push/body.html" \
-  -d "published=false" \
-  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/discussion_topics" 2>&1)
+MODULE_ID=<module id printed in B4>
+_CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
+  _WHAT=$1; shift
+  RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
+  HTTP_CODE=$(printf '%s\n' "$RESPONSE" | tail -1)
+  BODY=$(printf '%s\n' "$RESPONSE" | sed '$d')
+  case "$_RC:$HTTP_CODE" in
+    0:2??) ;;
+    28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
+    0:*) echo "PUSH_FAILED: $_WHAT: HTTP $HTTP_CODE"; rm -rf .idstack/canvas-push; exit 1 ;;
+    *) echo "PUSH_FAILED: $_WHAT: curl error $_RC"; rm -rf .idstack/canvas-push; exit 1 ;;
+  esac
+}
+_FIND() { # _FIND <list path> <name field> <result field>: sets _FOUND to the result of the item that has the title, or to nothing
+  _CALL "$_KIND \"$_NAME\" lookup" -G --data-urlencode "search_term@.idstack/canvas-push/title.txt" -d "per_page=100" "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/$1"
+  # shortcut: the first 100 matches only, enough when a title is not in 100 other titles
+  _FOUND=$(BODY="$BODY" python3 -c 'import json,os,sys
+n=open(".idstack/canvas-push/title.txt",encoding="utf-8").read().rstrip("\n")
+print(next((x[sys.argv[2]] for x in json.loads(os.environ["BODY"]) if x.get(sys.argv[1])==n),""))' "$2" "$3") || { echo "PUSH_FAILED: $_KIND \"$_NAME\" lookup: idstack cannot read the list from Canvas"; rm -rf .idstack/canvas-push; exit 1; }
+}
+_KIND=discussion; _NAME=$(cat .idstack/canvas-push/title.txt)
+_FIND discussion_topics title id
+if [ -n "$_FOUND" ]; then
+  TOPIC_ID=$_FOUND; echo "DISCUSSION_EXISTS: $_NAME"
+else
+  _CALL "$_KIND \"$_NAME\"" -X POST \
+    --data-urlencode "title@.idstack/canvas-push/title.txt" \
+    --data-urlencode "message@.idstack/canvas-push/body.html" \
+    -d "published=false" \
+    "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/discussion_topics"
+  TOPIC_ID=$(printf '%s\n' "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+fi
+_KIND="module item for discussion"
+_FIND modules/$MODULE_ID/items title id
+if [ -n "$_FOUND" ]; then
+  echo "ITEM_EXISTS: $_NAME"
+else
+  _CALL "$_KIND \"$_NAME\"" -X POST \
+    --data-urlencode "module_item[title]@.idstack/canvas-push/title.txt" \
+    -d "module_item[type]=Discussion" -d "module_item[content_id]=$TOPIC_ID" -d "module_item[published]=true" \
+    "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
+fi
 rm -rf .idstack/canvas-push
-HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | sed '$d')
-TOPIC_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 echo "HTTP: $HTTP_CODE"
 echo "TOPIC_ID=$TOPIC_ID"
 ```
 
-Write the discussion title to `.idstack/canvas-push/title.txt` again, then add the
-discussion to its module:
-```bash
-. ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-[ -f .idstack/canvas-push/title.txt ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-MODULE_ID=<module id printed in B4>
-TOPIC_ID=<TOPIC_ID printed above>
-printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s -X POST \
-  --data-urlencode "module_item[title]@.idstack/canvas-push/title.txt" \
-  -d "module_item[type]=Discussion" -d "module_item[content_id]=$TOPIC_ID" -d "module_item[published]=true" \
-  "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/modules/$MODULE_ID/items"
-rm -rf .idstack/canvas-push
-```
-
 ### B8. Error Handling
 
-Each call that creates a module, page, assignment or discussion prints `HTTP: <code>`.
-The calls that publish a module or add an item to a module do not print a code.
-Handle these cases for the calls that print a code:
+Each block in B4 to B7 stops at the first call that fails. It prints
+`PUSH_FAILED: <item>: <reason>`, and it deletes `.idstack/canvas-push/`. The
+reason is `HTTP <code>`, "Canvas did not answer in 60 seconds" (a timeout) or
+`curl error <number>`. A block also stops with `PUSH_VALUE_BAD` when `<position>`
+or `<points>` is not a number. Give the correct number and run the block again.
+
+Do not run the next block for an item that has a `PUSH_FAILED` line. Handle these
+cases:
 
 - **HTTP 401:** Token expired or invalid. Stop. Tell the user to put a new token in
   `.idstack/canvas.env`. Do not ask for the token in the chat.
@@ -1346,15 +1443,17 @@ Handle these cases for the calls that print a code:
 - **HTTP 404:** Course or resource not found. Report the specific endpoint.
 - **HTTP 422:** Validation error. Report the error message from Canvas.
   Common causes: duplicate page titles, missing required fields.
-- **HTTP 429:** Rate limited. Wait 10 seconds, retry once. If still 429:
-  "Canvas limits the request rate. idstack waits 30 seconds and then continues."
-  Wait 30 seconds and retry. If still failing, log the item as failed and
-  continue with the rest.
-- **Timeout / network error:** Log the item as failed, continue with the rest.
+- **HTTP 429:** Rate limited. Wait 10 seconds and run the same block once more.
+  If it is still 429, wait 30 seconds and run it once more. If it still fails,
+  handle it like the cases below.
+- **Timeout, curl error or other HTTP code:** Canvas can have made the item
+  before the call failed.
 
-If any single API call fails, log it and continue with remaining items. Do NOT
-abort the entire export on a single failure. The Export contents section shows
-what succeeded and what failed.
+For each case except 401 and 429: stop the push. Tell the user, in plain words,
+the item, the reason and what to do. Tell the user that they can run the push
+again: idstack finds the items that exist, by title, and does not create them
+again. The Export contents section shows what succeeded, what failed and what
+idstack did not reach.
 
 ### B9. Collect the Results
 
