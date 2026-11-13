@@ -282,6 +282,8 @@ if os.path.exists(manifest_file):
 # Build readiness table
 quality_score = manifest.get('quality_review', {}).get('overall_score', 0)
 quality_reviewed = 'course-quality-review' in completed
+# A missing, 0 or non-int score fails closed: the timeline can log a completed review when the manifest write failed.
+quality_known = type(quality_score) is int and quality_score > 0
 red_team = manifest.get('red_team_audit', {})
 red_critical = (red_team.get('findings_summary') or {}).get('critical')
 # A missing or non-int count must fail closed, never pass the gate as 0.
@@ -290,6 +292,7 @@ red_reviewed = 'red-team' in completed
 access = manifest.get('accessibility_review', {})
 access_score = access.get('score', {}).get('overall', 0)
 access_reviewed = 'accessibility-review' in completed
+access_known = type(access_score) is int and access_score > 0
 # Level-A WCAG violations force NOT-READY regardless of overall score.
 wcag_violations = access.get('wcag_violations', []) or []
 level_a_violations = [v for v in wcag_violations if isinstance(v, dict) and v.get('level') == 'A']
@@ -297,7 +300,7 @@ level_a_violations = [v for v in wcag_violations if isinstance(v, dict) and v.ge
 # Per-skill tier: NOT RUN / NEEDS-WORK / READY
 def quality_tier():
     if not quality_reviewed: return 'NOT RUN'
-    return 'READY' if quality_score >= READY_QUALITY_MIN else 'NEEDS-WORK'
+    return 'READY' if quality_known and quality_score >= READY_QUALITY_MIN else 'NEEDS-WORK'
 
 def red_tier():
     if not red_reviewed: return 'NOT RUN'
@@ -305,7 +308,7 @@ def red_tier():
 
 def access_tier():
     if not access_reviewed: return 'NOT RUN'
-    if access_score >= READY_ACCESS_MIN and not level_a_violations:
+    if access_known and access_score >= READY_ACCESS_MIN and not level_a_violations:
         return 'READY'
     return 'NEEDS-WORK'
 
@@ -333,13 +336,17 @@ def verdict():
         return f\"INCOMPLETE (run {', '.join(missing)})\"
 
     issues = []
-    if quality_score < READY_QUALITY_MIN:
+    if not quality_known:
+        issues.append('quality review has no score in the manifest')
+    elif quality_score < READY_QUALITY_MIN:
         issues.append(f'quality score {quality_score} < {READY_QUALITY_MIN}')
     if not red_known:
         issues.append('no red-team critical count')
     elif red_critical > READY_RED_CRITICAL_MAX:
         issues.append(f'{red_critical} critical red-team finding(s)')
-    if access_score < READY_ACCESS_MIN:
+    if not access_known:
+        issues.append('accessibility review has no score in the manifest')
+    elif access_score < READY_ACCESS_MIN:
         issues.append(f'accessibility score {access_score} < {READY_ACCESS_MIN}')
     if level_a_violations:
         issues.append(f'{len(level_a_violations)} WCAG Level-A violation(s)')

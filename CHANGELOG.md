@@ -4,9 +4,18 @@
 
 ### Fixed
 
+- **`./setup` fails when `claude` is missing, and checks python3.** Before, setup printed a warning, showed the "how to use" banner and exited 0 when `claude` was not on PATH. Now it prints an error and exits 1 with no banner. It also runs `scripts/idstack-doctor --quick` first, and stops with an error when python3 is missing or older than 3.9.
 - **The export readiness check does not pass a red-team section that has no critical count.** Before, `scripts/idstack-status --readiness` used 0 when `red_team_audit.findings_summary.critical` was missing, and the verdict was `READY TO EXPORT`. Now the red-team row is `NEEDS-WORK` with `Critical: none`, and the verdict gives the reason "no red-team critical count".
 - **The Chrome extension (1.2.5) does not read Classic Quizzes pages that show student answers.** These pages are the quiz history, the submissions and their versions, moderate and the quiz data pages. Before, an audit sent the text of these pages to the AI model.
+- **The Chrome extension (1.2.6) keeps your API key on this device.** Before, it saved the key in `chrome.storage.sync`, and Chrome copied it to your Google account. Now it saves the key in `chrome.storage.local`, and Chrome does not copy it to other devices. A key that an older version saved in `chrome.storage.sync` is not lost. The extension moves it to this device and deletes the old copy. Closes #177.
+- **The Chrome extension (1.2.6) does not read the New Quizzes moderation and reporting pages, the moderated grading page and the anonymous submission page.** These pages show the answers or grades of single students. The other New Quizzes routes in Canvas (`taking`, `observing`, `exports`) are not blocked, because nobody has checked their content. This is a partial fix for #191.
 - **`scripts/idstack-status` shows "unknown" when the project name is empty.** It reads the name in the same sequence as `scripts/idstack-slugify`.
+- **`scripts/idstack-ste-check` examines `.markdown` files in a folder.** Before, a folder scan skipped them with no message (#173).
+- **The readiness check names a review that has no score in the manifest.** The timeline can have a `completed` review while the manifest score is missing or 0. Then the row is `NEEDS-WORK` and the verdict says "quality review has no score in the manifest" or the same for accessibility (#172).
+- **`scripts/idstack-learnings log` keeps a `ts` from the caller,** as `idstack-timeline-log` does (#171).
+- **A new manifest has the mode of the umask, not 0600.** `idstack-migrate --init` makes the seed with the umask mode. A merge keeps the mode of the manifest (#190).
+- **`idstack-manifest-merge` and `idstack-migrate --init` do not make or write a manifest when the course folder is your home folder.** Exit code 9. The check is in the scripts, not in the preamble, so each skill has it (#178).
+- **Two sessions in one course folder do not lose manifest updates.** `idstack-manifest-merge` holds an exclusive lock on `.idstack/.manifest.lock` from its read to its write. The new option `--expect-updated <ts>` writes nothing and exits 8 if the manifest changed after the skill read it. Each skill writes its report draft to `.idstack/.report-section.<skill>.md`. Two sessions that run the same skill in one folder still share a draft (#179).
 - **`/idstack:course-import` refuses a .docx that has a DOCTYPE or ENTITY declaration (#182).** Before, the block parsed it with the XML parser of macOS python3 3.9, which has no limit on entity expansion. A crafted file could stop the session. Now the block prints `DOCX_READ_FAILED` and stops before it parses.
 - **Model-filled values in the skills no longer go into a double-quoted shell string (#183).** These are the `--mode` value of each report block, the experience level in `/idstack:start`, and the module position and the assignment points in `/idstack:course-export`. Each now uses a quoted heredoc. The experience level, the position and the points stop with `LEVEL_BAD` or `PUSH_VALUE_BAD` when the value is wrong.
 - **The Canvas push in `/idstack:course-export` stops on an error and does not make duplicates (#180).** Each call has `--max-time 60` and reads the HTTP code. A code that is not 2xx, a timeout or a curl error stops the block with `PUSH_FAILED` and the item name. Each block now uses an item that exists with the same title, and a second push does not make it again. A block also adds a new page, assignment or discussion to its module. Only a fake curl tested this, not a live Canvas.
@@ -15,7 +24,8 @@
 ### Tests
 
 - `test/test-status.sh` has 4 new tests for the readiness check and the project name. `test/test-extractor.mjs` tests the quiz pages. `test/mutation-test.sh` has cases 65a and 65b.
-- `test/test-skill-shell-zsh.sh` has a fake curl that answers 500, times out and lists existing items. It has hostile-text checks for the changed blocks and a .docx with a DOCTYPE. `test/mutation-test.sh` has cases 66a to 66l.
+- New tests: `test/test-ste-check.py` (1), `test/test-status.sh` (2), `test/integration-test.sh` (1) and `test/test-manifest-merge.sh` (9: file mode, home folder, the lock, `--expect-updated`). `test/mutation-test.sh` has cases 70a to 70i.
+- `test/test-skill-shell-zsh.sh` has a fake curl that answers 500, times out and lists existing items. It has hostile-text checks for the changed blocks and a .docx with a DOCTYPE. `test/mutation-test.sh` has cases 68a to 68l.
 
 ## v3.11.1.0 (2026-11-13)
 

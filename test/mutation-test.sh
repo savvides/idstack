@@ -1354,9 +1354,9 @@ fresh
 python3 - "$WORK/r/PRIVACY.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "Your Google API key is saved in `chrome.storage.sync`."
+old = "Your Google API key is saved in `chrome.storage.local`, on this device only."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "Your Google API key is saved in `chrome.storage.local`.", 1)
+s = s.replace(old, "Your Google API key is saved in `chrome.storage.sync`.", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "privacy policy names the wrong storage area for the API key" "$WORK/r/test/test-extension.sh"
@@ -2091,7 +2091,7 @@ PY
   expect_fail "$1" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 }
 shell_mutation "GNU-only head -n -1 returns to the Canvas push" \
-  skills/course-export/SKILL.md.tmpl "BODY=\$(echo \"\$RESPONSE\" | sed '\$d')" 'BODY=$(echo "$RESPONSE" | head -n -1)'
+  skills/course-export/SKILL.md.tmpl "BODY=\$(printf '%s\\n' \"\$RESPONSE\" | sed '\$d')" 'BODY=$(printf '"'"'%s\n'"'"' "$RESPONSE" | head -n -1)'
 shell_mutation "the SCO loop word-splits an unquoted variable again" \
   skills/course-import/SKILL.md.tmpl "printf '%s\\n' \"\$SCO_HREFS\" | while IFS= read -r sco_href; do" 'for sco_href in $SCO_HREFS; do'
 # A cartridge symlink can make the manifest read print any local file. Guarded
@@ -2519,60 +2519,162 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "quiz answer pages not blocked" "$WORK/r/test/test-extension.sh"
 
-# 66a-66m. Skill shell hardening (through test-skill-shell-zsh, which smoke-test runs).
-# 66a. The .docx block parses a DOCTYPE again -> smoke-test must fail (#182).
-shell_mutation "the .docx block parses a document with a DOCTYPE again" \
-  skills/course-import/SKILL.md.tmpl 'b"<!DOCTYPE" in xml or b"<!ENTITY" in xml' 'b"<!XDOCTYPE" in xml'
+# 66a. Setup exits 0 with the banner when `claude` is missing -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = '--scope $CLAUDE_SCOPE" >&2\n  exit 1\nfi'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '--scope $CLAUDE_SCOPE" >&2\nfi', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "setup exits 0 when claude is missing" "$WORK/r/test/test-setup.sh" "$WORK/r"
 
-# 66b. A report block puts the model's --mode in a double-quoted string again (#183).
+# 66b. Setup skips the python3 check -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = '_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) ||'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) || true ||', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "setup ignores a bad python3" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 69a. The API key goes back to chrome.storage.sync -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/storage.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "await area('local', 'set', settings);"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "await area('sync', 'set', settings);", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "API key saved in chrome.storage.sync" "$WORK/r/test/test-extension.sh"
+
+# 69b. The migration leaves the old key in sync -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/storage.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    await area('sync', 'remove', 'apiKey');\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "old API key not deleted from sync" "$WORK/r/test/test-extension.sh"
+
+# 69c. A New Quizzes moderation or reporting page is read again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = r"(?:submissions|anonymous_submissions|moderate|moderation|reporting)"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "submissions", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "New Quizzes student pages not blocked" "$WORK/r/test/test-extension.sh"
+
+# 70a-70i. Script bugs (#173, #172, #171, #190, #178, #179). Each case puts
+# back one defect -> the named suite must fail.
+suite_mutation() { # <name> <file> <old> <new> <suite>
+  fresh
+  python3 - "$WORK/r/$2" "$3" "$4" <<'PY'
+import sys
+p, old, new = sys.argv[1:4]
+s = open(p, encoding='utf-8').read()
+assert s.count(old) >= 1, 'anchor missing: %r' % old
+open(p, 'w', encoding='utf-8').write(s.replace(old, new))
+PY
+  regen
+  case "$5" in *.py) expect_fail "$1" python3 "$WORK/r/test/$5" ;; *) expect_fail "$1" "$WORK/r/test/$5" ;; esac
+}
+# 70a. A folder scan skips .markdown files again.
+suite_mutation "ste-check skips .markdown files in a folder" \
+  scripts/idstack-ste-check "'.md', '.markdown')" "'.md')" test-ste-check.py
+# 70b. A completed review with a 0 score in the manifest has no reason again.
+suite_mutation "readiness counts a 0 manifest score as a score" \
+  scripts/idstack-status "quality_known = type(quality_score) is int and quality_score > 0" "quality_known = True" test-status.sh
+# 70c. learnings log replaces a ts from the caller again.
+suite_mutation "learnings log replaces the caller's ts" \
+  scripts/idstack-learnings 'd.setdefault("ts", ts)' 'd["ts"] = ts' integration-test.sh
+# 70d. migrate --init writes its seed at mode 0600 again.
+suite_mutation "migrate --init seed ignores the umask" \
+  scripts/idstack-migrate 'os.chmod(tmp, 0o666 & ~umask)' 'pass' test-manifest-merge.sh
+# 70e. merge writes a manifest in the home folder again.
+suite_mutation "merge writes in the home folder" \
+  scripts/idstack-manifest-merge 'os.path.realpath(folder) == os.path.realpath(os.environ["HOME"])' 'False' test-manifest-merge.sh
+# 70f. migrate --init makes a manifest in the home folder again.
+suite_mutation "migrate --init makes a manifest in the home folder" \
+  scripts/idstack-migrate "sys.exit(0 if os.environ.get('HOME')" "sys.exit(1 if os.environ.get('HOME')" test-manifest-merge.sh
+# 70g. The merge takes no lock again.
+suite_mutation "merge takes no lock" \
+  scripts/idstack-manifest-merge 'fcntl.flock(lock, fcntl.LOCK_EX)  # held until the process exits' 'pass' test-manifest-merge.sh
+# 70h. --expect-updated stops checking.
+suite_mutation "--expect-updated does not check" \
+  scripts/idstack-manifest-merge 'args.expect_updated is not None and manifest.get("updated") != args.expect_updated' 'False' test-manifest-merge.sh
+# 70i. The draft goes back to the one scratch name for all skills.
+suite_mutation "the report draft uses one scratch name for every skill" \
+  templates/preamble.md ' .idstack/.report-section.<skill>.md;' ' .idstack/.report-section.md;' test-skill-shell-zsh.sh
+
+# 68a-66m. Skill shell hardening (through test-skill-shell-zsh, which smoke-test runs).
+# 68a. The .docx block parses a DOCTYPE again -> smoke-test must fail (#182).
+shell_mutation "the .docx block parses a document with a DOCTYPE again" \
+  skills/course-import/SKILL.md.tmpl 'b"<!DOCTYPE" in x or b"<!ENTITY" in x' 'b"<!XDOCTYPE" in x'
+
+# 68b. A report block puts the model's --mode in a double-quoted string again (#183).
 shell_mutation "a report block puts --mode in a quoted shell string again" \
   skills/course-quality-review/SKILL.md.tmpl '--mode "$_MODE" --reserve' '--mode "<mode>" --reserve'
 
-# 66c. /idstack:start writes any experience level to the profile again (#183).
+# 68c. /idstack:start writes any experience level to the profile again (#183).
 shell_mutation "start writes an experience level that it does not check" \
   skills/start/SKILL.md.tmpl 'case "$_LEVEL" in novice|intermediate|expert) ;; *) echo "LEVEL_BAD: $_LEVEL"; exit 1 ;; esac
 ' ''
 
-# 66d. The Canvas assignment block accepts any points value again (#183).
+# 68d. The Canvas assignment block accepts any points value again (#183).
 shell_mutation "the Canvas assignment block accepts text as points" \
   skills/course-export/SKILL.md.tmpl "''|*[!0-9.]*) echo \"PUSH_VALUE_BAD: points" "''|NOPE) echo \"PUSH_VALUE_BAD: points"
 
-# 66e. The Canvas module block accepts any position again (#183).
+# 68e. The Canvas module block accepts any position again (#183).
 shell_mutation "the Canvas module block accepts text as the position" \
   skills/course-export/SKILL.md.tmpl "''|*[!0-9]*) echo \"PUSH_VALUE_BAD: position" "''|NOPE) echo \"PUSH_VALUE_BAD: position"
 
-# 66f. A Canvas push call has no time limit again (#180).
+# 68f. A Canvas push call has no time limit again (#180).
 shell_mutation "a Canvas push call has no --max-time again" \
   skills/course-export/SKILL.md.tmpl 'curl -K - -s --max-time 60 -w "\n%{http_code}" "$@"' 'curl -K - -s -w "\n%{http_code}" "$@"'
 
-# 66g. A Canvas push call goes on after an HTTP error again (#180).
+# 68g. A Canvas push call goes on after an HTTP error again (#180).
 shell_mutation "a Canvas push call goes on after a non-2xx code" \
   skills/course-export/SKILL.md.tmpl '    0:2??) ;;
 ' '    0:*) ;;
 '
 
-# 66h. A Canvas push call that times out gets no plain message again (#180).
+# 68h. A Canvas push call that times out gets no plain message again (#180).
 shell_mutation "a Canvas push timeout has no plain message" \
   skills/course-export/SKILL.md.tmpl '    28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
 ' ''
 
-# 66i. The Canvas module block makes a new module on a re-run again (#180).
+# 68i. The Canvas module block makes a new module on a re-run again (#180).
 shell_mutation "the Canvas module block does not look for an existing module" \
   skills/course-export/SKILL.md.tmpl 'if [ -n "$_FOUND" ]; then
   MODULE_ID=$_FOUND;' 'if false; then
   MODULE_ID=$_FOUND;'
 
-# 66j. The Canvas page block adds a second module item on a re-run again (#180).
+# 68j. The Canvas page block adds a second module item on a re-run again (#180).
 shell_mutation "the Canvas page block does not look for an existing module item" \
   skills/course-export/SKILL.md.tmpl 'if [ -n "$_FOUND" ]; then
   echo "ITEM_EXISTS: $_NAME"' 'if false; then
   echo "ITEM_EXISTS: $_NAME"'
 
-# 66k. assessment-design stops passing the manifest stamp to the merge (#179).
+# 68k. assessment-design stops passing the manifest stamp to the merge (#179).
 shell_mutation "assessment-design does not pass --expect-updated to the merge" \
   skills/assessment-design/SKILL.md.tmpl '--create "$@" \' '--create \'
 
-# 66l. course-import stops passing the manifest stamp to the merge (#179).
+# 68l. course-import stops passing the manifest stamp to the merge (#179).
 shell_mutation "course-import does not pass --expect-updated to the merge" \
   skills/course-import/SKILL.md.tmpl '--create "$@" --set' '--create --set'
 

@@ -20,6 +20,12 @@ for arg in "$@"; do
   esac
 done
 
+# python3 3.9 or later is required by the scripts. Check first: the next step needs it.
+_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) || {
+  echo "ERROR: Setup needs python3 3.9 or later ($_py). Install it. Then run ./setup again." >&2
+  exit 1
+}
+
 # Regenerate skill files so installs are always fresh against the current .tmpl
 # source. Cheap (<1s); the source-of-truth invariant is worth more than the cost.
 "$IDSTACK_DIR/scripts/idstack-gen-skills" >/dev/null
@@ -69,10 +75,11 @@ if command -v claude >/dev/null 2>&1; then
   echo ""
   echo "Setup installed idstack in Claude Code (scope: $CLAUDE_SCOPE)."
 else
-  echo "  WARNING: 'claude' not found on PATH. Setup did not install idstack in Claude Code."
-  echo "  Install Claude Code. Then run ./setup again. You can also install idstack manually:"
-  echo "    claude plugin marketplace add \"$IDSTACK_DIR\""
-  echo "    claude plugin install idstack@idstack --scope $CLAUDE_SCOPE"
+  echo "ERROR: 'claude' not found on PATH. Setup did not install idstack in Claude Code." >&2
+  echo "Install Claude Code. Then run ./setup again. You can also install idstack manually:" >&2
+  echo "    claude plugin marketplace add \"$IDSTACK_DIR\"" >&2
+  echo "    claude plugin install idstack@idstack --scope $CLAUDE_SCOPE" >&2
+  exit 1
 fi
 
 echo ""

@@ -210,6 +210,12 @@ for (const url of [
   'https://canvas.instructure.com/courses/101/groups',
   'https://canvas.instructure.com/courses/101/discussion_topics/9',
   'https://canvas.instructure.com/courses/101/assignments/5/submissions/7',
+  'https://canvas.instructure.com/courses/101/assignments/5/anonymous_submissions/abc',
+  // New Quizzes and moderated grading views (canvas-lms config/routes.rb, assignments scope)
+  'https://canvas.instructure.com/courses/101/assignments/5/moderation',
+  'https://canvas.instructure.com/courses/101/assignments/5/moderation/attempts/3',
+  'https://canvas.instructure.com/courses/101/assignments/5/reporting',
+  'https://canvas.instructure.com/courses/101/assignments/5/moderate',
   'https://canvas.instructure.com/conversations',
   // Classic Quizzes views of one student's attempt, or of every student's (canvas-lms config/routes.rb)
   'https://canvas.instructure.com/courses/101/quizzes/5/history?quiz_submission_id=3',
@@ -233,7 +239,7 @@ for (const url of [
 }
 
 // A quiz description page is course material, not a student record: it is not refused.
-for (const url of ['https://canvas.instructure.com/courses/101/quizzes/5', 'https://canvas.instructure.com/courses/101/quizzes/5/edit', 'https://canvas.instructure.com/courses/101/quizzes']) {
+for (const url of ['https://canvas.instructure.com/courses/101/assignments/5', 'https://canvas.instructure.com/courses/101/assignments/5/build', 'https://canvas.instructure.com/courses/101/quizzes/5', 'https://canvas.instructure.com/courses/101/quizzes/5/edit', 'https://canvas.instructure.com/courses/101/quizzes']) {
   assert.notStrictEqual(extractContentFromDOM(createDocument(studentRecordHTML), url).pageType, 'Canvas Student Records', `${url}: quiz material must not be refused`);
 }
 
