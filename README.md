@@ -4,11 +4,11 @@
 
 Decades of research say elaborated feedback improves learning. Cognitive load theory has been replicated for 30 years. Constructive alignment measurably raises grades. The evidence is strong, but most course design tools don't make it easy to apply.
 
-idstack is an open source copilot for instructional designers. It helps you do your job in two ways: it helps you apply the framework that you already use (ADDIE, backward design or SAM), and it supports each recommendation with peer-reviewed research. Runs in Claude Code and Cowork. Rather than summarizing papers, idstack audits alignment matrices, flags cognitive load issues, classifies objectives against Bloom's taxonomy, and references the empirical evidence behind every recommendation.
+idstack is an open source copilot for instructional designers. It helps you do your job in two ways: it helps you apply the framework that you already use (ADDIE, backward design or SAM), and it supports each recommendation with peer-reviewed research. Runs in Claude Code. Rather than summarizing papers, idstack audits alignment matrices, flags cognitive load issues, classifies objectives against Bloom's taxonomy, and references the empirical evidence behind every recommendation.
 
 Skills covering the full lifecycle: analyze, design, build, export. One shared project manifest that remembers your course across sessions. Every recommendation tagged with its evidence tier, from T1 (meta-analyses) to T5 (expert opinion), so you always know how strong the backing is.
 
-Free, MIT licensed, open source. Available as a plugin for [Claude Code](#install-30-seconds) and [Cowork](#cowork), and as a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
+Free, MIT licensed, open source. Available as a plugin for [Claude Code](#install-30-seconds), and as a [Chrome Extension](https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm). [Have feedback or a feature request?](https://forms.gle/6LDgDD1M6WWyYvME8)
 
 [![How to use idstack: add the plugin, open your course folder, type /idstack:start. The eight pipeline skills are shown in sequence below their ADDIE phases and above their backward design stages. The text version is in the section "Works with your framework".](docs/idstack-guide.svg)](docs/frameworks.md)
 
@@ -92,9 +92,9 @@ You had a course in Canvas. Now you have an evidence-based audit with specific r
 
 ## Install (30 seconds)
 
-**Requirements:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI — or [Cowork](#cowork), and python3 3.9 or later.
+**Requirements:** [Claude Code](https://claude.ai/code) — desktop app, web app, or CLI — and python3 3.9 or later.
 
-**Not using Claude Code or Cowork?** The idstack skills run in Claude Code and Cowork. Without them, use the [Chrome extension](#chrome-extension-no-terminal-mode). The skills are plain Markdown, so you can fork this repo and adapt it for a different agent, for example Codex or Antigravity. idstack does not support or test those forks. <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
+**Not using Claude Code?** The idstack skills run in Claude Code. Without it, use the [Chrome extension](#chrome-extension-no-terminal-mode). The skills are plain Markdown, so you can fork this repo and adapt it for a different agent, for example Codex or Antigravity. idstack does not support or test those forks. <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
 
 Paste this into your terminal:
 
@@ -201,17 +201,6 @@ You can use idstack in the Code tab of the [Claude desktop app](https://claude.a
 Each skill that writes a report gives you a link to it. Click the link to open the report in the app.
 
 **macOS asks you to install developer tools?** idstack needs python3. Click **Install** in the macOS window. When the installation is complete, type `/idstack:start` again.
-
-### Cowork
-
-You can use idstack in Cowork in the Claude desktop app.
-
-1. Open **Customize**, then **Plugins**.
-2. Select **Add marketplace** and enter `savvides/idstack`.
-3. Install **idstack** from the list.
-4. Start a Cowork task in a folder for your course and type `/idstack:start`.
-
-Cowork support is new. idstack keeps its tools in `scripts/`, because Cowork does not install a plugin that has a top-level `bin/` folder. If a skill cannot find its tools or python3 in Cowork, [tell us](https://github.com/savvides/idstack/issues).
 
 ### Chrome Extension (No-Terminal Mode)
 
@@ -396,7 +385,7 @@ INSTALL
   scripts/idstack-doctor   diagnoses the install
                        (scripts/lib/plugin-status.sh)
 
-RUN (Claude Code or Cowork, inside your course project folder)
+RUN (Claude Code, inside your course project folder)
 
   /idstack:<skill>
      │
@@ -510,9 +499,6 @@ The tier ranges come from `evidence/references.md`. Most of the Constructive Ali
 **Do I need to know how to code?**
 No. You interact with idstack through conversation in Claude Code. It is a chat interface. In the [Claude desktop app](#claude-desktop-app-no-terminal) you do not need a terminal to install or use idstack. To update it, you run two commands in a terminal (see "How do I update idstack?").
 
-**Can I use this in Cowork?**
-Yes, from v3.11.0.0. See [Cowork](#cowork) for the install steps. Cowork support is new, so [tell us](https://github.com/savvides/idstack/issues) if something does not work.
-
 **Can I get feedback on one thing with no project?**
 Yes. Paste or attach the item and type `/idstack:quick-check`. It needs no setup and writes no file.
 
@@ -550,6 +536,33 @@ Update manually. idstack does not tell you when a new version is available.
 - If you downloaded ZIP: download the latest version and run `./setup` again.
 
 Then start a new session. Claude Code loads a plugin only when a session starts.
+
+If the new skills do not show after an update, remove idstack and install it again. Claude Code keeps the old files when the version number does not change:
+
+```bash
+claude plugin uninstall idstack@idstack && claude plugin install idstack@idstack
+```
+
+**How do I change from the desktop app install to a clone?**
+Remove the marketplace that the desktop app added, then run `./setup` in your clone:
+
+```bash
+claude plugin marketplace remove idstack
+cd <your idstack clone> && ./setup
+```
+
+If you do not remove the marketplace first, Claude Code can keep the old copy of idstack.
+
+**How do I uninstall idstack?**
+Run these commands in a terminal:
+
+```bash
+claude plugin uninstall idstack@idstack
+claude plugin marketplace remove idstack
+rm -rf ~/.idstack
+```
+
+The `~/.idstack` folder holds your experience level (`profile.yaml`) and the learnings that you promoted to all projects (`global/learnings.jsonl`). The last command deletes them. The `.idstack/` folder in each course folder is different. It holds the manifest, the reports and the Canvas token file of that course, and these commands do not delete it. If you installed from a clone, you can also delete the clone.
 
 **How do I request a feature or report a bug?**
 [Fill out this form](https://forms.gle/6LDgDD1M6WWyYvME8). No GitHub account needed. If you have a GitHub account, you can also [open an issue](https://github.com/savvides/idstack/issues).

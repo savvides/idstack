@@ -4,7 +4,7 @@
 
 ## What idstack collects
 
-Nothing. idstack has no servers of its own and receives none of your data. The plugin runs on your machine in Claude Code or Cowork, and the Chrome extension runs in your browser. In Cowork, the plugin runs in the Cowork sandbox on your computer and reads only the folders that you connect. The extension sends page text to Google only when you run an audit with your own Google API key saved (see below).
+Nothing. idstack has no servers of its own and receives none of your data. The plugin runs on your machine in Claude Code, and the Chrome extension runs in your browser. The extension sends page text to Google only when you run an audit with your own Google API key saved (see below).
 
 ## Where your data lives
 

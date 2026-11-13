@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Changed — docs before the public release
+
+- **The README, idstack.org, `ROADMAP.md`, `PRIVACY.md`, `DESIGN.md` and `docs/llms.txt` no longer say that idstack runs in Cowork.** Nobody has tested idstack in Cowork end to end yet (#160). The code that finds the plugin in Cowork stays.
+- **The README FAQ tells you how to uninstall idstack.** If an update does not show the new skills, it tells you to install again. Before you change from the desktop app install to a clone, it tells you to remove the marketplace.
+- **`CONTRIBUTING.md` tells you how to see a changed skill in the Claude desktop app.**
+- **`SECURITY.md` tells you how to report a security problem privately.** It names the sensitive data: Canvas tokens in `.idstack/canvas.env`, and course and student data.
+- **The bug form asks for the operating system and the output of `scripts/idstack-doctor`.** It tells you not to paste a token or student data.
+
 ### Changed — landing page
 
 - **The landing page names the two kinds of help.** The first paragraph and the share card now name them. They are the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation. The README introduction has the same message, and it says that idstack is a copilot for instructional designers.

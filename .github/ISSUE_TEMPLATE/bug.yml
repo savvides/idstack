@@ -2,6 +2,10 @@ name: Bug
 description: Something in idstack does not work as it should.
 labels: [bug]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste a Canvas token, an API key or student data.** This issue is public. To report a security problem, use [private vulnerability reporting](https://github.com/savvides/idstack/security) (see SECURITY.md).
   - type: textarea
     id: what
     attributes:
@@ -19,3 +23,14 @@ body:
     attributes:
       label: idstack version
       description: The contents of VERSION, or the plugin version in `claude plugin list`.
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15, Ubuntu 24.04, Windows 11 with WSL
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of scripts/idstack-doctor
+      description: Run `scripts/idstack-doctor` in your idstack clone or plugin folder and paste the output.
+      render: text

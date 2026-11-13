@@ -60,7 +60,7 @@ The bare `name` field becomes the slash-command suffix: `name: course-import` is
 
 Four skills run outside the pipeline: `quick-check`, `storyboard`, `question-bank` and `evaluation-plan`. A companion skill reads the manifest when one exists and never writes a manifest section, so it needs no schema change. `quick-check` answers in the chat and writes no file. The other three write one Markdown file with the Step Review, run the writing standard check, and log a timeline event. To add one, copy `skills/question-bank/SKILL.md.tmpl`, then add the name to the skill lists in `test/smoke-test.sh`, `test/test-doctor.sh`, `test/integration-test.sh`, `scripts/idstack-doctor` and `skills/start/SKILL.md.tmpl`.
 
-Keep the tools in `scripts/`. Cowork does not install a plugin that has a top-level `bin/` folder, and smoke-test fails if one exists.
+Keep the tools in `scripts/`. Some Claude apps do not install a plugin that has a top-level `bin/` folder, and smoke-test fails if one exists.
 
 ### Template system
 
@@ -138,6 +138,15 @@ scripts/idstack-gen-skills --dry-run  # Generated files up to date? Run this fir
 ./setup                           # Register your new skill with Claude Code
 ./test/smoke-test.sh              # Verify the install
 ```
+
+To see a new or changed skill in the Claude desktop app, point the install at your checkout, then install idstack again. With the same `VERSION`, Claude Code keeps the old files until you reinstall. Then open a new session in a course folder:
+
+```bash
+claude plugin marketplace remove idstack && ./setup
+claude plugin uninstall idstack@idstack && claude plugin install idstack@idstack
+```
+
+To go back to the GitHub install: `claude plugin marketplace remove idstack && claude plugin marketplace add https://github.com/savvides/idstack.git && claude plugin install idstack@idstack`.
 
 Every suite below runs in CI (`.github/workflows/test.yml`) on every pull request and every push to `main`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other suites, except `mutation-test.sh`, which CI runs in its own job. Run whichever ones your change touches locally; CI runs them all:
 

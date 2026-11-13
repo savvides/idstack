@@ -19,7 +19,7 @@ idstack operates on all four criteria.
 
 ## idstack Implementation
 
-**Agentic workflows require Claude Code or Cowork.** idstack skills are structured markdown specifications executed by Claude Code or Cowork. Without one of them, the files function as passive documentation. Claude Code executes the analytical steps, evaluates alignment, and generates structured deliverables.
+**Agentic workflows require Claude Code.** idstack skills are structured markdown specifications executed by Claude Code. Without it, the files function as passive documentation. Claude Code executes the analytical steps, evaluates alignment, and generates structured deliverables.
 
 **Model capabilities enhance skill output.** As foundation models improve in instruction following, pedagogical reasoning, and domain analysis, idstack skill execution improves without code changes.
 
