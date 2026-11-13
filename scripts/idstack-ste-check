@@ -54,7 +54,7 @@ PARAGRAPH_MAX = 6
 # counts as one word and is not examined.
 SLOT = '\ue000'
 
-CHECK_SUFFIXES = ('.html', '.htm', '.md')
+CHECK_SUFFIXES = ('.html', '.htm', '.md', '.markdown')
 
 CONTRACTION_RES = [
     re.compile(r"\b[A-Za-z]+n['\u2019]t\b", re.I),

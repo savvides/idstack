@@ -15,7 +15,7 @@ import unittest
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 HELPER = os.path.join(REPO_ROOT, 'scripts', 'idstack-report-section')
 REPORT = '.idstack/exports/bio-101/needs-analysis.md'
-DRAFT = '.idstack/.report-section.md'
+DRAFT = '.idstack/.report-section.needs-analysis.md'
 
 TASKS = """## Task analysis
 

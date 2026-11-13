@@ -341,6 +341,70 @@ mkdir -p "$WORK/initmig"
 check "migrate --init leaves one valid manifest and no tempfile" \
   "[ \"\$(ls -A '$WORK/initmig')\" = project.json ] && python3 -c 'import json, sys; assert json.load(open(sys.argv[1]))[\"version\"] == \"1.4\"' '$WORK/initmig/project.json'"
 
+# --- Test 27: file mode (#190). A new manifest has the umask mode, and a merge keeps the mode ---
+mode_of() { stat -c %a "$1" 2>/dev/null || stat -f %Lp "$1"; }
+mkdir -p "$WORK/mode"
+echo '{}' > "$WORK/mode/p.json"
+check "a new manifest has mode 644 under umask 022, and a merge keeps it" \
+  "( umask 022; cd '$WORK/mode' && '$MERGE' --create --section context --payload p.json --quiet && [ \"\$(mode_of .idstack/project.json)\" = 644 ] && '$MERGE' --section context --payload p.json --quiet && [ \"\$(mode_of .idstack/project.json)\" = 644 ] )"
+chmod 640 "$WORK/mode/.idstack/project.json"
+check "a merge keeps mode 640 of an existing manifest" \
+  "( umask 022; cd '$WORK/mode' && '$MERGE' --section context --payload p.json --quiet && [ \"\$(mode_of .idstack/project.json)\" = 640 ] )"
+
+# --- Test 28: the home folder (#178). Merge and migrate --init write nothing there ---
+mkdir -p "$WORK/home"
+set +e
+HOME_ERR=$(cd "$WORK/home" && HOME="$WORK/home" "$MERGE" --create --section context --payload ../mode/p.json 2>&1 >/dev/null)
+HOME_EC=$?
+HOME_MIG_ERR=$(cd "$WORK/home" && HOME="$WORK/home" "$REPO_ROOT/scripts/idstack-migrate" --init 2>&1 >/dev/null)
+HOME_MIG_EC=$?
+set -e
+check "merge in the home folder exits 9 and writes nothing" \
+  "[ $HOME_EC -eq 9 ] && printf '%s' \"\$HOME_ERR\" | grep -q 'home folder' && [ ! -e '$WORK/home/.idstack' ]"
+check "migrate --init in the home folder exits 9 and writes nothing" \
+  "[ $HOME_MIG_EC -eq 9 ] && printf '%s' \"\$HOME_MIG_ERR\" | grep -q 'home folder' && [ ! -e '$WORK/home/.idstack' ]"
+check "a symlink to the home folder is also refused" \
+  "ln -s '$WORK/home' '$WORK/homelink' && cd '$WORK/homelink' && HOME='$WORK/home' '$MERGE' --create --section context --payload ../mode/p.json --quiet; [ \$? -eq 9 ]"
+
+# --- Test 29: the lock (#179). Two writers at the same time lose no update ---
+mkdir -p "$WORK/lock/.idstack"
+(
+  cd "$WORK/lock"
+  echo '{}' | "$MERGE" --create --section context --payload - --quiet
+  ( for i in $(seq 1 40); do echo "{\"n\":$i}" | "$MERGE" --section quality_review --payload - --quiet; done ) &
+  ( for i in $(seq 1 40); do echo "{\"n\":$i}" | "$MERGE" --section red_team_audit --payload - --quiet; done ) &
+  wait
+)
+check "two concurrent merges lose no update" \
+  "python3 -c 'import json; d=json.load(open(\"$WORK/lock/.idstack/project.json\")); assert d[\"quality_review\"][\"n\"]==40 and d[\"red_team_audit\"][\"n\"]==40, d'"
+
+# --- Test 30: --expect-updated (#179). A stale read writes nothing ---
+seed_manifest
+cp "$WORK/project.json" "$WORK/expect-before.json"
+echo '{"x": 1}' > "$WORK/payload.json"
+set +e
+EXP_ERR=$("$MERGE" --section quality_review --payload "$WORK/payload.json" --manifest "$WORK/project.json" --expect-updated "2025-12-31T00:00:00Z" 2>&1 >/dev/null)
+EXP_EC=$?
+set -e
+check "a stale --expect-updated exits 8 and leaves the manifest unchanged" \
+  "[ $EXP_EC -eq 8 ] && printf '%s' \"\$EXP_ERR\" | grep -q 'changed after you read' && cmp -s '$WORK/project.json' '$WORK/expect-before.json'"
+check "a matching --expect-updated writes" \
+  "'$MERGE' --section quality_review --payload '$WORK/payload.json' --manifest '$WORK/project.json' --expect-updated 2026-01-01T00:00:00Z --quiet && python3 -c 'import json; assert json.load(open(\"$WORK/project.json\"))[\"quality_review\"]=={\"x\": 1}'"
+check "a second merge with the first read time is stale" \
+  "'$MERGE' --section quality_review --payload '$WORK/payload.json' --manifest '$WORK/project.json' --expect-updated 2026-01-01T00:00:00Z --quiet" 8
+
+# The lock file must be git-ignored, once, even when .gitignore lacks a final newline.
+GI="$WORK/gi"; mkdir -p "$GI"; seed_manifest; cp "$WORK/project.json" "$GI/project.json"; printf 'canvas.env' > "$GI/.gitignore"
+echo '{"x": 1}' > "$WORK/payload.json"
+"$MERGE" --section quality_review --payload "$WORK/payload.json" --manifest "$GI/project.json" --quiet
+"$MERGE" --section quality_review --payload "$WORK/payload.json" --manifest "$GI/project.json" --quiet
+check "the merge git-ignores .manifest.lock once and keeps old lines" \
+  "[ \$(grep -cx '.manifest.lock' '$GI/.gitignore') -eq 1 ] && grep -qx 'canvas.env' '$GI/.gitignore'"
+GW="$WORK/gw"; mkdir -p "$GW/.gitignore"; cp "$WORK/project.json" "$GW/project.json"
+GW_ERR=$("$MERGE" --section quality_review --payload "$WORK/payload.json" --manifest "$GW/project.json" --quiet 2>&1 >/dev/null)
+check "a .gitignore that cannot be written warns on stderr and the merge still writes" \
+  "printf '%s' \"\$GW_ERR\" | grep -q 'gitignore' && python3 -c 'import json; assert json.load(open(\"$GW/project.json\"))[\"quality_review\"]=={\"x\": 1}'"
+
 echo ""
 echo "manifest-merge: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
