@@ -42,6 +42,7 @@
 
 ### Tests
 
+- **`test/test-rendered-landing.js` starts Chrome again one time when no debugging port opens in 30 seconds.** A cold CI runner missed that wait one time, and the v3.11.0.0 release failed. A Chrome that stops at startup still fails at once.
 - `test/check-doc-accuracy.py` checks the landing page. `docs/index.html` must have one `<h1>` that names instructional design, a title of 65 characters maximum and a description of 160 maximum. The `<title>`, `og:title` and `twitter:title` must be equal. A `keywords` tag, or a plain `rem` or `px` font size below 12px, fails the check. Install must come before the skills. `docs/404.html` needs a `noindex` tag, and `docs/llms.txt` must exist.
 - `test/check-doc-accuracy.py` also fails when the text of `docs/index.html`, its title or its description tags give a number of studies.
 - `test/check-evidence-cards.py` does not read a number of studies on the Evidence cards. It fails when a card shows one. It also fails when the shares in the label of a tier bar do not agree with the bar's `data-tiers` counts. It still compares the counts at each tier and the tier range with `evidence/references.md`.

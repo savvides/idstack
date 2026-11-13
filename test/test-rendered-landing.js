@@ -72,7 +72,7 @@ function killChrome() {
 process.on('exit', killChrome);
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { killChrome(); process.exit(1); });
 
-async function main() {
+async function startChrome() {
   // Port 0: Chrome picks a free port and prints its address on stderr, so no other process can
   // hold the port. Keep reading stderr for the whole run. A full pipe stops Chrome.
   chrome = spawn(chromePath, [
@@ -85,8 +85,9 @@ async function main() {
   let stderr = '';
   const lastOutput = () => stderr.trim().split('\n').slice(-3).join(' / ');
   const wsUrl = await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(
-      `Chrome did not open a debugging port within ${STARTUP_SECONDS}s. Last output: ${lastOutput()}`)),
+    const timer = setTimeout(() => reject(Object.assign(new Error(
+      `Chrome did not open a debugging port within ${STARTUP_SECONDS}s. Last output: ${lastOutput()}`),
+      { timedOut: true })),
       STARTUP_SECONDS * 1000);
     chrome.stderr.on('data', chunk => {
       stderr += chunk;
@@ -106,6 +107,21 @@ async function main() {
       chrome.stderr.once('end', () => { clearTimeout(drained); fail(); });
     });
   });
+  return wsUrl;
+}
+
+async function main() {
+  let wsUrl;
+  try {
+    wsUrl = await startChrome();
+  } catch (err) {
+    // A cold CI runner once missed the startup wait, and that failed the v3.11.0.0 release.
+    // Start again one time after a timeout. A Chrome that stops at startup fails at once.
+    if (!err.timedOut) throw err;
+    console.log(`  NOTE: ${err.message} Starting Chrome again.`);
+    killChrome();
+    wsUrl = await startChrome();
+  }
 
   const ws = new WebSocket(wsUrl);
   await new Promise((res, rej) => {
