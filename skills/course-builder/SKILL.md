@@ -208,6 +208,7 @@ _idstack_skill="${CLAUDE_SKILL_DIR}"
 for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
+[ -n "$_IDSTACK" ] || echo "IDSTACK_NOT_FOUND"
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
   "$_IDSTACK/scripts/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
@@ -223,6 +224,17 @@ fi
 
 **If NO_MANIFEST:**
 - This skill will create or update the manifest during its workflow.
+
+**If IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
+idstack again with these two commands in a terminal:
+`claude plugin uninstall idstack@idstack` and
+`claude plugin install idstack@idstack`. Then start a new session." STOP.
+
+**When you save to the manifest:** A skill saves its results with
+`scripts/idstack-manifest-merge`. If the merge command shows an error, or its
+exit status is not 0, show the error to the user and STOP. Do not tell the user
+that idstack saved the results. Do not write `.idstack/project.json` with the
+Write or Edit tool.
 
 ## Preamble: Preferences
 
@@ -1191,8 +1203,6 @@ The payload is the **flat section contents** (no enclosing `course_content` key)
 The `placeholders_used` array lists any fields where placeholder text was used because the user chose to skip or defer those details. It is a record for the designer of what still needs to be filled in. No other skill reads this field.
 
 Use only the approved rows of the report. `generated_files` comes from the `## Generated artifacts` rows. `placeholders_used` comes from their Notes cells. `recommended_generation_targets` comes from the `## Generation targets` rows: one item for each row, with `description` (the Target cell), `source` (the Source finding cell, for example `red-team:alignment-3` or `user-request`), `status` (`generated`, `deferred` or `declined`) and `output_path` (the generated file, only when the status is `generated`).
-
-**Fallback (if `scripts/idstack-manifest-merge` is unavailable):** Read the full manifest, modify only the `course_content` section, Write back. Preserve all other sections verbatim.
 
 After writing the manifest, confirm:
 

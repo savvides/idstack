@@ -174,6 +174,7 @@ Before starting, check for an existing project manifest.
 
 ```bash
 {{IDSTACK_RESOLVE}}
+[ -n "$_IDSTACK" ] || echo "IDSTACK_NOT_FOUND"
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
   "$_IDSTACK/scripts/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
@@ -189,6 +190,17 @@ fi
 
 **If NO_MANIFEST:**
 - This skill will create or update the manifest during its workflow.
+
+**If IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
+idstack again with these two commands in a terminal:
+`claude plugin uninstall idstack@idstack` and
+`claude plugin install idstack@idstack`. Then start a new session." STOP.
+
+**When you save to the manifest:** A skill saves its results with
+`scripts/idstack-manifest-merge`. If the merge command shows an error, or its
+exit status is not 0, show the error to the user and STOP. Do not tell the user
+that idstack saved the results. Do not write `.idstack/project.json` with the
+Write or Edit tool.
 
 ## Preamble: Preferences
 

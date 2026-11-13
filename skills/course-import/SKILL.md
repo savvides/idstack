@@ -208,6 +208,7 @@ _idstack_skill="${CLAUDE_SKILL_DIR}"
 for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
+[ -n "$_IDSTACK" ] || echo "IDSTACK_NOT_FOUND"
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
   "$_IDSTACK/scripts/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
@@ -223,6 +224,17 @@ fi
 
 **If NO_MANIFEST:**
 - This skill will create or update the manifest during its workflow.
+
+**If IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
+idstack again with these two commands in a terminal:
+`claude plugin uninstall idstack@idstack` and
+`claude plugin install idstack@idstack`. Then start a new session." STOP.
+
+**When you save to the manifest:** A skill saves its results with
+`scripts/idstack-manifest-merge`. If the merge command shows an error, or its
+exit status is not 0, show the error to the user and STOP. Do not tell the user
+that idstack saved the results. Do not write `.idstack/project.json` with the
+Write or Edit tool.
 
 ## Preamble: Preferences
 
@@ -622,9 +634,16 @@ IFS= read -r CARTRIDGE_PATH <<'IDSTACK_PATH'
 IDSTACK_PATH
 IMPORT_DIR=$(mktemp -d)
 unzip -q "$CARTRIDGE_PATH" -d "$IMPORT_DIR" 2>&1
+_UNZIP_RC=$?
+# The file is not trusted: a symlink in it can point at any file on this computer.
+find "$IMPORT_DIR" -type l -delete
+[ "$_UNZIP_RC" -le 1 ] || echo "UNZIP_FAILED: $_UNZIP_RC"
 echo "IMPORT_DIR=$IMPORT_DIR"
 ls "$IMPORT_DIR/"
 ```
+
+If UNZIP_FAILED: "idstack cannot extract this file. It can be damaged. Export the course
+from your LMS again." Then delete the extracted files and stop.
 
 ### A3. Find and read the manifest
 
@@ -1039,9 +1058,16 @@ IFS= read -r SCORM_PATH <<'IDSTACK_PATH'
 IDSTACK_PATH
 IMPORT_DIR=$(mktemp -d)
 unzip -q "$SCORM_PATH" -d "$IMPORT_DIR" 2>&1
+_UNZIP_RC=$?
+# The file is not trusted: a symlink in it can point at any file on this computer.
+find "$IMPORT_DIR" -type l -delete
+[ "$_UNZIP_RC" -le 1 ] || echo "UNZIP_FAILED: $_UNZIP_RC"
 echo "IMPORT_DIR=$IMPORT_DIR"
 ls "$IMPORT_DIR/"
 ```
+
+If UNZIP_FAILED: "idstack cannot extract this file. It can be damaged. Export the package
+from your authoring tool again." Then delete the extracted files and stop.
 
 ### E3. Find and read the manifest
 

@@ -218,7 +218,7 @@ Reason: [user's reason]."
 
 If the user does not proceed, do the Step Review of this step. Then do the last Step Review (see Step 6). In the Summary, give the decision against training and the alternative intervention. Do not write a Top recommendations section.
 
-Then run the finish command of the Step Review. Then write the manifest as Step 7 tells, with `training_justification.justified` set to false. Then stop this skill.
+Then run the finish command of the Step Review. Then write the manifest as Step 7 tells, with `training_justification.justified` set to false. Then log the timeline event as "Completion: Timeline Logging" tells, with `"training_justified":false` in the JSON. Then stop this skill.
 
 **Step review:** do the Step Review in the preamble. Section: `## Organizational analysis`. Columns: `ID | Item | Finding | Justification | Evidence`.
 

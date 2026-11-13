@@ -126,6 +126,20 @@ ok/index.html")
   out=$(run "$P" "$b")
   check "[$sh] course-import SCO loop skips symlinked files and folders" \
     "! printf '%s' \"\$out\" | grep -q top-secret && [ \"\$(printf '%s\n' \"\$out\" | grep -c '^SCO_HREF_SKIPPED: ')\" = 2 ] && printf '%s' \"\$out\" | grep -qx three"
+  # A cartridge whose imsmanifest.xml is a symlink to a local file: the
+  # extraction block removes every symlink, so the manifest read cannot leak it.
+  # Only Info-ZIP on Linux restores the symlink; Apple's unzip refuses it, so
+  # this case guards the fix only on the Linux CI legs.
+  mkdir -p "$P/evilzip" && (cd "$P/evilzip" && ln -s "$P/secret.txt" imsmanifest.xml && zip -qy "$P/evil.imscc" imsmanifest.xml)
+  for pair in 'unzip -q "$CARTRIDGE_PATH":MANIFEST_FOUND' 'unzip -q "$SCORM_PATH":SCORM_MANIFEST_FOUND'; do
+    b=$(block course-import "${pair%%:*}" "<file path from the user>=$P/evil.imscc")
+    dir=$(run "$P" "$b" | sed -n 's/^IMPORT_DIR=//p')
+    b2=$(block course-import "${pair#*:}" "<IMPORT_DIR printed above>=$dir")
+    out=$(run "$P" "$b2"; [ "${pair#*:}" = MANIFEST_FOUND ] && run "$P" "cat '$dir/imsmanifest.xml'")
+    check "[$sh] course-import ${pair%%:*} removes a symlinked imsmanifest.xml" \
+      "[ -n '$dir' ] && [ ! -L '$dir/imsmanifest.xml' ] && ! printf '%s' \"\$out\" | grep -q top-secret"
+    rm -rf "$dir"
+  done
 
   # course-import: .docx text extraction.
   mkdir -p "$P/docx"

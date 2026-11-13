@@ -66,7 +66,10 @@ if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/scripts/id
   complete, close the Claude app and open it again. Then type `/idstack:start`
   again." STOP.
 - **IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
-  idstack again. Then type `/idstack:start` again." STOP.
+  idstack again with these two commands in a terminal:
+  `claude plugin uninstall idstack@idstack` and
+  `claude plugin install idstack@idstack`. Then start a new session and type
+  `/idstack:start` again." STOP.
 - **Any other output:** Tell the user: "idstack cannot check its setup. Install
   idstack again. Then type `/idstack:start` again." STOP.
 
