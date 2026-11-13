@@ -2519,6 +2519,30 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "quiz answer pages not blocked" "$WORK/r/test/test-extension.sh"
 
+# 66a. Setup exits 0 with the banner when `claude` is missing -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = '--scope $CLAUDE_SCOPE" >&2\n  exit 1\nfi'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '--scope $CLAUDE_SCOPE" >&2\nfi', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "setup exits 0 when claude is missing" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 66b. Setup skips the python3 check -> test-setup must fail.
+fresh
+python3 - "$WORK/r/setup" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = '_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) ||'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, '_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) || true ||', 1)
+open(p, 'w').write(s)
+PY
+expect_fail "setup ignores a bad python3" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
