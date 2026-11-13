@@ -8,6 +8,8 @@
 # the script writes "NEWER_SCHEMA <version>" to stderr and does not change it.
 # If there is no file, the script writes no output and exits 0.
 # If python3 is not available, the script exits 3 and changes nothing.
+# With --init, if the folder that holds .idstack/ is the home folder, the
+# script makes nothing and exits 9.
 # If it cannot write the manifest, it writes nothing to stdout, does not
 # change the manifest and exits 1.
 #
@@ -50,6 +52,16 @@ MANIFEST="${MANIFEST:-.idstack/project.json}"
 # Seed a fresh manifest when asked. The seed gives the v1.0 sections as empty
 # objects. The migration chain below adds the other sections.
 if [ ! -f "$MANIFEST" ] && [ "$INIT" = "1" ]; then
+  # The folder that holds .idstack/ must not be the home folder: the global
+  # profile is in ~/.idstack/.
+  if python3 -c "
+import os, sys
+folder = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[1])))
+sys.exit(0 if os.environ.get('HOME') and os.path.realpath(folder) == os.path.realpath(os.environ['HOME']) else 1)
+" "$MANIFEST"; then
+    echo "idstack-migrate: this folder is your home folder. idstack does not make a course manifest here. Go to a course folder, then run the skill again." >&2
+    exit 9
+  fi
   mkdir -p "$(dirname "$MANIFEST")"
   python3 -c "
 import json, os, sys, datetime, tempfile
@@ -63,14 +75,17 @@ seed = {
     'needs_analysis': {},
     'learning_objectives': {},
 }
-# Tempfile and rename, so a failed write cannot leave a cut seed. The default
-# mkstemp mode 0600 suits a new manifest (it can hold a course plan).
+# Tempfile and rename, so a failed write cannot leave a cut seed. mkstemp makes
+# the file 0600, so give it the mode that the umask allows, as a new report has.
 real = os.path.realpath(sys.argv[1])
 fd, tmp = tempfile.mkstemp(prefix='.manifest-init.', suffix='.tmp', dir=os.path.dirname(real))
 try:
     with os.fdopen(fd, 'w') as f:
         json.dump(seed, f, indent=2)
         f.write('\n')
+    umask = os.umask(0)
+    os.umask(umask)
+    os.chmod(tmp, 0o666 & ~umask)
     os.replace(tmp, real)
 except BaseException:
     os.unlink(tmp)

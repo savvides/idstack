@@ -20,7 +20,7 @@ Usage:
   idstack-manifest-merge [--create] [--set project_name=<value>]
                          --section <name> --payload <path|->
                          [--section <name> --payload <path|-> ...]
-                         [--manifest <path>] [--quiet]
+                         [--manifest <path>] [--expect-updated <ts>] [--quiet]
 
   --section   Top-level section name. Must be one of the whitelisted sections
               defined in the canonical schema. Unknown names exit 3.
@@ -32,7 +32,13 @@ Usage:
               (scripts/idstack-migrate --init). Without it a missing manifest
               exits 4, which catches a run in the wrong directory.
   --manifest  Path to the manifest. Default: .idstack/project.json
+  --expect-updated  The "updated" value that the skill read from the manifest.
+              If the manifest has another value when the merge takes its lock,
+              another session wrote in between. Nothing is written (exit 8).
   --quiet     Suppress progress output. Errors still go to stderr.
+
+  The merge holds an exclusive lock (.idstack/.manifest.lock) from its read to
+  its write, so two merges at the same time do not lose a section.
 
 Exit codes:
   0  success
@@ -46,9 +52,12 @@ Exit codes:
   6  i/o error
   7  the manifest is from a newer idstack (its version is above the latest
      version that idstack-migrate knows); nothing is written
+  8  --expect-updated does not match the manifest; nothing is written
+  9  the course folder is the home folder; nothing is written
 """
 
 import argparse
+import fcntl
 import json
 import os
 import re
@@ -116,6 +125,7 @@ def parse_args():
         default=".idstack/project.json",
         help="The path to the manifest. Default: .idstack/project.json",
     )
+    parser.add_argument("--expect-updated", metavar="TS", help="Refuse to write if the manifest's updated is not TS.")
     parser.add_argument("--quiet", action="store_true", help="Show only error messages.")
     args = parser.parse_args()
     if len(args.section) != len(args.payload):
@@ -226,6 +236,24 @@ def main():
 
     payloads = [load_payload(path) for path in args.payload]
 
+    # The folder that holds .idstack/ must not be the home folder: the global
+    # profile is in ~/.idstack/.
+    folder = os.path.dirname(os.path.dirname(os.path.abspath(args.manifest)))
+    if os.environ.get("HOME") and os.path.realpath(folder) == os.path.realpath(os.environ["HOME"]):
+        die(9, "this folder is your home folder. idstack does not write a course manifest here. "
+               "Go to a course folder, then run the skill again.")
+
+    # shortcut: fcntl is for macOS and Linux only; use msvcrt if idstack ever runs on Windows.
+    lock_dir = os.path.dirname(os.path.abspath(args.manifest))
+    if args.create:
+        os.makedirs(lock_dir, exist_ok=True)
+    if os.path.isdir(lock_dir):
+        try:
+            lock = open(os.path.join(lock_dir, ".manifest.lock"), "a")
+            fcntl.flock(lock, fcntl.LOCK_EX)  # held until the process exits
+        except OSError as exc:
+            die(6, f"cannot lock the manifest folder {lock_dir!r}: {exc}")
+
     created = False
     if args.create and not os.path.isfile(args.manifest):
         create_manifest(args.manifest)
@@ -234,6 +262,10 @@ def main():
     if version_tuple(manifest.get("version")) > version_tuple(LATEST_VERSION):
         die(7, f"the manifest has version {manifest.get('version')}, from a newer idstack than this one "
                f"({LATEST_VERSION}). Update idstack, then run the skill again.")
+
+    if args.expect_updated is not None and manifest.get("updated") != args.expect_updated:
+        die(8, f"the manifest changed after you read it (updated is {manifest.get('updated')!r}, "
+               f"not {args.expect_updated!r}). Another session wrote to it. Read it again, then merge again.")
 
     for section, payload in zip(args.section, payloads):
         manifest[section] = payload

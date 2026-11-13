@@ -220,7 +220,7 @@ scripts/idstack-migrate [--init] [path]
 | Option | Effect |
 |--------|--------|
 | `path` | The manifest. Default: `.idstack/project.json`. Only the first path is used. |
-| `--init` | If the manifest is missing, write a v1.0 seed and migrate it. Prints `INITIALIZED <path>` on stderr. |
+| `--init` | If the manifest is missing, write a v1.0 seed and migrate it. Prints `INITIALIZED <path>` on stderr. The seed has the mode of the umask. If the folder that holds `.idstack/` is the home folder, it makes nothing and exits 9. |
 | `-h`, `--help` | Prints the header comment and exits 0. |
 
 | Manifest | Result |
@@ -248,6 +248,7 @@ The write is atomic: a tempfile in the folder of the real file, then a rename. A
 | 1 | The script cannot write the manifest. stdout is empty and the manifest does not change. |
 | 2 | An unknown flag |
 | 3 | python3 is missing |
+| 9 | `--init` in the home folder. Nothing is made. |
 
 ```bash
 $ scripts/idstack-migrate --init
@@ -266,7 +267,7 @@ MIGRATED 1.0 1.4
 ```bash
 scripts/idstack-manifest-merge [--create] [--set project_name=<value>] \
   --section <name> --payload <path|-> [--section <name> --payload <path|-> ...] \
-  [--manifest <path>] [--quiet]
+  [--manifest <path>] [--expect-updated <ts>] [--quiet]
 ```
 
 | Option | Effect |
@@ -276,12 +277,15 @@ scripts/idstack-manifest-merge [--create] [--set project_name=<value>] \
 | `--set project_name=<value>` | Sets `project_name`. No other key is accepted. |
 | `--create` | If the manifest is missing, run `idstack-migrate --init` first. |
 | `--manifest <path>` | The manifest. Default: `.idstack/project.json`. |
+| `--expect-updated <ts>` | The `updated` value that the skill read. If the manifest has another value when the merge has its lock, it writes nothing and exits 8. The value has a resolution of one second. |
 | `--quiet` | Prints only errors. |
 | `-h`, `--help` | Prints the argparse help and exits 0. |
 
 The section names are `context`, `needs_analysis`, `learning_objectives`, `assessments`, `course_content`, `import_metadata`, `export_metadata`, `quality_review`, `red_team_audit`, `accessibility_review` and `preferences`.
 
 The merge replaces each named section. It does not merge the fields inside a section. It keeps all other top-level keys and sets `updated` to the current UTC time. The script examines all input before it writes. The sequence is the section names, the `--set` keys, each payload, then the manifest. A bad payload thus leaves the manifest, or its absence, unchanged.
+
+From its read to its write, the merge holds an exclusive lock on `.idstack/.manifest.lock`. Two merges at the same time thus lose no section. The merge keeps the mode of the manifest. It refuses to write when the folder that holds `.idstack/` is the home folder, because the global profile is in `~/.idstack/`.
 
 | Exit | Meaning |
 |------|---------|
@@ -293,8 +297,10 @@ The merge replaces each named section. It does not merge the fields inside a sec
 | 5 | A payload file is missing |
 | 6 | A read or write error, or `--create` cannot make the manifest |
 | 7 | The manifest version is above the latest version that `idstack-migrate` knows: a newer idstack wrote it. Nothing is written. |
+| 8 | `--expect-updated` does not match the manifest. Nothing is written. |
+| 9 | The folder that holds `.idstack/` is the home folder. Nothing is written. |
 
-Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads the payloads, the manifest, and `LATEST_VERSION` in `scripts/idstack-migrate`. Writes the manifest through a tempfile in the folder of the real file and a rename. A symlinked manifest stays a link.
+Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads the payloads, the manifest, and `LATEST_VERSION` in `scripts/idstack-migrate`. Writes the manifest through a tempfile in the folder of the real file and a rename. A symlinked manifest stays a link. Makes `.idstack/.manifest.lock`, which stays after the run.
 
 ```bash
 $ echo '{"audience":"New teachers"}' > ctx.json
@@ -413,7 +419,7 @@ scripts/idstack-ste-check [--format auto|html|markdown|text] [--word-list <path>
 
 | Option | Effect |
 |--------|--------|
-| `<path>` | A file, a folder, or `-` for stdin. A folder gives each `.html`, `.htm` and `.md` file below it. |
+| `<path>` | A file, a folder, or `-` for stdin. A folder gives each `.html`, `.htm`, `.md` and `.markdown` file below it. |
 | `--format` | Default `auto`: `.html` and `.htm` are HTML, `.md` and `.markdown` are Markdown, and all other input (stdin too) is text. |
 | `--word-list <path>` | The file with the `ste-core` word list. Default: `templates/preamble.md` in the clone. |
 | `-h`, `--help` | Prints the argparse help and exits 0. |
@@ -486,7 +492,7 @@ scripts/idstack-learnings promote <key>
 
 | Subcommand | Effect |
 |------------|--------|
-| `log` | Adds one line with a new `ts` (UTC). A `ts` from the caller is replaced. Input that is not a JSON object becomes `{"raw": ..., "ts": ...}`. `log --help` prints the header comment. |
+| `log` | Adds one line with a `ts` (UTC). A `ts` from the caller is kept, as in `idstack-timeline-log`. Input that is not a JSON object becomes `{"raw": ..., "ts": ...}`. `log --help` prints the header comment. |
 | `search` | Prints the matching lines as JSON, in file sequence. |
 | `delete` | Removes the most recent course entry with the key, atomically. Prints `idstack removed the learning: <key>`. |
 | `promote` | Adds the most recent course entry with the key to the global file, with `_source_project` and `"_promoted": true`. |

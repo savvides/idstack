@@ -6,7 +6,8 @@
 #        idstack-learnings delete <key>
 #        idstack-learnings promote <key>
 #
-# log      Appends one learning and adds a "ts" field. Creates .idstack/ if needed.
+# log      Appends one learning and adds a "ts" field. A "ts" from the caller is kept,
+#          as in idstack-timeline-log. Creates .idstack/ if needed.
 #          Exit 0 always, so it never blocks the calling skill.
 # search   Prints matching JSONL lines (default limit 3).
 # delete   Removes the most recent entry with the key, atomically. Exit 1 on error.
@@ -56,7 +57,7 @@ if cmd == "log":
     ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     try:
         d = json.loads(args[0])
-        d["ts"] = ts
+        d.setdefault("ts", ts)
     except Exception:
         d = {"raw": args[0], "ts": ts}
     try:

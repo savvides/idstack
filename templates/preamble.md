@@ -308,12 +308,14 @@ That line gives the section heading and the table columns.
 
 **The procedure**
 
-1. Write the section to `.idstack/.report-section.md` with the Write tool.
+1. Write the section to `.idstack/.report-section.<skill>.md` with the Write tool.
+   In this name and in each command below, `<skill>` is the name of this skill
+   (for example `red-team`).
 2. Run the check command:
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" check .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" check .idstack/.report-section.<skill>.md; fi
 ```
 
 3. If the output shows problems, correct the draft. Then do step 2 again. Do the
@@ -325,7 +327,7 @@ if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTIO
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" append "<path>" .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" append "<path>" .idstack/.report-section.<skill>.md; fi
 ```
 
 5. Tell the user about the section in a maximum of three short lines:
@@ -353,7 +355,7 @@ if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTIO
 
 ```bash
 {{IDSTACK_RESOLVE}}
-if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" approve "<path>" --draft .idstack/.report-section.md; fi
+if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTION_MISSING: $_IDSTACK"; elif ! command -v python3 >/dev/null 2>&1; then echo "REPORT_SECTION_UNAVAILABLE"; else "$_IDSTACK/scripts/idstack-report-section" approve "<path>" --draft .idstack/.report-section.<skill>.md; fi
 ```
 
 9. Go to the next step only if the output starts with `SECTION_APPROVED`.

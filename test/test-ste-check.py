@@ -74,6 +74,12 @@ class SteCheckTest(unittest.TestCase):
         self.assertIn('b.html:1: word:', proc.stdout)
         self.assertNotIn('c.css', proc.stdout)
 
+    def test_directory_checks_markdown_extension(self):
+        self.write('d.markdown', 'Do not utilize this.\n')
+        proc = run_checker([self.work])
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn('d.markdown:1: word:', proc.stdout)
+
     # --- sentence and paragraph length -------------------------------------
 
     def test_description_of_25_words_passes_and_26_fails(self):

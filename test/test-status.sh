@@ -190,6 +190,14 @@ check "a missing critical count marks the red-team row NEEDS-WORK, not 0" \
   "$STATUS --readiness | grep -qE 'Red Team Audit: +NEEDS-WORK +Critical: none'"
 ste_capture no-red-count
 
+# A completed review whose manifest write failed leaves a 0 or missing score.
+write_manifest 0 0 0
+check "a completed review with a 0 score in the manifest says it has no score" \
+  "$STATUS --readiness | grep -q 'quality review has no score in the manifest, accessibility review has no score in the manifest'"
+printf '%s\n' '{"red_team_audit": {"findings_summary": {"critical": 0}}}' > .idstack/project.json
+check "a completed review with no score section is NEEDS-WORK" \
+  "$STATUS --readiness | grep -qE 'Quality Review: +NEEDS-WORK'"
+
 # --- WCAG Level-A override ---
 # A Level-A violation forces NOT-READY even when the overall score passes;
 # nothing exercised this path, so the score check could have swallowed it.

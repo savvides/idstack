@@ -7,10 +7,17 @@
 - **The export readiness check does not pass a red-team section that has no critical count.** Before, `scripts/idstack-status --readiness` used 0 when `red_team_audit.findings_summary.critical` was missing, and the verdict was `READY TO EXPORT`. Now the red-team row is `NEEDS-WORK` with `Critical: none`, and the verdict gives the reason "no red-team critical count".
 - **The Chrome extension (1.2.5) does not read Classic Quizzes pages that show student answers.** These pages are the quiz history, the submissions and their versions, moderate and the quiz data pages. Before, an audit sent the text of these pages to the AI model.
 - **`scripts/idstack-status` shows "unknown" when the project name is empty.** It reads the name in the same sequence as `scripts/idstack-slugify`.
+- **`scripts/idstack-ste-check` examines `.markdown` files in a folder.** Before, a folder scan skipped them with no message (#173).
+- **The readiness check names a review that has no score in the manifest.** The timeline can have a `completed` review while the manifest score is missing or 0. Then the row is `NEEDS-WORK` and the verdict says "quality review has no score in the manifest" or the same for accessibility (#172).
+- **`scripts/idstack-learnings log` keeps a `ts` from the caller,** as `idstack-timeline-log` does (#171).
+- **A new manifest has the mode of the umask, not 0600.** `idstack-migrate --init` makes the seed with the umask mode. A merge keeps the mode of the manifest (#190).
+- **`idstack-manifest-merge` and `idstack-migrate --init` do not make or write a manifest when the course folder is your home folder.** Exit code 9. The check is in the scripts, not in the preamble, so each skill has it (#178).
+- **Two sessions in one course folder do not lose manifest updates.** `idstack-manifest-merge` holds an exclusive lock on `.idstack/.manifest.lock` from its read to its write. The new option `--expect-updated <ts>` writes nothing and exits 8 if the manifest changed after the skill read it. Each skill writes its report draft to `.idstack/.report-section.<skill>.md`. Two sessions that run the same skill in one folder still share a draft (#179).
 
 ### Tests
 
 - `test/test-status.sh` has 4 new tests for the readiness check and the project name. `test/test-extractor.mjs` tests the quiz pages. `test/mutation-test.sh` has cases 65a and 65b.
+- New tests: `test/test-ste-check.py` (1), `test/test-status.sh` (2), `test/integration-test.sh` (1) and `test/test-manifest-merge.sh` (9: file mode, home folder, the lock, `--expect-updated`). `test/mutation-test.sh` has cases 66a to 66i.
 
 ## v3.11.1.0 (2026-11-13)
 

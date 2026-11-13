@@ -62,6 +62,9 @@ check "creates learnings.jsonl" \
 check "appends valid JSON with ts field" \
   "python3 -c \"import json; d=json.loads(open('.idstack/learnings.jsonl').readline()); assert 'ts' in d and d['type']=='operational'\""
 
+check "log keeps a ts from the caller" \
+  "mkdir -p '$TEST_DIR/ts-learn' && (cd '$TEST_DIR/ts-learn' && $IDSTACK_DIR/scripts/idstack-learnings log '{\"key\":\"k\",\"ts\":\"2020-01-02T03:04:05Z\"}' && grep -q '\"ts\": \"2020-01-02T03:04:05Z\"' .idstack/learnings.jsonl)"
+
 check "handles empty arg without error" \
   "$IDSTACK_DIR/scripts/idstack-learnings log ''"
 
