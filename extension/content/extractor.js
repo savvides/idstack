@@ -17,19 +17,22 @@ function detectPageType(url, document) {
 
 function extractContentFromDOM(document, url = (typeof window !== 'undefined' && window.location ? window.location.href : '')) {
   // Canvas views that show student records: gradebook and SpeedGrader, grades, People
-  // (course and account level), groups, discussion replies, submissions, quiz answers, Inbox. Checked on
+  // (course and account level), groups, discussion replies, submissions, quiz answers, Inbox, every page under
+  // an assignment except edit and build (New Quizzes moderate, taking, reports), and the New Quizzes host
+  // (*.quiz-lti-<region>-prod.instructure.com; the region is not fixed, so match quiz-lti). Checked on
   // every URL, because Canvas on a custom domain is only detected as Canvas under /courses/N.
   // Matched on the URL string: url can be '', and new URL('') throws. Function-scoped on
   // purpose: a top-level const would throw when the file is re-injected into the same world.
-  const studentRecordUrl = /^https?:\/\/[^/?#]+\/(?:courses\/\d+\/(?:gradebook|grades|users|groups|discussion_topics|assignments\/\d+\/(?:submissions|anonymous_submissions|moderate|moderation|reporting)|quizzes\/\d+\/(?:history|submissions|moderate|managed_quiz_data|submission_versions|submission_html))|conversations|groups\/\d+|users\/\d+|accounts\/\d+\/users)(?:[/?#]|$)/;
-  if (studentRecordUrl.test(url)) {
+  const studentRecordUrl = /^https?:\/\/(?:[^/?#]*quiz-lti|[^/?#]+\/(?:courses\/\d+\/(?:gradebook|grades|users|groups|discussion_topics|assignments\/\d+\/(?!(?:edit|build)\/?(?:[?#]|$))[^/?#][^?#]*|quizzes\/\d+\/(?:history|submissions|moderate|managed_quiz_data|submission_versions|submission_html))|conversations|groups\/\d+|users\/\d+|accounts\/\d+\/users)(?:[/?#]|$))/;
+  // A doubled slash in the path is routed as one slash, so it must not hide a refused page.
+  if (studentRecordUrl.test(url.replace(/^(https?:\/\/[^/?#]+)([^?#]*)/, (m, host, path) => host + path.replace(/\/{2,}/g, '/')))) {
     return {
       url,
       title: 'Student records page',
       pageType: 'Canvas Student Records',
       content: '',
       wordCount: 0,
-      emptyReason: 'idstack does not read Canvas pages that show student records (grades, People, Inbox, discussions, groups, submissions, New Quizzes moderation and reports, and quiz answers). You can audit an assignment, a page, a syllabus, a rubric or the Modules view.'
+      emptyReason: 'idstack does not read Canvas pages that show student records (grades, People, Inbox, discussions, groups, submissions, the pages under an assignment, New Quizzes and quiz answers). You can audit an assignment, a page, a syllabus, a rubric or the Modules view.'
     };
   }
 

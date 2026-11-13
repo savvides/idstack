@@ -226,6 +226,22 @@ for (const url of [
   'https://canvas.instructure.com/courses/101/quizzes/5/managed_quiz_data',
   'https://canvas.instructure.com/courses/101/quizzes/5/submission_versions',
   'https://canvas.instructure.com/courses/101/quizzes/5/submission_html',
+  // Any other page under an assignment is refused unless it is on the allow list (edit, build): New Quizzes taking, observing, exports, errors, settings, peer reviews.
+  'https://canvas.instructure.com/courses/101/assignments/5/taking',
+  'https://canvas.instructure.com/courses/101/assignments/5/observing',
+  'https://canvas.instructure.com/courses/101/assignments/5/exports',
+  'https://canvas.instructure.com/courses/101/assignments/5/settings',
+  'https://canvas.instructure.com/courses/101/assignments/5/peer_reviews',
+  // Pages under edit or build are not on the allow list, and a doubled slash does not hide a refused page.
+  'https://canvas.instructure.com/courses/101/assignments/5/edit/taking',
+  'https://canvas.instructure.com/courses/101/assignments/5/build/reports',
+  'https://canvas.instructure.com/courses/101/assignments/5//taking',
+  'https://canvas.instructure.com/courses/101//assignments/5/taking',
+  'https://canvas.instructure.com//courses/101/gradebook',
+  // The New Quizzes LTI tool has its own host, *.quiz-lti-<region>-prod.instructure.com; the region is not fixed.
+  'https://school.quiz-lti-iad-prod.instructure.com/lti/launch',
+  'https://school.quiz-lti-dub-prod.instructure.com/',
+  'https://school.quiz-lti-iad-prod.instructure.com:443/reports?x=1',
   // Canvas on a custom domain outside /courses/N is not detected as Canvas; the guard still applies.
   'https://canvas.example.edu/conversations',
   'https://canvas.example.edu/groups/12',
@@ -239,7 +255,7 @@ for (const url of [
 }
 
 // A quiz description page is course material, not a student record: it is not refused.
-for (const url of ['https://canvas.instructure.com/courses/101/assignments/5', 'https://canvas.instructure.com/courses/101/assignments/5/build', 'https://canvas.instructure.com/courses/101/quizzes/5', 'https://canvas.instructure.com/courses/101/quizzes/5/edit', 'https://canvas.instructure.com/courses/101/quizzes']) {
+for (const url of ['https://canvas.instructure.com/courses/101/assignments/5', 'https://canvas.instructure.com/courses/101/assignments/5/build', 'https://canvas.instructure.com/courses/101/assignments/5/edit', 'https://canvas.instructure.com/courses/101/assignments/5/edit/', 'https://canvas.instructure.com/courses/101/assignments/5/edit?module_item_id=3', 'https://canvas.instructure.com/courses/101/assignments/5/', 'https://quizzes.example.edu/courses/101/assignments/5', 'https://canvas.instructure.com/courses/101/quizzes/5', 'https://canvas.instructure.com/courses/101/quizzes/5/edit', 'https://canvas.instructure.com/courses/101/quizzes']) {
   assert.notStrictEqual(extractContentFromDOM(createDocument(studentRecordHTML), url).pageType, 'Canvas Student Records', `${url}: quiz material must not be refused`);
 }
 
