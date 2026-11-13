@@ -253,6 +253,16 @@ def main():
             fcntl.flock(lock, fcntl.LOCK_EX)  # held until the process exits
         except OSError as exc:
             die(6, f"cannot lock the manifest folder {lock_dir!r}: {exc}")
+        # Keep the lock file out of git. A failure must not block the merge, but must not be silent.
+        try:
+            gi = os.path.join(lock_dir, ".gitignore")
+            with open(gi, "a+") as f:
+                f.seek(0)
+                text = f.read()
+                if ".manifest.lock" not in text.splitlines():
+                    f.write(("\n" if text and not text.endswith("\n") else "") + ".manifest.lock\n")
+        except OSError as exc:
+            print(f"idstack-manifest-merge: warning: cannot update {gi}: {exc}", file=sys.stderr)
 
     created = False
     if args.create and not os.path.isfile(args.manifest):

@@ -300,7 +300,7 @@ From its read to its write, the merge holds an exclusive lock on `.idstack/.mani
 | 8 | `--expect-updated` does not match the manifest. Nothing is written. |
 | 9 | The folder that holds `.idstack/` is the home folder. Nothing is written. |
 
-Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads the payloads, the manifest, and `LATEST_VERSION` in `scripts/idstack-migrate`. Writes the manifest through a tempfile in the folder of the real file and a rename. A symlinked manifest stays a link. Makes `.idstack/.manifest.lock`, which stays after the run.
+Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads the payloads, the manifest, and `LATEST_VERSION` in `scripts/idstack-migrate`. Writes the manifest through a tempfile in the folder of the real file and a rename. A symlinked manifest stays a link. It keeps `.manifest.lock` in that folder and lists it in the `.gitignore` there (a write error only gives a warning). Makes `.idstack/.manifest.lock`, which stays after the run.
 
 ```bash
 $ echo '{"audience":"New teachers"}' > ctx.json

@@ -393,6 +393,18 @@ check "a matching --expect-updated writes" \
 check "a second merge with the first read time is stale" \
   "'$MERGE' --section quality_review --payload '$WORK/payload.json' --manifest '$WORK/project.json' --expect-updated 2026-01-01T00:00:00Z --quiet" 8
 
+# The lock file must be git-ignored, once, even when .gitignore lacks a final newline.
+GI="$WORK/gi"; mkdir -p "$GI"; seed_manifest; cp "$WORK/project.json" "$GI/project.json"; printf 'canvas.env' > "$GI/.gitignore"
+echo '{"x": 1}' > "$WORK/payload.json"
+"$MERGE" --section quality_review --payload "$WORK/payload.json" --manifest "$GI/project.json" --quiet
+"$MERGE" --section quality_review --payload "$WORK/payload.json" --manifest "$GI/project.json" --quiet
+check "the merge git-ignores .manifest.lock once and keeps old lines" \
+  "[ \$(grep -cx '.manifest.lock' '$GI/.gitignore') -eq 1 ] && grep -qx 'canvas.env' '$GI/.gitignore'"
+GW="$WORK/gw"; mkdir -p "$GW/.gitignore"; cp "$WORK/project.json" "$GW/project.json"
+GW_ERR=$("$MERGE" --section quality_review --payload "$WORK/payload.json" --manifest "$GW/project.json" --quiet 2>&1 >/dev/null)
+check "a .gitignore that cannot be written warns on stderr and the merge still writes" \
+  "printf '%s' \"\$GW_ERR\" | grep -q 'gitignore' && python3 -c 'import json; assert json.load(open(\"$GW/project.json\"))[\"quality_review\"]=={\"x\": 1}'"
+
 echo ""
 echo "manifest-merge: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
