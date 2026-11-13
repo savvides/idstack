@@ -278,6 +278,14 @@ check "deletes the most recent entry with the key when there are duplicates" \
 check "deletes a specific learning" \
   "$IDSTACK_DIR/scripts/idstack-learnings delete key2 && python3 -c \"import json,sys; lines=[json.loads(l) for l in open('.idstack/learnings.jsonl')]; assert len(lines)==1 and lines[0]['key']=='key1'\""
 
+# #168: delete once replaced a symlinked learnings file with a regular file.
+mkdir -p "$TEST_DIR/reallearn"
+mv .idstack/learnings.jsonl "$TEST_DIR/reallearn/learnings.jsonl"
+ln -s "$TEST_DIR/reallearn/learnings.jsonl" .idstack/learnings.jsonl
+check "delete writes through a symlinked learnings file" \
+  "$IDSTACK_DIR/scripts/idstack-learnings delete key1 && [ -L .idstack/learnings.jsonl ] && [ ! -s '$TEST_DIR/reallearn/learnings.jsonl' ]"
+rm -f .idstack/learnings.jsonl
+
 echo ""
 # --- idstack-learnings promote ---
 echo "## idstack-learnings promote"

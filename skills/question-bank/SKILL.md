@@ -23,7 +23,7 @@ allowed-tools:
 
 ## Preamble: Interaction Conventions
 
-idstack runs in Claude Code and in Cowork. Skill bodies name these tools:
+idstack runs in Claude Code. Skill bodies name these tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   present a single multiple-choice question (e.g., "Which of these best describes X?")
@@ -208,9 +208,10 @@ _idstack_skill="${CLAUDE_SKILL_DIR}"
 for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
+[ -n "$_IDSTACK" ] || echo "IDSTACK_NOT_FOUND"
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
-  "$_IDSTACK/scripts/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
+  "$_IDSTACK/scripts/idstack-migrate" .idstack/project.json 2>&1 || cat .idstack/project.json
 else
   echo "NO_MANIFEST"
 fi
@@ -223,6 +224,21 @@ fi
 
 **If NO_MANIFEST:**
 - This skill will create or update the manifest during its workflow.
+
+**If IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
+idstack again with these two commands in a terminal:
+`claude plugin uninstall idstack@idstack` and
+`claude plugin install idstack@idstack`. Then start a new session." STOP.
+
+**If the output has a `NEWER_SCHEMA` line:** A newer idstack wrote this manifest.
+Tell the user: "A newer version of idstack wrote this course. Update idstack
+before you continue. This version cannot save to this course." STOP.
+
+**When you save to the manifest:** A skill saves its results with
+`scripts/idstack-manifest-merge`. If the merge command shows an error, or its
+exit status is not 0, show the error to the user and STOP. Do not tell the user
+that idstack saved the results. Do not write `.idstack/project.json` with the
+Write or Edit tool.
 
 ## Preamble: Preferences
 
@@ -459,6 +475,8 @@ if [ ! -x "$_IDSTACK/scripts/idstack-report-section" ]; then echo "REPORT_SECTIO
   Then run the finish command again.
 - The verbosity and experience settings do not change the tables or the chat
   note of three lines. Each table always has its citations.
+- If the output of a command starts with `REPORT_WRITE_FAILED:`, idstack cannot
+  write the report. Do not change the draft. Show the line to the user and STOP.
 - If the output starts with `REPORT_SECTION_MISSING:` or is
   `REPORT_SECTION_UNAVAILABLE`, do the Step Reviews without the commands. If the
   report does not exist, write its header, Summary and footer from the "Report

@@ -2094,6 +2094,10 @@ shell_mutation "GNU-only head -n -1 returns to the Canvas push" \
   skills/course-export/SKILL.md.tmpl "BODY=\$(echo \"\$RESPONSE\" | sed '\$d')" 'BODY=$(echo "$RESPONSE" | head -n -1)'
 shell_mutation "the SCO loop word-splits an unquoted variable again" \
   skills/course-import/SKILL.md.tmpl "printf '%s\\n' \"\$SCO_HREFS\" | while IFS= read -r sco_href; do" 'for sco_href in $SCO_HREFS; do'
+# A cartridge symlink can make the manifest read print any local file. Guarded
+# only where unzip restores symlinks (Info-ZIP on Linux, as in the CI job).
+shell_mutation "course-import keeps the symlinks in an extracted cartridge" \
+  skills/course-import/SKILL.md.tmpl 'find "$IMPORT_DIR" -type l -delete' 'true'
 shell_mutation "course-quality-review lists files with bare globs again" \
   skills/course-quality-review/SKILL.md.tmpl "_FILES=\$(find . -maxdepth 1" 'ls -la *.md *.docx 2>/dev/null; _FILES=$(find . -maxdepth 1'
 shell_mutation "the manifest-merge example writes a /tmp payload again" \
@@ -2240,7 +2244,7 @@ fresh
 python3 - "$WORK/r/scripts/idstack-learnings" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = '        shutil.copymode(LOCAL, tmp_path)\n'
+old = '        shutil.copymode(real, tmp_path)\n'
 assert s.count(old) == 1, 'anchor count %d' % s.count(old)
 s = s.replace(old, '        os.chmod(tmp_path, 0o644)\n', 1)
 open(p, 'w', encoding='utf-8').write(s)

@@ -4,6 +4,8 @@
 # the manifest again only when it applies a migration. It writes the manifest
 # to stdout, changed or not.
 # When it applies a migration, it writes "MIGRATED <from> <to>" to stderr.
+# If a newer idstack wrote the manifest (its version is above LATEST_VERSION),
+# the script writes "NEWER_SCHEMA <version>" to stderr and does not change it.
 # If there is no file, the script writes no output and exits 0.
 # If python3 is not available, the script exits 3 and changes nothing.
 # If it cannot write the manifest, it writes nothing to stdout, does not
@@ -50,7 +52,7 @@ MANIFEST="${MANIFEST:-.idstack/project.json}"
 if [ ! -f "$MANIFEST" ] && [ "$INIT" = "1" ]; then
   mkdir -p "$(dirname "$MANIFEST")"
   python3 -c "
-import json, sys, datetime
+import json, os, sys, datetime, tempfile
 ts = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 seed = {
     'version': '1.0',
@@ -61,9 +63,18 @@ seed = {
     'needs_analysis': {},
     'learning_objectives': {},
 }
-with open(sys.argv[1], 'w') as f:
-    json.dump(seed, f, indent=2)
-    f.write('\n')
+# Tempfile and rename, so a failed write cannot leave a cut seed. The default
+# mkstemp mode 0600 suits a new manifest (it can hold a course plan).
+real = os.path.realpath(sys.argv[1])
+fd, tmp = tempfile.mkstemp(prefix='.manifest-init.', suffix='.tmp', dir=os.path.dirname(real))
+try:
+    with os.fdopen(fd, 'w') as f:
+        json.dump(seed, f, indent=2)
+        f.write('\n')
+    os.replace(tmp, real)
+except BaseException:
+    os.unlink(tmp)
+    raise
 " "$MANIFEST"
   echo "INITIALIZED $MANIFEST" >&2
 fi
@@ -100,6 +111,18 @@ with open(MANIFEST) as f:
 
 version = data.get('version', '')
 migrated_from = version
+
+def newer(v):
+    try:
+        return tuple(int(p) for p in str(v).split('.')) > tuple(int(p) for p in '$LATEST_VERSION'.split('.'))
+    except ValueError:
+        return False
+
+if newer(version):
+    print(f'NEWER_SCHEMA {version}', file=sys.stderr)
+
+# A null section is treated as absent, so a migration step can fill its defaults.
+data = {k: v for k, v in data.items() if v is not None}
 
 def migrate_1_0_to_1_1(data):
     data.setdefault('assessments', {'items': [], 'formative_checkpoints': [], 'feedback_quality_score': 0})

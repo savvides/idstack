@@ -66,6 +66,12 @@ printf '%s\n' '{"skill":"needs-analysis","event":"completed","training_justified
 check "project name comes from the manifest" \
   "$STATUS | grep -q 'Project: Test Course 123'"
 
+# #172: the dashboard once read only the last 200 timeline lines, so an early
+# skill in a long project showed as not completed.
+python3 -c 'print("\n".join(["{\"skill\":\"quick-check\",\"event\":\"completed\"}"] * 250))' >> .idstack/timeline.jsonl
+check "a skill before the last 200 timeline lines still counts as completed" \
+  "$STATUS --context | grep 'SKILLS_COMPLETED' | grep -q needs-analysis"
+
 cat > .idstack/timeline.jsonl <<'JSON'
 {"skill":"needs-analysis","event":"completed","training_justified":true}
 {"skill":"course-quality-review","event":"completed","score":65,"dimensions":{"teaching_presence":7,"social_presence":3,"cognitive_presence":5}}

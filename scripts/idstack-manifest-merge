@@ -44,11 +44,14 @@ Exit codes:
   4  manifest file not found
   5  payload file not found
   6  i/o error
+  7  the manifest is from a newer idstack (its version is above the latest
+     version that idstack-migrate knows); nothing is written
 """
 
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -73,6 +76,19 @@ ALLOWED_SECTIONS = {
 
 # Top-level scalar fields that --set may write.
 SETTABLE_FIELDS = {"project_name"}
+
+MIGRATE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "idstack-migrate")
+# idstack-migrate owns the schema version; read it, so the two cannot disagree.
+with open(MIGRATE, encoding="utf-8") as _f:
+    LATEST_VERSION = re.search(r'^LATEST_VERSION="([0-9.]+)"$', _f.read(), re.M).group(1)
+
+
+def version_tuple(value):
+    """'1.10' -> (1, 10). A missing or malformed version sorts as oldest."""
+    try:
+        return tuple(int(p) for p in str(value).split("."))
+    except ValueError:
+        return ()
 
 
 def parse_args():
@@ -159,9 +175,8 @@ def load_manifest(manifest_path):
 def create_manifest(manifest_path):
     """Seed a canonical manifest with idstack-migrate --init, so the migrations
     stay the only definition of each section's default."""
-    migrate = os.path.join(os.path.dirname(os.path.realpath(__file__)), "idstack-migrate")
     result = subprocess.run(
-        [migrate, "--init", manifest_path],
+        [MIGRATE, "--init", manifest_path],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         universal_newlines=True,
@@ -173,20 +188,23 @@ def create_manifest(manifest_path):
 def write_atomic(manifest_path, data):
     """Write JSON atomically via tempfile + rename, so a crash mid-write
     cannot leave the manifest truncated or partially overwritten."""
-    directory = os.path.dirname(os.path.abspath(manifest_path)) or "."
-    fd, tmp_path = tempfile.mkstemp(prefix=".manifest-merge.", dir=directory, suffix=".tmp")
+    # Rename onto the real file, so a symlinked manifest stays a link.
+    real = os.path.realpath(manifest_path)
+    tmp_path = None
     try:
+        fd, tmp_path = tempfile.mkstemp(prefix=".manifest-merge.", dir=os.path.dirname(real), suffix=".tmp")
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(data, handle, indent=2)
             handle.write("\n")
         # mkstemp makes the file 0600. Keep the mode of the manifest.
-        shutil.copymode(manifest_path, tmp_path)
-        os.replace(tmp_path, manifest_path)
+        shutil.copymode(real, tmp_path)
+        os.replace(tmp_path, real)
     except Exception as exc:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
         die(6, f"cannot write the manifest {manifest_path!r}: {exc}")
 
 
@@ -213,6 +231,9 @@ def main():
         create_manifest(args.manifest)
         created = True
     manifest = load_manifest(args.manifest)
+    if version_tuple(manifest.get("version")) > version_tuple(LATEST_VERSION):
+        die(7, f"the manifest has version {manifest.get('version')}, from a newer idstack than this one "
+               f"({LATEST_VERSION}). Update idstack, then run the skill again.")
 
     for section, payload in zip(args.section, payloads):
         manifest[section] = payload

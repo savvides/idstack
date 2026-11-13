@@ -504,6 +504,17 @@ check "preamble Step Review has the approve command" \
 check "preamble Step Review commands name an install that has no report helper" \
   "grep -F '\"\$_IDSTACK/scripts/idstack-report-section\" ' '$IDSTACK_DIR/templates/preamble.md' | while IFS= read -r l; do _IDSTACK='$RS_NOHELPER' bash -c \"\$l\" | grep -qxF 'REPORT_SECTION_MISSING: $RS_NOHELPER' || exit 1; done"
 rm -rf "$RS_NOHELPER"
+# A skill with no idstack install must say so, not fail on "/scripts/..." calls.
+check "preamble Project Manifest block prints IDSTACK_NOT_FOUND with no install" \
+  "awk '/^## Preamble: Project Manifest/{f=1} f&&/^\`\`\`bash/{b=1;next} b&&/^\`\`\`/{exit} b' '$IDSTACK_DIR/templates/preamble.md' | grep -qxF '[ -n \"\$_IDSTACK\" ] || echo \"IDSTACK_NOT_FOUND\"'"
+check "preamble tells skills to stop when the manifest merge fails" \
+  "grep -qF 'If the merge command shows an error, or its' '$IDSTACK_DIR/templates/preamble.md'"
+check "preamble stops on a manifest from a newer idstack and on a report write error" \
+  "grep -qF 'If the output has a \`NEWER_SCHEMA\` line:' '$IDSTACK_DIR/templates/preamble.md' && grep -qF 'starts with \`REPORT_WRITE_FAILED:\`' '$IDSTACK_DIR/templates/preamble.md' && grep -qF 'idstack-migrate\" .idstack/project.json 2>&1 ||' '$IDSTACK_DIR/templates/preamble.md'"
+check "no skill writes the manifest by hand when the merge tool is unavailable" \
+  "! grep -lE 'Fallback \(if .scripts/idstack-manifest-merge|fall back to manual write' '$IDSTACK_DIR'/skills/*/SKILL.md.tmpl"
+check "needs-analysis stop branch logs the timeline event" \
+  "grep -qF 'Then log the timeline event as \"Completion: Timeline Logging\" tells, with \`\"training_justified\":false\`' '$IDSTACK_DIR/skills/needs-analysis/SKILL.md.tmpl'"
 # The user reads each table in the report file. A table in the chat or in the
 # question card is too dense to read, so the preamble forbids both.
 SR_TEXT=$(awk '/^## Preamble: Step Review/{f=1;next} /^## Preamble: /{f=0} f' "$IDSTACK_DIR/templates/preamble.md")

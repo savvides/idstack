@@ -10,6 +10,17 @@
 - **`SECURITY.md` tells you how to report a security problem privately.** It names the sensitive data: Canvas tokens in `.idstack/canvas.env`, and course and student data.
 - **The bug form asks for the operating system and the output of `scripts/idstack-doctor`.** It tells you not to paste a token or student data.
 
+### Fixed — reliability
+
+- **`/idstack:course-import` removes the symlinks from a cartridge or a SCORM package that it extracts.** On Linux, `unzip` restores a symlink. A package whose `imsmanifest.xml` was a symlink could then show any file on your computer in the session. The skill also stops when `unzip` cannot extract the file.
+- **A skill tells you when it cannot find the idstack files.** The skill shows the commands that install idstack again, and stops. Before, the scripts failed with "No such file".
+- **A skill stops when it cannot save to the manifest.** It shows the error, and it does not tell you that it saved the results. The skills no longer write `.idstack/project.json` by hand.
+- **`/idstack:needs-analysis` logs a timeline event when you stop after idstack recommends against training.** Closes #147.
+- **A symlinked manifest, report or learnings file stays a link.** `idstack-manifest-merge`, `idstack-report-section` and `idstack-learnings delete` now write to the real file. Before, they replaced the link with a regular file. Closes #168.
+- **A write error in a read-only folder gives a clear message, not a Python traceback.** `idstack-manifest-merge` exits 6. `idstack-report-section` exits 4 and prints `REPORT_WRITE_FAILED`, and the skill stops. Before, the skill changed the draft and tried again.
+- **idstack does not write a manifest that a newer idstack wrote.** `idstack-migrate` prints `NEWER_SCHEMA`, the skill tells you to update idstack, and `idstack-manifest-merge` exits 7. `idstack-migrate` also accepts a section with the value `null`.
+- **The dashboard reads the full timeline.** Before, it read only the last 200 lines. In a long project, the pipeline could then run an early skill again. This is the first part of #172.
+
 ### Changed — landing page
 
 - **The landing page names the two kinds of help.** The first paragraph and the share card now name them. They are the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation. The README introduction has the same message, and it says that idstack is a copilot for instructional designers.
@@ -50,6 +61,7 @@
 
 ### Tests
 
+- **`test/test-rendered-landing.js` starts Chrome again one time when no debugging port opens in 30 seconds.** A cold CI runner missed that wait one time, and the v3.11.0.0 release failed. A Chrome that stops at startup still fails at once.
 - `test/check-doc-accuracy.py` checks the landing page. `docs/index.html` must have one `<h1>` that names instructional design, a title of 65 characters maximum and a description of 160 maximum. The `<title>`, `og:title` and `twitter:title` must be equal. A `keywords` tag, or a plain `rem` or `px` font size below 12px, fails the check. Install must come before the skills. `docs/404.html` needs a `noindex` tag, and `docs/llms.txt` must exist.
 - `test/check-doc-accuracy.py` also fails when the text of `docs/index.html`, its title or its description tags give a number of studies.
 - `test/check-evidence-cards.py` does not read a number of studies on the Evidence cards. It fails when a card shows one. It also fails when the shares in the label of a tier bar do not agree with the bar's `data-tiers` counts. It still compares the counts at each tier and the tier range with `evidence/references.md`.
