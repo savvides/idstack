@@ -74,8 +74,8 @@ idstack has four new skills that work at any time, outside the pipeline.
 - **The chat is shorter (#146).** `/idstack:pipeline` gives its status in one line. `/idstack:course-import` and `/idstack:course-export` give a short closing message with the report link. `/idstack:course-builder` does not write a line for each file. `/idstack:accessibility-review` and `/idstack:assessment-design` keep their details in the report.
 - **The link preview image shows the current study count (#141).**
 - **The Chrome extension (1.2.3) cites real studies in a page audit.** The page audit gave the model no list of studies, so a citation code could be wrong. It now uses the same checks and the same studies as `/idstack:quick-check`, for objectives, quiz questions, rubrics, media and practice.
-- **idstack.org shows the sixteen skills.** The text of the page is shorter and uses the active voice. It said "146 references" in one place. It now says 154.
-- **Eight new references, all peer-reviewed.** Five on test questions and practice tests ([Assessment-23] to [Assessment-27]) and three on training evaluation and transfer ([Evaluation-23] to [Evaluation-25]). The evidence base has 154 studies.
+- **idstack.org shows the sixteen skills.** The text of the page is shorter and uses the active voice. It gave an old number of references in one place. It now gives the correct number.
+- **New references, all peer-reviewed.** They are on test questions and practice tests ([Assessment-23] to [Assessment-27]) and on training evaluation and transfer ([Evaluation-23] to [Evaluation-25]).
 
 Reports and the course dashboard are now Markdown files. Each skill gives a report link that opens in the Claude desktop app. Each skill now adds the output of each step to the report as a draft table, and you approve each section.
 
@@ -160,7 +160,7 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 
 ## v3.10.0.0 (2026-11-01)
 
-This release lets you use idstack in the Claude desktop app with no terminal. A new skill, `/idstack:start`, checks your setup and starts the correct skill. Each skill gives you a link that opens its report in the app. The evidence base has 38 new references, and 27 references have a correct evidence tier.
+This release lets you use idstack in the Claude desktop app with no terminal. A new skill, `/idstack:start`, checks your setup and starts the correct skill. Each skill gives you a link that opens its report in the app. The evidence base has new references, and 27 references have a correct evidence tier.
 
 To update: `cd` into your idstack clone, then `git pull && ./setup`. For a marketplace install, run `claude plugin update idstack@idstack`.
 
@@ -179,7 +179,7 @@ To update: `cd` into your idstack clone, then `git pull && ./setup`. For a marke
 
 ### Changed — the evidence base
 
-- **`evidence/references.md` has 38 new references, from 108 to 146.** We found them with Consensus searches and kept only the papers that two independent reviews accepted. 26 are meta-analyses (T1). They give new evidence on 4C/ID, gamification, worked examples, productive failure, the expertise reversal effect, signaling, seductive details, interactive video, rubrics, self- and peer-assessment, adaptive learning, the Community of Inquiry presences, and UDL achievement. Each new reference has the next free number in its domain. No reference has a new number. The landing page cards and the study count show the new totals.
+- **`evidence/references.md` has new references.** We found them with Consensus searches and kept only the papers that two independent reviews accepted. Many are meta-analyses (T1). They give new evidence on 4C/ID, gamification, worked examples, productive failure, the expertise reversal effect, signaling, seductive details, interactive video, rubrics, self- and peer-assessment, adaptive learning, the Community of Inquiry presences, and UDL achievement. Each new reference has the next free number in its domain. No reference has a new number. The landing page cards and the study count show the new totals.
 - **27 references have a correct evidence tier.** We compared the design that each abstract states with the tier table in `evidence/references.md`. Two reviewers then examined each change, and we kept only the changes that both accepted. 25 tiers go down and two go up. For example, CogLoad-17 (13 participants) goes from T1 to T2, Online-13 (a literature review) goes from T1 to T3, and Online-15 (a design experiment in one course) goes from T2 to T4. ID-113 goes from T5 to T3 and Access-6 goes from T2 to T3, because each is a systematic review. The skills, the README and the Chrome extension demo now cite the new tiers. The README T2 example is now Chen et al. (2018).
 - **Ten references have correct metadata.** Online-3 is from 2006 and Online-17 is from 2002: the two papers are from the *Journal of Asynchronous Learning Networks*, and 2019 is the date when *Online Learning* put them online. Assessment-10 is from 2015, not 2013. Seven titles were paraphrases and now are the published titles: Alignment-3, Alignment-16, Prototype-9, Prototype-16, Online-1, Online-13 and Online-15.
 
@@ -997,7 +997,7 @@ No version bump (still 1.4). The `report_path` additions are optional fields; ex
 
 - You can now run `/accessibility-review` to audit your course for WCAG 2.1 AA compliance and Universal Design for Learning (UDL 3.0). Two-tier output: "Must Fix" for legal accessibility violations, "Should Improve" for inclusive design recommendations. Scores accessibility 0-100.
 - You can now run `/red-team` to stress-test your course design. Five adversarial dimensions: alignment gaps, evidence verification, cognitive load analysis, learner persona simulation, and prerequisite chain integrity. Produces a confidence score so you know how solid your design is before you export.
-- New evidence domain added: Domain 11 (Accessibility & Universal Design for Learning) with 9 citations covering WCAG, UDL Guidelines 3.0, and differentiated instruction research
+- New evidence domain added: Domain 11 (Accessibility & Universal Design for Learning), with citations covering WCAG, UDL Guidelines 3.0, and differentiated instruction research
 - Pipeline extended: `/accessibility-review` and `/red-team` sit between `/course-quality-review` and `/course-export` as the final quality gates
 - Smoke tests expanded from 46 to 58 checks covering all 9 skills
 
