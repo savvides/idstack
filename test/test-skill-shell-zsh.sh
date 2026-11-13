@@ -54,20 +54,33 @@ PY
 # Fake curl for the Canvas blocks: prints a JSON body and then the HTTP code
 # on its own line, as `curl -s -w "\n%{http_code}"` does. It takes the token
 # only from a config on stdin (`-K -`): a token in argv shows in `ps`. It logs
-# its argv to $CURL_LOG and the text of each `name@file` field to $CURL_LOG.data.
+# its argv to $CURL_LOG and the text of each `name@file` field to $CURL_LOG.data
+# (a lookup with -G goes to $CURL_LOG.get). A call with no --max-time is noted
+# in $CURL_LOG.err. A lookup (-G) prints the file $FAKE_LIST, or []. FAKE=500
+# makes every POST and PUT answer 500, and FAKE=timeout makes them exit 28 with
+# no output, as curl does after --max-time.
 mkdir -p "$WORK/fakebin"
 export CURL_LOG="$WORK/curl.log"
 cat > "$WORK/fakebin/curl" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$*" >> "$CURL_LOG"
-prev= cfg=
+prev= cfg= get= tm=
 for a in "$@"; do
   [ "$prev" = -K ] && [ "$a" = - ] && cfg=$(cat)
-  case "$prev:$a" in --data-urlencode:*@*) cat "${a#*@}" >> "$CURL_LOG.data"; echo >> "$CURL_LOG.data" ;; esac
+  [ "$a" = -G ] && get=1
+  [ "$a" = --max-time ] && tm=1
+  prev=$a
+done
+[ -n "$tm" ] || echo "no --max-time: $*" >> "$CURL_LOG.err"
+prev=
+for a in "$@"; do
+  case "$prev:$a" in --data-urlencode:*@*) if [ -n "$get" ]; then f="$CURL_LOG.get"; else f="$CURL_LOG.data"; fi; cat "${a#*@}" >> "$f"; echo >> "$f" ;; esac
   prev=$a
 done
 case "$cfg" in *'header = "Authorization: Bearer secret-token-123"'*) ;; *) printf '{"error":"no token"}\n401'; exit 0 ;; esac
-printf '{"id":42,"name":"Module 1"}\n200'
+if [ -n "$get" ]; then if [ -n "${FAKE_LIST:-}" ]; then cat "$FAKE_LIST"; else printf '[]'; fi; printf '\n200'; exit 0; fi
+case "${FAKE:-}" in timeout) exit 28 ;; 500) printf '{"error":"boom"}\n500'; exit 0 ;; esac
+printf '{"id":42,"name":"Module 1","url":"page-slug"}\n200'
 EOF
 chmod +x "$WORK/fakebin/curl"
 # Text with characters that the shell changes when it is put in a command.
@@ -163,6 +176,19 @@ PY
   out=$(run "$P/docx" "$b")
   check "[$sh] course-import does not run a command in a file name" \
     "[ ! -e '$P/docx/pwned' ] && grep -qx '## Week 1' '$P/docx/.idstack/import/Bio\$(touch pwned).txt'"
+  # A DOCTYPE or ENTITY (billion laughs) is refused before the XML parser runs.
+  python3 - "$P/docx/Laughs.docx" <<'PY'
+import sys, zipfile
+doc = ('<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY a "ha"><!ENTITY b "&a;&a;&a;&a;">'
+       '<!ENTITY c "&b;&b;&b;&b;">]><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+       '<w:body><w:p><w:r><w:t>&c;</w:t></w:r></w:p></w:body></w:document>')
+with zipfile.ZipFile(sys.argv[1], 'w') as z:
+    z.writestr('word/document.xml', doc)
+PY
+  b=$(block course-import 'read -r DOCX_PATH' "<file path from the user>=Laughs.docx")
+  out=$(run "$P/docx" "$b")
+  check "[$sh] course-import refuses a .docx with a DOCTYPE or ENTITY" \
+    "printf '%s' \"\$out\" | grep -q '^DOCX_READ_FAILED: the document has a DOCTYPE' && [ ! -e '$P/docx/.idstack/import/Laughs.txt' ]"
 
   # course-export: IMSCC staging, then packaging in a later, separate shell.
   mkdir -p "$P/exp/.idstack/exports/demo-course"
@@ -226,11 +252,23 @@ PY
   run "$P/canvas" "$(block course-export "_TOKEN_LINE=" "<canvas url>=https://canvas.example.edu" "<course id>=456")" >/dev/null
   check "[$sh] rewriting the Canvas settings keeps the token" \
     "grep -qx \"CANVAS_TOKEN='secret-token-123'\" '$P/canvas/.idstack/canvas.env'"
-  b=$(block course-export 'module[name]@')
-  rm -f "$CURL_LOG" "$CURL_LOG.data"
-  mkdir -p "$P/canvas/.idstack/canvas-push"
-  printf '%s' "$HOSTILE" > "$P/canvas/.idstack/canvas-push/title.txt"
-  out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas" "$b")
+  # Canvas push blocks. Each one writes its files, runs, and the files go.
+  # push <block> <dir> [file=text ...]: runs the push block in <dir> with the fake curl.
+  # $FAKE and $FAKE_LIST steer the fake curl. $out gets the output.
+  rm -f "$CURL_LOG" "$CURL_LOG.data" "$CURL_LOG.get" "$CURL_LOG.err"
+  push() {
+    local blk=$1 dir=$2; shift 2
+    rm -f "$CURL_LOG" "$CURL_LOG.data" "$CURL_LOG.get" "$CURL_LOG.err"
+    mkdir -p "$dir/.idstack/canvas-push"
+    for kv in "$@"; do printf '%s' "${kv#*=}" > "$dir/.idstack/canvas-push/${kv%%=*}"; done
+    out=$(PATH="$WORK/fakebin:$PATH" run "$dir" "$blk")
+  }
+  posts() { grep -c -e '-X POST' "$CURL_LOG"; }
+  puts() { grep -c -e '-X PUT' "$CURL_LOG"; }
+  HOSTILE_PAGE=$(printf '<p>%s</p>' "$HOSTILE")
+  HOSTILE="$HOSTILE" python3 -c 'import json,os; h=os.environ["HOSTILE"]; print(json.dumps([{"id":77,"name":h,"title":h,"url":"old-slug"}]))' > "$WORK/list.json"
+  mb=$(block course-export 'module[name]@' "<position>=3")
+  push "$mb" "$P/canvas" "title.txt=$HOSTILE"
   check "[$sh] Canvas module block reads the token in a new shell and parses the id" \
     "printf '%s' \"\$out\" | grep -q 'HTTP: 200' && printf '%s' \"\$out\" | grep -qx 'MODULE_ID=42'"
   check "[$sh] Canvas module block does not print the token" \
@@ -239,17 +277,69 @@ PY
     "[ -s '$CURL_LOG' ] && ! grep -q secret-token-123 '$CURL_LOG'"
   check "[$sh] Canvas module block sends the title unchanged and deletes the push files" \
     "[ \"\$(cat '$CURL_LOG.data')\" = \"\$HOSTILE\" ] && [ ! -e '$P/canvas/.idstack/canvas-push' ] && [ ! -e '$P/canvas/pwned' ]"
-  # Page: the title and the HTML body go from files, unchanged.
-  rm -f "$CURL_LOG" "$CURL_LOG.data"
-  mkdir -p "$P/canvas/.idstack/canvas-push"
-  printf '%s' "$HOSTILE" > "$P/canvas/.idstack/canvas-push/title.txt"
-  printf '<p>%s</p>' "$HOSTILE" > "$P/canvas/.idstack/canvas-push/body.html"
-  out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas" "$(block course-export 'wiki_page[body]@')")
-  check "[$sh] Canvas page block sends the title and body unchanged" \
-    "printf '%s' \"\$out\" | grep -q 'HTTP: 200' && [ \"\$(cat '$CURL_LOG.data')\" = \"\$(printf '%s\n<p>%s</p>' \"\$HOSTILE\" \"\$HOSTILE\")\" ] && [ ! -e '$P/canvas/pwned' ]"
-  out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas" "$(block course-export 'wiki_page[body]@')")
+  check "[$sh] Canvas module block looks the module up by name, then creates and publishes it once, with --max-time" \
+    "[ \"\$(cat '$CURL_LOG.get')\" = \"\$HOSTILE\" ] && [ \"\$(posts)\" = 1 ] && [ \"\$(puts)\" = 1 ] && [ ! -e '$CURL_LOG.err' ] && grep -q 'module\[position\]=3' '$CURL_LOG'"
+  # A value that the model fills in must be a number: nothing runs, no call is made.
+  for bad in '3"$(touch pwned)' '`touch pwned`' '3x'; do
+    push "$(block course-export 'module[name]@' "<position>=$bad")" "$P/canvas" "title.txt=T"
+    check "[$sh] Canvas module block refuses the position '$bad' before curl runs" \
+      "printf '%s' \"\$out\" | grep -q '^PUSH_VALUE_BAD' && [ ! -e '$CURL_LOG' ] && [ ! -e '$P/canvas/pwned' ]"
+  done
+  # A Canvas error stops the push at once, names the item and the code, and creates nothing after it.
+  FAKE=500 push "$mb" "$P/canvas" "title.txt=Module One"
+  check "[$sh] Canvas module block stops on HTTP 500 and names the module and the code" \
+    "printf '%s' \"\$out\" | grep -qF 'PUSH_FAILED: module \"Module One\": HTTP 500' && ! printf '%s' \"\$out\" | grep -q '^MODULE_ID' && [ \"\$(puts)\" = 0 ]"
+  FAKE=timeout push "$mb" "$P/canvas" "title.txt=Module One"
+  check "[$sh] Canvas module block says that Canvas did not answer when curl times out" \
+    "printf '%s' \"\$out\" | grep -qF 'PUSH_FAILED: module \"Module One\": Canvas did not answer in 60 seconds' && [ \"\$(puts)\" = 0 ] && [ ! -e '$P/canvas/.idstack/canvas-push' ]"
+  # A second run finds the module by name and does not create it again.
+  FAKE_LIST="$WORK/list.json" push "$mb" "$P/canvas" "title.txt=$HOSTILE"
+  check "[$sh] Canvas module block on a re-run reuses the module: no POST, the old id" \
+    "printf '%s' \"\$out\" | grep -qx 'MODULE_ID=77' && [ \"\$(posts)\" = 0 ] && [ \"\$(puts)\" = 1 ]"
+  # Page: the title and the HTML body go from files, unchanged; then the page goes into the module.
+  pb=$(block course-export 'wiki_page[body]@' "<module id printed in B4>=42")
+  push "$pb" "$P/canvas" "title.txt=$HOSTILE" "body.html=$HOSTILE_PAGE"
+  check "[$sh] Canvas page block sends the title and body unchanged, then adds the page to the module" \
+    "printf '%s' \"\$out\" | grep -q 'HTTP: 200' && printf '%s' \"\$out\" | grep -qx 'PAGE_URL=page-slug' && [ \"\$(cat '$CURL_LOG.data')\" = \"\$(printf '%s\n%s\n%s' \"\$HOSTILE\" \"\$HOSTILE_PAGE\" \"\$HOSTILE\")\" ] && [ \"\$(posts)\" = 2 ] && grep -q 'module_item\[page_url\]=page-slug' '$CURL_LOG' && [ ! -e '$CURL_LOG.err' ] && [ ! -e '$P/canvas/pwned' ]"
+  out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas" "$pb")
   check "[$sh] Canvas page block stops with PUSH_FILE_MISSING when the files are not there" \
     "printf '%s' \"\$out\" | grep -qx PUSH_FILE_MISSING && ! printf '%s' \"\$out\" | grep -q 'HTTP:'"
+  FAKE=500 push "$pb" "$P/canvas" "title.txt=Page One" "body.html=<p>x</p>"
+  check "[$sh] Canvas page block stops on HTTP 500 and does not add an item to the module" \
+    "printf '%s' \"\$out\" | grep -qF 'PUSH_FAILED: page \"Page One\": HTTP 500' && [ \"\$(posts)\" = 1 ] && ! grep -q 'module_item' '$CURL_LOG'"
+  FAKE=timeout push "$pb" "$P/canvas" "title.txt=Page One" "body.html=<p>x</p>"
+  check "[$sh] Canvas page block says that Canvas did not answer when curl times out" \
+    "printf '%s' \"\$out\" | grep -qF 'PUSH_FAILED: page \"Page One\": Canvas did not answer' && [ \"\$(posts)\" = 1 ]"
+  FAKE_LIST="$WORK/list.json" push "$pb" "$P/canvas" "title.txt=$HOSTILE" "body.html=$HOSTILE_PAGE"
+  check "[$sh] Canvas page block on a re-run makes no second page and no second module item" \
+    "printf '%s' \"\$out\" | grep -qx 'PAGE_URL=old-slug' && [ \"\$(posts)\" = 0 ]"
+  # Assignment: the points are a number.
+  ab=$(block course-export 'assignment[name]@' "<module id printed in B4>=42" "<points>=10")
+  push "$ab" "$P/canvas" "title.txt=$HOSTILE" "body.html=$HOSTILE_PAGE"
+  check "[$sh] Canvas assignment block creates the assignment and adds it to the module" \
+    "[ \"\$(posts)\" = 2 ] && grep -q 'points_possible\]=10' '$CURL_LOG' && grep -q 'content_id\]=42' '$CURL_LOG' && [ ! -e '$CURL_LOG.err' ]"
+  for bad in '10"$(touch pwned)' '`touch pwned`' '1 0'; do
+    push "$(block course-export 'assignment[name]@' "<module id printed in B4>=42" "<points>=$bad")" "$P/canvas" "title.txt=T" "body.html=B"
+    check "[$sh] Canvas assignment block refuses the points '$bad' before curl runs" \
+      "printf '%s' \"\$out\" | grep -q '^PUSH_VALUE_BAD' && [ ! -e '$CURL_LOG' ] && [ ! -e '$P/canvas/pwned' ]"
+  done
+  FAKE=500 push "$ab" "$P/canvas" "title.txt=Essay One" "body.html=B"
+  check "[$sh] Canvas assignment block stops on HTTP 500 and adds nothing to the module" \
+    "printf '%s' \"\$out\" | grep -qF 'PUSH_FAILED: assignment \"Essay One\": HTTP 500' && [ \"\$(posts)\" = 1 ]"
+  FAKE_LIST="$WORK/list.json" push "$ab" "$P/canvas" "title.txt=$HOSTILE" "body.html=B"
+  check "[$sh] Canvas assignment block on a re-run makes no second assignment and no second module item" \
+    "[ \"\$(posts)\" = 0 ]"
+  # Discussion topic.
+  db=$(block course-export 'discussion_topics' "<module id printed in B4>=42")
+  push "$db" "$P/canvas" "title.txt=$HOSTILE" "body.html=$HOSTILE_PAGE"
+  check "[$sh] Canvas discussion block creates the topic and adds it to the module" \
+    "[ \"\$(posts)\" = 2 ] && grep -q 'content_id\]=42' '$CURL_LOG' && [ ! -e '$CURL_LOG.err' ]"
+  FAKE=timeout push "$db" "$P/canvas" "title.txt=Talk One" "body.html=B"
+  check "[$sh] Canvas discussion block says that Canvas did not answer when curl times out" \
+    "printf '%s' \"\$out\" | grep -qF 'PUSH_FAILED: discussion \"Talk One\": Canvas did not answer'"
+  FAKE_LIST="$WORK/list.json" push "$db" "$P/canvas" "title.txt=$HOSTILE" "body.html=B"
+  check "[$sh] Canvas discussion block on a re-run makes no second topic and no second module item" \
+    "[ \"\$(posts)\" = 0 ]"
   # A settings file from an older idstack can have an http URL.
   sed "s|^CANVAS_BASE_URL=.*|CANVAS_BASE_URL='http://canvas.example.edu'|" "$P/canvas/.idstack/canvas.env" > "$P/canvas/old.env"
   mkdir -p "$P/canvas-old/.idstack" && mv "$P/canvas/old.env" "$P/canvas-old/.idstack/canvas.env"
@@ -382,12 +472,74 @@ MD
   check "[$sh] Step Review finish block completes the report" \
     "printf '%s\n' \"\$out\" | grep -qxF 'REPORT_COMPLETE: $RS_REPORT' && ! grep -q '^\*\*Status:\*\*' '$P/rs/$RS_REPORT'"
 
+  # Model-filled values reach the shell through a quoted heredoc: a quotation
+  # mark, $( ), a backtick or a second line must not run a command.
+  BADMODE='Mode 1" $(touch pwned) `touch pwned` it'"'"'s'
+  for s in assessment-design course-builder course-import course-quality-review needs-analysis red-team; do
+    mkdir -p "$P/mode-$s/.idstack"
+    if [ $s = needs-analysis ] || [ $s = course-import ]; then pn='<project name>=Bio 101'; else pn='<mode>=<mode>'; fi
+    out=$(run "$P/mode-$s" "$(block $s 'idstack-report-section" init' "$pn" "<mode>=$BADMODE")")
+    check "[$sh] $s init passes a hostile --mode through unchanged and runs nothing" \
+      "[ ! -e '$P/mode-$s/pwned' ] && grep -rqF -- \"mode: \$BADMODE\" '$P/mode-$s/.idstack/exports'"
+    mkdir -p "$P/mode2-$s/.idstack"
+    out=$(run "$P/mode2-$s" "$(block $s 'idstack-report-section" init' "$pn" "<mode>=Mode 2
+\$(touch pwned)")")
+    check "[$sh] $s init reads only the first line of --mode" \
+      "[ ! -e '$P/mode2-$s/pwned' ] && grep -rq 'mode: Mode 2\$' '$P/mode2-$s/.idstack/exports'"
+  done
+
+  # The merge in course-import and assessment-design passes the manifest stamp
+  # that the skill noted before. The stub below stands in for the real
+  # --expect-updated flag, which the scripts change adds: this tests the skill
+  # text and its shell only. The stub logs its arguments and exits with $STUB_RC.
+  mkdir -p "$WORK/stub/scripts"
+  cat > "$WORK/stub/scripts/idstack-manifest-merge" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" > "$STUB_LOG"
+exit "${STUB_RC:-0}"
+EOF
+  cp "$IDSTACK_DIR/scripts/idstack-slugify" "$WORK/stub/scripts/"
+  chmod +x "$WORK/stub/scripts/"*
+  mkdir -p "$P/stamp/.idstack"
+  echo '{"updated":"2026-11-13T10:00:00Z"}' > "$P/stamp/.idstack/project.json"
+  for s in course-import assessment-design; do
+    if [ $s = course-import ]; then pn='<project name>=Bio 101'; else pn=; fi
+    out=$(run "$P/stamp" "$(block $s 'MANIFEST_UPDATED')")
+    check "[$sh] $s prints the manifest stamp" \
+      "printf '%s\n' \"\$out\" | grep -qx 'MANIFEST_UPDATED: 2026-11-13T10:00:00Z'"
+    out=$(run "$P/empty" "$(block $s 'MANIFEST_UPDATED')")
+    check "[$sh] $s prints an empty manifest stamp when there is no manifest" \
+      "printf '%s\n' \"\$out\" | grep -qx 'MANIFEST_UPDATED: '"
+    for stamp in "2026-11-13T10:00:00Z" 'x" $(touch pwned) `touch pwned`'; do
+      export STUB_LOG="$P/stamp/merge.args"; rm -f "$STUB_LOG"
+      out=$(STUB_RC=8 IDSTACK_HOME="$WORK/stub" run "$P/stamp" "$(block $s 'idstack-manifest-merge" --create' "<updated value>=$stamp" ${pn:+"$pn"})"; echo "rc=$?")
+      check "[$sh] $s passes --expect-updated '$stamp' to the merge" \
+        "grep -qF -- \"--expect-updated \$stamp \" '$STUB_LOG' && [ ! -e '$P/stamp/pwned' ]"
+    done
+    export STUB_LOG="$P/stamp/merge.args"; rm -f "$STUB_LOG"
+    out=$(IDSTACK_HOME="$WORK/stub" run "$P/stamp" "$(block $s 'idstack-manifest-merge" --create' "<updated value>=" ${pn:+"$pn"})")
+    check "[$sh] $s passes no --expect-updated when the stamp is empty" \
+      "[ -s '$STUB_LOG' ] && ! grep -q -- --expect-updated '$STUB_LOG'"
+  done
+
   # start: the setup check prints one machine-readable code.
   mkdir -p "$P/start"
   b=$(block start 'idstack-doctor" --quick')
   out=$(run "$P/start" "$b")
   check "[$sh] start setup check prints OK when python3 3.9 or later is present" \
     "printf '%s\n' \"\$out\" | grep -qx OK"
+
+  # start: the experience level is an enum. Hostile text is refused.
+  mkdir -p "$P/lvl"
+  rm -f "$HOME/.idstack/profile.yaml"
+  out=$(run "$P/lvl" "$(block start 'IDSTACK_LEVEL' '<level>=expert"
+$(touch pwned) `touch pwned`')")
+  check "[$sh] start refuses a hostile experience level and writes no profile" \
+    "printf '%s' \"\$out\" | grep -q '^LEVEL_BAD' && [ ! -e '$P/lvl/pwned' ] && [ ! -e \"\$HOME/.idstack/profile.yaml\" ]"
+  out=$(run "$P/lvl" "$(block start 'IDSTACK_LEVEL' '<level>=novice')")
+  check "[$sh] start saves a valid experience level" \
+    "printf '%s' \"\$out\" | grep -qx PROFILE_SAVED && grep -qx 'experience_level: novice' \"\$HOME/.idstack/profile.yaml\""
+  rm -f "$HOME/.idstack/profile.yaml"
 
   # start: the folder check refuses the home folder, /, and the shared folders
   # a folder picker offers first; it accepts a course folder.

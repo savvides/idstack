@@ -2519,6 +2519,63 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "quiz answer pages not blocked" "$WORK/r/test/test-extension.sh"
 
+# 66a-66m. Skill shell hardening (through test-skill-shell-zsh, which smoke-test runs).
+# 66a. The .docx block parses a DOCTYPE again -> smoke-test must fail (#182).
+shell_mutation "the .docx block parses a document with a DOCTYPE again" \
+  skills/course-import/SKILL.md.tmpl 'b"<!DOCTYPE" in xml or b"<!ENTITY" in xml' 'b"<!XDOCTYPE" in xml'
+
+# 66b. A report block puts the model's --mode in a double-quoted string again (#183).
+shell_mutation "a report block puts --mode in a quoted shell string again" \
+  skills/course-quality-review/SKILL.md.tmpl '--mode "$_MODE" --reserve' '--mode "<mode>" --reserve'
+
+# 66c. /idstack:start writes any experience level to the profile again (#183).
+shell_mutation "start writes an experience level that it does not check" \
+  skills/start/SKILL.md.tmpl 'case "$_LEVEL" in novice|intermediate|expert) ;; *) echo "LEVEL_BAD: $_LEVEL"; exit 1 ;; esac
+' ''
+
+# 66d. The Canvas assignment block accepts any points value again (#183).
+shell_mutation "the Canvas assignment block accepts text as points" \
+  skills/course-export/SKILL.md.tmpl "''|*[!0-9.]*) echo \"PUSH_VALUE_BAD: points" "''|NOPE) echo \"PUSH_VALUE_BAD: points"
+
+# 66e. The Canvas module block accepts any position again (#183).
+shell_mutation "the Canvas module block accepts text as the position" \
+  skills/course-export/SKILL.md.tmpl "''|*[!0-9]*) echo \"PUSH_VALUE_BAD: position" "''|NOPE) echo \"PUSH_VALUE_BAD: position"
+
+# 66f. A Canvas push call has no time limit again (#180).
+shell_mutation "a Canvas push call has no --max-time again" \
+  skills/course-export/SKILL.md.tmpl 'curl -K - -s --max-time 60 -w "\n%{http_code}" "$@"' 'curl -K - -s -w "\n%{http_code}" "$@"'
+
+# 66g. A Canvas push call goes on after an HTTP error again (#180).
+shell_mutation "a Canvas push call goes on after a non-2xx code" \
+  skills/course-export/SKILL.md.tmpl '    0:2??) ;;
+' '    0:*) ;;
+'
+
+# 66h. A Canvas push call that times out gets no plain message again (#180).
+shell_mutation "a Canvas push timeout has no plain message" \
+  skills/course-export/SKILL.md.tmpl '    28:*) echo "PUSH_FAILED: $_WHAT: Canvas did not answer in 60 seconds"; rm -rf .idstack/canvas-push; exit 1 ;;
+' ''
+
+# 66i. The Canvas module block makes a new module on a re-run again (#180).
+shell_mutation "the Canvas module block does not look for an existing module" \
+  skills/course-export/SKILL.md.tmpl 'if [ -n "$_FOUND" ]; then
+  MODULE_ID=$_FOUND;' 'if false; then
+  MODULE_ID=$_FOUND;'
+
+# 66j. The Canvas page block adds a second module item on a re-run again (#180).
+shell_mutation "the Canvas page block does not look for an existing module item" \
+  skills/course-export/SKILL.md.tmpl 'if [ -n "$_FOUND" ]; then
+  echo "ITEM_EXISTS: $_NAME"' 'if false; then
+  echo "ITEM_EXISTS: $_NAME"'
+
+# 66k. assessment-design stops passing the manifest stamp to the merge (#179).
+shell_mutation "assessment-design does not pass --expect-updated to the merge" \
+  skills/assessment-design/SKILL.md.tmpl '--create "$@" \' '--create \'
+
+# 66l. course-import stops passing the manifest stamp to the merge (#179).
+shell_mutation "course-import does not pass --expect-updated to the merge" \
+  skills/course-import/SKILL.md.tmpl '--create "$@" --set' '--create --set'
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

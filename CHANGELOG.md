@@ -7,10 +7,15 @@
 - **The export readiness check does not pass a red-team section that has no critical count.** Before, `scripts/idstack-status --readiness` used 0 when `red_team_audit.findings_summary.critical` was missing, and the verdict was `READY TO EXPORT`. Now the red-team row is `NEEDS-WORK` with `Critical: none`, and the verdict gives the reason "no red-team critical count".
 - **The Chrome extension (1.2.5) does not read Classic Quizzes pages that show student answers.** These pages are the quiz history, the submissions and their versions, moderate and the quiz data pages. Before, an audit sent the text of these pages to the AI model.
 - **`scripts/idstack-status` shows "unknown" when the project name is empty.** It reads the name in the same sequence as `scripts/idstack-slugify`.
+- **`/idstack:course-import` refuses a .docx that has a DOCTYPE or ENTITY declaration (#182).** Before, the block parsed it with the XML parser of macOS python3 3.9, which has no limit on entity expansion. A crafted file could stop the session. Now the block prints `DOCX_READ_FAILED` and stops before it parses.
+- **Model-filled values in the skills no longer go into a double-quoted shell string (#183).** These are the `--mode` value of each report block, the experience level in `/idstack:start`, and the module position and the assignment points in `/idstack:course-export`. Each now uses a quoted heredoc. The experience level, the position and the points stop with `LEVEL_BAD` or `PUSH_VALUE_BAD` when the value is wrong.
+- **The Canvas push in `/idstack:course-export` stops on an error and does not make duplicates (#180).** Each call has `--max-time 60` and reads the HTTP code. A code that is not 2xx, a timeout or a curl error stops the block with `PUSH_FAILED` and the item name. Each block now uses an item that exists with the same title, and a second push does not make it again. A block also adds a new page, assignment or discussion to its module. Only a fake curl tested this, not a live Canvas.
+- **`/idstack:course-import` and `/idstack:assessment-design` note the manifest stamp and pass it to the merge (#179, skill side).** The merge command gets `--expect-updated`. On exit code 8, the skill reads the manifest again, adds its changes to the sections that changed, and tries one more time. The flag itself comes with the change to `scripts/idstack-manifest-merge`.
 
 ### Tests
 
 - `test/test-status.sh` has 4 new tests for the readiness check and the project name. `test/test-extractor.mjs` tests the quiz pages. `test/mutation-test.sh` has cases 65a and 65b.
+- `test/test-skill-shell-zsh.sh` has a fake curl that answers 500, times out and lists existing items. It has hostile-text checks for the changed blocks and a .docx with a DOCTYPE. `test/mutation-test.sh` has cases 66a to 66l.
 
 ## v3.11.1.0 (2026-11-13)
 

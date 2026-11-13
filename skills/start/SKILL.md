@@ -652,7 +652,11 @@ Then run this command. Replace `<level>` with `novice`, `intermediate` or
 do not run the command.
 
 ```bash
-mkdir -p "$HOME/.idstack" && printf 'experience_level: %s\n' "<level>" > "$HOME/.idstack/profile.yaml" && echo "PROFILE_SAVED"
+IFS= read -r _LEVEL <<'IDSTACK_LEVEL'
+<level>
+IDSTACK_LEVEL
+case "$_LEVEL" in novice|intermediate|expert) ;; *) echo "LEVEL_BAD: $_LEVEL"; exit 1 ;; esac
+mkdir -p "$HOME/.idstack" && printf 'experience_level: %s\n' "$_LEVEL" > "$HOME/.idstack/profile.yaml" && echo "PROFILE_SAVED"
 ```
 
 Use the level for the remainder of this session, as the Designer Profile section

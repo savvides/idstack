@@ -880,7 +880,10 @@ echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
-if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill red-team --title "Red Team Audit" --mode "<mode>" --reserve "Confidence score"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+IFS= read -r _MODE <<'IDSTACK_MODE'
+<mode>
+IDSTACK_MODE
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill red-team --title "Red Team Audit" --mode "$_MODE" --reserve "Confidence score"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
 In the command, replace `<mode>` with the `mode` value from the JSON file, then ` · focus: `, then the FOCUS value. An example is `full · focus: Full sweep`.

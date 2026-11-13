@@ -65,6 +65,15 @@ Every recommendation and flag includes its evidence tier:
 The shared preamble above already ran the manifest existence check
 (`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
+**Manifest stamp:** Before you read the sections that other skills write, run this
+command one time. Write down the value after `MANIFEST_UPDATED:`. The merge command
+in the "Step 6: Write Manifest" section uses it, so that you do not write over a change that
+another session made in the meantime.
+
+```bash
+python3 -c 'import json; print("MANIFEST_UPDATED: " + json.load(open(".idstack/project.json")).get("updated", ""))' 2>/dev/null || echo "MANIFEST_UPDATED: "
+```
+
 - If `needs_analysis` has data from /idstack:needs-analysis: note it. You will PRESERVE
   this data. Import adds to task_analysis (job_tasks) and does not replace it.
 - If `learning_objectives` has data from /idstack:learning-objectives: ask the user
@@ -293,6 +302,10 @@ try:
     xml = zipfile.ZipFile(sys.argv[1]).read("word/document.xml")
 except (OSError, KeyError, zipfile.BadZipFile) as e:
     print("DOCX_READ_FAILED: %s" % e)
+    sys.exit(1)
+# macOS python3 3.9 has an old expat with no entity-expansion limit.
+if b"<!DOCTYPE" in xml or b"<!ENTITY" in xml:
+    print("DOCX_READ_FAILED: the document has a DOCTYPE or ENTITY declaration. idstack does not read it.")
     sys.exit(1)
 lines = []
 for p in ET.fromstring(xml).iter(W + "p"):
@@ -695,7 +708,10 @@ echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
-if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill course-import --title "Course Import Report" --project "$_PROJECT_NAME" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+IFS= read -r _MODE <<'IDSTACK_MODE'
+<mode>
+IDSTACK_MODE
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill course-import --title "Course Import Report" --project "$_PROJECT_NAME" --mode "$_MODE"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
 Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
@@ -870,7 +886,11 @@ enclosing section key: `.idstack/.context-payload.json`, `.idstack/.needs_analys
 IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
 <project name>
 IDSTACK_PROJECT_NAME
-"$_IDSTACK/scripts/idstack-manifest-merge" --create --set project_name="$_PROJECT_NAME" \
+IFS= read -r _UPDATED <<'IDSTACK_UPDATED'
+<updated value>
+IDSTACK_UPDATED
+[ -n "$_UPDATED" ] && set -- --expect-updated "$_UPDATED" || set --
+"$_IDSTACK/scripts/idstack-manifest-merge" --create "$@" --set project_name="$_PROJECT_NAME" \
   --section context --payload .idstack/.context-payload.json \
   --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
   --section learning_objectives --payload .idstack/.learning_objectives-payload.json \
@@ -882,6 +902,14 @@ IDSTACK_PROJECT_NAME
 `--create` makes a canonical manifest first if `.idstack/project.json` does not
 exist yet (the standalone case). It never replaces a manifest that exists. If any payload is malformed, the tool
 writes nothing.
+
+Replace `<updated value>` with the value that you wrote down. If the line had no
+value, leave it empty. If the command exits with code 8, another session changed
+the manifest after you read it, and the tool wrote nothing. The payload files stay
+in `.idstack/`. Run the stamp command again and read `.idstack/project.json` again.
+For each section that changed, add your changes to the new section and write the
+payload file again. Then run the merge command one more time with the new value.
+If it exits with code 8 again, stop and tell the user.
 
 **CRITICAL — Manifest Integrity Rules:**
 1. PRESERVE what other skills wrote in the co-owned sections (especially

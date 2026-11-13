@@ -525,6 +525,15 @@ Example: "Note: this Canvas instance uses a custom rubric format (idstack found 
 **Skill-specific manifest check:** If the manifest `assessments` section already has data,
 ask the user: "You ran this skill previously. Do you want to update the results or start again?"
 
+**Manifest stamp:** Before you read the sections that other skills write, run this
+command one time. Write down the value after `MANIFEST_UPDATED:`. The merge command
+in the "Write Manifest" section uses it, so that you do not write over a change that
+another session made in the meantime.
+
+```bash
+python3 -c 'import json; print("MANIFEST_UPDATED: " + json.load(open(".idstack/project.json")).get("updated", ""))' 2>/dev/null || echo "MANIFEST_UPDATED: "
+```
+
 # Assessment Design — Rubrics, Feedback Strategies & Formative Checkpoints
 
 You are an evidence-based assessment design partner. Your job is to help users design
@@ -657,7 +666,10 @@ echo "Report template: $_IDSTACK/templates/report.md.tmpl"
 echo "Report rules: $_IDSTACK/templates/report-format.md"
 echo "Evidence list: $_IDSTACK/evidence/references.md"
 echo "Report path: $_REPORT_PATH"
-if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill assessment-design --title "Assessment Design Report" --mode "<mode>"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
+IFS= read -r _MODE <<'IDSTACK_MODE'
+<mode>
+IDSTACK_MODE
+if [ -x "$_IDSTACK/scripts/idstack-report-section" ] && command -v python3 >/dev/null 2>&1; then "$_IDSTACK/scripts/idstack-report-section" init "$_REPORT_PATH" --skill assessment-design --title "Assessment Design Report" --mode "$_MODE"; else echo "REPORT_SECTION_MISSING: $_IDSTACK"; fi
 ```
 
 Before the first Step Review, use the Read tool on the files from the "Report rules:" and "Evidence list:" lines. The `templates/` and `evidence/` paths are in the idstack plugin folder, not in the course project.
@@ -980,7 +992,11 @@ _idstack_skill="${CLAUDE_SKILL_DIR}"
 for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
-"$_IDSTACK/scripts/idstack-manifest-merge" --create \
+IFS= read -r _UPDATED <<'IDSTACK_UPDATED'
+<updated value>
+IDSTACK_UPDATED
+[ -n "$_UPDATED" ] && set -- --expect-updated "$_UPDATED" || set --
+"$_IDSTACK/scripts/idstack-manifest-merge" --create "$@" \
   --section assessments --payload .idstack/.assessments-payload.json \
   --section learning_objectives --payload .idstack/.learning_objectives-payload.json \
   && rm -f .idstack/.assessments-payload.json .idstack/.learning_objectives-payload.json
@@ -989,6 +1005,14 @@ done
 `--create` makes a canonical manifest first if `.idstack/project.json` does not
 exist yet (the standalone case). It never replaces a manifest that exists. If either payload is malformed, the tool writes
 nothing.
+
+Replace `<updated value>` with the value that you wrote down. If the line had no
+value, leave it empty. If the command exits with code 8, another session changed
+the manifest after you read it, and the tool wrote nothing. The payload files stay
+in `.idstack/`. Run the stamp command again and read `.idstack/project.json` again.
+For each section that changed, add your changes to the new section and write the
+payload file again. Then run the merge command one more time with the new value.
+If it exits with code 8 again, stop and tell the user.
 
 **Populate the `assessments` section (payload contents, no enclosing `assessments` key):**
 
