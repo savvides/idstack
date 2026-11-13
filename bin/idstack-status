@@ -38,7 +38,8 @@ if [ -f "$MANIFEST" ]; then
 import json
 try:
     d = json.load(open('$MANIFEST'))
-    print(d.get('project_name', d.get('needs_analysis', {}).get('project_name', 'unknown')))
+    na = d.get('needs_analysis')
+    print(d.get('project_name') or (na.get('project_name') if isinstance(na, dict) else '') or 'unknown')
 except: print('unknown')
 " 2>/dev/null) || PROJECT_NAME="unknown"
 fi
@@ -53,7 +54,7 @@ timeline_summary() {
 import json, sys, os
 
 mode = os.environ['MODE']
-lines = open(sys.argv[1]).readlines()[-200:]
+lines = open(sys.argv[1]).readlines()
 events = []
 for line in lines:
     try:
@@ -282,7 +283,9 @@ if os.path.exists(manifest_file):
 quality_score = manifest.get('quality_review', {}).get('overall_score', 0)
 quality_reviewed = 'course-quality-review' in completed
 red_team = manifest.get('red_team_audit', {})
-red_critical = red_team.get('findings_summary', {}).get('critical', 0)
+red_critical = (red_team.get('findings_summary') or {}).get('critical')
+# A missing or non-int count must fail closed, never pass the gate as 0.
+red_known = type(red_critical) is int
 red_reviewed = 'red-team' in completed
 access = manifest.get('accessibility_review', {})
 access_score = access.get('score', {}).get('overall', 0)
@@ -298,7 +301,7 @@ def quality_tier():
 
 def red_tier():
     if not red_reviewed: return 'NOT RUN'
-    return 'READY' if red_critical <= READY_RED_CRITICAL_MAX else 'NEEDS-WORK'
+    return 'READY' if red_known and red_critical <= READY_RED_CRITICAL_MAX else 'NEEDS-WORK'
 
 def access_tier():
     if not access_reviewed: return 'NOT RUN'
@@ -314,7 +317,7 @@ q_status = quality_tier()
 r_status = red_tier()
 a_status = access_tier()
 print(f'  Quality Review:       {q_status:<11} Score: {quality_score}/100  (READY threshold: {READY_QUALITY_MIN})')
-print(f'  Red Team Audit:       {r_status:<11} Critical: {red_critical}  (READY threshold: <= {READY_RED_CRITICAL_MAX})')
+print(f'  Red Team Audit:       {r_status:<11} Critical: {red_critical if red_known else \"none\"}  (READY threshold: <= {READY_RED_CRITICAL_MAX})')
 a_extra = f'  WCAG Level-A violations: {len(level_a_violations)}' if level_a_violations else ''
 print(f'  Accessibility Review: {a_status:<11} Score: {access_score}/100  (READY threshold: {READY_ACCESS_MIN}{a_extra})')
 print()
@@ -332,7 +335,9 @@ def verdict():
     issues = []
     if quality_score < READY_QUALITY_MIN:
         issues.append(f'quality score {quality_score} < {READY_QUALITY_MIN}')
-    if red_critical > READY_RED_CRITICAL_MAX:
+    if not red_known:
+        issues.append('no red-team critical count')
+    elif red_critical > READY_RED_CRITICAL_MAX:
         issues.append(f'{red_critical} critical red-team finding(s)')
     if access_score < READY_ACCESS_MIN:
         issues.append(f'accessibility score {access_score} < {READY_ACCESS_MIN}')

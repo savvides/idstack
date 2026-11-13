@@ -66,6 +66,20 @@ printf '%s\n' '{"skill":"needs-analysis","event":"completed","training_justified
 check "project name comes from the manifest" \
   "$STATUS | grep -q 'Project: Test Course 123'"
 
+# idstack-migrate --init writes an empty project_name; fall back as idstack-slugify does.
+printf '%s\n' '{"project_name": "", "needs_analysis": {"project_name": "Fallback Course"}}' > .idstack/project.json
+check "an empty project name falls back to needs_analysis.project_name" \
+  "$STATUS | grep -q 'Project: Fallback Course'"
+printf '%s\n' '{"project_name": "", "needs_analysis": []}' > .idstack/project.json
+check "an empty project name with no fallback shows unknown" \
+  "$STATUS | grep -q 'Project: unknown'"
+printf '%s\n' '{"project_name": "Test Course 123"}' > .idstack/project.json
+
+# A completion older than the last 200 timeline lines must still count.
+{ echo '{"skill":"red-team","event":"completed"}'; for i in $(seq 200); do echo '{"skill":"x","event":"started"}'; done; } > .idstack/timeline.jsonl
+check "a completion older than 200 timeline lines still counts" \
+  "$STATUS | grep -qF '[x] /idstack:red-team'"
+
 cat > .idstack/timeline.jsonl <<'JSON'
 {"skill":"needs-analysis","event":"completed","training_justified":true}
 {"skill":"course-quality-review","event":"completed","score":65,"dimensions":{"teaching_presence":7,"social_presence":3,"cognitive_presence":5}}
@@ -166,6 +180,14 @@ check "accessibility one below the threshold (79) is NOT-READY" \
 write_manifest 80 1 90
 check "a single critical red-team finding is NOT-READY" \
   "$STATUS --readiness | grep -q '1 critical red-team finding'"
+
+# A red-team section with no critical count must not pass the gate as 0 findings.
+printf '%s\n' '{"quality_review": {"overall_score": 80}, "accessibility_review": {"score": {"overall": 90}}, "red_team_audit": {"confidence_score": 20}}' > .idstack/project.json
+check "a red-team section with no critical count is NOT-READY" \
+  "$STATUS --readiness | grep -q 'NOT-READY (no red-team critical count)'"
+check "a missing critical count marks the red-team row NEEDS-WORK, not 0" \
+  "$STATUS --readiness | grep -qE 'Red Team Audit: +NEEDS-WORK +Critical: none'"
+ste_capture no-red-count
 
 # --- WCAG Level-A override ---
 # A Level-A violation forces NOT-READY even when the overall score passes;

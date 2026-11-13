@@ -22,6 +22,11 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 ### Fixed
 
 - **`/idstack:start` stops in a temporary folder of the Claude desktop app.** The app can start a session in a folder under `~/Library/Application Support/Claude/scratch-workspaces/`. That folder is hidden, and the app can delete it. Before, `/idstack:start` let the session continue there, and the next skill wrote the course data in that folder.
+- **The export readiness check does not pass a red-team section that has no critical count.** Before, `bin/idstack-status --readiness` used 0 when `red_team_audit.findings_summary.critical` was missing, and the verdict was `READY TO EXPORT`. Now the red-team row is `NEEDS-WORK` with `Critical: none`, and the verdict gives the reason "no red-team critical count".
+- **The Chrome extension (1.2.3) does not read Classic Quizzes pages that show student answers.** These pages are the quiz history, the submissions and their versions, moderate and the quiz data pages. Before, an audit sent the text of these pages to the AI model.
+- **`bin/idstack-migrate` writes the manifest atomically.** Before, an error during the write could leave a part of the file. The script also gives the path to Python as an argument, so a path with a `'` character does not stop the migration.
+- **`bin/idstack-learnings search` does not stop with no output.** Before, a flag with no value, for example `search --keyword`, made an infinite loop. Now the script shows the usage and exits 1. A search also finds a learning whose `insight` is `null`.
+- **`bin/idstack-status` shows "unknown" when the project name is empty.** It reads the name in the same sequence as `bin/idstack-slugify`. It also reads the full timeline, not only the last 200 lines.
 
 ### Documentation
 
@@ -63,6 +68,7 @@ Reports and the course dashboard are now Markdown files. Each skill gives a repo
 - `test/test-setup.sh` copies `extension/`, so its regeneration test also covers `extension/shared/ste-rules.js`.
 - `test/test-report-section.py` has two tests for `finish --stopped`, and `test/mutation-test.sh` has case 62n. Case 30i now puts back the vote buttons.
 - `test/test-skill-shell-zsh.sh` runs the folder check in a scratch workspace in bash and zsh. `test/mutation-test.sh` has case 61i.
+- `test/test-status.sh` has 5 new tests and `test/integration-test.sh` has 3 new tests for the fixes above. `test/test-extractor.mjs` tests the quiz pages. `test/mutation-test.sh` has cases 65a and 65b.
 
 ## v3.10.0.0 (2026-11-01)
 

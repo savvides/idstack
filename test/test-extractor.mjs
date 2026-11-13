@@ -205,6 +205,15 @@ for (const url of [
   'https://canvas.instructure.com/courses/101/discussion_topics/9',
   'https://canvas.instructure.com/courses/101/assignments/5/submissions/7',
   'https://canvas.instructure.com/conversations',
+  // Classic Quizzes views of one student's attempt, or of every student's (canvas-lms config/routes.rb)
+  'https://canvas.instructure.com/courses/101/quizzes/5/history?quiz_submission_id=3',
+  'https://canvas.instructure.com/courses/101/quizzes/5/history?user_id=7',
+  'https://canvas.instructure.com/courses/101/quizzes/5/submissions/3',
+  'https://canvas.instructure.com/courses/101/quizzes/5/submissions/3/log',
+  'https://canvas.instructure.com/courses/101/quizzes/5/moderate',
+  'https://canvas.instructure.com/courses/101/quizzes/5/managed_quiz_data',
+  'https://canvas.instructure.com/courses/101/quizzes/5/submission_versions',
+  'https://canvas.instructure.com/courses/101/quizzes/5/submission_html',
   // Canvas on a custom domain outside /courses/N is not detected as Canvas; the guard still applies.
   'https://canvas.example.edu/conversations',
   'https://canvas.example.edu/groups/12',
@@ -217,12 +226,17 @@ for (const url of [
   assert.ok(!JSON.stringify(r).includes('Jane Doe'), `${url}: student name leaked into the payload`);
 }
 
+// A quiz description page is course material, not a student record: it is not refused.
+for (const url of ['https://canvas.instructure.com/courses/101/quizzes/5', 'https://canvas.instructure.com/courses/101/quizzes/5/edit', 'https://canvas.instructure.com/courses/101/quizzes']) {
+  assert.notStrictEqual(extractContentFromDOM(createDocument(studentRecordHTML), url).pageType, 'Canvas Student Records', `${url}: quiz material must not be refused`);
+}
+
 // An unlisted Canvas view gets '' rather than the whole page.
-const quizHistoryUrl = 'https://canvas.instructure.com/courses/101/quizzes/5/history?quiz_submission_id=3';
-assert.strictEqual(extractContentFromDOM(createDocument(studentRecordHTML), quizHistoryUrl).content, '', 'Canvas must not fall back to document.body');
+const unlistedCanvasUrl = 'https://canvas.instructure.com/courses/101/quizzes/5';
+assert.strictEqual(extractContentFromDOM(createDocument(studentRecordHTML), unlistedCanvasUrl).content, '', 'Canvas must not fall back to document.body');
 
 // Custom-domain Canvas course pages are Canvas (no [role=main] or body read).
-const customCourseUrl = 'https://canvas.example.edu/courses/101/quizzes/5/history?quiz_submission_id=3';
+const customCourseUrl = 'https://canvas.example.edu/courses/101/quizzes/5';
 const extractedCustomCourse = extractContentFromDOM(createDocument(studentRecordHTML), customCourseUrl);
 assert.ok(extractedCustomCourse.pageType.startsWith('Canvas'), 'custom-domain /courses/N URLs are Canvas');
 assert.strictEqual(extractedCustomCourse.content, '', 'custom-domain Canvas must not fall back to the whole page');

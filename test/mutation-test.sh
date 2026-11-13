@@ -2461,6 +2461,32 @@ shell_mutation "the Step Review chat note loses its exact link line" \
 shell_mutation "the Step Review question loses its option descriptions" \
   templates/preamble.md '   - "Approve", with the description "Keep this section as it is."' '   - "Approve"'
 
+# 65a. A red-team section with no critical count counts as 0 again -> test-status
+# must fail. The export gate then said READY for an audit with no count.
+fresh
+python3 - "$WORK/r/bin/idstack-status" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+old = "(red_team.get('findings_summary') or {}).get('critical')\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "(red_team.get('findings_summary') or {}).get('critical', 0)\n", 1)
+open(p, 'w').write(s)
+PY
+expect_fail "red-team missing critical count passes the gate as 0" "$WORK/r/test/test-status.sh"
+
+# 65b. The extension reads Classic Quizzes pages that show student answers again
+# -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = r"|quizzes\/\d+\/(?:history|submissions|moderate|managed_quiz_data|submission_versions|submission_html)"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "quiz answer pages not blocked" "$WORK/r/test/test-extension.sh"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

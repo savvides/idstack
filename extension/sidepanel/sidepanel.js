@@ -1,5 +1,5 @@
 import { getSettings, saveSettings, getDossier, addToDossier, removeFromDossier, clearDossier } from '../shared/storage.js';
-import { renderAuditHTML, renderDossierListHTML } from './renderer-helper.js';
+import { renderAuditHTML, renderDossierListHTML, escapeHtml } from './renderer-helper.js';
 import { detectCourseContext } from '../content/extractor-core.js';
 import { compileSingleAuditToMarkdown, compileDossierToMarkdown, dossierCourseLabel } from '../shared/dossier-compiler.js';
 
@@ -199,14 +199,7 @@ function renderError(errorMessage) {
   const container = document.getElementById('results-container');
   if (!container) return;
 
-  const safeError = errorMessage
-    ? String(errorMessage)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;')
-    : 'An unknown error occurred during the audit.';
+  const safeError = errorMessage ? escapeHtml(errorMessage) : 'An unknown error occurred during the audit.';
 
   container.innerHTML = `
     <div class="context-card error-card">

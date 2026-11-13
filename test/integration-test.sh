@@ -298,6 +298,26 @@ check "promotes when HOME has a quote in it" \
 check "an unknown subcommand fails with usage" \
   "! $IDSTACK_DIR/bin/idstack-learnings frobnicate 2>&1 && $IDSTACK_DIR/bin/idstack-learnings frobnicate 2>&1 | grep -q '^Usage: idstack-learnings'"
 
+# A flag with no value once looped forever: shift 2 fails with one arg left.
+# perl's alarm stops a hang (macOS has no timeout); SIGALRM exits 142, usage exits 1.
+check "search with a flag and no value exits 1 at once" \
+  "perl -e 'alarm 5; exec @ARGV' $IDSTACK_DIR/bin/idstack-learnings search --keyword 2>/dev/null; [ \$? -eq 1 ]"
+
+# A null insight raised a TypeError, and the bare except dropped the row.
+check "search finds a row whose insight is null" \
+  "$IDSTACK_DIR/bin/idstack-learnings log '{\"type\":\"fact\",\"key\":\"nullins\",\"insight\":null}' && $IDSTACK_DIR/bin/idstack-learnings search --keyword nullins | grep -q '\"nullins\"'"
+
+echo ""
+
+# --- idstack-migrate quoted path ---
+echo "## idstack-migrate quoted path"
+
+# migrate once spliced the path into its python source, so a quote skipped the migration.
+QUOTE_COURSE="$TEST_DIR/o'brien course/.idstack"
+mkdir -p "$QUOTE_COURSE" && echo '{"version":"1.0"}' > "$QUOTE_COURSE/project.json" && chmod 640 "$QUOTE_COURSE/project.json"
+check "migrates a manifest whose path has a quote and keeps its mode" \
+  "$IDSTACK_DIR/bin/idstack-migrate \"$QUOTE_COURSE/project.json\" >/dev/null 2>&1 && python3 -c 'import json, os, stat, sys; p = sys.argv[1]; assert json.load(open(p))[\"version\"] == \"1.4\"; assert stat.S_IMODE(os.stat(p).st_mode) == 0o640' \"$QUOTE_COURSE/project.json\""
+
 echo ""
 
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
