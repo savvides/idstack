@@ -510,9 +510,7 @@ the manifest is corrupt, or the section name is misspelled — never silently ov
 `--create` makes a canonical manifest first if `.idstack/project.json` does not
 exist yet (the standalone case). It never replaces a manifest that exists.
 
-**Fallback (if `scripts/idstack-manifest-merge` is unavailable):** Read the full manifest, modify
-only the `red_team_audit` section, Write back. Preserve all other sections verbatim. The
-canonical schema for reference is in `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
+The canonical schema for reference is in `${CLAUDE_PLUGIN_ROOT}/templates/manifest-schema.md`.
 
 After the manifest write, delete the findings file:
 

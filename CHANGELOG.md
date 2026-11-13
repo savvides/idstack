@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed — reliability
+
+- **`/idstack:course-import` removes the symlinks from a cartridge or a SCORM package that it extracts.** On Linux, `unzip` restores a symlink. A package whose `imsmanifest.xml` was a symlink could then show any file on your computer in the session. The skill also stops when `unzip` cannot extract the file.
+- **A skill tells you when it cannot find the idstack files.** The skill shows the commands that install idstack again, and stops. Before, the scripts failed with "No such file".
+- **A skill stops when it cannot save to the manifest.** It shows the error, and it does not tell you that it saved the results. The skills no longer write `.idstack/project.json` by hand.
+- **`/idstack:needs-analysis` logs a timeline event when you stop after idstack recommends against training.** Closes #147.
+
 ### Changed — landing page
 
 - **The landing page names the two kinds of help.** The first paragraph and the share card now name them. They are the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation. The README introduction has the same message, and it says that idstack is a copilot for instructional designers.

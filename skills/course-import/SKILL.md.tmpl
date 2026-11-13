@@ -138,9 +138,16 @@ IFS= read -r CARTRIDGE_PATH <<'IDSTACK_PATH'
 IDSTACK_PATH
 IMPORT_DIR=$(mktemp -d)
 unzip -q "$CARTRIDGE_PATH" -d "$IMPORT_DIR" 2>&1
+_UNZIP_RC=$?
+# The file is not trusted: a symlink in it can point at any file on this computer.
+find "$IMPORT_DIR" -type l -delete
+[ "$_UNZIP_RC" -le 1 ] || echo "UNZIP_FAILED: $_UNZIP_RC"
 echo "IMPORT_DIR=$IMPORT_DIR"
 ls "$IMPORT_DIR/"
 ```
+
+If UNZIP_FAILED: "idstack cannot extract this file. It can be damaged. Export the course
+from your LMS again." Then delete the extracted files and stop.
 
 ### A3. Find and read the manifest
 
@@ -555,9 +562,16 @@ IFS= read -r SCORM_PATH <<'IDSTACK_PATH'
 IDSTACK_PATH
 IMPORT_DIR=$(mktemp -d)
 unzip -q "$SCORM_PATH" -d "$IMPORT_DIR" 2>&1
+_UNZIP_RC=$?
+# The file is not trusted: a symlink in it can point at any file on this computer.
+find "$IMPORT_DIR" -type l -delete
+[ "$_UNZIP_RC" -le 1 ] || echo "UNZIP_FAILED: $_UNZIP_RC"
 echo "IMPORT_DIR=$IMPORT_DIR"
 ls "$IMPORT_DIR/"
 ```
+
+If UNZIP_FAILED: "idstack cannot extract this file. It can be damaged. Export the package
+from your authoring tool again." Then delete the extracted files and stop.
 
 ### E3. Find and read the manifest
 

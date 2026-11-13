@@ -4,7 +4,7 @@ description: |
   The first idstack skill to run in a course folder. It makes sure that idstack
   can run, makes sure that the session is in a course folder, and then starts
   the correct skill. Use when the user is new to idstack, uses the Claude
-  desktop app or Cowork, or asks "where do I start", "help me start", "what can
+  desktop app, or asks "where do I start", "help me start", "what can
   idstack do" or "set up idstack". (idstack)
 allowed-tools:
   - Bash
@@ -19,7 +19,7 @@ allowed-tools:
 
 ## Preamble: Interaction Conventions
 
-idstack runs in Claude Code and in Cowork. Skill bodies name these tools:
+idstack runs in Claude Code. Skill bodies name these tools:
 
 - **AskUserQuestion** — when a skill says "ask via AskUserQuestion" or "using AskUserQuestion",
   present a single multiple-choice question (e.g., "Which of these best describes X?")
@@ -204,6 +204,7 @@ _idstack_skill="${CLAUDE_SKILL_DIR}"
 for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idstack_cache"; do
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
+[ -n "$_IDSTACK" ] || echo "IDSTACK_NOT_FOUND"
 if [ -f ".idstack/project.json" ]; then
   echo "MANIFEST_EXISTS"
   "$_IDSTACK/scripts/idstack-migrate" .idstack/project.json 2>/dev/null || cat .idstack/project.json
@@ -219,6 +220,17 @@ fi
 
 **If NO_MANIFEST:**
 - This skill will create or update the manifest during its workflow.
+
+**If IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
+idstack again with these two commands in a terminal:
+`claude plugin uninstall idstack@idstack` and
+`claude plugin install idstack@idstack`. Then start a new session." STOP.
+
+**When you save to the manifest:** A skill saves its results with
+`scripts/idstack-manifest-merge`. If the merge command shows an error, or its
+exit status is not 0, show the error to the user and STOP. Do not tell the user
+that idstack saved the results. Do not write `.idstack/project.json` with the
+Write or Edit tool.
 
 ## Preamble: Preferences
 
@@ -561,7 +573,10 @@ if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/scripts/id
   complete, close the Claude app and open it again. Then type `/idstack:start`
   again." STOP.
 - **IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
-  idstack again. Then type `/idstack:start` again." STOP.
+  idstack again with these two commands in a terminal:
+  `claude plugin uninstall idstack@idstack` and
+  `claude plugin install idstack@idstack`. Then start a new session and type
+  `/idstack:start` again." STOP.
 - **Any other output:** Tell the user: "idstack cannot check its setup. Install
   idstack again. Then type `/idstack:start` again." STOP.
 

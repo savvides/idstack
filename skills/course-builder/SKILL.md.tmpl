@@ -664,8 +664,6 @@ The `placeholders_used` array lists any fields where placeholder text was used b
 
 Use only the approved rows of the report. `generated_files` comes from the `## Generated artifacts` rows. `placeholders_used` comes from their Notes cells. `recommended_generation_targets` comes from the `## Generation targets` rows: one item for each row, with `description` (the Target cell), `source` (the Source finding cell, for example `red-team:alignment-3` or `user-request`), `status` (`generated`, `deferred` or `declined`) and `output_path` (the generated file, only when the status is `generated`).
 
-**Fallback (if `scripts/idstack-manifest-merge` is unavailable):** Read the full manifest, modify only the `course_content` section, Write back. Preserve all other sections verbatim.
-
 After writing the manifest, confirm:
 
 "I generated your course content. You have three outputs:
