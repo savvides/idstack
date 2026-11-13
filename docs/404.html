@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Page not found | idstack</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+  <style>
+    :root {
+      --bg: #faf8f3; --ink: #1a1815; --ink-soft: #3a352e; --accent-blue: #1d4a5e; --hero-ink: #faf8f3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16140f; --ink: #ebe7dd; --ink-soft: #cfc9bc; --accent-blue: #6aa6e3; --hero-ink: #ebe7dd;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--ink); min-height: 100vh;
+      font-family: 'Source Serif 4', Charter, Georgia, serif; font-size: 1.0625rem; line-height: 1.65;
+    }
+    main { max-width: 40rem; margin: 0 auto; padding: 4rem 1rem; text-align: center; }
+    h1 {
+      font-family: 'Public Sans', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    p { color: var(--ink-soft); margin-bottom: 2rem; }
+    .links { display: flex; flex-direction: column; gap: 0.75rem; align-items: center; }
+    .links a {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+      padding: 0.5rem 1.25rem; border: 1px solid var(--accent-blue); border-radius: 4px;
+      font-family: 'Public Sans', Arial, sans-serif; font-weight: 600; font-size: 1rem;
+      color: var(--accent-blue); text-decoration: none;
+    }
+    .links a:hover, .links a:focus-visible { background: var(--accent-blue); color: var(--hero-ink); }
+    @media (min-width: 480px) { .links { flex-direction: row; justify-content: center; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>This page does not exist.</h1>
+    <p>Check the address. Or start again from the home page.</p>
+    <nav class="links">
+      <a href="/">Go to the idstack home page</a>
+      <a href="/#install">Install idstack</a>
+    </nav>
+  </main>
+</body>
+</html>

@@ -4,7 +4,17 @@
 
 ### Changed — landing page
 
-- **The landing page says first that idstack is a copilot for instructional designers.** The headline, the first paragraph, the page title and the share card now name the two kinds of help. They are the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation. The README introduction has the same message.
+- **The landing page names the two kinds of help.** The first paragraph and the share card now name them. They are the framework that you use (ADDIE, backward design or SAM) and the literature behind each recommendation. The README introduction has the same message, and it says that idstack is a copilot for instructional designers.
+- **idstack.org names "AI instructional design" in the page title, the description and the headings.** The title is "AI instructional design tool, backed by research | idstack". The headline is "An AI copilot for instructional design." The share card (`docs/og-image.png`) has the same headline. Four section headings also name the search terms. The `keywords` meta tag is gone, because search engines do not use it.
+- **The first paragraph has 28 words, not 84, and the hero links to the desktop app steps.** Below the install command, the link "No terminal? Use the Claude desktop app" goes to the Claude Desktop App card in the Install section.
+- **The summary text of idstack.org has fewer counts, version numbers and file paths.** The Why, Install, skills, Output and FAQ text no longer gives a skill count, a study count, a standard version or a file path. Each one went out because the sentence is true without it. The Evidence section keeps its tier ranges, and the install requirements keep their versions and paths, because a reader needs them there.
+- **idstack.org and the share card no longer give a total number of studies.** The page title, the descriptions, the link in the first paragraph, and the Evidence heading and text say "research" or "studies" with no count. The share card (`docs/og-image.png`) shows the tier labels T1 to T5 with no numbers.
+- **The Evidence cards on idstack.org no longer show a number of studies.** The cards keep their order, the tier bar and the tier range. For screen readers, the label of each tier bar gives the share of each tier as a percentage, not a number of studies.
+- **Small wording fixes on idstack.org.** The three install card headings and their labels use sentence case, as the other headings do. Two short fragments ("No command line." and "No setup.") are full sentences. The FAQ answer about the role of the designer does not repeat the first paragraph of the "Why" section.
+- **Install is now the third section.** It comes after "Why" and before the skills. The navigation has the same order as the sections.
+- **A new FAQ section answers six questions.** The questions cover the meaning of the term, the role of the designer, the frameworks, the sources, the LMS formats and the cost.
+- **You can read the file paths in the sample session.** The paths in the hero sample were light text in a light box. The box is now transparent.
+- **No text on idstack.org is smaller than 12px.** 148 text elements were smaller than 13px, and the smallest was about 10px. The page is a little taller.
 
 ### Changed — Chrome extension
 
@@ -12,7 +22,11 @@
 
 ### Added — evidence base
 
-- **Fourteen new references, all peer-reviewed, from 2025 and 2026.** A Consensus search of each of the 11 domains found them. Four are T1 meta-analyses of learning outcomes: formative assessment [Assessment-29], cues in online learning [Multimedia-25], video playback speed [Multimedia-26] and adaptive learning [Learner-22]. Ten are T3: nine systematic or scoping reviews ([ID-117], [ID-118], [Needs-17], [Assessment-28], [Evaluation-26], [Prototype-19], [Online-23], [Access-14] and [Access-15]) and one meta-analysis of cognitive presence, [Online-22], that measures only perceived learning and satisfaction. The evidence base now has 168 studies. No skill cites the new references yet.
+- **New references, all peer-reviewed, from 2025 and 2026.** A Consensus search of each of the 11 domains found them. The T1 references are meta-analyses of learning outcomes: formative assessment [Assessment-29], cues in online learning [Multimedia-25], video playback speed [Multimedia-26] and adaptive learning [Learner-22]. The T3 references are systematic or scoping reviews ([ID-117], [ID-118], [Needs-17], [Assessment-28], [Evaluation-26], [Prototype-19], [Online-23], [Access-14] and [Access-15]) and a meta-analysis of cognitive presence, [Online-22], that measures only perceived learning and satisfaction. No skill cites the new references yet.
+
+### Changed — documentation
+
+- **`README.md`, `DESIGN.md` and `ROADMAP.md` no longer give a number of studies.** A literature review changes the numbers. The evidence table in the README keeps the tier range of each domain.
 
 ### Added — framework alignment
 
@@ -24,6 +38,13 @@
 ### Added — documentation
 
 - **A CLI reference at `docs/cli-reference.md` gives the options, exit codes and files of `./setup` and each tool in `scripts/`.**
+- **`docs/404.html` and `docs/llms.txt` are new.** GitHub Pages shows `404.html` for an address that does not exist. It has a `noindex` tag and links to the home page and to the install steps. `llms.txt` is a short Markdown summary of idstack for AI assistants. It links to the README, the frameworks guide, the evidence references and the Chrome extension.
+
+### Tests
+
+- `test/check-doc-accuracy.py` checks the landing page. `docs/index.html` must have one `<h1>` that names instructional design, a title of 65 characters maximum and a description of 160 maximum. The `<title>`, `og:title` and `twitter:title` must be equal. A `keywords` tag, or a plain `rem` or `px` font size below 12px, fails the check. Install must come before the skills. `docs/404.html` needs a `noindex` tag, and `docs/llms.txt` must exist.
+- `test/check-doc-accuracy.py` also fails when the text of `docs/index.html`, its title or its description tags give a number of studies.
+- `test/check-evidence-cards.py` does not read a number of studies on the Evidence cards. It fails when a card shows one. It also fails when the shares in the label of a tier bar do not agree with the bar's `data-tiers` counts. It still compares the counts at each tier and the tier range with `evidence/references.md`.
 
 ### Fixed — skill count in setup and doctor
 

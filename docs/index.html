@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>idstack: A copilot for instructional designers, with frameworks and research</title>
-  <meta name="description" content="idstack is an open-source copilot for instructional designers. It helps you analyze, design, build and review a course in ADDIE, backward design or SAM. Every recommendation cites one of 168 peer-reviewed studies and its evidence tier. Runs in Claude Code, Cowork and Chrome.">
-  <meta name="keywords" content="instructional design, evidence-based, course design, Quality Matters, Bloom's taxonomy, cognitive load, learning objectives, WCAG, UDL, open source, Claude Code">
+  <title>AI instructional design tool, backed by research | idstack</title>
+  <meta name="description" content="AI instructional design tool for ADDIE, backward design or SAM. It cites studies with an evidence tier. Open source. Runs in Claude Code, Cowork and Chrome.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://idstack.org/">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -19,8 +18,8 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="idstack: A copilot for instructional designers, with frameworks and research">
-  <meta property="og:description" content="A copilot for instructional designers. It helps you apply ADDIE, backward design or SAM, and supports each recommendation with 168 peer-reviewed studies. Open source. Runs in Claude Code, Cowork and Chrome.">
+  <meta property="og:title" content="AI instructional design tool, backed by research | idstack">
+  <meta property="og:description" content="idstack is an open-source AI instructional design tool. It helps you apply ADDIE, backward design or SAM. It supports each recommendation with peer-reviewed studies. It runs in Claude Code, Cowork and Chrome.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://idstack.org/">
   <meta property="og:site_name" content="idstack">
@@ -28,14 +27,14 @@
   <meta property="og:image" content="https://idstack.org/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="idstack: A copilot for instructional designers.">
+  <meta property="og:image:alt" content="An AI copilot for instructional design.">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="idstack: A copilot for instructional designers, with frameworks and research">
-  <meta name="twitter:description" content="A copilot for instructional designers: your framework (ADDIE, backward design or SAM), 168 peer-reviewed studies, and an evidence tier on every recommendation. Open source.">
+  <meta name="twitter:title" content="AI instructional design tool, backed by research | idstack">
+  <meta name="twitter:description" content="AI instructional design tool: your framework (ADDIE, backward design or SAM), peer-reviewed studies, and an evidence tier on every recommendation. Open source.">
   <meta name="twitter:image" content="https://idstack.org/og-image.png">
-  <meta name="twitter:image:alt" content="idstack: A copilot for instructional designers.">
+  <meta name="twitter:image:alt" content="An AI copilot for instructional design.">
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -43,7 +42,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "idstack",
-    "description": "An open-source copilot for instructional designers. It helps you do each job of course design in ADDIE, backward design or SAM. It supports every recommendation with peer-reviewed research across 11 domains. Runs in Claude Code, Cowork and Chrome.",
+    "description": "idstack is an open-source AI instructional design tool. It helps you do each job of course design in ADDIE, backward design or SAM. It supports every recommendation with peer-reviewed research across 11 domains. It runs in Claude Code, Cowork and Chrome.",
     "url": "https://idstack.org",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "macOS, Linux, Windows (WSL or Git Bash)",
@@ -198,7 +197,7 @@
       border: 1px solid var(--rule);
       padding: 0.08em 0.35em;
       border-radius: 2px;
-      font-size: 0.85em;
+      font-size: max(0.85em, 0.75rem);
     }
 
     h1, h2, h3 {
@@ -241,7 +240,7 @@
     .brand:hover { text-decoration: none; }
     .brand-beta {
       font-family: var(--font-ui);
-      font-size: 0.62rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -454,7 +453,7 @@
     .hero .btn-chrome:hover { background: var(--hero-soft); color: var(--hero-bg); }
     .hero .btn-chrome:focus-visible { outline-color: var(--hero-ink); }
     .btn-chrome .btn-badge {
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       border: 1px solid currentColor;
       padding: 0.05rem 0.4rem;
       border-radius: 2px;
@@ -474,6 +473,9 @@
     }
     .hero .cta-secondary { color: var(--hero-soft); }
     .hero .cta-secondary:hover { color: var(--hero-ink); text-decoration: underline; }
+    .cta-tap { display: inline-flex; align-items: center; min-height: var(--tap-min); }
+    /* The topbar is sticky (93px at 375px), so a jump to the card must stop below it. */
+    #install-desktop { scroll-margin-top: 6rem; }
 
     @media (max-width: 480px) {
       .cta-actions { flex-direction: column; align-items: stretch; gap: 0.6rem; }
@@ -495,7 +497,7 @@
     .session-head {
       padding: 0.55rem 0.9rem;
       border-bottom: 1px solid var(--hero-rule);
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       letter-spacing: 0.02em;
       overflow-x: auto;
       white-space: nowrap;
@@ -505,6 +507,8 @@
     .session-line + .session-line { margin-top: 0.35rem; }
     .session-who { color: var(--hero-soft); opacity: 1; }
     .session-you .session-said { color: var(--hero-ink); }
+    /* The base code box is light; on the dark session panel it hid the text. */
+    .session-said code { background: transparent; border-color: var(--hero-rule); }
     .session-finding {
       margin-top: 0.9rem;
       background: var(--bg);
@@ -525,7 +529,7 @@
     .session-finding p + p { margin-top: 0.45rem; }
     .session-finding .finding-label {
       font-family: var(--font-ui);
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -541,7 +545,7 @@
       align-items: center;
       justify-content: center;
       font-family: var(--font-mono);
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.04em;
       padding: 0.18em 0.5em;
@@ -568,7 +572,7 @@
 
     .severity {
       font-family: var(--font-ui);
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -622,8 +626,8 @@
     .evidence-index { list-style: none; border-top: 1px solid var(--rule-strong); }
     .evidence-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 5.5rem minmax(0, 15rem);
-      grid-template-areas: "title count bar" "body body body";
+      grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);
+      grid-template-areas: "title bar" "body body";
       gap: 0.2rem 1rem;
       align-items: center;
       padding: 0.95rem 0;
@@ -634,14 +638,6 @@
       font-size: 1.02rem;
       font-weight: 700;
       letter-spacing: -0.01em;
-    }
-    .evidence-row-count {
-      grid-area: count;
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      color: var(--ink-muted);
-      text-align: right;
-      white-space: nowrap;
     }
     .tier-mix { grid-area: bar; display: flex; height: 0.75rem; }
     .tier-mix span { display: block; height: 100%; flex: none; }
@@ -667,8 +663,8 @@
     }
     @media (max-width: 640px) {
       .evidence-row {
-        grid-template-columns: minmax(0, 1fr) 5.5rem;
-        grid-template-areas: "title count" "bar bar" "body body";
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "title" "bar" "body";
         gap: 0.45rem 0.75rem;
       }
     }
@@ -690,7 +686,7 @@
 
     .pipeline-track-label {
       font-family: var(--font-ui);
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -740,7 +736,7 @@
       top: 0.6rem;
       right: 0.6rem;
       font-family: var(--font-mono);
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: var(--ink-muted);
     }
     .pipeline-node .node-num::before { content: counter(step); }
@@ -893,7 +889,7 @@
       display: block;
       margin: -0.85rem -0.85rem 0.7rem;
       font-family: var(--font-ui);
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       font-weight: 700;
       line-height: 1.3;
       color: var(--on-accent);
@@ -906,7 +902,8 @@
     .node-phase { margin-inline: -0.7rem; }
     .node-phase [data-fw] { padding-inline: 0.7rem 1.6rem; min-height: calc(2.6em + 0.7rem); }
     .pipeline-node .node-num { top: 0.35rem; right: 0.6rem; color: var(--on-accent); font-weight: 700; line-height: 1.3; }
-    .pipeline-node .node-label { padding-right: 0; font-size: 0.72rem; word-break: normal; overflow-wrap: anywhere; }
+    /* -0.02em keeps the 14-character names on one line in the 8-column row at 12px. */
+    .pipeline-node .node-label { padding-right: 0; font-size: 0.75rem; letter-spacing: -0.02em; word-break: normal; overflow-wrap: anywhere; }
     .pipeline-node .node-desc { display: block; }
     @media (max-width: 480px) {
       .pipeline-aside { flex-wrap: wrap; }
@@ -953,7 +950,7 @@
       border-bottom: 1px solid var(--rule);
       background: color-mix(in srgb, var(--bg) 50%, transparent);
       font-family: var(--font-mono);
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       color: var(--ink-muted);
       letter-spacing: 0.02em;
       overflow-x: auto;
@@ -998,6 +995,24 @@
       font-size: 0.92rem;
       color: var(--ink-muted);
       max-width: var(--prose);
+    }
+
+    /* ──────────────────────────────────────────────
+       FAQ: hairline rows, as in the Why list
+       ────────────────────────────────────────────── */
+    .faq-list { max-width: var(--prose); }
+    .faq-list > div {
+      padding-block: 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .faq-list h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .faq-list p {
+      margin-top: 0.35rem;
+      color: var(--ink-soft);
     }
 
     /* ──────────────────────────────────────────────
@@ -1208,9 +1223,9 @@
       <a class="brand" href="/">idstack<sup class="brand-beta">beta</sup></a>
       <div class="nav-links">
         <a href="#why">Why</a>
+        <a href="#install">Install</a>
         <a href="#pipeline">Frameworks</a>
         <a href="#evidence">Evidence</a>
-        <a href="#install">Install</a>
         <a href="https://github.com/savvides/idstack" rel="noopener">GitHub&nbsp;↗</a>
       </div>
     </nav>
@@ -1222,8 +1237,8 @@
     <div class="hero-band">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-text">
-        <h1 id="hero-title">A copilot for instructional designers.</h1>
-        <p class="lede">idstack helps you do the job of an instructional designer: the needs analysis, the objectives, the assessments, the course content, the reviews and the export. It helps you apply the framework that you already use: ADDIE, backward design or SAM. It supports each recommendation with the literature: the study and how strong its evidence is, from <span class="tier tier-1">T1</span> meta-analyses and RCTs to <span class="tier tier-5">T5</span> expert opinion. 168 peer-reviewed studies across 11 research domains. It runs in Claude Code, Cowork or Chrome.</p>
+        <h1 id="hero-title">An AI copilot for instructional design.</h1>
+        <p class="lede">idstack helps you do each job of an instructional designer, in ADDIE, backward design or SAM. Each recommendation cites its study and shows how strong the evidence is.</p>
 
         <div class="cta-row">
           <div class="cta-actions">
@@ -1245,7 +1260,8 @@
             <code id="install-cmd">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
             <button class="copy-btn" type="button" data-copy-target="install-cmd" aria-label="Copy install command">Copy</button>
           </div>
-          <a class="cta-secondary" href="#evidence">→&nbsp; See the 168 studies</a>
+          <a class="cta-secondary cta-tap" href="#install-desktop">No terminal? Use the Claude desktop app</a>
+          <a class="cta-secondary" href="#evidence">→&nbsp; See the studies</a>
           <a class="cta-secondary" href="#pipeline">→&nbsp; Find your ADDIE or backward design phase</a>
         </div>
 
@@ -1283,7 +1299,7 @@
     <!-- ────────── Why ────────── -->
     <section class="section" id="why" aria-labelledby="why-title">
       <header class="section-header">
-        <h2 id="why-title">Help with the jobs that you do each day.</h2>
+        <h2 id="why-title">AI help for each instructional design job</h2>
         <p class="lede">You are the designer, and idstack is the copilot. It does the first draft, the review and the search for the research. Each skill does the work of one phase of your framework. You make each decision.</p>
       </header>
 
@@ -1291,7 +1307,7 @@
         <div class="why-col">
           <h3>For one designer</h3>
           <dl class="why-list">
-            <div><dt>A second opinion in one minute</dt><dd>Paste an objective, a quiz question, a rubric or a slide. You get a maximum of five findings, each with its study, and a corrected version.</dd></div>
+            <div><dt>A second opinion in one minute</dt><dd>Paste an objective, a quiz question, a rubric or a slide. You get findings, each with its study, and a corrected version.</dd></div>
             <div><dt>A first draft to start from</dt><dd>Objectives with Bloom's levels, rubrics, question banks, storyboards and module pages. You approve, change or remove each row.</dd></div>
             <div><dt>An answer to "why?"</dt><dd>When a subject matter expert disagrees, you show the study and how strong its evidence is.</dd></div>
             <div><dt>A full course audit in one afternoon</dt><dd>Import a course from your LMS. You get a quality score, an accessibility score and a list of what to correct first.</dd></div>
@@ -1300,7 +1316,7 @@
         <div class="why-col">
           <h3>For a design team</h3>
           <dl class="why-list">
-            <div><dt>One standard of review</dt><dd>Each course is examined against the same standards: Quality Matters, WCAG 2.1 AA and constructive alignment.</dd></div>
+            <div><dt>One standard of review</dt><dd>Each course is examined against the same standards: Quality Matters, WCAG and constructive alignment.</dd></div>
             <div><dt>Reports that you can send</dt><dd>Each skill writes a plain Markdown report for faculty, clients and curriculum committees. Each finding has its evidence tier.</dd></div>
             <div><dt>Design decisions stay with the course</dt><dd>The needs, the objectives and the alignment are saved in the course folder. A different designer continues where the first one stopped.</dd></div>
             <div><dt>New designers learn the reasons</dt><dd>idstack explains each step and each term to a new designer, and it is brief with an expert.</dd></div>
@@ -1311,11 +1327,75 @@
       <p class="why-foot">Free and open source. idstack keeps the course files in a folder on your computer.</p>
     </section>
 
+    <!-- ────────── Install ────────── -->
+    <section class="section" id="install" aria-labelledby="install-title">
+      <header class="section-header">
+        <h2 id="install-title">Three ways to install idstack</h2>
+      </header>
+
+      <div class="install-tracks">
+        <div class="install-track-card">
+          <div class="install-track-header">
+            <h3>Chrome extension</h3>
+            <span class="track-badge">In-browser (Canvas / Docs)</span>
+          </div>
+          <p class="install-prose">Audit Canvas modules and assignments, Google Docs syllabi and web course pages in the Chrome side panel. You do not need a command line.</p>
+          <a class="btn-chrome" href="https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm" target="_blank" rel="noopener">
+            <svg class="chrome-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="4" fill="currentColor"/>
+              <path d="M12 2a10 10 0 0 1 8.66 5H12" stroke="currentColor" stroke-width="2"/>
+              <path d="M20.66 7A10 10 0 0 1 12 22l4.33-7.5" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 22A10 10 0 0 1 3.34 7L12 12" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Install from Chrome Web Store</span>
+            <span class="btn-badge">Free</span>
+          </a>
+        </div>
+
+        <div class="install-track-card" id="install-desktop">
+          <div class="install-track-header">
+            <h3>Claude desktop app</h3>
+            <span class="track-badge">No terminal</span>
+          </div>
+          <p class="install-prose">In the Code tab of the Claude desktop app, select a folder for your course. Then paste this line in the message box:</p>
+          <div class="install-block" role="group" aria-label="Desktop install command">
+            <span class="prompt" aria-hidden="true">›</span>
+            <code id="install-cmd-3">/plugin marketplace add savvides/idstack</code>
+            <button class="copy-btn" type="button" data-copy-target="install-cmd-3" aria-label="Copy desktop install command">Copy</button>
+          </div>
+          <p class="install-prose">Click <strong>+</strong>, then <strong>Add plugins</strong>, and install idstack. Then start a new session and select the course folder again, because Claude Code loads a plugin only when a session starts. Type <code>/idstack:start</code>. Each skill that writes a report gives you a link to open it in the app. In Cowork, open <strong>Customize</strong>, then <strong>Plugins</strong>, select <strong>Add marketplace</strong> and enter <code>savvides/idstack</code>.</p>
+        </div>
+
+        <div class="install-track-card">
+          <div class="install-track-header">
+            <h3>Claude Code plugin</h3>
+            <span class="track-badge">All skills</span>
+          </div>
+          <div class="install-block" role="group" aria-label="Install command">
+            <span class="prompt" aria-hidden="true">$</span>
+            <code id="install-cmd-2">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
+            <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
+          </div>
+
+          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs the skills. Re-run it after a <code>git pull</code> to update.</p>
+
+          <p class="install-prose">You need a bash shell (Terminal on macOS or Linux, WSL or Git Bash on Windows). <code>./setup</code> does not run in PowerShell or <code>cmd</code>. You also need Python 3.9 or later, because the skills save their results with it. <code>scripts/idstack-doctor</code> checks for it.</p>
+
+          <p class="install-prose">To check the install, run <code>scripts/idstack-doctor</code>. To see the health of a course, run <code>scripts/idstack-status</code>.</p>
+
+          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/code" rel="noopener">Install the Claude Code command-line tool</a> first, then paste the command above in a terminal. In the Claude desktop app, use the steps in the Claude desktop app card. When Claude Code starts, run <code>/idstack:start</code>.</p>
+
+          <p class="install-prose">Not using Claude Code or Cowork? The idstack skills run in Claude Code and Cowork. Use the Chrome extension, or fork the repo and adapt the skills for a different agent, for example Codex or Antigravity. idstack does not support or test those forks.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
+        </div>
+      </div>
+    </section>
+
     <!-- ────────── Pipeline ────────── -->
     <section class="section" id="pipeline" aria-labelledby="pipeline-title">
       <header class="section-header">
-        <h2 id="pipeline-title">Sixteen skills, in the framework you already use.</h2>
-        <p class="lede">Eight skills run in sequence through <code>/idstack:pipeline</code>. Three more handle first-run setup, course import and course memory. Four companion skills work at any time: feedback on one item, a storyboard, a question bank and an evaluation plan. You can run any skill alone, with no manifest.</p>
+        <h2 id="pipeline-title">AI course design skills for ADDIE, backward design and SAM</h2>
+        <p class="lede">The pipeline skills run in sequence through <code>/idstack:pipeline</code>. Other skills handle first-run setup, course import and course memory. Companion skills work at any time: feedback on one item, a storyboard, a question bank and an evaluation plan. You can run any skill alone, with no manifest.</p>
       </header>
 
       <div class="pipeline-canvas">
@@ -1348,7 +1428,7 @@
             <span class="node-phase"><span data-fw="addie" class="g-b">Design</span><span data-fw="ubd" class="g-b">Stage 2: evidence</span><span data-fw="sam" class="g-b">Iterative design</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">assessment-design</span>
-            <span class="node-desc">Rubrics, checkpoints, Nicol's 7 feedback principles.</span>
+            <span class="node-desc">Rubrics, checkpoints and feedback principles.</span>
           </li>
           <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-a">Develop</span><span data-fw="ubd" class="g-a">Stage 3: lessons</span><span data-fw="sam" class="g-a">Iterative development</span></span>
@@ -1360,25 +1440,25 @@
             <span class="node-phase"><span data-fw="addie" class="g-b">Evaluate</span><span data-fw="ubd" class="g-b">Alignment check</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">course-quality-review</span>
-            <span class="node-desc">QM 8 standards + Community of Inquiry.</span>
+            <span class="node-desc">Quality Matters + Community of Inquiry.</span>
           </li>
           <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-b">Evaluate</span><span data-fw="ubd" class="g-b">Alignment check</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">accessibility-review</span>
-            <span class="node-desc">WCAG 2.1 AA + UDL 3.0 audit.</span>
+            <span class="node-desc">WCAG + UDL audit.</span>
           </li>
           <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-b">Evaluate</span><span data-fw="ubd" class="g-b">Alignment check</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">red-team</span>
-            <span class="node-desc">Adversarial audit across 5 dimensions.</span>
+            <span class="node-desc">Adversarial audit before launch.</span>
           </li>
           <li class="pipeline-node" tabindex="0">
             <span class="node-phase"><span data-fw="addie" class="g-a">Implement</span><span data-fw="ubd" class="g-a">Publish</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">course-export</span>
-            <span class="node-desc">Common Cartridge, SCORM 1.2, or Canvas API.</span>
+            <span class="node-desc">Common Cartridge, SCORM, or Canvas API.</span>
           </li>
         </ol>
 
@@ -1401,7 +1481,7 @@
         <div class="pipeline-aside-row" aria-label="Companion skills that run at any time">
           <div class="pipeline-aside">
             <span class="aside-tag">quick-check<span class="aside-phase"><span data-fw="addie">Each phase</span><span data-fw="ubd">Each stage</span><span data-fw="sam">Each review</span></span></span>
-            <span>Feedback on one objective, quiz question, rubric, slide or page in one minute. A maximum of five cited findings and a corrected version. No setup.</span>
+            <span>Feedback on one objective, quiz question, rubric, slide or page in one minute. You get cited findings and a corrected version. It needs no setup.</span>
           </div>
           <div class="pipeline-aside">
             <span class="aside-tag">storyboard<span class="aside-phase"><span data-fw="addie">Develop</span><span data-fw="ubd">Stage 3: lessons</span><span data-fw="sam">Iterative design</span></span></span>
@@ -1424,8 +1504,8 @@
     <!-- ────────── Evidence ────────── -->
     <section class="section" id="evidence" aria-labelledby="evidence-title">
       <header class="section-header">
-        <h2 id="evidence-title">Every recommendation cites its source.</h2>
-        <p class="lede">The 11 research domains below are ranked by study count. Each bar shows the tier mix of that domain's references. You can see where idstack rests on trials and where it rests on reviews or expert opinion. When findings conflict, the stronger tier wins. All 168 references are in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a>. Every source is public, and you can check every citation.</p>
+        <h2 id="evidence-title">Evidence-based instructional design: the research behind idstack</h2>
+        <p class="lede">The 11 research domains below are ranked by study count. Each bar shows the tier mix of that domain's references. You can see where idstack rests on trials and where it rests on reviews or expert opinion. When findings conflict, the stronger tier wins. All the references are in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a>. Every source is public, and you can check every citation.</p>
       </header>
 
       <div class="evidence-legend" role="note" aria-label="Evidence tier legend">
@@ -1439,68 +1519,57 @@
       <ol class="evidence-index" aria-label="Research domains, ranked by study count">
         <li class="evidence-row">
           <h3 class="evidence-row-title">Formative Assessment &amp; Feedback</h3>
-          <span class="evidence-row-count">21 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 15 at T1, 1 at T2, 2 at T3, 1 at T4, 2 at T5" data-tiers="15,1,2,1,2" style="width:100%"><span class="t1" style="width:71.43%"></span><span class="t2" style="width:4.76%"></span><span class="t3" style="width:9.52%"></span><span class="t4" style="width:4.76%"></span><span class="t5" style="width:9.52%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 71% at T1, 5% at T2, 10% at T3, 5% at T4, 10% at T5" data-tiers="15,1,2,1,2" style="width:100%"><span class="t1" style="width:71.43%"></span><span class="t2" style="width:4.76%"></span><span class="t3" style="width:9.52%"></span><span class="t4" style="width:4.76%"></span><span class="t5" style="width:9.52%"></span></span>
           <p class="evidence-row-body">Feedback that explains the error and the next step improves retention. Feedback that only marks an answer right or wrong does less. Nicol's principles give criteria for rubrics, self-assessment and peer review. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Cognitive Load Theory &amp; Instructional Sequencing</h3>
-          <span class="evidence-row-count">19 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 6 at T1, 2 at T2, 1 at T4, 10 at T5" data-tiers="6,2,0,1,10" style="width:90.48%"><span class="t1" style="width:31.58%"></span><span class="t2" style="width:10.53%"></span><span class="t4" style="width:5.26%"></span><span class="t5" style="width:52.63%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 32% at T1, 11% at T2, 0% at T3, 5% at T4, 53% at T5" data-tiers="6,2,0,1,10" style="width:90.48%"><span class="t1" style="width:31.58%"></span><span class="t2" style="width:10.53%"></span><span class="t4" style="width:5.26%"></span><span class="t5" style="width:52.63%"></span></span>
           <p class="evidence-row-body">Working memory holds only a few new ideas at one time. Cognitive load research shows when a visual cue helps, and when a repeated explanation overloads the learner. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Instructional Design Models &amp; Frameworks</h3>
-          <span class="evidence-row-count">17 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 3 at T1, 13 at T3, 1 at T5" data-tiers="3,0,13,0,1" style="width:80.95%"><span class="t1" style="width:17.65%"></span><span class="t3" style="width:76.47%"></span><span class="t5" style="width:5.88%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 18% at T1, 0% at T2, 76% at T3, 0% at T4, 6% at T5" data-tiers="3,0,13,0,1" style="width:80.95%"><span class="t1" style="width:17.65%"></span><span class="t3" style="width:76.47%"></span><span class="t5" style="width:5.88%"></span></span>
           <p class="evidence-row-body">ADDIE, ARCS, ASSURE and UDL fit different contexts. A 2025 review <span class="cite-pill">[ID-7] [T3]</span> compares the strengths and limits of ADDIE, ARCS, and ASSURE. It proposes a framework that combines them. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Evaluation Models</h3>
-          <span class="evidence-row-count">16 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 4 at T1, 5 at T3, 1 at T4, 6 at T5" data-tiers="4,0,5,1,6" style="width:76.19%"><span class="t1" style="width:25%"></span><span class="t3" style="width:31.25%"></span><span class="t4" style="width:6.25%"></span><span class="t5" style="width:37.5%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 25% at T1, 0% at T2, 31% at T3, 6% at T4, 38% at T5" data-tiers="4,0,5,1,6" style="width:76.19%"><span class="t1" style="width:25%"></span><span class="t3" style="width:31.25%"></span><span class="t4" style="width:6.25%"></span><span class="t5" style="width:37.5%"></span></span>
           <p class="evidence-row-body">Plan the evaluation while you design the course, not after it. Kirkpatrick's four levels measure reaction, learning, behavior and results. Satisfaction alone does not show learning. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Multimedia Learning Principles</h3>
-          <span class="evidence-row-count">16 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 9 at T1, 2 at T2, 2 at T3, 1 at T4, 2 at T5" data-tiers="9,2,2,1,2" style="width:76.19%"><span class="t1" style="width:56.25%"></span><span class="t2" style="width:12.5%"></span><span class="t3" style="width:12.5%"></span><span class="t4" style="width:6.25%"></span><span class="t5" style="width:12.5%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 56% at T1, 13% at T2, 13% at T3, 6% at T4, 13% at T5" data-tiers="9,2,2,1,2" style="width:76.19%"><span class="t1" style="width:56.25%"></span><span class="t2" style="width:12.5%"></span><span class="t3" style="width:12.5%"></span><span class="t4" style="width:6.25%"></span><span class="t5" style="width:12.5%"></span></span>
           <p class="evidence-row-body">Mayer's principles (coherence, signaling, segmenting, modality, redundancy) tell how to combine words and pictures. Text or decoration that does not teach adds load and reduces learning. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Online Course Quality Frameworks</h3>
-          <span class="evidence-row-count">16 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 3 at T1, 4 at T3, 8 at T4, 1 at T5" data-tiers="3,0,4,8,1" style="width:76.19%"><span class="t1" style="width:18.75%"></span><span class="t3" style="width:25%"></span><span class="t4" style="width:50%"></span><span class="t5" style="width:6.25%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 19% at T1, 0% at T2, 25% at T3, 50% at T4, 6% at T5" data-tiers="3,0,4,8,1" style="width:76.19%"><span class="t1" style="width:18.75%"></span><span class="t3" style="width:25%"></span><span class="t4" style="width:50%"></span><span class="t5" style="width:6.25%"></span></span>
           <p class="evidence-row-body">Quality Matters (QM) standards and the Community of Inquiry (CoI) model are the most studied frameworks for online course quality. CoI measures teaching, social and cognitive presence. idstack audits against both. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Accessibility &amp; Universal Design for Learning</h3>
-          <span class="evidence-row-count">15 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T1, 8 at T3, 1 at T4, 4 at T5" data-tiers="2,0,8,1,4" style="width:71.43%"><span class="t1" style="width:13.33%"></span><span class="t3" style="width:53.33%"></span><span class="t4" style="width:6.67%"></span><span class="t5" style="width:26.67%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 13% at T1, 0% at T2, 53% at T3, 7% at T4, 27% at T5" data-tiers="2,0,8,1,4" style="width:71.43%"><span class="t1" style="width:13.33%"></span><span class="t3" style="width:53.33%"></span><span class="t4" style="width:6.67%"></span><span class="t5" style="width:26.67%"></span></span>
           <p class="evidence-row-body">WCAG 2.1 AA is the legal baseline for digital accessibility. Universal Design for Learning (UDL 3.0) plans three pathways (engagement, representation, and action) from the start, so that more learners can succeed. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Constructive Alignment &amp; Learning Objectives</h3>
-          <span class="evidence-row-count">13 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T1, 1 at T3, 6 at T4, 4 at T5" data-tiers="2,0,1,6,4" style="width:61.9%"><span class="t1" style="width:15.38%"></span><span class="t3" style="width:7.69%"></span><span class="t4" style="width:46.15%"></span><span class="t5" style="width:30.77%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 15% at T1, 0% at T2, 8% at T3, 46% at T4, 31% at T5" data-tiers="2,0,1,6,4" style="width:61.9%"><span class="t1" style="width:15.38%"></span><span class="t3" style="width:7.69%"></span><span class="t4" style="width:46.15%"></span><span class="t5" style="width:30.77%"></span></span>
           <p class="evidence-row-body">When objectives, activities and assessments do not agree, students learn less. The revised Bloom's taxonomy classifies each objective, so that the assessment can measure the same level. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Learner Analysis &amp; Differentiation</h3>
-          <span class="evidence-row-count">12 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 6 at T1, 4 at T4, 2 at T5" data-tiers="6,0,0,4,2" style="width:57.14%"><span class="t1" style="width:50%"></span><span class="t4" style="width:33.33%"></span><span class="t5" style="width:16.67%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 50% at T1, 0% at T2, 0% at T3, 33% at T4, 17% at T5" data-tiers="6,0,0,4,2" style="width:57.14%"><span class="t1" style="width:50%"></span><span class="t4" style="width:33.33%"></span><span class="t5" style="width:16.67%"></span></span>
           <p class="evidence-row-body">Prior knowledge is the strongest predictor of what a learner gains from instruction. Novices need support that slows experienced learners. This is the expertise-reversal effect. <span class="evidence-row-tiers">T1–T5</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Needs Analysis</h3>
-          <span class="evidence-row-count">12 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 2 at T1, 10 at T3" data-tiers="2,0,10,0,0" style="width:57.14%"><span class="t1" style="width:16.67%"></span><span class="t3" style="width:83.33%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 17% at T1, 0% at T2, 83% at T3, 0% at T4, 0% at T5" data-tiers="2,0,10,0,0" style="width:57.14%"><span class="t1" style="width:16.67%"></span><span class="t3" style="width:83.33%"></span></span>
           <p class="evidence-row-body">A needs analysis examines three levels (organization, task and learner) before anyone writes content. It keeps the course on the skill gap, and it shows when training is not the answer. <span class="evidence-row-tiers">T1–T3</span></p>
         </li>
         <li class="evidence-row">
           <h3 class="evidence-row-title">Rapid Prototyping &amp; Design-Based Research</h3>
-          <span class="evidence-row-count">11 studies</span>
-          <span class="tier-mix" role="img" aria-label="Tier mix: 1 at T2, 4 at T3, 2 at T4, 4 at T5" data-tiers="0,1,4,2,4" style="width:52.38%"><span class="t2" style="width:9.09%"></span><span class="t3" style="width:36.36%"></span><span class="t4" style="width:18.18%"></span><span class="t5" style="width:36.36%"></span></span>
+          <span class="tier-mix" role="img" aria-label="Tier mix: 0% at T1, 9% at T2, 36% at T3, 18% at T4, 36% at T5" data-tiers="0,1,4,2,4" style="width:52.38%"><span class="t2" style="width:9.09%"></span><span class="t3" style="width:36.36%"></span><span class="t4" style="width:18.18%"></span><span class="t5" style="width:36.36%"></span></span>
           <p class="evidence-row-body">A pilot with real learners finds usability and content problems early. Design-based research gives the revisions a method. <span class="evidence-row-tiers">T2–T5</span></p>
         </li>
       </ol>
@@ -1512,7 +1581,7 @@
     <section class="section" id="output" aria-labelledby="output-title">
       <header class="section-header">
         <h2 id="output-title">Each pipeline skill writes a report and a manifest.</h2>
-        <p class="lede">Each skill that produces findings writes two files: a Markdown report for faculty and stakeholders, and a JSON manifest that later skills read. Reports go in <code>.idstack/exports/&lt;course-slug&gt;/</code>. The manifest is <code>.idstack/project.json</code>.</p>
+        <p class="lede">Each skill that produces findings writes two files: a Markdown report for faculty and stakeholders, and a JSON manifest that later skills read.</p>
       </header>
 
       <div class="output-pair">
@@ -1546,69 +1615,39 @@
         </article>
       </div>
 
-      <p class="output-foot">The report is plain text that you can send to faculty and curriculum committees. The manifest keeps the state of the course for the skills. The timeline at <code>.idstack/timeline.jsonl</code> records each run. <code>/idstack:pipeline</code> writes an <code>index.md</code> dashboard with readiness scores, the issues that recur across skills, and a link to each report.</p>
+      <p class="output-foot">The report is plain text that you can send to faculty and curriculum committees. The manifest keeps the state of the course for the skills. <code>/idstack:pipeline</code> writes a dashboard with readiness scores, the issues that recur across skills, and a link to each report.</p>
     </section>
 
-    <!-- ────────── Install ────────── -->
-    <section class="section" id="install" aria-labelledby="install-title">
+    <!-- ────────── FAQ ────────── -->
+    <section class="section" id="faq" aria-labelledby="faq-title">
       <header class="section-header">
-        <h2 id="install-title">Three ways to install.</h2>
+        <h2 id="faq-title">AI instructional design FAQ</h2>
       </header>
 
-      <div class="install-tracks">
-        <div class="install-track-card">
-          <div class="install-track-header">
-            <h3>Chrome Extension</h3>
-            <span class="track-badge">In-Browser (Canvas / Docs)</span>
-          </div>
-          <p class="install-prose">Audit Canvas modules and assignments, Google Docs syllabi and web course pages in the Chrome side panel. No command line.</p>
-          <a class="btn-chrome" href="https://chromewebstore.google.com/detail/eclnhfehloplcnidkkopphamllnlhinm" target="_blank" rel="noopener">
-            <svg class="chrome-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-              <circle cx="12" cy="12" r="4" fill="currentColor"/>
-              <path d="M12 2a10 10 0 0 1 8.66 5H12" stroke="currentColor" stroke-width="2"/>
-              <path d="M20.66 7A10 10 0 0 1 12 22l4.33-7.5" stroke="currentColor" stroke-width="2"/>
-              <path d="M12 22A10 10 0 0 1 3.34 7L12 12" stroke="currentColor" stroke-width="2"/>
-            </svg>
-            <span>Install from Chrome Web Store</span>
-            <span class="btn-badge">Free</span>
-          </a>
+      <div class="faq-list">
+        <div>
+          <h3>What is an AI instructional design tool?</h3>
+          <p>It is software that uses AI to help you do the work of an instructional designer. idstack has skills that run in Claude Code and Cowork, and a Chrome extension that audits Canvas, Google Docs and web pages. Each skill does one job, for example a needs analysis, learning objectives, a rubric or a quality review.</p>
         </div>
-
-        <div class="install-track-card">
-          <div class="install-track-header">
-            <h3>Claude Desktop App</h3>
-            <span class="track-badge">No Terminal</span>
-          </div>
-          <p class="install-prose">In the Code tab of the Claude desktop app, select a folder for your course. Then paste this line in the message box:</p>
-          <div class="install-block" role="group" aria-label="Desktop install command">
-            <span class="prompt" aria-hidden="true">›</span>
-            <code id="install-cmd-3">/plugin marketplace add savvides/idstack</code>
-            <button class="copy-btn" type="button" data-copy-target="install-cmd-3" aria-label="Copy desktop install command">Copy</button>
-          </div>
-          <p class="install-prose">Click <strong>+</strong>, then <strong>Add plugins</strong>, and install idstack. Then start a new session and select the course folder again, because Claude Code loads a plugin only when a session starts. Type <code>/idstack:start</code>. Each skill that writes a report gives you a link to open it in the app. In Cowork, open <strong>Customize</strong>, then <strong>Plugins</strong>, select <strong>Add marketplace</strong> and enter <code>savvides/idstack</code>.</p>
+        <div>
+          <h3>Does idstack replace an instructional designer?</h3>
+          <p>No. idstack writes a first draft and finds the research. You make each decision: you approve, change or remove each row.</p>
         </div>
-
-        <div class="install-track-card">
-          <div class="install-track-header">
-            <h3>Claude Code Plugin</h3>
-            <span class="track-badge">All 16 Skills</span>
-          </div>
-          <div class="install-block" role="group" aria-label="Install command">
-            <span class="prompt" aria-hidden="true">$</span>
-            <code id="install-cmd-2">git clone https://github.com/savvides/idstack.git &amp;&amp; cd idstack &amp;&amp; ./setup</code>
-            <button class="copy-btn" type="button" data-copy-target="install-cmd-2" aria-label="Copy install command">Copy</button>
-          </div>
-
-          <p class="install-prose"><code>./setup</code> registers idstack with Claude Code and installs all 16 skills. Re-run it after a <code>git pull</code> to update.</p>
-
-          <p class="install-prose">You need a bash shell (Terminal on macOS or Linux, WSL or Git Bash on Windows). <code>./setup</code> does not run in PowerShell or <code>cmd</code>. You also need Python 3.9 or later, because the skills save their results with it. <code>scripts/idstack-doctor</code> checks for it.</p>
-
-          <p class="install-prose">To check the install, run <code>scripts/idstack-doctor</code>. To see the health of a course, run <code>scripts/idstack-status</code>.</p>
-
-          <p class="install-prose">New to Claude Code? <a href="https://claude.ai/code" rel="noopener">Install the Claude Code command-line tool</a> first, then paste the command above in a terminal. In the Claude desktop app, use the steps in the Claude Desktop App card. When Claude Code starts, run <code>/idstack:start</code>.</p>
-
-          <p class="install-prose">Not using Claude Code or Cowork? The idstack skills run in Claude Code and Cowork. Use the Chrome extension, or fork the repo and adapt the skills for a different agent, for example Codex or Antigravity. idstack does not support or test those forks.</p> <!-- IDSTACK_CLI_LEAK_ALLOW: unsupported-fork pointer, not a support claim -->
+        <div>
+          <h3>Which instructional design frameworks does idstack support?</h3>
+          <p>idstack helps you apply ADDIE, backward design or SAM. Each skill does the work of one phase, for example Analyze in ADDIE or Stage 1 in backward design. You can also name the phase, for example "I am in the Design phase", and Claude starts the correct skill.</p>
+        </div>
+        <div>
+          <h3>Where do the recommendations come from?</h3>
+          <p>Each recommendation cites a peer-reviewed study from the idstack reference list. Each citation has an evidence tier, from <span class="tier tier-1">T1</span> (meta-analyses and randomized controlled trials) to <span class="tier tier-5">T5</span> (expert opinion). The full list is in <a href="https://github.com/savvides/idstack/blob/main/evidence/references.md" rel="noopener"><code>evidence/references.md</code></a>, so you can check each citation.</p>
+        </div>
+        <div>
+          <h3>Does idstack work with Canvas, Blackboard and Moodle?</h3>
+          <p>Yes. <code>/idstack:course-import</code> reads a Common Cartridge file from Canvas, Blackboard, Moodle or D2L, and it can connect to Canvas through the Canvas API. <code>/idstack:course-export</code> writes a Common Cartridge file for these four systems or a SCORM package, or it sends the course to Canvas.</p>
+        </div>
+        <div>
+          <h3>Is idstack free, and what do I need to run it?</h3>
+          <p>idstack is free and open source, with the MIT license. The skills need Claude Code or Cowork, and Python 3.9 or later. The Chrome extension needs a free Google AI Studio API key for real audits, and without a key it shows sample findings.</p>
         </div>
       </div>
     </section>

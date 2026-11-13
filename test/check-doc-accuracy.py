@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Validate documentation accuracy: version strings, the manifest schema version, scripts/ and test/ path references, and removed date fields.
+"""Validate documentation accuracy: version strings, the manifest schema version, scripts/ and test/ path references, removed date fields, and the landing page's search tags, headings, text size and that it gives no number of studies.
 
 Usage: check-doc-accuracy.py <repo-root>
 Prints diagnostic lines and exits 1 on mismatch; prints nothing and exits 0 when clean.
 """
 
+import html
 import os
 import re
 import sys
@@ -136,6 +137,72 @@ def check_public_surfaces(root, problems):
         problems.append("missing README.md file")
 
 
+def check_landing_page(root, problems):
+    """Assert the search and readability facts of docs/index.html, docs/404.html and docs/llms.txt.
+
+    The font-size check reads only a plain number in rem or px, such as
+    "0.7rem" or "11px". A value in em, clamp(), max() or % depends on its
+    parent or the viewport, so a static check cannot find its real size: it
+    is skipped. The font shorthand is skipped too.
+    """
+    index_html = os.path.join(root, "docs", "index.html")
+    if not os.path.isfile(index_html):
+        return  # check_versions reports the missing file
+    with open(index_html, "r", encoding="utf-8") as f:
+        page = f.read()
+
+    def first(pattern):
+        m = re.search(pattern, page, re.S)
+        return html.unescape(m.group(1)) if m else None
+
+    title = first(r"<title>(.*?)</title>")
+    description = first(r'<meta name="description" content="([^"]*)"')
+    og_title = first(r'<meta property="og:title" content="([^"]*)"')
+    tw_title = first(r'<meta name="twitter:title" content="([^"]*)"')
+
+    h1s = re.findall(r"<h1\b[^>]*>(.*?)</h1>", page, re.S)
+    if len(re.findall(r"<h1\b", page)) != 1 or len(h1s) != 1:
+        problems.append("docs/index.html must have exactly one <h1>")
+    elif "instructional design" not in re.sub(r"<[^>]+>", "", h1s[0]).lower():
+        problems.append('docs/index.html <h1> does not contain "instructional design"')
+
+    if title is None or len(title) > 65:
+        problems.append("docs/index.html <title> is missing or over 65 characters")
+    if description is None or len(description) > 160:
+        problems.append("docs/index.html meta description is missing or over 160 characters")
+    if not (title is not None and title == og_title == tw_title):
+        problems.append("docs/index.html <title>, og:title and twitter:title are not equal")
+    if '<meta name="keywords"' in page:
+        problems.append("docs/index.html has a keywords meta tag; it was removed on purpose")
+
+    # No number of studies: a literature review changes the numbers.
+    body = re.search(r"<body\b[^>]*>(.*)</body>", page, re.S)
+    body = re.sub(r"<(script|style)\b.*?</\1>|<!--.*?-->", " ", body.group(1) if body else "", flags=re.S | re.I)
+    visible = [re.sub(r"<[^>]+>", " ", body), title or ""]
+    visible += re.findall(r'<meta (?:name="description"|property="og:[^"]*"|name="twitter:[^"]*") content="([^"]*)"', page)
+    for text in visible:
+        m = re.search(r"\b\d[\d,]*\s+(?:peer-reviewed\s+)?(?:studies|references|papers)\b", html.unescape(text), re.I)
+        if m:
+            problems.append('docs/index.html gives a number of studies: "%s"' % m.group(0))
+
+    for size, unit in re.findall(r"font-size:\s*([\d.]+)(rem|px)\b", page):
+        if float(size) < (0.75 if unit == "rem" else 12):
+            problems.append("docs/index.html has font-size %s%s, below 12px (0.75rem)" % (size, unit))
+
+    install, pipeline = page.find('id="install"'), page.find('id="pipeline"')
+    if not 0 <= install < pipeline:
+        problems.append('docs/index.html: id="install" must come before id="pipeline"')
+
+    for name in ("404.html", "llms.txt"):
+        if not os.path.isfile(os.path.join(root, "docs", name)):
+            problems.append("missing docs/%s file" % name)
+    not_found = os.path.join(root, "docs", "404.html")
+    if os.path.isfile(not_found):
+        with open(not_found, "r", encoding="utf-8") as f:
+            if "noindex" not in f.read():
+                problems.append("docs/404.html has no noindex robots tag")
+
+
 def check_developer_surfaces(root, problems):
     dev_files = ["CLAUDE.md", "DESIGN.md", "CONTRIBUTING.md", "ROADMAP.md"]
     for f in dev_files:
@@ -216,6 +283,7 @@ def main():
     check_binaries_and_flags(root, problems)
     check_public_surfaces(root, problems)
     check_no_stale_dates(root, problems)
+    check_landing_page(root, problems)
     check_developer_surfaces(root, problems)
 
     for p in problems:

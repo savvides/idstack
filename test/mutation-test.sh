@@ -350,23 +350,50 @@ PY
 expect_fail "evidence card overstates its tier range" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 18b. the tier-mix bar's data-tiers attribute moves a study to a stronger tier
-# while the count and the range stay right -> smoke-test must fail. The per-tier
-# counts in data-tiers are compared with evidence/references.md by
-# check-evidence-cards.py, not only their total. Nothing renders data-tiers: the
-# visible bar comes from the inline segment widths, which no check compares.
+# while the range stays right -> smoke-test must fail. The aria-label moves with
+# it, so only the comparison of data-tiers with evidence/references.md in
+# check-evidence-cards.py can catch it. Nothing renders data-tiers: the visible
+# bar comes from the inline segment widths, which no check compares.
 fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import io, sys
 p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
-old = 'data-tiers="4,0,5,1,6"'
+old = 'aria-label="Tier mix: 25% at T1, 0% at T2, 31% at T3, 6% at T4, 38% at T5" data-tiers="4,0,5,1,6"'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-io.open(p, 'w', encoding='utf-8').write(s.replace(old, 'data-tiers="5,0,4,1,6"'))
+io.open(p, 'w', encoding='utf-8').write(s.replace(old, 'aria-label="Tier mix: 31% at T1, 0% at T2, 25% at T3, 6% at T4, 38% at T5" data-tiers="5,0,4,1,6"'))
 PY
 expect_fail "tier-mix bar overstates a domain's T1 share" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
-# 19. a domain's study count drifts from the reference file -> smoke-test must
-# fail. The count and the tier range are separate assertions; a checker that
-# only compared tiers would let a card's "12 studies" count rot silently.
+# 18c. the tier-mix bar's aria-label gives T1 a larger share than data-tiers
+# -> smoke-test must fail. A screen reader reads the label, not data-tiers, so
+# check-evidence-cards.py computes each share from data-tiers and compares.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import io, sys
+p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
+old = 'aria-label="Tier mix: 71% at T1,'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+io.open(p, 'w', encoding='utf-8').write(s.replace(old, 'aria-label="Tier mix: 76% at T1,'))
+PY
+expect_fail "tier-mix label overstates a domain's T1 share" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 18d. a number of studies comes back outside the evidence cards -> the
+# visible-text assertion in check-doc-accuracy.py must fail. The page gives no
+# number of studies, because a literature review changes the numbers. The lede
+# is outside the cards, so check-evidence-cards.py cannot see it.
+fresh
+python3 - "$WORK/r/docs/index.html" <<'PY'
+import io, sys
+p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
+old = 'All the references are in'
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+io.open(p, 'w', encoding='utf-8').write(s.replace(old, 'All 168 references are in'))
+PY
+expect_fail "a number of studies comes back in the Evidence lede" python3 "$WORK/r/test/check-doc-accuracy.py" "$WORK/r"
+
+# 19. a domain loses a reference while the cards keep the old tier mix
+# -> smoke-test must fail. The cards show no number of studies, so the
+# data-tiers comparison in check-evidence-cards.py is what catches the drift.
 fresh
 python3 - "$WORK/r/evidence/references.md" <<'PY'
 import io, sys
@@ -382,7 +409,7 @@ for i, line in enumerate(lines):
         break
 io.open(p, 'w', encoding='utf-8').write('\n'.join(lines))
 PY
-expect_fail "domain study count drifts from the cards" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+expect_fail "domain reference count drifts from the cards" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
 # 20. version string in README mutated -> smoke-test must fail
 fresh
