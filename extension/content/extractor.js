@@ -17,11 +17,11 @@ function detectPageType(url, document) {
 
 function extractContentFromDOM(document, url = (typeof window !== 'undefined' && window.location ? window.location.href : '')) {
   // Canvas views that show student records: gradebook and SpeedGrader, grades, People
-  // (course and account level), groups, discussion replies, submissions, Inbox. Checked on
+  // (course and account level), groups, discussion replies, submissions, quiz answers, Inbox. Checked on
   // every URL, because Canvas on a custom domain is only detected as Canvas under /courses/N.
   // Matched on the URL string: url can be '', and new URL('') throws. Function-scoped on
   // purpose: a top-level const would throw when the file is re-injected into the same world.
-  const studentRecordUrl = /^https?:\/\/[^/?#]+\/(?:courses\/\d+\/(?:gradebook|grades|users|groups|discussion_topics|assignments\/\d+\/submissions)|conversations|groups\/\d+|users\/\d+|accounts\/\d+\/users)(?:[/?#]|$)/;
+  const studentRecordUrl = /^https?:\/\/[^/?#]+\/(?:courses\/\d+\/(?:gradebook|grades|users|groups|discussion_topics|assignments\/\d+\/submissions|quizzes\/\d+\/(?:history|submissions|moderate|managed_quiz_data|submission_versions|submission_html))|conversations|groups\/\d+|users\/\d+|accounts\/\d+\/users)(?:[/?#]|$)/;
   if (studentRecordUrl.test(url)) {
     return {
       url,
@@ -29,7 +29,7 @@ function extractContentFromDOM(document, url = (typeof window !== 'undefined' &&
       pageType: 'Canvas Student Records',
       content: '',
       wordCount: 0,
-      emptyReason: 'idstack does not read Canvas pages that show student records (grades, People, Inbox, discussions, groups and submissions). You can audit an assignment, a page, a syllabus, a rubric or the Modules view.'
+      emptyReason: 'idstack does not read Canvas pages that show student records (grades, People, Inbox, discussions, groups, submissions and quiz answers). You can audit an assignment, a page, a syllabus, a rubric or the Modules view.'
     };
   }
 
