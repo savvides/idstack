@@ -1354,9 +1354,9 @@ fresh
 python3 - "$WORK/r/PRIVACY.md" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = "Your Google API key is saved in `chrome.storage.sync`."
+old = "Your Google API key is saved in `chrome.storage.local`, on this device only."
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-s = s.replace(old, "Your Google API key is saved in `chrome.storage.local`.", 1)
+s = s.replace(old, "Your Google API key is saved in `chrome.storage.sync`.", 1)
 open(p, 'w', encoding='utf-8').write(s)
 PY
 expect_fail "privacy policy names the wrong storage area for the API key" "$WORK/r/test/test-extension.sh"
@@ -2542,6 +2542,42 @@ s = s.replace(old, '_py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) || true
 open(p, 'w').write(s)
 PY
 expect_fail "setup ignores a bad python3" "$WORK/r/test/test-setup.sh" "$WORK/r"
+
+# 69a. The API key goes back to chrome.storage.sync -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/storage.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "await area('local', 'set', settings);"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "await area('sync', 'set', settings);", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "API key saved in chrome.storage.sync" "$WORK/r/test/test-extension.sh"
+
+# 69b. The migration leaves the old key in sync -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/shared/storage.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = "    await area('sync', 'remove', 'apiKey');\n"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "old API key not deleted from sync" "$WORK/r/test/test-extension.sh"
+
+# 69c. A New Quizzes moderation or reporting page is read again -> test-extension must fail.
+fresh
+python3 - "$WORK/r/extension/content/extractor.js" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+old = r"(?:submissions|anonymous_submissions|moderate|moderation|reporting)"
+assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
+s = s.replace(old, "submissions", 1)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+expect_fail "New Quizzes student pages not blocked" "$WORK/r/test/test-extension.sh"
 
 # 70a-70i. Script bugs (#173, #172, #171, #190, #178, #179). Each case puts
 # back one defect -> the named suite must fail.

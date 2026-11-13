@@ -11,6 +11,23 @@ assert.strictEqual((await getSettings()).apiKey, '', 'no key configured by defau
 await saveSettings({ apiKey: 'test-key' });
 assert.strictEqual((await getSettings()).apiKey, 'test-key');
 
+// The key lives in chrome.storage.local, never sync (Chrome copies sync to the user's Google account).
+let c = installChrome();
+await saveSettings({ apiKey: 'k1' });
+assert.deepStrictEqual(c.storage.local.apiKey, 'k1', 'key saved to local');
+assert.ok(!('apiKey' in c.storage.sync), 'key not saved to sync');
+
+// An older key in sync moves to local and is deleted from sync.
+c = installChrome({ sync: { apiKey: 'old' } });
+assert.strictEqual((await getSettings()).apiKey, 'old');
+assert.strictEqual(c.storage.local.apiKey, 'old', 'migrated to local');
+assert.ok(!('apiKey' in c.storage.sync), 'sync copy deleted');
+
+// With a key in both areas, local wins and the sync copy is deleted.
+c = installChrome({ sync: { apiKey: 'old' }, local: { apiKey: 'new' } });
+assert.strictEqual((await getSettings()).apiKey, 'new');
+assert.ok(!('apiKey' in c.storage.sync), 'sync copy deleted when local wins');
+
 // Dossier: add, replace-by-url, remove, clear
 const a = { url: 'https://canvas.instructure.com/courses/1/assignments/2', title: 'Lab 1', result: {} };
 const b = { url: 'https://canvas.instructure.com/courses/1/assignments/3', title: 'Lab 2', result: {} };
