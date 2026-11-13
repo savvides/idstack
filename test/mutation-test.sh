@@ -2244,7 +2244,7 @@ fresh
 python3 - "$WORK/r/scripts/idstack-learnings" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
-old = '        shutil.copymode(LOCAL, tmp_path)\n'
+old = '        shutil.copymode(real, tmp_path)\n'
 assert s.count(old) == 1, 'anchor count %d' % s.count(old)
 s = s.replace(old, '        os.chmod(tmp_path, 0o644)\n', 1)
 open(p, 'w', encoding='utf-8').write(s)
