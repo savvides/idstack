@@ -30,8 +30,8 @@ Each change is implemented by one general-purpose subagent with the model given.
 
 Model: **opus**. Reason: this is the public headline copy; it has character limits and ASD-STE100 rules, and several files must agree.
 
-- `<title>`, `og:title`, `twitter:title`: `AI instructional design tool, backed by 168 studies | idstack`.
-- Meta description (160 characters maximum), `og:description`, `twitter:description` and the JSON-LD `description`: start with "AI instructional design tool" or "idstack is an open-source AI instructional design tool". Keep the facts that are there now (frameworks, 168 studies, evidence tier, open source, where it runs).
+- `<title>`, `og:title`, `twitter:title`: `AI instructional design tool, backed by <N> studies | idstack`.
+- Meta description (160 characters maximum), `og:description`, `twitter:description` and the JSON-LD `description`: start with "AI instructional design tool" or "idstack is an open-source AI instructional design tool". Keep the facts that are there now (frameworks, <N> studies, evidence tier, open source, where it runs).
 - `og:image:alt` and `twitter:image:alt`: the new H1 text.
 - Delete `<meta name="keywords">`.
 - Headings:
@@ -41,7 +41,7 @@ Model: **opus**. Reason: this is the public headline copy; it has character limi
 | H1: A copilot for instructional designers. | The AI instructional design tool that cites its research. |
 | Help with the jobs that you do each day. | AI help for each instructional design job |
 | Sixteen skills, in the framework you already use. | AI course design skills for ADDIE, backward design and SAM |
-| Every recommendation cites its source. | Evidence-based instructional design: 168 studies |
+| Every recommendation cites its source. | Evidence-based instructional design: <N> studies |
 | Three ways to install. | Three ways to install idstack |
 
 - "Each pipeline skill writes a report and a manifest." does not change.
@@ -53,7 +53,7 @@ Model: **opus**. Reason: this is the public headline copy; it has character limi
 Model: **sonnet**. Reason: a small edit in one block, with the text given here; the risk is only the markup and the touch-target tests.
 
 - Replace the 85-word paragraph with about 35 words:
-  "idstack helps you do each job of an instructional designer, in ADDIE, backward design or SAM. Each recommendation cites its study and its evidence tier, from T1 to T5. 168 peer-reviewed studies. It runs in Claude Code, Cowork or Chrome."
+  "idstack helps you do each job of an instructional designer, in ADDIE, backward design or SAM. Each recommendation cites its study and its evidence tier, from T1 to T5. <N> peer-reviewed studies. It runs in Claude Code or Chrome."
   Keep the tier chip markup for T1 and T5 if the paragraph has it now.
 - Add a link directly below the install command: "No terminal? Use the Claude desktop app". It goes to the Claude Desktop App card in the Install section. Give that card an `id` if it has none. The link must be a 44 px touch target on a phone.
 
@@ -169,7 +169,7 @@ Rule: a count, a version number of a standard or a file path goes out of heading
 | Output foot | The timeline at `.idstack/timeline.jsonl` records each run. | removed |
 | Output foot | writes an `index.md` dashboard | writes a dashboard |
 | FAQ 1 | idstack has 16 skills that run in | idstack has skills that run in |
-| FAQ 4 | cites a study from a list of 168 studies in 11 domains of instructional design research | cites a peer-reviewed study from the idstack reference list |
+| FAQ 4 | cites a study from a list of <N> studies in 11 domains of instructional design research | cites a peer-reviewed study from the idstack reference list |
 | FAQ 5 | a SCORM 1.2 package | a SCORM package |
 
 Kept on purpose:
@@ -241,11 +241,11 @@ Model: **sonnet**. Reason: the new text is given, but nine places, the share car
 | Where | New text |
 |---|---|
 | `<title>`, `og:title`, `twitter:title` | `AI instructional design tool, backed by research \| idstack` |
-| Meta description, `og:description`, `twitter:description` | the same sentences with "168 studies" → "peer-reviewed studies" and "168 peer-reviewed studies" → "peer-reviewed studies". Description 160 characters maximum. |
+| Meta description, `og:description`, `twitter:description` | the same sentences with "<N> studies" → "peer-reviewed studies" and "<N> peer-reviewed studies" → "peer-reviewed studies". Description 160 characters maximum. |
 | Hero link | See the studies |
 | Evidence H2 | Evidence-based instructional design: the research behind idstack |
-| Evidence lede | "All 168 references are in" → "All the references are in" |
-| `docs/og-template.html` lede | "168 peer-reviewed studies across 11 research domains" → "peer-reviewed studies across 11 research domains" |
+| Evidence lede | "All <N> references are in" → "All the references are in" |
+| `docs/og-template.html` lede | "<N> peer-reviewed studies across 11 research domains" → "peer-reviewed studies across 11 research domains" |
 | `docs/og-template.html` rail legend | the labels T1 to T5 with no numbers. The colored bar stays. The CSS comment loses its counts. |
 
 - Render `docs/og-image.png` again and look at it.
@@ -256,7 +256,7 @@ Model: **sonnet**. Reason: the new text is given, but nine places, the share car
 
 Model: **opus**. Reason: this changes a test that guards the one claim idstack cannot get wrong (tier strength), its mutation cases, an accessible label and the card layout.
 
-- Remove the `evidence-row-count` span ("21 studies") from each of the 11 cards, and the CSS that only it uses. The card order does not change.
+- Remove the `evidence-row-count` span ("<N> studies") from each of the 11 cards, and the CSS that only it uses. The card order does not change.
 - The tier-mix bar keeps `data-tiers` (nothing renders it, and the test reads it). Its `aria-label` gives shares, not counts: "Tier mix: 71% at T1, 5% at T2, …", with the percentages that the bar segments already have, rounded to whole numbers.
 - Evidence lede: "ranked by study count" stays true and stays.
 - `test/check-evidence-cards.py`: stop reading a visible count. Keep the checks of the domain names, the number of cards, `data-tiers` against `evidence/references.md`, and the tier range. Add a check that each `aria-label` share agrees with `data-tiers`.

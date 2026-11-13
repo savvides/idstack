@@ -2,7 +2,7 @@
 
 > idstack is an open-source AI instructional design tool. Every recommendation cites a peer-reviewed study and an evidence tier from strongest to weakest.
 
-idstack is a set of skills that run in Claude Code and Cowork, plus a Chrome extension. The skills guide a course designer through needs analysis, learning objectives, assessment design, course building, quality review, accessibility review, red-team review and LMS export. The frameworks are ADDIE, backward design and SAM. Each pipeline skill writes a Markdown report and a section of a JSON project file. idstack is released under the MIT license.
+idstack is a set of skills that run in Claude Code, plus a Chrome extension. The skills guide a course designer through needs analysis, learning objectives, assessment design, course building, quality review, accessibility review, red-team review and LMS export. The frameworks are ADDIE, backward design and SAM. Each pipeline skill writes a Markdown report and a section of a JSON project file. idstack is released under the MIT license.
 
 ## Links
 
