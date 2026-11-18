@@ -358,13 +358,15 @@ scripts/idstack-report-section finish <report> [--stopped]
 
 | Subcommand | Effect | stdout on success |
 |------------|--------|-------------------|
-| `init` | Writes the title, the meta line, the status line, a Summary placeholder, one placeholder for each `--reserve` heading and the footer. Replaces an earlier report. | `REPORT_STARTED: <report>` |
+| `init` | Writes the title, the meta line, the status line, a Summary placeholder, one placeholder for each `--reserve` heading and the footer. Replaces an earlier report. First, it copies a finished earlier report (one with no status line) to `.idstack/prev-reports/<course-slug>/<file>`. A report in progress is replaced with no copy. | `REPORT_KEPT: <copy>` (only when it kept a report), then `REPORT_STARTED: <report>` |
 | `check` | Examines a draft (see the next table). Writes nothing. | `CHECK_OK` |
 | `append` | Runs `check`, then adds each draft section with a draft mark. A section with the same heading is replaced in place. A new section goes before the footer. | `SECTION_ADDED:` or `SECTION_REPLACED:` for each section, then `Report path: <report>` |
 | `approve` | Removes each draft mark. `--draft` also deletes the draft file. | `SECTION_APPROVED: <heading>` for each section |
 | `finish` | Fails on a placeholder or a draft mark that remains. Then removes the status line. | `REPORT_COMPLETE: <report>` |
 
 `init` options: `--skill` and `--title` are necessary. `--project` is the course name in the meta line. Without it, `init` reads `project_name` from `.idstack/project.json`, or uses `Untitled course`. `--mode` adds `mode: <mode>`. `--run-id` sets the run ID. The default is six random hex characters.
+
+The copy goes to `.idstack/prev-reports/<course-slug>/`, where `<course-slug>` is the name of the report's folder in `.idstack/exports/`. A report that is not in an `exports/<course-slug>/` folder gets its copy in a `prev-reports/` folder beside it. The path in `REPORT_KEPT:` is relative to the current folder. A second finished report replaces the copy of the first. If `init` cannot write the copy, it exits 4 and the report does not change.
 
 `finish --stopped` puts `idstack did not write this section because the skill stopped.` in each reserved section that has its placeholder. The Summary placeholder does not change, so the Summary must have text.
 

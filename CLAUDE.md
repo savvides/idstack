@@ -26,7 +26,7 @@ scripts/idstack-slugify "<project name>"       # Derive the <course-slug> used f
 scripts/idstack-slugify --from-manifest        # Same, from the manifest's project_name (what skills call)
 scripts/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
 scripts/idstack-ste-check --format markdown <f> # Use for .tmpl/.md: skips frontmatter and code fences. Reports a paragraph's problems on its first line
-scripts/idstack-report-section init <report> --skill <s> --title <t>   # Start a report: header, status line, placeholders (--reserve, --mode)
+scripts/idstack-report-section init <report> --skill <s> --title <t>   # Start a report: header, status line, placeholders (--reserve, --mode); keeps a finished earlier report in .idstack/prev-reports/
 scripts/idstack-report-section check <draft>   # Check a draft section: table shape, citation tiers, ASD-STE100
 scripts/idstack-report-section append <report> <draft>   # Check, then add the section to the report as a draft (atomic)
 scripts/idstack-report-section approve <report> [--draft <f>]  # Remove each draft mark; print SECTION_APPROVED: <heading>; delete the draft
@@ -62,7 +62,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # scripts/idstack-ste-check unit tests (smoke-test also runs them)
-python3 test/test-report-section.py     # 41 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
+python3 test/test-report-section.py     # 48 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md: titles, data-tiers,
                                        # the aria-label shares and tier ranges. Fails on a card that shows a number of studies
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier

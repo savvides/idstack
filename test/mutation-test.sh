@@ -2691,6 +2691,10 @@ shell_mutation "assessment-design does not pass --expect-updated to the merge" \
 shell_mutation "course-import does not pass --expect-updated to the merge" \
   skills/course-import/SKILL.md.tmpl '--create "$@" --set' '--create --set'
 
+# 71a. init stops keeping a finished report (#181) -> test-report-section must fail.
+suite_mutation "report init does not keep a finished report" \
+  scripts/idstack-report-section "if not any(line.strip() == STATUS_LINE for line in earlier.split('\\n')):" 'if False:' test-report-section.py
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

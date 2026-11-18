@@ -11,7 +11,9 @@ Usage:
 
 init    writes the report header, an in-progress status line, a Summary
         placeholder, one placeholder for each --reserve heading, and the footer.
-        It replaces a report from an earlier run.
+        It replaces a report from an earlier run. Before it does, it copies a
+        finished report (one with no status line) to
+        .idstack/prev-reports/<course-slug>/ and prints REPORT_KEPT: <path>.
 check   examines a draft section (the Step Review in templates/preamble.md):
         each "## " section other than Summary, Limitations and Next steps has
         a table, the first column is ID, a cited table ends with Justification
@@ -354,6 +356,19 @@ def cmd_init(args):
               % (args.skill, version)]
     folder = os.path.dirname(os.path.abspath(args.report))
     os.makedirs(folder, exist_ok=True)
+    if os.path.isfile(args.report):
+        with open(args.report, encoding='utf-8') as handle:
+            earlier = handle.read()
+        if not any(line.strip() == STATUS_LINE for line in earlier.split('\n')):
+            exports = os.path.dirname(folder)
+            if os.path.basename(exports) == 'exports':
+                keep = os.path.join(os.path.dirname(exports), 'prev-reports', os.path.basename(folder))
+            else:
+                keep = os.path.join(folder, 'prev-reports')
+            os.makedirs(keep, exist_ok=True)
+            backup = os.path.join(keep, os.path.basename(args.report))
+            write_atomic(backup, earlier)
+            print('REPORT_KEPT: %s' % os.path.relpath(backup))
     write_atomic(args.report, '\n'.join(lines) + '\n')
     print('REPORT_STARTED: %s' % args.report)
     return 0
