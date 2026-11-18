@@ -2711,9 +2711,9 @@ suite_mutation "idstack-learnings search does not refuse an unknown option" \
 suite_mutation "idstack-doctor does not find the Microsoft Store stub" \
   scripts/idstack-doctor '*/WindowsApps/*|*\\WindowsApps\\*) return 0 ;;' '*/NoSuchFolder/*) return 0 ;;' test-doctor.sh
 
-# 71f. idstack-doctor gives the plugin cache as the marketplace again (#186) -> test-doctor must fail.
-suite_mutation "idstack-doctor gives its own path as the marketplace in the plugin cache" \
-  scripts/idstack-doctor '      */plugins/cache/*)' '      */no-such-folder/*)' test-doctor.sh
+# 71f. idstack-doctor does not know that it runs in the plugin cache (#186) -> test-doctor must fail.
+suite_mutation "idstack-doctor does not know that it runs in the plugin cache" \
+  scripts/idstack-doctor '*/plugins/cache/*) IN_PLUGIN_CACHE=1 ;;' '*/no-such-folder/*) IN_PLUGIN_CACHE=1 ;;' test-doctor.sh
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

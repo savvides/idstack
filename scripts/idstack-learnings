@@ -18,7 +18,7 @@
 # promote  Copies the most recent entry with the key to the global store and
 #          tags it with the source project. Exit 1 on error.
 # Every subcommand needs python3 (idstack supports 3.9 or later). If python3 is
-# not on PATH, every subcommand except log exits 2. Then log exits 0.
+# not on PATH, log exits 0 and every other subcommand exits 2.
 #
 # Exit code: 0 after it prints, and always for log. 1 for an error in delete or
 # promote, or for a missing value after --limit, --type or --keyword. 2 if python3

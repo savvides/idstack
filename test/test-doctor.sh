@@ -141,6 +141,25 @@ check "in the plugin cache, the fix does not give a local path" "'$CACHE_DOCTOR'
 check "in the plugin cache, the fix does not tell the user to run ./setup" "'$CACHE_DOCTOR' | grep -c 'run ./setup'" 1 "^0$"
 "$CACHE_DOCTOR" > "$TEST_ROOT/cache-not-installed.txt" 2>&1 || true
 
+# Two more lines tell the user to run ./setup, and a desktop user has no clone
+# and no ./setup: the WARNING for a missing claude command, and the PROBLEM for a
+# missing marketplace.json. In the plugin cache they tell the user to install
+# idstack again. From a clone they keep ./setup (#186).
+remove_mock_claude
+check "from a clone, with claude absent, the WARNING tells the user to run ./setup" "'$DOCTOR_CMD'" 0 "Then run ./setup from the repo"
+check "in the plugin cache, with claude absent, the WARNING does not mention ./setup" "'$CACHE_DOCTOR' | grep -cF './setup'" 1 "^0$"
+check "in the plugin cache, with claude absent, the WARNING sends the user to the desktop app" "'$CACHE_DOCTOR'" 0 "install idstack again from the Claude desktop app"
+"$CACHE_DOCTOR" > "$TEST_ROOT/cache-no-claude.txt" 2>&1 || true
+
+mock_claude_output "idstack@idstack
+status: enabled"
+rm "$MOCK_IDSTACK_DIR/.claude-plugin/marketplace.json" "$CACHE_IDSTACK_DIR/.claude-plugin/marketplace.json"
+check "from a clone, a missing marketplace.json says that ./setup cannot install the plugin" "'$DOCTOR_CMD'" 1 "Without this file, ./setup cannot install the plugin"
+check "in the plugin cache, a missing marketplace.json is a PROBLEM" "'$CACHE_DOCTOR'" 1 "PROBLEM: missing.*marketplace\.json"
+check "in the plugin cache, a missing marketplace.json does not mention ./setup" "'$CACHE_DOCTOR' | grep -cF './setup'" 1 "^0$"
+check "in the plugin cache, a missing marketplace.json says to install idstack again" "'$CACHE_DOCTOR'" 1 "Install idstack again"
+"$CACHE_DOCTOR" > "$TEST_ROOT/cache-no-marketplace.txt" 2>&1 || true
+
 # The v3.3.0.0 regression: a neighbouring plugin's "enabled" line was read as
 # idstack's, so a disabled idstack was diagnosed healthy. Pinned here too, at
 # the doctor level rather than only in test-plugin-status.sh.
@@ -289,6 +308,8 @@ cp "$TEST_ROOT/winstub.txt" "$STE_OUT/winstub.txt"
 cp "$TEST_ROOT/bad-arg.txt" "$STE_OUT/bad-arg.txt"
 cp "$TEST_ROOT/help.txt" "$STE_OUT/help.txt"
 cp "$TEST_ROOT/cache-not-installed.txt" "$STE_OUT/cache-not-installed.txt"
+cp "$TEST_ROOT/cache-no-claude.txt" "$STE_OUT/cache-no-claude.txt"
+cp "$TEST_ROOT/cache-no-marketplace.txt" "$STE_OUT/cache-no-marketplace.txt"
 
 check "doctor output obeys the writing standard (healthy and problem runs)" \
   "'$PYTHON' '$REPO_DIR/scripts/idstack-ste-check' --format text '$STE_OUT'/*.txt"

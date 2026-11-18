@@ -75,9 +75,9 @@ Other facts:
 
 ### #181 `report-section init`
 
-- If the report exists and is finished (it does not have the status line), `init` copies it to `.idstack/prev-reports/<course-slug>/<basename>` before it writes the skeleton. `<course-slug>` is the name of the report's folder. The copy is atomic, as in "Shared libraries" in `CLAUDE.md`.
+- If the report exists and is finished (it has neither the in-progress status line nor the stopped status line), `init` copies it to `.idstack/prev-reports/<course-slug>/<basename>` before it writes the skeleton. `<course-slug>` is the name of the report's folder. The copy is atomic, as in "Shared libraries" in `CLAUDE.md`.
 - `init` then prints `REPORT_KEPT: <backup path>` before `REPORT_STARTED:`.
-- One backup for each report. A report that is in progress is replaced with no backup, as today, so a stopped run cannot replace a good backup with an empty one.
+- One backup for each report. A report that is in progress is replaced with no backup, as today, so a stopped run cannot replace a good backup with an empty one. `finish --stopped` writes a visible `**Status:** stopped.` line in place of the in-progress line, and `init` does not keep a report that has it.
 - If the copy fails, `init` exits non-zero and does not change the report.
 - The preamble tells the skill to give the `REPORT_KEPT` path to the user in one line.
 - Tests in `test/test-report-section.py`: finished report is kept, in-progress report is not, second finished report replaces the backup, failed copy leaves the report.
@@ -94,7 +94,7 @@ Other facts:
 ### #185 python3 help
 
 - `--quick` gives `PYTHON_WINSTUB` when `python3` is on PATH, does not run, and its path is in a `WindowsApps` folder. The full doctor reports the same condition as a PROBLEM with the Windows fix. The builder confirms the stub's behaviour in Git Bash from Microsoft's documentation before writing the test.
-- `/idstack:start` Step 1 prints the OS (`uname -s`) in its bash block and has help text for macOS, Windows and Linux. Windows: the python.org installer, then a new session. Linux: the package manager of the distribution.
+- `/idstack:start` Step 1 prints the OS (`uname -s`) in its bash block and has help text for macOS, Windows and Linux. Windows: Python from the Microsoft Store, then `/idstack:start` again. The python.org installer gives no `python3` command on Windows. Linux: the package manager of the distribution.
 - Tests use fake `python3` and `uname` commands, as `test/test-doctor.sh` does now. The PR says that no run on Windows was done.
 
 ### #186 setup scope and desktop advice
@@ -122,3 +122,7 @@ Two PRs. PR 1 (`claude/tool-fixes-170-181-185-186`): #170, #181, #185, #186, don
 ## Left to the builder
 
 The words of each message (ASD-STE100), the names of the tests, and the order of the four fixes inside PR 1.
+
+## Changes after review
+
+These two points changed after independent review on 2026-11-18: the stopped status line (#181) and the Windows help text (#185). The mutation case IDs are 71a to 71f.

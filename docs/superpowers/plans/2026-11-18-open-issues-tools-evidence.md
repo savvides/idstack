@@ -17,7 +17,7 @@
 - Never edit `skills/*/SKILL.md` or `extension/shared/ste-rules.js`. Edit the `.tmpl` or `templates/preamble.md`, then run `scripts/idstack-gen-skills`.
 - Test the shipped file, never a copy. No local counter block in a bash suite; use `check` from `test/test-helper.sh`: `check "<desc>" "<cmd>" <exit> "<regex>"`.
 - Fail first: run each new test and see it fail before the fix.
-- Each fix gets a mutation case after `68l` in `test/mutation-test.sh` (IDs `69a`…; first `grep '^# 69'` to confirm they are free). Form: `shell_mutation "<desc>" <file> '<anchor text>' '<mutated text>' [suite]`. The anchor must be text found only at the mutated site. Do not run the full mutation suite; run the anchor-only check from `CLAUDE.md`.
+- Each fix gets a mutation case after `68l` in `test/mutation-test.sh` (IDs `71a`…; first `grep '^# 71'` to confirm they are free). Form: `suite_mutation "<desc>" <file> '<anchor text>' '<mutated text>' <suite>`. The anchor must be text found only at the mutated site. Do not run the full mutation suite; run the anchor-only check from `CLAUDE.md`.
 - After each task: `./test/smoke-test.sh` and `./test/integration-test.sh` exit 0 (locally, smoke-test can show one known failure: the rendered-landing test, because Chrome does not start in a background job). Update the hand-kept counts in `CLAUDE.md` and the `CLAUDE.md`/`docs/cli-reference.md` text from the real run.
 - One line for each issue below `## Unreleased` in `CHANGELOG.md`. No version bump. No number of studies in any doc.
 - Keep scratch files in the session scratchpad, never in the repo.
@@ -80,10 +80,10 @@ def test_init_keeps_a_finished_report_that_is_a_symlink(self):
 ```
 
 - [ ] **Step 2: Run** `python3 test/test-report-section.py -k init` — the six new tests FAIL; the existing init tests pass.
-- [ ] **Step 3: Implement** in `cmd_init`, before `write_atomic(args.report, …)`: if `os.path.isfile(args.report)` and no line of it equals `STATUS_LINE`, compute the backup path (Interfaces), `os.makedirs(..., exist_ok=True)`, `write_atomic(backup, text)`, and print `REPORT_KEPT: <os.path.relpath(backup)>`. An `OSError` goes to the existing `REPORT_WRITE_FAILED` handler in `main` (exit 4). Add one sentence on this to the header docstring.
+- [ ] **Step 3: Implement** in `cmd_init`, before `write_atomic(args.report, …)`: if `os.path.isfile(args.report)` and no line of it equals `STATUS_LINE` or `STOPPED_STATUS_LINE`, compute the backup path (Interfaces), `os.makedirs(..., exist_ok=True)`, `write_atomic(backup, text)`, and print `REPORT_KEPT: <os.path.relpath(backup)>`. An `OSError` goes to the existing `REPORT_WRITE_FAILED` handler in `main` (exit 4). Add one sentence on this to the header docstring.
 - [ ] **Step 4: Run** `python3 test/test-report-section.py` — all pass.
 - [ ] **Step 5: Preamble.** In `templates/preamble.md`, where the skill reads the `Report path:` line, add: if the output has a line that starts with `REPORT_KEPT:`, tell the user in one line that idstack kept the earlier report, with that path in backticks. Run `scripts/idstack-ste-check --format markdown templates/preamble.md`, then `scripts/idstack-gen-skills`.
-- [ ] **Step 6: Mutation case 69a** — anchor: the new `if` condition line in `cmd_init`; mutated: `if False:`; suite `test-report-section.py` (follow how case 68 neighbours name a python suite).
+- [ ] **Step 6: Mutation case 71a** — anchor: the new `if` condition line in `cmd_init`; mutated: `if False:`; suite `test-report-section.py` (follow how case 68 neighbours name a python suite).
 - [ ] **Step 7: Docs, counts, changelog** (`Closes #181` goes in the PR body, not here). Run smoke and integration suites.
 - [ ] **Step 8: Commit** `fix: report-section init keeps the earlier finished report (#181)`.
 
@@ -122,7 +122,7 @@ check "--quick --help prints the usage, not a code" "'$DOCTOR_CMD' --quick --hel
 - [ ] **Step 3: Run both suites** — the new checks FAIL.
 - [ ] **Step 4: Implement.** `idstack-status`: put a blank line after the header comment (move the "Readiness thresholds" comment below it so it stays with the constants), make the `Usage:` line start the synopsis, and replace the two `[ "$1" = … ]` lines with a `for arg in "$@"` `case` loop. `idstack-doctor`: add `-h|--help)` to the loop with the same `sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'`; scan for help before `--quick` acts. Update the header's exit-code lines.
 - [ ] **Step 5: Run both suites** — pass. Diff the three baseline outputs from Step 1 against new runs: no difference.
-- [ ] **Step 6: Mutation cases 69b, 69c** — one per tool; anchor: the new unknown-argument line of `idstack-status`, and the `-h|--help)` line of `idstack-doctor`.
+- [ ] **Step 6: Mutation cases 71b, 71c** — one per tool; anchor: the new unknown-argument line of `idstack-status`, and the `-h|--help)` line of `idstack-doctor`.
 - [ ] **Step 7: Docs and counts; smoke and integration suites; commit** `fix: idstack-status and idstack-doctor accept --help and refuse an unknown argument (#170)`.
 
 ### Task 3: `idstack-learnings`, `idstack-gen-skills`, `idstack-migrate` (#170, part 2)
@@ -155,7 +155,7 @@ check "migrate --help gives the INITIALIZED line" "$IDSTACK_DIR/scripts/idstack-
 - [ ] **Step 2: Run** `./test/integration-test.sh` — new checks FAIL.
 - [ ] **Step 3: Implement.** `usage()` exits 2. Top-level `case`: `-h|--help)` prints the header. `search`: `*) echo "idstack-learnings: unknown option: $1" >&2; exit 2 ;;`. `gen-skills`: synopsis `idstack-gen-skills [--dry-run] [-h|--help]`. `migrate`: two header sentences (unknown flag exits 2; with `--init`, `INITIALIZED <path>` on stderr — confirm the exact line at `scripts/idstack-migrate:~68` and quote it). Update the learnings header ("python3 missing … exits 2" now shares the code; say so).
 - [ ] **Step 4: Run** integration and smoke suites — pass. `grep -rn 'idstack-learnings' skills/*/SKILL.md.tmpl templates/` and confirm no caller passes an option outside `--limit --type --keyword --cross-project`.
-- [ ] **Step 5: Mutation case 69d** — anchor: the new `search` unknown-option line; mutated: `*) shift ;;`; suite `integration-test.sh`. Check that the edit did not break the anchors of the existing learnings cases (lines ~2197, ~2244, ~2617).
+- [ ] **Step 5: Mutation case 71d** — anchor: the new `search` unknown-option line; mutated: `*) shift ;;`; suite `integration-test.sh`. Check that the edit did not break the anchors of the existing learnings cases (lines ~2197, ~2244, ~2617).
 - [ ] **Step 6: Docs, counts, changelog; commit** `fix: idstack-learnings refuses an unknown option; --help agrees across tools (#170)`.
 
 ### Task 4: python3 help for each OS (#185)
@@ -182,9 +182,9 @@ check "the full run reports the Microsoft Store stub" "<stub PATH> '$DOCTOR_CMD'
 
   Existing checks at lines 178-186 (`PYTHON_STUB`, `PYTHON_OLD`) must still pass unchanged.
 - [ ] **Step 3: Run** `./test/test-doctor.sh` — new checks FAIL.
-- [ ] **Step 4: Implement** the `--quick` branch and the full-run PROBLEM line with a `Fix:` that names the python.org Windows installer and a new session.
-- [ ] **Step 5: Start skill.** Add `echo "OS: $(uname -s 2>/dev/null)"` to the Step 1 block. Rewrite the code list: `PYTHON_STUB` stays macOS-only; add `PYTHON_WINSTUB`; `PYTHON_MISSING`/`PYTHON_OLD` choose the text by the `OS:` line. Windows text: get the Windows installer from https://www.python.org/downloads/, open it, set "Add python.exe to PATH", then start a new session. Linux text: install python3 with the package manager of the distribution, then start a new session. Run `idstack-ste-check --format markdown` on the template, then `scripts/idstack-gen-skills`. Run `./test/test-skill-shell-zsh.sh`.
-- [ ] **Step 6: Mutation case 69e** — anchor: the `WindowsApps` test line; mutated to a condition that is never true; suite `test-doctor.sh`.
+- [ ] **Step 4: Implement** the `--quick` branch and the full-run PROBLEM line. The `Fix:` names Python from the Microsoft Store and says to run the doctor again.
+- [ ] **Step 5: Start skill.** Add `echo "OS: $(uname -s 2>/dev/null)"` to the Step 1 block. Rewrite the code list: `PYTHON_STUB` stays macOS-only; add `PYTHON_WINSTUB`; `PYTHON_MISSING`/`PYTHON_OLD` choose the text by the `OS:` line. Windows text: install Python from the Microsoft Store (publisher Python Software Foundation), then type `/idstack:start` again. Linux text: install python3 with the package manager of the distribution, then start a new session. Run `idstack-ste-check --format markdown` on the template, then `scripts/idstack-gen-skills`. Run `./test/test-skill-shell-zsh.sh`.
+- [ ] **Step 6: Mutation case 71e** — anchor: the `WindowsApps` test line; mutated to a condition that is never true; suite `test-doctor.sh`.
 - [ ] **Step 7: Docs, counts, changelog (say plainly: checked with fake commands, not on Windows; #136 stays open). Smoke and integration suites. Commit** `fix: python3 help depends on the OS; the doctor finds the Microsoft Store stub (#185)`.
 
 ### Task 5: `./setup --local` scope and desktop advice (#186) — coordinator
@@ -201,9 +201,9 @@ check "in the plugin cache, the fix gives the GitHub marketplace" "'$CACHE_DOCTO
 check "in the plugin cache, the fix does not give the cache path" "'$CACHE_DOCTOR' | grep -c 'marketplace add \"/'" 1 "^0$"
 ```
 
-- [ ] **Step 3: Run — FAIL. Implement** the branch in the doctor on `case "$IDSTACK_DIR" in */.claude/plugins/cache/*)`. **Run — PASS.**
+- [ ] **Step 3: Run — FAIL. Implement** the branch in the doctor on `case "$IDSTACK_DIR" in */plugins/cache/*)`. **Run — PASS.**
 - [ ] **Step 4: README.** Project-scoped install: state what Step 1 found. If the scope follows the current folder, give `cd <course folder>` then `/path/to/idstack/setup --local`. Troubleshooting (line ~588): keep the doctor line for a user with a clone; add the two commands for a desktop user with no clone (`claude plugin marketplace add https://github.com/savvides/idstack.git`, `claude plugin install idstack@idstack`). Run `python3 test/check-doc-accuracy.py .`.
-- [ ] **Step 5: Mutation case 69f; docs, counts, changelog; suites; commit** `fix: install advice for a project scope and for a desktop user with no clone (#186)`.
+- [ ] **Step 5: Mutation case 71f; docs, counts, changelog; suites; commit** `fix: install advice for a project scope and for a desktop user with no clone (#186)`.
 - [ ] **Step 6: Finish PR 1.** Anchor-only mutation check (recipe in `CLAUDE.md`). `git status` clean of scratch files. Independent review (`reasoning-worker`: give it the diff and the spec; ask for architectural drift, helpers nobody asked for, spec violations). Push; `gh pr create` with `Closes #170`, `Closes #181`, `Closes #185`, `Closes #186`; watch CI.
 
 ### Task 6: Assessment-12 and Online-2 (#140) — coordinator, PR 2 from `main`

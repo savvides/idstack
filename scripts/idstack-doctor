@@ -20,6 +20,11 @@ set -u
 # its own location so the diagnosis works regardless of where the repo sits.
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 
+# In the Claude Code plugin cache there is no clone and no ./setup, and the cache
+# is not a marketplace source (#186).
+IN_PLUGIN_CACHE=0
+case "$IDSTACK_DIR" in */plugins/cache/*) IN_PLUGIN_CACHE=1 ;; esac
+
 # `claude plugin list` parsing (pinned by test/test-plugin-status.sh).
 . "$IDSTACK_DIR/scripts/lib/plugin-status.sh"
 
@@ -125,7 +130,12 @@ if [ -f "$market_manifest" ]; then
 else
   echo "  PROBLEM: missing $market_manifest"
   echo "  Claude Code installs plugins through a marketplace manifest."
-  echo "  Without this file, ./setup cannot install the plugin."
+  if [ "$IN_PLUGIN_CACHE" = 1 ]; then
+    echo "  Without this file, the install is not complete."
+    echo "  Install idstack again with the commands in the README."
+  else
+    echo "  Without this file, ./setup cannot install the plugin."
+  fi
   note_problem
 fi
 echo ""
@@ -165,22 +175,24 @@ if command -v claude >/dev/null 2>&1; then
     fi
   else
     echo "  PROBLEM: idstack@idstack is not installed."
-    # In the Claude Code plugin cache there is no clone and no ./setup, and the
-    # cache is not a marketplace source: give the GitHub marketplace (#186).
-    case "$IDSTACK_DIR" in
-      */plugins/cache/*)
-        echo "  Fix: install idstack from GitHub with these two commands:"
-        echo "    claude plugin marketplace add https://github.com/savvides/idstack.git" ;;
-      *)
-        echo "  Fix: run ./setup from the repo. You can also install idstack manually:"
-        echo "    claude plugin marketplace add \"$IDSTACK_DIR\"" ;;
-    esac
+    if [ "$IN_PLUGIN_CACHE" = 1 ]; then
+      echo "  Fix: install idstack from GitHub with these two commands:"
+      echo "    claude plugin marketplace add https://github.com/savvides/idstack.git"
+    else
+      echo "  Fix: run ./setup from the repo. You can also install idstack manually:"
+      echo "    claude plugin marketplace add \"$IDSTACK_DIR\""
+    fi
     echo "    claude plugin install idstack@idstack"
     note_problem
   fi
 else
   echo "  WARNING: 'claude' not found on PATH. Doctor cannot examine the Claude Code install."
-  echo "           Install Claude Code. Then run ./setup from the repo."
+  if [ "$IN_PLUGIN_CACHE" = 1 ]; then
+    echo "           Install Claude Code. Then install idstack again from the Claude desktop app."
+    echo "           You can also run idstack-doctor again. It prints the install commands."
+  else
+    echo "           Install Claude Code. Then run ./setup from the repo."
+  fi
 fi
 echo ""
 
