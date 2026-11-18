@@ -183,6 +183,19 @@ class ReportSectionTest(unittest.TestCase):
         self.assertEqual(self.read('loose/prev-reports/needs-analysis.md'), '# An earlier report\n')
         self.assertIn('REPORT_KEPT: loose/prev-reports/needs-analysis.md', result.stdout)
 
+    def test_init_after_a_stopped_run_leaves_the_earlier_backup(self):
+        # Run A finishes and init keeps it. Run B stops and ends with finish --stopped.
+        self.finish_report()
+        finished_a = self.read(REPORT)
+        self.init()
+        self.append(CLOSING)
+        self.run_helper('approve', REPORT)
+        result = self.run_helper('finish', REPORT, '--stopped')
+        self.assertEqual(result.returncode, 0, result.stdout)
+        result = self.init()
+        self.assertNotIn('REPORT_KEPT', result.stdout)
+        self.assertEqual(self.read(PREV), finished_a)
+
     # check ----------------------------------------------------------------
 
     def test_check_accepts_a_valid_draft(self):
@@ -439,6 +452,33 @@ class ReportSectionTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn('"Summary" has no text', result.stdout)
         self.assertNotIn('"Score breakdown" has no text', result.stdout)
+
+    def stopped_report(self):
+        self.init()
+        self.append(CLOSING)
+        self.run_helper('approve', REPORT)
+        result = self.run_helper('finish', REPORT, '--stopped')
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_finish_stopped_puts_a_stopped_status_line_where_the_status_line_was(self):
+        self.stopped_report()
+        text = self.read(REPORT)
+        self.assertEqual(text.count('**Status:** stopped.'), 1)
+        self.assertNotIn('**Status:** in progress', text)
+        self.assertLess(text.index('# Needs Analysis Report'), text.index('**Status:** stopped.'))
+        self.assertLess(text.index('**Status:** stopped.'), text.index('## Summary'))
+
+    def test_finish_stopped_again_keeps_one_stopped_status_line(self):
+        self.stopped_report()
+        result = self.run_helper('finish', REPORT, '--stopped')
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(self.read(REPORT).count('**Status:**'), 1)
+
+    def test_finish_after_a_stopped_finish_removes_the_stopped_status_line(self):
+        self.stopped_report()
+        result = self.run_helper('finish', REPORT)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn('**Status:**', self.read(REPORT))
 
     def test_finish_refuses_a_draft_section(self):
         # Only the draft is wrong here: the Summary has text and is approved.

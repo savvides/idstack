@@ -31,7 +31,7 @@ scripts/idstack-report-section check <draft>   # Check a draft section: table sh
 scripts/idstack-report-section append <report> <draft>   # Check, then add the section to the report as a draft (atomic)
 scripts/idstack-report-section approve <report> [--draft <f>]  # Remove each draft mark; print SECTION_APPROVED: <heading>; delete the draft
 scripts/idstack-report-section finish <report> # Fail on a placeholder or a draft that remains; remove the status line.
-                                           # --stopped (skill stopped early) fills each empty reserved section
+                                           # --stopped (skill stopped early) leaves a stopped status line and fills each empty reserved section
 scripts/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 scripts/idstack-timeline-log '<json>'          # Append one event to .idstack/timeline.jsonl (adds "ts"; never fails the skill)
 scripts/idstack-learnings log|search|delete|promote   # Project learnings in .idstack/learnings.jsonl; promote copies to ~/.idstack/global/
@@ -62,7 +62,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # scripts/idstack-ste-check unit tests (smoke-test also runs them)
-python3 test/test-report-section.py     # 48 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
+python3 test/test-report-section.py     # 52 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md: titles, data-tiers,
                                        # the aria-label shares and tier ranges. Fails on a card that shows a number of studies
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier

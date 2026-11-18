@@ -2693,7 +2693,7 @@ shell_mutation "course-import does not pass --expect-updated to the merge" \
 
 # 71a. init stops keeping a finished report (#181) -> test-report-section must fail.
 suite_mutation "report init does not keep a finished report" \
-  scripts/idstack-report-section "if not any(line.strip() == STATUS_LINE for line in earlier.split('\\n')):" 'if False:' test-report-section.py
+  scripts/idstack-report-section "if not any(line.strip() in (STATUS_LINE, STOPPED_STATUS_LINE) for line in earlier.split('\\n')):" 'if False:' test-report-section.py
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

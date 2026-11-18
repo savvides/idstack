@@ -12,8 +12,9 @@ Usage:
 init    writes the report header, an in-progress status line, a Summary
         placeholder, one placeholder for each --reserve heading, and the footer.
         It replaces a report from an earlier run. Before it does, it copies a
-        finished report (one with no status line) to
-        .idstack/prev-reports/<course-slug>/ and prints REPORT_KEPT: <path>.
+        finished report (one with no in-progress status line and no stopped
+        status line) to .idstack/prev-reports/<course-slug>/ and prints
+        REPORT_KEPT: <path>.
 check   examines a draft section (the Step Review in templates/preamble.md):
         each "## " section other than Summary, Limitations and Next steps has
         a table, the first column is ID, a cited table ends with Justification
@@ -29,9 +30,11 @@ append  runs check, then puts each section of the draft in the report, marked as
 approve removes the draft mark from each section that has one. With --draft,
         it also deletes the draft file.
 finish  makes sure that no placeholder and no draft section remain, and removes
-        the status line. With --stopped (the skill stopped early), each reserved
-        section that still has its placeholder gets STOPPED_TEXT. The Summary
-        placeholder is not changed: the last Step Review writes the Summary.
+        the status line. With --stopped (the skill stopped early), it puts the
+        stopped status line in its place, so that init does not take the report
+        for a finished one. Each reserved section that still has its placeholder
+        gets STOPPED_TEXT. The Summary placeholder is not changed: the last Step
+        Review writes the Summary.
 
 Exit codes: 0 OK; 1 problems (the report did not change); 2 an error in the
 command, or a missing file that the script needs; 3 the report does not exist;
@@ -58,6 +61,7 @@ STE_CHECK = os.path.join(HERE, 'idstack-ste-check')
 VERSION_FILE = os.path.join(HERE, '..', 'VERSION')
 
 STATUS_LINE = '**Status:** in progress. A section with a draft mark waits for your approval.'
+STOPPED_STATUS_LINE = '**Status:** stopped. The skill stopped before the end of the report.'
 DRAFT_LINE = '**Draft:** this section waits for your approval.'
 PLACEHOLDER = '_idstack writes this section at the end of the skill._'
 STOPPED_TEXT = 'idstack did not write this section because the skill stopped.'
@@ -359,7 +363,7 @@ def cmd_init(args):
     if os.path.isfile(args.report):
         with open(args.report, encoding='utf-8') as handle:
             earlier = handle.read()
-        if not any(line.strip() == STATUS_LINE for line in earlier.split('\n')):
+        if not any(line.strip() in (STATUS_LINE, STOPPED_STATUS_LINE) for line in earlier.split('\n')):
             exports = os.path.dirname(folder)
             if os.path.basename(exports) == 'exports':
                 keep = os.path.join(os.path.dirname(exports), 'prev-reports', os.path.basename(folder))
@@ -434,7 +438,12 @@ def cmd_finish(report, stopped=False):
         print('%s: the section "%s" is a draft. Ask the user to approve it.' % (report, heading))
     if empty or drafts:
         return 1
+    first = next((i for i, line in enumerate(lines)
+                  if line.strip() in (STATUS_LINE, STOPPED_STATUS_LINE)), None)
     out, _ = drop_marks(lines, STATUS_LINE)
+    out, _ = drop_marks(out, STOPPED_STATUS_LINE)
+    if stopped and first is not None:
+        out[first:first] = [STOPPED_STATUS_LINE, '']
     write_atomic(report, '\n'.join(out))
     print('REPORT_COMPLETE: %s' % report)
     return 0
