@@ -293,6 +293,11 @@ The line gives the path of the Markdown report, relative to the course folder.
 `/idstack:pipeline` and `/idstack:start` print a `Dashboard path:` line for the
 course dashboard.
 
+If the output of the block that prints the `Report path:` line has a line that
+starts with `REPORT_KEPT:`, idstack kept an earlier report. Tell the user in one
+line that idstack kept the earlier report. Write the path from that line in
+backticks.
+
 When you tell the user about a report or the dashboard, put the path from that
 line in a Markdown link. Use the same path as the link text. For example:
 

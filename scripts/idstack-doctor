@@ -7,16 +7,23 @@
 # Usage:
 #   idstack-doctor           full diagnosis
 #   idstack-doctor --quick   one code for /idstack:start: OK, PYTHON_MISSING,
-#                            PYTHON_OLD or PYTHON_STUB
+#                            PYTHON_OLD, PYTHON_STUB (macOS) or PYTHON_WINSTUB
+#                            (Windows)
+#   idstack-doctor --help    this text (-h is the same)
 #
-# Exit code: 0 if all green (--quick: OK), 1 if any problem is detected,
-# 2 for an unknown argument.
+# Exit code: 0 if all green (--quick: OK) or for --help, 1 if any problem is
+# detected, 2 for an unknown argument.
 
 set -u
 
 # This script lives at <repo>/scripts/idstack-doctor — resolve the repo root from
 # its own location so the diagnosis works regardless of where the repo sits.
 IDSTACK_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
+
+# In the Claude Code plugin cache there is no clone and no ./setup, and the cache
+# is not a marketplace source (#186).
+IN_PLUGIN_CACHE=0
+case "$IDSTACK_DIR" in */plugins/cache/*) IN_PLUGIN_CACHE=1 ;; esac
 
 # `claude plugin list` parsing (pinned by test/test-plugin-status.sh).
 . "$IDSTACK_DIR/scripts/lib/plugin-status.sh"
@@ -29,12 +36,29 @@ assessment-design course-builder course-export accessibility-review red-team \
 pipeline learn start quick-check storyboard question-bank evaluation-plan"
 
 QUICK=0
+BAD_ARG=""
 for arg in "$@"; do
   case "$arg" in
     --quick) QUICK=1 ;;
-    *) echo "ERROR: unknown argument: $arg" >&2; echo "Command: idstack-doctor [--quick]" >&2; exit 2 ;;
+    -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) [ -n "$BAD_ARG" ] || BAD_ARG="$arg" ;;
   esac
 done
+if [ -n "$BAD_ARG" ]; then
+  echo "ERROR: unknown argument: $BAD_ARG" >&2
+  echo "Command: idstack-doctor [--quick] [-h | --help]" >&2
+  exit 2
+fi
+
+# On Windows, python3 can be a shortcut that opens the Microsoft Store. It is in
+# a WindowsApps folder. A real Store install of Python is in that folder too, so
+# call this only after python3 has failed the version test.
+python3_is_in_windowsapps() {
+  case "$(command -v python3 2>/dev/null)" in
+    */WindowsApps/*|*\\WindowsApps\\*) return 0 ;;
+  esac
+  return 1
+}
 
 # --quick: the one python3 code that /idstack:start reads. A working python3
 # comes first: a python.org install on a Mac has no Command Line Tools, and
@@ -47,6 +71,8 @@ if [ "$QUICK" = "1" ]; then
   fi
   if ! command -v python3 >/dev/null 2>&1; then
     echo "PYTHON_MISSING"
+  elif python3_is_in_windowsapps; then
+    echo "PYTHON_WINSTUB"
   elif [ "$(uname -s 2>/dev/null)" = "Darwin" ] && ! xcode-select -p >/dev/null 2>&1; then
     echo "PYTHON_STUB"
   else
@@ -65,6 +91,11 @@ echo ""
 echo "Requirements:"
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; then
   echo "  found python3 $(python3 -c 'import platform; print(platform.python_version())')"
+elif python3_is_in_windowsapps; then
+  echo "  PROBLEM: python3 is the Windows shortcut that opens the Microsoft Store. It is not Python."
+  echo "  Fix: open the Microsoft Store app. Find \"Python\" from the publisher \"Python Software Foundation\"."
+  echo "       Install the newest version. Then run idstack-doctor again."
+  note_problem
 else
   echo "  PROBLEM: idstack needs python3 3.9 or a later version. Install it, then run idstack-doctor again."
   note_problem
@@ -99,7 +130,12 @@ if [ -f "$market_manifest" ]; then
 else
   echo "  PROBLEM: missing $market_manifest"
   echo "  Claude Code installs plugins through a marketplace manifest."
-  echo "  Without this file, ./setup cannot install the plugin."
+  if [ "$IN_PLUGIN_CACHE" = 1 ]; then
+    echo "  Without this file, the install is not complete."
+    echo "  Install idstack again with the commands in the README."
+  else
+    echo "  Without this file, ./setup cannot install the plugin."
+  fi
   note_problem
 fi
 echo ""
@@ -139,14 +175,24 @@ if command -v claude >/dev/null 2>&1; then
     fi
   else
     echo "  PROBLEM: idstack@idstack is not installed."
-    echo "  Fix: run ./setup from the repo. You can also install idstack manually:"
-    echo "    claude plugin marketplace add \"$IDSTACK_DIR\""
+    if [ "$IN_PLUGIN_CACHE" = 1 ]; then
+      echo "  Fix: install idstack from GitHub with these two commands:"
+      echo "    claude plugin marketplace add https://github.com/savvides/idstack.git"
+    else
+      echo "  Fix: run ./setup from the repo. You can also install idstack manually:"
+      echo "    claude plugin marketplace add \"$IDSTACK_DIR\""
+    fi
     echo "    claude plugin install idstack@idstack"
     note_problem
   fi
 else
   echo "  WARNING: 'claude' not found on PATH. Doctor cannot examine the Claude Code install."
-  echo "           Install Claude Code. Then run ./setup from the repo."
+  if [ "$IN_PLUGIN_CACHE" = 1 ]; then
+    echo "           Install Claude Code. Then install idstack again from the Claude desktop app."
+    echo "           You can also run idstack-doctor again. It prints the install commands."
+  else
+    echo "           Install Claude Code. Then run ./setup from the repo."
+  fi
 fi
 echo ""
 

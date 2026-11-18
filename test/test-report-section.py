@@ -16,6 +16,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 HELPER = os.path.join(REPO_ROOT, 'scripts', 'idstack-report-section')
 REPORT = '.idstack/exports/bio-101/needs-analysis.md'
 DRAFT = '.idstack/.report-section.needs-analysis.md'
+PREV = '.idstack/prev-reports/bio-101/needs-analysis.md'
 
 TASKS = """## Task analysis
 
@@ -82,6 +83,15 @@ class ReportSectionTest(unittest.TestCase):
         self.write(DRAFT, text)
         return self.run_helper('check', DRAFT)
 
+    def finish_report(self, tasks=TASKS):
+        self.init()
+        self.append(tasks)
+        self.run_helper('approve', REPORT)
+        self.append(CLOSING)
+        self.run_helper('approve', REPORT)
+        result = self.run_helper('finish', REPORT)
+        self.assertEqual(result.returncode, 0, result.stdout)
+
     # init -----------------------------------------------------------------
 
     def test_init_writes_header_status_placeholders_and_footer(self):
@@ -108,6 +118,83 @@ class ReportSectionTest(unittest.TestCase):
         self.append(TASKS)
         self.init()
         self.assertNotIn('Task analysis', self.read(REPORT))
+
+    def test_init_keeps_a_finished_report(self):
+        self.finish_report()
+        before = self.read(REPORT)
+        result = self.init()
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(self.read(PREV), before)
+        self.assertIn('REPORT_KEPT: ' + PREV, result.stdout)
+        self.assertLess(result.stdout.index('REPORT_KEPT'), result.stdout.index('REPORT_STARTED'))
+
+    def test_init_does_not_keep_a_report_in_progress(self):
+        self.init()
+        self.append(TASKS)
+        result = self.init()
+        self.assertFalse(os.path.exists(self.path(PREV)))
+        self.assertNotIn('REPORT_KEPT', result.stdout)
+
+    def test_init_in_progress_run_leaves_the_earlier_backup(self):
+        self.finish_report()
+        finished_a = self.read(REPORT)
+        self.init()
+        self.init()
+        self.assertEqual(self.read(PREV), finished_a)
+
+    def test_init_second_finished_report_replaces_the_backup(self):
+        self.finish_report()
+        finished_a = self.read(REPORT)
+        self.init()
+        self.finish_report(TASKS.replace('Write a lab report', 'Write a field note'))
+        finished_b = self.read(REPORT)
+        self.assertNotEqual(finished_b, finished_a)
+        self.init()
+        self.assertEqual(self.read(PREV), finished_b)
+
+    def test_init_backup_failure_leaves_the_report(self):
+        self.finish_report()
+        before = self.read(REPORT)
+        self.write('.idstack/prev-reports', 'not a folder\n')
+        result = self.run_helper('init', REPORT, '--skill', 'needs-analysis',
+                                 '--title', 'Needs Analysis Report')
+        self.assertEqual(result.returncode, 4)
+        self.assertIn('REPORT_WRITE_FAILED', result.stdout)
+        self.assertEqual(self.read(REPORT), before)
+
+    def test_init_keeps_a_finished_report_that_is_a_symlink(self):
+        self.finish_report()
+        before = self.read(REPORT)
+        os.makedirs(self.path('.idstack/elsewhere'))
+        os.rename(self.path(REPORT), self.path('.idstack/elsewhere/needs-analysis.md'))
+        os.symlink(self.path('.idstack/elsewhere/needs-analysis.md'), self.path(REPORT))
+        self.init()
+        self.assertEqual(self.read(PREV), before)
+        self.assertFalse(os.path.islink(self.path(PREV)))
+        self.assertTrue(os.path.islink(self.path(REPORT)))
+        self.assertIn('**Status:** in progress', self.read(REPORT))
+
+    def test_init_keeps_a_report_outside_an_exports_folder_beside_it(self):
+        os.makedirs(self.path('loose'))
+        self.write('loose/needs-analysis.md', '# An earlier report\n')
+        result = self.run_helper('init', 'loose/needs-analysis.md', '--skill', 'needs-analysis',
+                                 '--title', 'Needs Analysis Report')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.read('loose/prev-reports/needs-analysis.md'), '# An earlier report\n')
+        self.assertIn('REPORT_KEPT: loose/prev-reports/needs-analysis.md', result.stdout)
+
+    def test_init_after_a_stopped_run_leaves_the_earlier_backup(self):
+        # Run A finishes and init keeps it. Run B stops and ends with finish --stopped.
+        self.finish_report()
+        finished_a = self.read(REPORT)
+        self.init()
+        self.append(CLOSING)
+        self.run_helper('approve', REPORT)
+        result = self.run_helper('finish', REPORT, '--stopped')
+        self.assertEqual(result.returncode, 0, result.stdout)
+        result = self.init()
+        self.assertNotIn('REPORT_KEPT', result.stdout)
+        self.assertEqual(self.read(PREV), finished_a)
 
     # check ----------------------------------------------------------------
 
@@ -365,6 +452,33 @@ class ReportSectionTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn('"Summary" has no text', result.stdout)
         self.assertNotIn('"Score breakdown" has no text', result.stdout)
+
+    def stopped_report(self):
+        self.init()
+        self.append(CLOSING)
+        self.run_helper('approve', REPORT)
+        result = self.run_helper('finish', REPORT, '--stopped')
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_finish_stopped_puts_a_stopped_status_line_where_the_status_line_was(self):
+        self.stopped_report()
+        text = self.read(REPORT)
+        self.assertEqual(text.count('**Status:** stopped.'), 1)
+        self.assertNotIn('**Status:** in progress', text)
+        self.assertLess(text.index('# Needs Analysis Report'), text.index('**Status:** stopped.'))
+        self.assertLess(text.index('**Status:** stopped.'), text.index('## Summary'))
+
+    def test_finish_stopped_again_keeps_one_stopped_status_line(self):
+        self.stopped_report()
+        result = self.run_helper('finish', REPORT, '--stopped')
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(self.read(REPORT).count('**Status:**'), 1)
+
+    def test_finish_after_a_stopped_finish_removes_the_stopped_status_line(self):
+        self.stopped_report()
+        result = self.run_helper('finish', REPORT)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn('**Status:**', self.read(REPORT))
 
     def test_finish_refuses_a_draft_section(self):
         # Only the draft is wrong here: the Summary has text and is approved.

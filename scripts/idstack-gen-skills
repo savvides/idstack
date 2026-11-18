@@ -2,7 +2,7 @@
 # Make the Claude Code SKILL.md files from their .tmpl templates.
 #
 # Usage:
-#   idstack-gen-skills [--dry-run]
+#   idstack-gen-skills [--dry-run] [-h|--help]
 #
 # The script writes skills/<name>/SKILL.md. The Claude Code plugin loader reads
 # this layout.

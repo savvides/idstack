@@ -12,9 +12,12 @@
 # script makes nothing and exits 9.
 # If it cannot write the manifest, it writes nothing to stdout, does not
 # change the manifest and exits 1.
+# If you give a flag that it does not know, the script writes
+# "idstack-migrate: unknown flag: <flag>" to stderr and exits 2.
+# If --init makes a manifest, the script writes "INITIALIZED <path>" to stderr.
 #
 # Usage:
-#   idstack-migrate [--init] [path]
+#   idstack-migrate [--init] [-h|--help] [path]
 #
 #   --init   If there is no manifest, make a manifest that has each top-level
 #            section. If there is a manifest, migrate it.

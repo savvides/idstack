@@ -34,7 +34,7 @@ Requirements: bash and python3 3.9 or later. `package-extension.sh` also needs `
 | Option | Effect |
 |--------|--------|
 | (none) | Installs at user scope (`--scope user`). |
-| `--local` | Installs at project scope (`--scope project`). |
+| `--local` | Installs at project scope (`--scope project`). Claude Code writes this scope to `.claude/settings.json` in the current folder, so run `<your idstack clone>/setup --local` from the course folder. |
 | `-h`, `--help` | Prints the usage and exits 0. |
 
 The steps, in sequence:
@@ -65,30 +65,33 @@ Command: ./setup [--local]
 `idstack-doctor` examines python3, the plugin manifests, the skill files and the Claude Code install.
 
 ```bash
-scripts/idstack-doctor [--quick]
+scripts/idstack-doctor [--quick] [-h | --help]
 ```
 
 | Option | Effect |
 |--------|--------|
 | (none) | Full diagnosis. The last line is `OK` or `BROKEN (<n> problem group(s) above)`. |
-| `--quick` | Prints one code and nothing more: `OK`, `PYTHON_MISSING`, `PYTHON_OLD` or `PYTHON_STUB`. |
+| `--quick` | Prints one code and nothing more: `OK`, `PYTHON_MISSING`, `PYTHON_OLD`, `PYTHON_STUB` or `PYTHON_WINSTUB`. |
+| `-h`, `--help` | Prints the header comment and exits 0. It runs no check, so it also works without python3. It wins over `--quick` and over an unknown argument. |
 
-There is no `--help`. Any other argument exits 2.
+Any other argument prints `ERROR: unknown argument: <argument>` and a `Command:` line on stderr, and exits 2.
 
 The full diagnosis has four groups. Each `PROBLEM` line adds one to the count.
 
 | Group | PROBLEM when |
 |-------|--------------|
-| Requirements | python3 is missing or older than 3.9 |
+| Requirements | python3 is missing or older than 3.9, or python3 is the Windows shortcut for the Microsoft Store |
 | Plugin manifests | `plugin.json` is missing or has no version that can be read, or `marketplace.json` is missing |
 | Skill files | One of the 16 `skills/<name>/SKILL.md` files is missing |
 | Claude Code install | `claude plugin list` has no `idstack@idstack`, or its entry is not enabled |
 
-If `claude` is not on `PATH`, the last group prints a WARNING and does not add a problem. If python3 is on `PATH` but fails the check, `--quick` prints `PYTHON_STUB` on macOS when `xcode-select -p` fails. In other cases it prints `PYTHON_OLD`.
+If `claude` is not on `PATH`, the last group prints a WARNING and does not add a problem. If python3 is on `PATH` but fails the check, `--quick` prints `PYTHON_WINSTUB` when the path of python3 has a `WindowsApps` folder. This is the Windows shortcut that opens the Microsoft Store. A python3 in that folder that passes the check gives `OK`. In other cases it prints `PYTHON_STUB` on macOS when `xcode-select -p` fails. In all other cases it prints `PYTHON_OLD`.
+
+When idstack is not installed, the doctor prints the two commands that install it. The marketplace in the first command is the clone. If the doctor runs from the Claude Code plugin cache (its path has `/plugins/cache/`), there is no clone and no `./setup`. Then the marketplace is `https://github.com/savvides/idstack.git`. In the cache, the PROBLEM for a missing `marketplace.json` and the WARNING for a missing `claude` command also say to install idstack again. In a clone, they say to run `./setup`.
 
 | Exit | Meaning |
 |------|---------|
-| 0 | No problems (`--quick`: `OK`) |
+| 0 | No problems (`--quick`: `OK`), or `--help` |
 | 1 | One or more problems (`--quick`: a code other than `OK`) |
 | 2 | An unknown argument |
 
@@ -113,7 +116,7 @@ OK
 `idstack-gen-skills` writes each `skills/<name>/SKILL.md` from its `SKILL.md.tmpl`, and writes `extension/shared/ste-rules.js` from the preamble.
 
 ```bash
-scripts/idstack-gen-skills [--dry-run]
+scripts/idstack-gen-skills [--dry-run] [-h | --help]
 ```
 
 | Option | Effect |
@@ -126,7 +129,7 @@ The script replaces `{{PREAMBLE}}`, `{{MANIFEST_SCHEMA}}` and `{{IDSTACK_RESOLVE
 
 | Exit | Meaning |
 |------|---------|
-| 0 | All files written, or all files up to date (`--dry-run`) |
+| 0 | All files written, or all files up to date (`--dry-run`), or `--help` |
 | 1 | A template has no `{{PREAMBLE}}`, or a file is stale or missing (`--dry-run`). Also: no `.tmpl` file, a missing source file, or no text between the `ste-core` markers. |
 | 2 | An unknown argument |
 
@@ -146,7 +149,7 @@ The script examined 16 templates. 0 have problems.
 `idstack-status` prints the course health dashboard for the course folder.
 
 ```bash
-scripts/idstack-status [--readiness | --context]
+scripts/idstack-status [--readiness | --context | -h | --help]
 ```
 
 | Option | Output |
@@ -154,8 +157,9 @@ scripts/idstack-status [--readiness | --context]
 | (none) | The dashboard: project name, skills completed, quality trend, presence scores, next skill, learnings count, reports, then the readiness table if a manifest exists |
 | `--readiness` | The readiness table only |
 | `--context` | The lines that the preamble's Context Recovery reads (see the next table) |
+| `-h`, `--help` | Prints the header comment and exits 0. It runs before the python3 check, so it also works without python3. It wins over `--readiness`, `--context` and an unknown argument. |
 
-The script reads only the first argument. It ignores other arguments, so `--help` prints the dashboard.
+Any other argument prints `ERROR: unknown argument: <argument>` and a `Command:` line on stderr, and exits 2. It prints nothing on stdout.
 
 | `--context` line | Content |
 |------------------|---------|
@@ -182,8 +186,8 @@ The dashboard and the readiness table read all of the lines of the timeline. Wit
 
 | Exit | Meaning |
 |------|---------|
-| 0 | Output printed |
-| 2 | python3 is missing |
+| 0 | Output printed, or `--help` |
+| 2 | python3 is missing, or an unknown argument |
 
 Files: reads `.idstack/timeline.jsonl`, `.idstack/learnings.jsonl` and `.idstack/project.json`. Lists the `.md` files, `course-export.imscc` and `scorm-export.zip` in `.idstack/exports/<course-slug>/`. It gets the slug from `idstack-slugify --from-manifest`. If that folder is missing and `.idstack/exports/` has only one subfolder, it uses that subfolder. A report that still has the `init` status line shows `(in progress)`. Writes nothing.
 
@@ -214,7 +218,7 @@ $ scripts/idstack-status --readiness
 `idstack-migrate` updates `.idstack/project.json` to schema version 1.4 and prints the manifest.
 
 ```bash
-scripts/idstack-migrate [--init] [path]
+scripts/idstack-migrate [--init] [-h | --help] [path]
 ```
 
 | Option | Effect |
@@ -244,9 +248,9 @@ The write is atomic: a tempfile in the folder of the real file, then a rename. A
 
 | Exit | Meaning |
 |------|---------|
-| 0 | Done, or nothing to do |
+| 0 | Done, nothing to do, or `--help` |
 | 1 | The script cannot write the manifest. stdout is empty and the manifest does not change. |
-| 2 | An unknown flag |
+| 2 | An unknown flag. stderr gets `idstack-migrate: unknown flag: <flag>`. |
 | 3 | python3 is missing |
 | 9 | `--init` in the home folder. Nothing is made. |
 
@@ -358,15 +362,17 @@ scripts/idstack-report-section finish <report> [--stopped]
 
 | Subcommand | Effect | stdout on success |
 |------------|--------|-------------------|
-| `init` | Writes the title, the meta line, the status line, a Summary placeholder, one placeholder for each `--reserve` heading and the footer. Replaces an earlier report. | `REPORT_STARTED: <report>` |
+| `init` | Writes the title, the meta line, the status line, a Summary placeholder, one placeholder for each `--reserve` heading and the footer. Replaces an earlier report. First, it copies a finished earlier report (one with neither the in-progress status line nor the stopped status line) to `.idstack/prev-reports/<course-slug>/<file>`. A report in progress is replaced with no copy. | `REPORT_KEPT: <copy>` (only when it kept a report), then `REPORT_STARTED: <report>` |
 | `check` | Examines a draft (see the next table). Writes nothing. | `CHECK_OK` |
 | `append` | Runs `check`, then adds each draft section with a draft mark. A section with the same heading is replaced in place. A new section goes before the footer. | `SECTION_ADDED:` or `SECTION_REPLACED:` for each section, then `Report path: <report>` |
 | `approve` | Removes each draft mark. `--draft` also deletes the draft file. | `SECTION_APPROVED: <heading>` for each section |
-| `finish` | Fails on a placeholder or a draft mark that remains. Then removes the status line. | `REPORT_COMPLETE: <report>` |
+| `finish` | Fails on a placeholder or a draft mark that remains. Then removes the status line. With `--stopped`, it writes the stopped status line in its place. | `REPORT_COMPLETE: <report>` |
 
 `init` options: `--skill` and `--title` are necessary. `--project` is the course name in the meta line. Without it, `init` reads `project_name` from `.idstack/project.json`, or uses `Untitled course`. `--mode` adds `mode: <mode>`. `--run-id` sets the run ID. The default is six random hex characters.
 
-`finish --stopped` puts `idstack did not write this section because the skill stopped.` in each reserved section that has its placeholder. The Summary placeholder does not change, so the Summary must have text.
+The copy goes to `.idstack/prev-reports/<course-slug>/`, where `<course-slug>` is the name of the report's folder in `.idstack/exports/`. A report that is not in an `exports/<course-slug>/` folder gets its copy in a `prev-reports/` folder beside it. The path in `REPORT_KEPT:` is relative to the current folder. A second finished report replaces the copy of the first. `init` does not keep a report that a stopped skill finished, because its stopped status line shows that the report is not complete. If `init` cannot write the copy, it exits 4 and the report does not change.
+
+`finish --stopped` puts `idstack did not write this section because the skill stopped.` in each reserved section that has its placeholder. The Summary placeholder does not change, so the Summary must have text. It also puts `**Status:** stopped. The skill stopped before the end of the report.` where the status line was. A second `finish --stopped` keeps one such line, and `finish` with no `--stopped` removes it.
 
 `check` refuses a draft for these problems:
 
@@ -488,7 +494,10 @@ scripts/idstack-learnings log '<json>'
 scripts/idstack-learnings search [--limit N] [--type T] [--keyword K] [--cross-project]
 scripts/idstack-learnings delete <key>
 scripts/idstack-learnings promote <key>
+scripts/idstack-learnings -h | --help
 ```
+
+`-h` or `--help` as the first argument prints the header comment and exits 0. It runs before the python3 check, so it also works without python3.
 
 | Subcommand | Effect |
 |------------|--------|
@@ -503,14 +512,15 @@ scripts/idstack-learnings promote <key>
 | `--type T` | Only entries whose `type` is `T` |
 | `--keyword K` | Only entries whose `insight` or `key` contains `K`, case-insensitive |
 | `--cross-project` | Also reads the global file. Course entries come last, so they stay when the limit cuts the list. Global entries get `"_source": "global"`. |
+| `-h`, `--help` | Prints the header comment and exits 0. It wins over an unknown option. |
 
-`--limit`, `--type` and `--keyword` also accept the `--option=value` form. `search` ignores options that it does not know. `promote` gets `_source_project` from `project_name` in `.idstack/project.json`, or uses `unknown`.
+`--limit`, `--type` and `--keyword` also accept the `--option=value` form. An option that `search` does not know, and a bare argument, prints `idstack-learnings: unknown option: <option>` on stderr and exits 2. `search` prints no line on stdout then. `promote` gets `_source_project` from `project_name` in `.idstack/project.json`, or uses `unknown`.
 
 | Exit | Meaning |
 |------|---------|
-| 0 | Done. `log` always exits 0. |
-| 1 | No subcommand or an unknown one (the usage line goes to stderr), or a missing option value. Also: no key, no course learnings file, no entry with the key, or a write error. |
-| 2 | python3 is missing (all subcommands except `log`) |
+| 0 | Done, or `--help`. `log` always exits 0. |
+| 1 | A missing option value. Also: no key, no course learnings file, no entry with the key, or a write error. |
+| 2 | python3 is missing (all subcommands except `log`). Also: no subcommand, an unknown subcommand (the usage line goes to stderr), or an unknown `search` option. |
 
 Files: reads and writes `.idstack/learnings.jsonl`, and makes `.idstack/` for `log`. `search --cross-project` reads, and `promote` writes, `$HOME/.idstack/global/learnings.jsonl`.
 

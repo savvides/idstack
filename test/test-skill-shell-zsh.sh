@@ -550,6 +550,13 @@ EOF
   out=$(run "$P/start" "$b")
   check "[$sh] start setup check prints OK when python3 3.9 or later is present" \
     "printf '%s\n' \"\$out\" | grep -qx OK"
+  # start: the OS line carries the uname value. The skill picks the python3 help from it.
+  mkdir -p "$WORK/fakeuname"
+  printf '#!/bin/sh\necho MINGW64_NT-10.0-19045\n' > "$WORK/fakeuname/uname"
+  chmod +x "$WORK/fakeuname/uname"
+  out=$(PATH="$WORK/fakeuname:$PATH" run "$P/start" "$b")
+  check "[$sh] start setup check prints the OS line with the uname value" \
+    "printf '%s\n' \"\$out\" | grep -qx 'OS: MINGW64_NT-10.0-19045'"
 
   # start: the experience level is an enum. Hostile text is refused.
   mkdir -p "$P/lvl"
