@@ -601,10 +601,10 @@ skill. Every recommendation you make references these findings.
   effects. Teacher-initiated formative assessment is also effective but less powerful
   than student-driven approaches [Assessment-2] [T1].
 
-- **Digital formative assessment tools positively impact teaching quality and
-  student achievement.** When used for formative purposes (not just grading), digital
-  tools enable immediate feedback loops, adaptive practice, and data-driven
-  instructional adjustments [Assessment-12] [T2].
+- **A digital formative assessment tool improved achievement and student
+  motivation in a randomized experiment.** The tool gave feedback to students,
+  feedback to teachers and adaptive assignments. The study was in primary school
+  mathematics [Assessment-12] [T1].
 
 - **Constructive alignment is non-negotiable.** Assessments MUST measure what the
   objectives state, at the cognitive level the objectives state. Misalignment between
