@@ -15,7 +15,7 @@ scripts/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.
                                            # ste-rules.js (from the preamble)
 scripts/idstack-gen-skills --dry-run           # Check if generated files are up to date
 scripts/idstack-doctor                         # Diagnose plugin install (python3, presence, manifest version)
-scripts/idstack-doctor --quick                 # One python3 code for /idstack:start: OK, PYTHON_MISSING, PYTHON_OLD or PYTHON_STUB
+scripts/idstack-doctor --quick                 # One python3 code for /idstack:start: OK, PYTHON_MISSING, PYTHON_OLD, PYTHON_STUB or PYTHON_WINSTUB
 scripts/idstack-status                         # Course health dashboard (run in a project dir)
 scripts/idstack-status --readiness             # Pre-export readiness check only
 scripts/idstack-status --context               # Context-recovery lines the preamble reads
@@ -26,12 +26,12 @@ scripts/idstack-slugify "<project name>"       # Derive the <course-slug> used f
 scripts/idstack-slugify --from-manifest        # Same, from the manifest's project_name (what skills call)
 scripts/idstack-ste-check <file|dir|->          # Find some ASD-STE100 writing-rule problems in idstack output
 scripts/idstack-ste-check --format markdown <f> # Use for .tmpl/.md: skips frontmatter and code fences. Reports a paragraph's problems on its first line
-scripts/idstack-report-section init <report> --skill <s> --title <t>   # Start a report: header, status line, placeholders (--reserve, --mode)
+scripts/idstack-report-section init <report> --skill <s> --title <t>   # Start a report: header, status line, placeholders (--reserve, --mode); keeps a finished earlier report in .idstack/prev-reports/
 scripts/idstack-report-section check <draft>   # Check a draft section: table shape, citation tiers, ASD-STE100
 scripts/idstack-report-section append <report> <draft>   # Check, then add the section to the report as a draft (atomic)
 scripts/idstack-report-section approve <report> [--draft <f>]  # Remove each draft mark; print SECTION_APPROVED: <heading>; delete the draft
 scripts/idstack-report-section finish <report> # Fail on a placeholder or a draft that remains; remove the status line.
-                                           # --stopped (skill stopped early) fills each empty reserved section
+                                           # --stopped (skill stopped early) leaves a stopped status line and fills each empty reserved section
 scripts/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 scripts/idstack-timeline-log '<json>'          # Append one event to .idstack/timeline.jsonl (adds "ts"; never fails the skill)
 scripts/idstack-learnings log|search|delete|promote   # Project learnings in .idstack/learnings.jsonl; promote copies to ~/.idstack/global/
@@ -45,15 +45,15 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/smoke-test.sh              # 655 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
-./test/integration-test.sh        # 59 behavioral tests across the scripts/ scripts; also proves the suite
+./test/integration-test.sh        # 71 behavioral tests across the scripts/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 13 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
-./test/test-doctor.sh             # 18 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches and --quick
-./test/test-status.sh             # 34 tests for scripts/idstack-status, incl. the --readiness export gate
+./test/test-doctor.sh             # 47 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches, --quick and --help
+./test/test-status.sh             # 46 tests for scripts/idstack-status, incl. the --readiness export gate and the arguments
 ./test/test-manifest-merge.sh     # scripts/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # scripts/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on the local python3; CI covers 3.9 and 3.12
-./test/test-skill-shell-zsh.sh    # 255 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
+./test/test-skill-shell-zsh.sh    # 257 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules directly
                                   # (test/extension-harness.mjs stubs browser globals for the ones that need them)
@@ -62,7 +62,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # scripts/idstack-ste-check unit tests (smoke-test also runs them)
-python3 test/test-report-section.py     # 41 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
+python3 test/test-report-section.py     # 52 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md: titles, data-tiers,
                                        # the aria-label shares and tier ranges. Fails on a card that shows a number of studies
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier

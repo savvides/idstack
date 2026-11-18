@@ -132,9 +132,14 @@ Claude clones the repo, runs setup, and confirms the skills are registered.
 <details>
 <summary>Project-scoped install (one project only)</summary>
 
+Claude Code writes a project-scoped install to `.claude/settings.json` in the folder where you run the command. Go to the course folder first. Then run setup with the path of your idstack clone:
+
 ```bash
-./setup --local
+cd path/to/your-course
+path/to/idstack/setup --local
 ```
+
+If you run `./setup --local` in the idstack clone, idstack is installed only for sessions that start in the clone.
 </details>
 
 <details>
@@ -142,7 +147,7 @@ Claude clones the repo, runs setup, and confirms the skills are registered.
 
 ```bash
 ./setup                # Register the plugin with Claude Code at user scope
-./setup --local        # Install at project scope (./.claude/) instead of user scope
+./setup --local        # Install at project scope (.claude/ in the current folder) instead of user scope
 ./setup --help         # Show the usage and exit (also -h)
 ```
 
@@ -586,6 +591,16 @@ cd <your idstack clone> && ./setup
 **Upgrading from v2.0?** v2.0 installed under `~/.claude/skills/idstack`, which only exposed `/idstack` (the dispatcher) — never the 11 namespaced sub-skills. Remove the old install, then clone fresh and run setup: `rm -rf ~/.claude/skills/idstack && git clone https://github.com/savvides/idstack.git && cd idstack && ./setup`. Setup no longer removes old installs for you; the CHANGELOG lists every path an older install can leave behind.
 
 **`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `scripts/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 16 SKILL.md files, and python3. It reports each problem it finds, and for a Claude Code install problem it prints the command that fixes it.
+
+If you installed idstack from the Claude desktop app, you have no clone. Install idstack again with these three commands in a terminal. Run them one at a time:
+
+```bash
+claude plugin marketplace add https://github.com/savvides/idstack.git
+claude plugin uninstall idstack@idstack
+claude plugin install idstack@idstack
+```
+
+The second command can tell you that idstack is not installed, and this is not a problem. Then start a new session.
 
 ## Contributing
 

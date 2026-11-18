@@ -290,6 +290,11 @@ The line gives the path of the Markdown report, relative to the course folder.
 `/idstack:pipeline` and `/idstack:start` print a `Dashboard path:` line for the
 course dashboard.
 
+If the output of the block that prints the `Report path:` line has a line that
+starts with `REPORT_KEPT:`, idstack kept an earlier report. Tell the user in one
+line that idstack kept the earlier report. Write the path from that line in
+backticks.
+
 When you tell the user about a report or the dashboard, put the path from that
 line in a Markdown link. Use the same path as the link text. For example:
 
@@ -560,7 +565,10 @@ for _p in "${CLAUDE_PLUGIN_ROOT}" "$_idstack_skill" "${IDSTACK_HOME:-}" "$_idsta
   if [ -n "$_p" ] && [ -d "$_p" ]; then _IDSTACK="${_p%/}"; break; fi
 done
 if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/scripts/idstack-doctor" --quick; fi
+echo "OS: $(uname -s 2>/dev/null)"
 ```
+
+The `OS:` line gives the system of the user. It is not a result of the check.
 
 - **OK:** Go to Step 2. Do not tell the user about this check.
 - **PYTHON_STUB:** The Mac does not have the free Apple developer tools, and
@@ -575,11 +583,27 @@ if [ -z "$_IDSTACK" ]; then echo "IDSTACK_NOT_FOUND"; else "$_IDSTACK/scripts/id
   Then type `/idstack:start` again. If you cannot install the Apple tool, get
   the macOS installer from https://www.python.org/downloads/ and open it. Then
   close the Claude app, open it again and type `/idstack:start` again." STOP.
-- **PYTHON_MISSING** or **PYTHON_OLD:** Tell the user: "idstack needs Python 3.9
-  or a later version. Get the macOS installer from
-  https://www.python.org/downloads/ and open it. When the installation is
-  complete, close the Claude app and open it again. Then type `/idstack:start`
-  again." STOP.
+- **PYTHON_WINSTUB:** Tell the user: "Windows has a shortcut that opens the
+  Microsoft Store. It is not Python, and idstack needs Python 3.9 or a later
+  version. Open the Microsoft Store app and find **Python** from the publisher
+  **Python Software Foundation**. Install the newest version. When the
+  installation is complete, type `/idstack:start` again." STOP.
+- **PYTHON_MISSING** or **PYTHON_OLD:** Tell the user the text for their
+  system. Use the `OS:` line to select it. `Darwin` is a Mac. A value that
+  starts with `MINGW`, `MSYS` or `CYGWIN` is Windows. Any other value is Linux.
+  - Mac: "idstack needs Python 3.9 or a later version. Get the macOS installer
+    from https://www.python.org/downloads/ and open it. When the installation is
+    complete, close the Claude app and open it again. Then type `/idstack:start`
+    again."
+  - Windows: "idstack needs Python 3.9 or a later version. Open the Microsoft
+    Store app and find **Python** from the publisher **Python Software
+    Foundation**. Install the newest version. When the installation is complete,
+    type `/idstack:start` again."
+  - Linux: "idstack needs Python 3.9 or a later version. Install python3 with the
+    package manager of your Linux distribution. Then start a new session and
+    type `/idstack:start` again."
+
+  Then STOP.
 - **IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
   idstack again with these two commands in a terminal:
   `claude plugin uninstall idstack@idstack` and

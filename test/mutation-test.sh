@@ -2691,6 +2691,30 @@ shell_mutation "assessment-design does not pass --expect-updated to the merge" \
 shell_mutation "course-import does not pass --expect-updated to the merge" \
   skills/course-import/SKILL.md.tmpl '--create "$@" --set' '--create --set'
 
+# 71a. init stops keeping a finished report (#181) -> test-report-section must fail.
+suite_mutation "report init does not keep a finished report" \
+  scripts/idstack-report-section "if not any(line.strip() in (STATUS_LINE, STOPPED_STATUS_LINE) for line in earlier.split('\\n')):" 'if False:' test-report-section.py
+
+# 71b. idstack-status takes an unknown argument as the dashboard again (#170) -> test-status must fail.
+suite_mutation "idstack-status does not refuse an unknown argument" \
+  scripts/idstack-status 'if [ -n "$BAD_ARG" ]; then' 'if false; then' test-status.sh
+
+# 71c. idstack-doctor takes --help as an unknown argument again (#170) -> test-doctor must fail.
+suite_mutation "idstack-doctor does not accept --help" \
+  scripts/idstack-doctor '-h|--help) sed -n' '--xhelp) sed -n' test-doctor.sh
+
+# 71d. idstack-learnings search ignores an unknown option again (#170) -> integration-test must fail.
+suite_mutation "idstack-learnings search does not refuse an unknown option" \
+  scripts/idstack-learnings '*) [ -n "$BAD_OPT" ] || BAD_OPT="$1"; shift ;;' '*) shift ;;' integration-test.sh
+
+# 71e. idstack-doctor stops finding the Microsoft Store python3 shortcut (#185) -> test-doctor must fail.
+suite_mutation "idstack-doctor does not find the Microsoft Store stub" \
+  scripts/idstack-doctor '*/WindowsApps/*|*\\WindowsApps\\*) return 0 ;;' '*/NoSuchFolder/*) return 0 ;;' test-doctor.sh
+
+# 71f. idstack-doctor does not know that it runs in the plugin cache (#186) -> test-doctor must fail.
+suite_mutation "idstack-doctor does not know that it runs in the plugin cache" \
+  scripts/idstack-doctor '*/plugins/cache/*) IN_PLUGIN_CACHE=1 ;;' '*/no-such-folder/*) IN_PLUGIN_CACHE=1 ;;' test-doctor.sh
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

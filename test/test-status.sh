@@ -124,6 +124,25 @@ ste_capture partial
 
 echo ""
 
+# --- arguments (#170) ---
+# --help once printed the dashboard with exit 0, and a wrong flag did the same.
+check "--help prints the usage and exits 0" "$STATUS --help" 0 "^Usage: idstack-status"
+check "-h prints the usage and no dashboard" "$STATUS -h | grep -c 'Project:'" 1 "^0$"
+check "--help does not print the shell constants" "$STATUS --help | grep -c READY_QUALITY_MIN=" 1 "^0$"
+check "--context --help prints the usage" "$STATUS --context --help" 0 "^Usage: idstack-status"
+check "--help before an unknown argument prints the usage" "$STATUS --help --bogus" 0 "^Usage: idstack-status"
+check "--help after an unknown argument prints the usage" "$STATUS --bogus --help" 0 "^Usage: idstack-status"
+check "an unknown argument exits 2" "$STATUS --bogus" 2 "ERROR: unknown argument: --bogus"
+check "an unknown argument shows the command" "$STATUS --bogus" 2 "^Command: idstack-status"
+check "an unknown argument prints no dashboard" "$STATUS --bogus 2>/dev/null | wc -c | tr -d ' '" 0 "^0$"
+check "an unknown argument after a valid flag exits 2" "$STATUS --context --bogus" 2 "ERROR: unknown argument: --bogus"
+check "the help text obeys the writing standard" \
+  "( set -o pipefail; $STATUS --help | python3 '$STE_CHECK' --format text - )"
+check "the unknown argument message obeys the writing standard" \
+  "$STATUS --bogus 2>&1 | python3 '$STE_CHECK' --format text -"
+
+echo ""
+
 # --- readiness gate ---
 # Helper: write a manifest with explicit scores. $4 is optional extra JSON for
 # the accessibility section (used for the WCAG override case).
