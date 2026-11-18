@@ -65,15 +65,16 @@ Command: ./setup [--local]
 `idstack-doctor` examines python3, the plugin manifests, the skill files and the Claude Code install.
 
 ```bash
-scripts/idstack-doctor [--quick]
+scripts/idstack-doctor [--quick | -h | --help]
 ```
 
 | Option | Effect |
 |--------|--------|
 | (none) | Full diagnosis. The last line is `OK` or `BROKEN (<n> problem group(s) above)`. |
 | `--quick` | Prints one code and nothing more: `OK`, `PYTHON_MISSING`, `PYTHON_OLD` or `PYTHON_STUB`. |
+| `-h`, `--help` | Prints the header comment and exits 0. It runs no check, so it also works without python3. It wins over `--quick` and over an unknown argument. |
 
-There is no `--help`. Any other argument exits 2.
+Any other argument prints `ERROR: unknown argument: <argument>` and a `Command:` line on stderr, and exits 2.
 
 The full diagnosis has four groups. Each `PROBLEM` line adds one to the count.
 
@@ -88,7 +89,7 @@ If `claude` is not on `PATH`, the last group prints a WARNING and does not add a
 
 | Exit | Meaning |
 |------|---------|
-| 0 | No problems (`--quick`: `OK`) |
+| 0 | No problems (`--quick`: `OK`), or `--help` |
 | 1 | One or more problems (`--quick`: a code other than `OK`) |
 | 2 | An unknown argument |
 
@@ -146,7 +147,7 @@ The script examined 16 templates. 0 have problems.
 `idstack-status` prints the course health dashboard for the course folder.
 
 ```bash
-scripts/idstack-status [--readiness | --context]
+scripts/idstack-status [--readiness | --context | -h | --help]
 ```
 
 | Option | Output |
@@ -154,8 +155,9 @@ scripts/idstack-status [--readiness | --context]
 | (none) | The dashboard: project name, skills completed, quality trend, presence scores, next skill, learnings count, reports, then the readiness table if a manifest exists |
 | `--readiness` | The readiness table only |
 | `--context` | The lines that the preamble's Context Recovery reads (see the next table) |
+| `-h`, `--help` | Prints the header comment and exits 0. It runs before the python3 check, so it also works without python3. It wins over `--readiness`, `--context` and an unknown argument. |
 
-The script reads only the first argument. It ignores other arguments, so `--help` prints the dashboard.
+Any other argument prints `ERROR: unknown argument: <argument>` and a `Command:` line on stderr, and exits 2. It prints nothing on stdout.
 
 | `--context` line | Content |
 |------------------|---------|
@@ -182,8 +184,8 @@ The dashboard and the readiness table read all of the lines of the timeline. Wit
 
 | Exit | Meaning |
 |------|---------|
-| 0 | Output printed |
-| 2 | python3 is missing |
+| 0 | Output printed, or `--help` |
+| 2 | python3 is missing, or an unknown argument |
 
 Files: reads `.idstack/timeline.jsonl`, `.idstack/learnings.jsonl` and `.idstack/project.json`. Lists the `.md` files, `course-export.imscc` and `scorm-export.zip` in `.idstack/exports/<course-slug>/`. It gets the slug from `idstack-slugify --from-manifest`. If that folder is missing and `.idstack/exports/` has only one subfolder, it uses that subfolder. A report that still has the `init` status line shows `(in progress)`. Writes nothing.
 

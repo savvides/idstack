@@ -48,8 +48,8 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/integration-test.sh        # 59 behavioral tests across the scripts/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 13 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
-./test/test-doctor.sh             # 18 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches and --quick
-./test/test-status.sh             # 34 tests for scripts/idstack-status, incl. the --readiness export gate
+./test/test-doctor.sh             # 27 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches, --quick and --help
+./test/test-status.sh             # 46 tests for scripts/idstack-status, incl. the --readiness export gate and the arguments
 ./test/test-manifest-merge.sh     # scripts/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # scripts/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on the local python3; CI covers 3.9 and 3.12

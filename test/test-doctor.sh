@@ -192,6 +192,21 @@ restore_quick_cmds
 
 check "an unknown argument exits 2" "'$DOCTOR_CMD' --bogus" 2 "ERROR: unknown argument: --bogus"
 "$DOCTOR_CMD" --bogus > "$TEST_ROOT/bad-arg.txt" 2>&1 || true
+check "an unknown argument shows the command" "'$DOCTOR_CMD' --bogus" 2 "^Command: idstack-doctor"
+check "an unknown argument prints no diagnosis" "'$DOCTOR_CMD' --bogus 2>/dev/null | wc -c | tr -d ' '" 0 "^0$"
+
+# --- --help (#170) ---
+# --help once exited 2 as an unknown argument. It must print the usage and run no check.
+check "--help prints the usage and exits 0" "'$DOCTOR_CMD' --help" 0 "idstack-doctor --quick"
+check "-h exits 0" "'$DOCTOR_CMD' -h" 0
+check "--help prints no diagnosis" "'$DOCTOR_CMD' --help | grep -c '^idstack doctor$'" 1 "^0$"
+check "--quick --help prints the usage, not a code" "'$DOCTOR_CMD' --quick --help | grep -cxE 'OK|PYTHON_[A-Z]+'" 1 "^0$"
+check "--help before an unknown argument prints the usage" "'$DOCTOR_CMD' --help --bogus" 0 "idstack-doctor --quick"
+check "--help after an unknown argument prints the usage" "'$DOCTOR_CMD' --bogus --help" 0 "idstack-doctor --quick"
+rm "$MOCK_BIN/python3"
+check "--help works without python3" "'$DOCTOR_CMD' --help" 0 "idstack-doctor --quick"
+restore_quick_cmds
+"$DOCTOR_CMD" --help > "$TEST_ROOT/help.txt" 2>&1 || true
 
 # --- writing standard (ASD-STE100) ---
 # A person reads every line that doctor prints. Send a healthy run and the
@@ -221,6 +236,7 @@ remove_mock_claude
 "$DOCTOR_CMD" > "$STE_OUT/no-claude.txt" 2>&1 || true
 cp "$TEST_ROOT/no-python.txt" "$STE_OUT/no-python.txt"
 cp "$TEST_ROOT/bad-arg.txt" "$STE_OUT/bad-arg.txt"
+cp "$TEST_ROOT/help.txt" "$STE_OUT/help.txt"
 
 check "doctor output obeys the writing standard (healthy and problem runs)" \
   "'$PYTHON' '$REPO_DIR/scripts/idstack-ste-check' --format text '$STE_OUT'/*.txt"

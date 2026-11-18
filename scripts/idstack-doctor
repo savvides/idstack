@@ -8,9 +8,10 @@
 #   idstack-doctor           full diagnosis
 #   idstack-doctor --quick   one code for /idstack:start: OK, PYTHON_MISSING,
 #                            PYTHON_OLD or PYTHON_STUB
+#   idstack-doctor --help    this text (-h is the same)
 #
-# Exit code: 0 if all green (--quick: OK), 1 if any problem is detected,
-# 2 for an unknown argument.
+# Exit code: 0 if all green (--quick: OK) or for --help, 1 if any problem is
+# detected, 2 for an unknown argument.
 
 set -u
 
@@ -29,12 +30,19 @@ assessment-design course-builder course-export accessibility-review red-team \
 pipeline learn start quick-check storyboard question-bank evaluation-plan"
 
 QUICK=0
+BAD_ARG=""
 for arg in "$@"; do
   case "$arg" in
     --quick) QUICK=1 ;;
-    *) echo "ERROR: unknown argument: $arg" >&2; echo "Command: idstack-doctor [--quick]" >&2; exit 2 ;;
+    -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) [ -n "$BAD_ARG" ] || BAD_ARG="$arg" ;;
   esac
 done
+if [ -n "$BAD_ARG" ]; then
+  echo "ERROR: unknown argument: $BAD_ARG" >&2
+  echo "Command: idstack-doctor [--quick] [-h | --help]" >&2
+  exit 2
+fi
 
 # --quick: the one python3 code that /idstack:start reads. A working python3
 # comes first: a python.org install on a Mac has no Command Line Tools, and

@@ -3,6 +3,7 @@
 # Usage: idstack-status
 #        idstack-status --readiness    (pre-export readiness table only)
 #        idstack-status --context      (machine lines for a skill's context recovery)
+#        idstack-status --help         (this text, same as -h)
 # Shows: project name, skills completed, quality score trend, dimensions, next step.
 #
 # --context prints QUALITY_TREND, LAST_PRESENCE, SKILLS_COMPLETED, LAST_SKILL,
@@ -10,6 +11,8 @@
 # Context Recovery runs it, so the dashboard summary and every skill read the
 # timeline with the same code. The readiness table has its own reader.
 #
+# Exit code: 0 after it prints, 2 for an unknown argument or if python3 is missing.
+
 # Readiness thresholds (the bar a course must clear to be reported READY):
 #   READY_QUALITY_MIN          = 70   (quality_review.overall_score must be >=)
 #   READY_ACCESS_MIN           = 80   (accessibility_review.score.overall must be >=)
@@ -22,8 +25,20 @@ READY_RED_CRITICAL_MAX=0
 
 READINESS_ONLY=0
 CONTEXT_ONLY=0
-[ "$1" = "--readiness" ] && READINESS_ONLY=1
-[ "$1" = "--context" ] && CONTEXT_ONLY=1
+BAD_ARG=""
+for arg in "$@"; do
+  case "$arg" in
+    --readiness) READINESS_ONLY=1 ;;
+    --context) CONTEXT_ONLY=1 ;;
+    -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) [ -n "$BAD_ARG" ] || BAD_ARG="$arg" ;;
+  esac
+done
+if [ -n "$BAD_ARG" ]; then
+  echo "ERROR: unknown argument: $BAD_ARG" >&2
+  echo "Command: idstack-status [--readiness | --context] [-h | --help]" >&2
+  exit 2
+fi
 
 command -v python3 &>/dev/null || { echo "idstack-status: python3 is necessary" >&2; exit 2; }
 
