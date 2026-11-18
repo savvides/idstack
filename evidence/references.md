@@ -97,7 +97,7 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 - [Assessment-8] Wisniewski, B. et al. (2020). The Power of Feedback Revisited: A Meta-Analysis. *Frontiers in Psychology*. T1
 - [Assessment-9] Nicol, D. & Macfarlane-Dick, D. (2006). Formative assessment and self-regulated learning. *Studies in Higher Education*. T5
 - [Assessment-10] Van der Kleij, F.M. et al. (2015). Effects of Feedback in a Computer-Based Learning Environment on Students' Learning Outcomes: A Meta-Analysis. *Review of Educational Research*. T1
-- [Assessment-12] Faber, J. (2020). Effects of digital formative assessment tools. T2
+- [Assessment-12] Faber, J.M., Luyten, H. & Visscher, A.J. (2017). The effects of a digital formative assessment tool on mathematics achievement and student motivation: Results of a randomized experiment. *Computers & Education*. T1
 - [Assessment-14] Double, K.S. et al. (2019). The Impact of Peer Assessment: A Meta-analysis. *Educational Psychology Review*. T1
 - [Assessment-18] Sortwell, A. et al. (2024). Systematic Review of Meta-Analyses on Formative Assessment in K-12. *Sustainability*. T3
 - [Assessment-19] Panadero, E. et al. (2023). Effects of Rubrics on Academic Performance, Self-Regulated Learning, and Self-Efficacy: a Meta-analytic Review. *Educational Psychology Review*. T1
@@ -182,7 +182,7 @@ Each citation includes its domain shorthand and evidence tier for cross-referenc
 ## Domain 10: Online Course Quality Frameworks
 
 - [Online-1] Zimmerman, W. et al. (2020). Evaluating Online Course Quality: A Study on Implementation of Course Quality Standards. *Online Learning*. T4
-- [Online-2] Trivedi, S. et al. (2023). Impact of Applying Quality Matters Essential Standards. *Journal of Animal Science*. T4
+- [Online-2] Deuser, K. et al. (2023). Student perceptions of the impact of quality matters essential standards in an animal physiology course. *Translational Animal Science*. T4
 - [Online-3] Sener, J. (2006). Quality Matters: Inter-Institutional Quality Improvement. *Journal of Asynchronous Learning Networks* (now *Online Learning*). T5
 - [Online-8] Martin, F. et al. (2019). Award-winning faculty online teaching practices. *Internet and Higher Education*. T4
 - [Online-10] McInnes, R. et al. (2024). Online Course Quality Evaluation Instruments: A Scoping Review. *AJET*. T3

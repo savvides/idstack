@@ -371,9 +371,9 @@ fresh
 python3 - "$WORK/r/docs/index.html" <<'PY'
 import io, sys
 p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
-old = 'aria-label="Tier mix: 71% at T1,'
+old = 'aria-label="Tier mix: 76% at T1,'
 assert s.count(old) == 1, 'anchor not unique: %d' % s.count(old)
-io.open(p, 'w', encoding='utf-8').write(s.replace(old, 'aria-label="Tier mix: 76% at T1,'))
+io.open(p, 'w', encoding='utf-8').write(s.replace(old, 'aria-label="Tier mix: 81% at T1,'))
 PY
 expect_fail "tier-mix label overstates a domain's T1 share" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
