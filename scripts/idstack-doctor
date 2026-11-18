@@ -88,8 +88,8 @@ if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.ve
   echo "  found python3 $(python3 -c 'import platform; print(platform.python_version())')"
 elif python3_is_in_windowsapps; then
   echo "  PROBLEM: python3 is the Windows shortcut that opens the Microsoft Store. It is not Python."
-  echo "  Fix: get the Windows installer from https://www.python.org/downloads/ and open it."
-  echo "       Select \"Add python.exe to PATH\". Then start a new session and run idstack-doctor again."
+  echo "  Fix: open the Microsoft Store app. Find \"Python\" from the publisher \"Python Software Foundation\"."
+  echo "       Install the newest version. Then run idstack-doctor again."
   note_problem
 else
   echo "  PROBLEM: idstack needs python3 3.9 or a later version. Install it, then run idstack-doctor again."

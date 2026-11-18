@@ -205,8 +205,10 @@ fake_cmd uname 'echo MINGW64_NT-10.0-19045'
 fake_cmd python3 'exit 1' "$WIN_BIN"
 check "--quick prints PYTHON_WINSTUB for the Microsoft Store stub" "PATH='$WIN_PATH' '$DOCTOR_CMD' --quick" 1 "^PYTHON_WINSTUB$"
 check "the full run reports the Microsoft Store stub" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "PROBLEM: .*Microsoft Store"
-check "the full run names the Windows installer for the stub" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Fix: .*Windows installer.*python\\.org/downloads"
-check "the full run tells the user to start a new session after the install" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Add python\\.exe to PATH.*new session"
+check "the full run sends the user to the Microsoft Store for the stub" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Fix: open the Microsoft Store app.*Python Software Foundation"
+check "the full run tells the user to run the doctor again after the install" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Install the newest version.*run idstack-doctor again"
+# The python.org installer gives no python3 command, so the shortcut stays first on PATH and the doctor says the same again.
+check "the full run does not send the Windows user to the python.org installer" "PATH='$WIN_PATH' '$DOCTOR_CMD' | grep -c -E 'python\\.org|Add python\\.exe'" 1 "^0$"
 PATH="$WIN_PATH" "$DOCTOR_CMD" > "$TEST_ROOT/winstub.txt" 2>&1 || true
 
 fake_cmd python3 'exit 1' "$WIN_BIN_BS"
