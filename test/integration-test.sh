@@ -329,8 +329,49 @@ QUOTE_HOME="$TEST_DIR/o'neil home"
 check "promotes when HOME has a quote in it" \
   "HOME=\"$QUOTE_HOME\" $IDSTACK_DIR/scripts/idstack-learnings promote key2 && grep -q '\"key2\"' \"$QUOTE_HOME/.idstack/global/learnings.jsonl\""
 
-check "an unknown subcommand fails with usage" \
-  "! $IDSTACK_DIR/scripts/idstack-learnings frobnicate 2>&1 && $IDSTACK_DIR/scripts/idstack-learnings frobnicate 2>&1 | grep -q '^Usage: idstack-learnings'"
+# --help and a wrong argument (#170). The skills call log, delete, promote and
+# search with --limit, --keyword or --cross-project. Those calls must keep
+# working. log exits 0 for any argument, so it never blocks a skill.
+check "--help prints the usage and exits 0" \
+  "$IDSTACK_DIR/scripts/idstack-learnings --help" 0 "^Usage: idstack-learnings"
+
+check "-h makes no .idstack folder" \
+  "mkdir -p '$TEST_DIR/h2' && (cd '$TEST_DIR/h2' && $IDSTACK_DIR/scripts/idstack-learnings -h >/dev/null) && [ ! -e '$TEST_DIR/h2/.idstack' ]"
+
+check "an unknown subcommand exits 2 with usage" \
+  "$IDSTACK_DIR/scripts/idstack-learnings frobnicate" 2 "^Usage: idstack-learnings"
+
+check "no subcommand exits 2 with usage" \
+  "$IDSTACK_DIR/scripts/idstack-learnings" 2 "^Usage: idstack-learnings"
+
+check "search refuses an unknown option" \
+  "$IDSTACK_DIR/scripts/idstack-learnings search --bogus" 2 "unknown option: --bogus"
+
+check "search with an unknown option prints no results" \
+  "$IDSTACK_DIR/scripts/idstack-learnings search --bogus 2>/dev/null | wc -c | tr -d ' '" 0 "^0$"
+
+check "search --help beside an unknown option prints the usage and exits 0" \
+  "$IDSTACK_DIR/scripts/idstack-learnings search --bogus --help" 0 "^Usage: idstack-learnings"
+
+check "search still accepts --limit=1, --cross-project and --keyword=test" \
+  "HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/scripts/idstack-learnings search --limit=1 --cross-project --keyword=test"
+
+check "search --limit=1 --cross-project still gives one line" \
+  "[ \$(HOME=\"$TEST_DIR/fake_home\" $IDSTACK_DIR/scripts/idstack-learnings search --limit=1 --cross-project | wc -l | tr -d ' ') -eq 1 ]"
+
+check "log still exits 0 on an unknown option" \
+  "mkdir -p '$TEST_DIR/log-bogus' && (cd '$TEST_DIR/log-bogus' && $IDSTACK_DIR/scripts/idstack-learnings log --bogus && grep -q '\"raw\": \"--bogus\"' .idstack/learnings.jsonl)"
+
+# gen-skills and migrate already accept --help. The header text must say so,
+# and give the exit code and the stderr line that a caller reads.
+check "gen-skills --help shows the help option" \
+  "$IDSTACK_DIR/scripts/idstack-gen-skills --help" 0 "\[-h\|--help\]"
+
+check "migrate --help gives the exit code for an unknown flag" \
+  "$IDSTACK_DIR/scripts/idstack-migrate --help" 0 "exits 2"
+
+check "migrate --help gives the INITIALIZED line" \
+  "$IDSTACK_DIR/scripts/idstack-migrate --help" 0 "INITIALIZED <path>"
 
 echo ""
 

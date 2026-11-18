@@ -114,7 +114,7 @@ OK
 `idstack-gen-skills` writes each `skills/<name>/SKILL.md` from its `SKILL.md.tmpl`, and writes `extension/shared/ste-rules.js` from the preamble.
 
 ```bash
-scripts/idstack-gen-skills [--dry-run]
+scripts/idstack-gen-skills [--dry-run | -h | --help]
 ```
 
 | Option | Effect |
@@ -127,7 +127,7 @@ The script replaces `{{PREAMBLE}}`, `{{MANIFEST_SCHEMA}}` and `{{IDSTACK_RESOLVE
 
 | Exit | Meaning |
 |------|---------|
-| 0 | All files written, or all files up to date (`--dry-run`) |
+| 0 | All files written, or all files up to date (`--dry-run`), or `--help` |
 | 1 | A template has no `{{PREAMBLE}}`, or a file is stale or missing (`--dry-run`). Also: no `.tmpl` file, a missing source file, or no text between the `ste-core` markers. |
 | 2 | An unknown argument |
 
@@ -246,9 +246,9 @@ The write is atomic: a tempfile in the folder of the real file, then a rename. A
 
 | Exit | Meaning |
 |------|---------|
-| 0 | Done, or nothing to do |
+| 0 | Done, nothing to do, or `--help` |
 | 1 | The script cannot write the manifest. stdout is empty and the manifest does not change. |
-| 2 | An unknown flag |
+| 2 | An unknown flag. stderr gets `idstack-migrate: unknown flag: <flag>`. |
 | 3 | python3 is missing |
 | 9 | `--init` in the home folder. Nothing is made. |
 
@@ -492,7 +492,10 @@ scripts/idstack-learnings log '<json>'
 scripts/idstack-learnings search [--limit N] [--type T] [--keyword K] [--cross-project]
 scripts/idstack-learnings delete <key>
 scripts/idstack-learnings promote <key>
+scripts/idstack-learnings -h | --help
 ```
+
+`-h` or `--help` as the first argument prints the header comment and exits 0. It runs before the python3 check, so it also works without python3.
 
 | Subcommand | Effect |
 |------------|--------|
@@ -507,14 +510,15 @@ scripts/idstack-learnings promote <key>
 | `--type T` | Only entries whose `type` is `T` |
 | `--keyword K` | Only entries whose `insight` or `key` contains `K`, case-insensitive |
 | `--cross-project` | Also reads the global file. Course entries come last, so they stay when the limit cuts the list. Global entries get `"_source": "global"`. |
+| `-h`, `--help` | Prints the header comment and exits 0. It wins over an unknown option. |
 
-`--limit`, `--type` and `--keyword` also accept the `--option=value` form. `search` ignores options that it does not know. `promote` gets `_source_project` from `project_name` in `.idstack/project.json`, or uses `unknown`.
+`--limit`, `--type` and `--keyword` also accept the `--option=value` form. An option that `search` does not know, and a bare argument, prints `idstack-learnings: unknown option: <option>` on stderr and exits 2. `search` prints no line on stdout then. `promote` gets `_source_project` from `project_name` in `.idstack/project.json`, or uses `unknown`.
 
 | Exit | Meaning |
 |------|---------|
-| 0 | Done. `log` always exits 0. |
-| 1 | No subcommand or an unknown one (the usage line goes to stderr), or a missing option value. Also: no key, no course learnings file, no entry with the key, or a write error. |
-| 2 | python3 is missing (all subcommands except `log`) |
+| 0 | Done, or `--help`. `log` always exits 0. |
+| 1 | A missing option value. Also: no key, no course learnings file, no entry with the key, or a write error. |
+| 2 | python3 is missing (all subcommands except `log`). Also: no subcommand, an unknown subcommand (the usage line goes to stderr), or an unknown `search` option. |
 
 Files: reads and writes `.idstack/learnings.jsonl`, and makes `.idstack/` for `log`. `search --cross-project` reads, and `promote` writes, `$HOME/.idstack/global/learnings.jsonl`.
 

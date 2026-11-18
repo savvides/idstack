@@ -5,16 +5,26 @@
 #        idstack-learnings search [--limit N] [--type T] [--keyword K] [--cross-project]
 #        idstack-learnings delete <key>
 #        idstack-learnings promote <key>
+#        idstack-learnings --help      (this text, same as -h)
 #
 # log      Appends one learning and adds a "ts" field. A "ts" from the caller is kept,
 #          as in idstack-timeline-log. Creates .idstack/ if needed.
 #          Exit 0 always, so it never blocks the calling skill.
-# search   Prints matching JSONL lines (default limit 3).
+# search   Prints matching JSONL lines (default limit 3). For an option that it does
+#          not know, it writes "idstack-learnings: unknown option: <option>" to
+#          stderr, prints no line and exits 2. -h or --help among the options
+#          prints this text and exits 0, also beside an unknown option.
 # delete   Removes the most recent entry with the key, atomically. Exit 1 on error.
 # promote  Copies the most recent entry with the key to the global store and
 #          tags it with the source project. Exit 1 on error.
 # Every subcommand needs python3 (idstack supports 3.9 or later). If python3 is
-# not on PATH, every subcommand except log exits 2; log exits 0.
+# not on PATH, every subcommand except log exits 2. Then log exits 0.
+#
+# Exit code: 0 after it prints, and always for log. 1 for an error in delete or
+# promote, or for a missing value after --limit, --type or --keyword. 2 if python3
+# is missing, for no subcommand or an unknown subcommand (the usage line goes to
+# stderr), and for an unknown search option. --help as the first argument runs
+# before the python3 check, so it also works without python3.
 
 LOCAL=".idstack/learnings.jsonl"
 GLOBAL_DIR="$HOME/.idstack/global"
@@ -22,7 +32,7 @@ GLOBAL="$GLOBAL_DIR/learnings.jsonl"
 
 usage() {
   echo "Usage: idstack-learnings log '<json>' | search [--limit N] [--type T] [--keyword K] [--cross-project] | delete <key> | promote <key>" >&2
-  exit 1
+  exit "${1:-2}"
 }
 
 # The paths go in through the environment, not spliced into the source, so a
@@ -150,6 +160,8 @@ PY
 CMD="${1:-}"
 [ $# -gt 0 ] && shift
 
+case "$CMD" in -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+
 if ! command -v python3 &>/dev/null; then
   echo "idstack-learnings: python3 is necessary" >&2
   [ "$CMD" = log ] && exit 0
@@ -170,6 +182,7 @@ case "$CMD" in
     TYPE=""
     KEYWORD=""
     CROSS_PROJECT=0
+    BAD_OPT=""
     while [ $# -gt 0 ]; do
       case "$1" in
         --limit|--type|--keyword)
@@ -183,9 +196,14 @@ case "$CMD" in
         --keyword) KEYWORD="$2"; shift 2 ;;
         --keyword=*) KEYWORD="${1#--keyword=}"; shift ;;
         --cross-project) CROSS_PROJECT=1; shift ;;
-        *) shift ;;
+        -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) [ -n "$BAD_OPT" ] || BAD_OPT="$1"; shift ;;
       esac
     done
+    if [ -n "$BAD_OPT" ]; then
+      echo "idstack-learnings: unknown option: $BAD_OPT" >&2
+      exit 2
+    fi
 
     # Global first if cross-project, so local comes last and takes precedence.
     SOURCES=()
@@ -197,7 +215,7 @@ case "$CMD" in
 
   delete|promote)
     KEY="${1:-}"
-    [ -z "$KEY" ] && usage
+    [ -z "$KEY" ] && usage 1
     [ -f "$LOCAL" ] || { echo "There are no local learnings." >&2; exit 1; }
     learnings_py "$CMD" "$KEY"
     ;;
