@@ -162,10 +162,11 @@ check "python3 3.9 or later is found" "'$DOCTOR_CMD'" 0 "found python3 3\\.(9|[1
 # OK line, so a regex would pass even if --quick were ignored.
 # Fakes REPLACE the file in MOCK_BIN. Remove it first: MOCK_BIN/python3 is a
 # symlink to the real interpreter, and a redirect would write through it.
-fake_cmd() { # fake_cmd <name> <shell body>
-  rm -f "$MOCK_BIN/$1"
-  printf '#!/bin/sh\n%s\n' "$2" > "$MOCK_BIN/$1"
-  chmod +x "$MOCK_BIN/$1"
+fake_cmd() { # fake_cmd <name> <shell body> [folder, default MOCK_BIN]
+  local _dir="${3:-$MOCK_BIN}"
+  rm -f "$_dir/$1"
+  printf '#!/bin/sh\n%s\n' "$2" > "$_dir/$1"
+  chmod +x "$_dir/$1"
 }
 restore_quick_cmds() {
   rm -f "$MOCK_BIN/uname" "$MOCK_BIN/xcode-select" "$MOCK_BIN/python3"
@@ -184,6 +185,41 @@ check "--quick prints PYTHON_STUB for the macOS python3 stub" "'$DOCTOR_CMD' --q
 
 fake_cmd uname 'echo Linux'
 check "--quick prints PYTHON_OLD for an old python3 that is not the macOS stub" "'$DOCTOR_CMD' --quick" 1 "^PYTHON_OLD$"
+restore_quick_cmds
+
+# --- the Microsoft Store shortcut on Windows (#185) ---
+# Windows has a python3 shortcut that opens the Microsoft Store. It fails when it
+# runs, and it lives in a WindowsApps folder. A python3 that works in that folder
+# is a real Store install of Python, so it must give OK. WIN_BIN stands in for
+# ...\AppData\Local\Microsoft\WindowsApps and comes first on the PATH. WIN_BIN_BS
+# is a folder whose name has backslashes, as a Windows path does.
+WIN_BIN="$TEST_ROOT/c/Users/test/AppData/Local/Microsoft/WindowsApps"
+WIN_BIN_BS="$TEST_ROOT/Local\\WindowsApps\\bin"
+mkdir -p "$WIN_BIN" "$WIN_BIN_BS"
+WIN_PATH="$WIN_BIN:$MOCK_BIN"
+
+setup_happy_path
+mock_claude_output "idstack@idstack
+status: enabled"
+fake_cmd uname 'echo MINGW64_NT-10.0-19045'
+fake_cmd python3 'exit 1' "$WIN_BIN"
+check "--quick prints PYTHON_WINSTUB for the Microsoft Store stub" "PATH='$WIN_PATH' '$DOCTOR_CMD' --quick" 1 "^PYTHON_WINSTUB$"
+check "the full run reports the Microsoft Store stub" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "PROBLEM: .*Microsoft Store"
+check "the full run names the Windows installer for the stub" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Fix: .*Windows installer.*python\\.org/downloads"
+check "the full run tells the user to start a new session after the install" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Add python\\.exe to PATH.*new session"
+PATH="$WIN_PATH" "$DOCTOR_CMD" > "$TEST_ROOT/winstub.txt" 2>&1 || true
+
+fake_cmd python3 'exit 1' "$WIN_BIN_BS"
+check "--quick prints PYTHON_WINSTUB when the folder path has backslashes" "PATH='$WIN_BIN_BS':'$MOCK_BIN' '$DOCTOR_CMD' --quick" 1 "^PYTHON_WINSTUB$"
+
+rm -f "$WIN_BIN/python3"
+ln -sf "$PYTHON" "$WIN_BIN/python3"
+check "--quick prints only OK for a python3 that works in a WindowsApps folder" "[ \"\$(PATH='$WIN_PATH' '$DOCTOR_CMD' --quick 2>&1)\" = OK ]"
+check "the full run finds a python3 that works in a WindowsApps folder" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 0 "found python3 3\\.(9|[1-9][0-9])"
+
+fake_cmd python3 'exit 1'
+check "--quick prints PYTHON_OLD for a python3 that fails outside WindowsApps on Windows" "'$DOCTOR_CMD' --quick" 1 "^PYTHON_OLD$"
+rm -f "$WIN_BIN/python3" "$WIN_BIN_BS/python3"
 restore_quick_cmds
 
 rm "$MOCK_BIN/python3"
@@ -235,6 +271,7 @@ setup_happy_path
 remove_mock_claude
 "$DOCTOR_CMD" > "$STE_OUT/no-claude.txt" 2>&1 || true
 cp "$TEST_ROOT/no-python.txt" "$STE_OUT/no-python.txt"
+cp "$TEST_ROOT/winstub.txt" "$STE_OUT/winstub.txt"
 cp "$TEST_ROOT/bad-arg.txt" "$STE_OUT/bad-arg.txt"
 cp "$TEST_ROOT/help.txt" "$STE_OUT/help.txt"
 

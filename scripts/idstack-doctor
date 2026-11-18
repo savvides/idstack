@@ -7,7 +7,8 @@
 # Usage:
 #   idstack-doctor           full diagnosis
 #   idstack-doctor --quick   one code for /idstack:start: OK, PYTHON_MISSING,
-#                            PYTHON_OLD or PYTHON_STUB
+#                            PYTHON_OLD, PYTHON_STUB (macOS) or PYTHON_WINSTUB
+#                            (Windows)
 #   idstack-doctor --help    this text (-h is the same)
 #
 # Exit code: 0 if all green (--quick: OK) or for --help, 1 if any problem is
@@ -44,6 +45,16 @@ if [ -n "$BAD_ARG" ]; then
   exit 2
 fi
 
+# On Windows, python3 can be a shortcut that opens the Microsoft Store. It is in
+# a WindowsApps folder. A real Store install of Python is in that folder too, so
+# call this only after python3 has failed the version test.
+python3_is_in_windowsapps() {
+  case "$(command -v python3 2>/dev/null)" in
+    */WindowsApps/*|*\\WindowsApps\\*) return 0 ;;
+  esac
+  return 1
+}
+
 # --quick: the one python3 code that /idstack:start reads. A working python3
 # comes first: a python.org install on a Mac has no Command Line Tools, and
 # that is not a problem. Running the macOS stub here is also what opens the
@@ -55,6 +66,8 @@ if [ "$QUICK" = "1" ]; then
   fi
   if ! command -v python3 >/dev/null 2>&1; then
     echo "PYTHON_MISSING"
+  elif python3_is_in_windowsapps; then
+    echo "PYTHON_WINSTUB"
   elif [ "$(uname -s 2>/dev/null)" = "Darwin" ] && ! xcode-select -p >/dev/null 2>&1; then
     echo "PYTHON_STUB"
   else
@@ -73,6 +86,11 @@ echo ""
 echo "Requirements:"
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; then
   echo "  found python3 $(python3 -c 'import platform; print(platform.python_version())')"
+elif python3_is_in_windowsapps; then
+  echo "  PROBLEM: python3 is the Windows shortcut that opens the Microsoft Store. It is not Python."
+  echo "  Fix: get the Windows installer from https://www.python.org/downloads/ and open it."
+  echo "       Select \"Add python.exe to PATH\". Then start a new session and run idstack-doctor again."
+  note_problem
 else
   echo "  PROBLEM: idstack needs python3 3.9 or a later version. Install it, then run idstack-doctor again."
   note_problem

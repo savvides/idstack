@@ -71,7 +71,7 @@ scripts/idstack-doctor [--quick | -h | --help]
 | Option | Effect |
 |--------|--------|
 | (none) | Full diagnosis. The last line is `OK` or `BROKEN (<n> problem group(s) above)`. |
-| `--quick` | Prints one code and nothing more: `OK`, `PYTHON_MISSING`, `PYTHON_OLD` or `PYTHON_STUB`. |
+| `--quick` | Prints one code and nothing more: `OK`, `PYTHON_MISSING`, `PYTHON_OLD`, `PYTHON_STUB` or `PYTHON_WINSTUB`. |
 | `-h`, `--help` | Prints the header comment and exits 0. It runs no check, so it also works without python3. It wins over `--quick` and over an unknown argument. |
 
 Any other argument prints `ERROR: unknown argument: <argument>` and a `Command:` line on stderr, and exits 2.
@@ -80,12 +80,12 @@ The full diagnosis has four groups. Each `PROBLEM` line adds one to the count.
 
 | Group | PROBLEM when |
 |-------|--------------|
-| Requirements | python3 is missing or older than 3.9 |
+| Requirements | python3 is missing or older than 3.9, or python3 is the Windows shortcut for the Microsoft Store |
 | Plugin manifests | `plugin.json` is missing or has no version that can be read, or `marketplace.json` is missing |
 | Skill files | One of the 16 `skills/<name>/SKILL.md` files is missing |
 | Claude Code install | `claude plugin list` has no `idstack@idstack`, or its entry is not enabled |
 
-If `claude` is not on `PATH`, the last group prints a WARNING and does not add a problem. If python3 is on `PATH` but fails the check, `--quick` prints `PYTHON_STUB` on macOS when `xcode-select -p` fails. In other cases it prints `PYTHON_OLD`.
+If `claude` is not on `PATH`, the last group prints a WARNING and does not add a problem. If python3 is on `PATH` but fails the check, `--quick` prints `PYTHON_WINSTUB` when the path of python3 has a `WindowsApps` folder. This is the Windows shortcut that opens the Microsoft Store. A python3 in that folder that passes the check gives `OK`. In other cases it prints `PYTHON_STUB` on macOS when `xcode-select -p` fails. In all other cases it prints `PYTHON_OLD`.
 
 | Exit | Meaning |
 |------|---------|

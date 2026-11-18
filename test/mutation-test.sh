@@ -2707,6 +2707,10 @@ suite_mutation "idstack-doctor does not accept --help" \
 suite_mutation "idstack-learnings search does not refuse an unknown option" \
   scripts/idstack-learnings '*) [ -n "$BAD_OPT" ] || BAD_OPT="$1"; shift ;;' '*) shift ;;' integration-test.sh
 
+# 71e. idstack-doctor stops finding the Microsoft Store python3 shortcut (#185) -> test-doctor must fail.
+suite_mutation "idstack-doctor does not find the Microsoft Store stub" \
+  scripts/idstack-doctor '*/WindowsApps/*|*\\WindowsApps\\*) return 0 ;;' '*/NoSuchFolder/*) return 0 ;;' test-doctor.sh
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

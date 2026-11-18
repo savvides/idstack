@@ -15,7 +15,7 @@ scripts/idstack-gen-skills                     # Regenerate skills/<name>/SKILL.
                                            # ste-rules.js (from the preamble)
 scripts/idstack-gen-skills --dry-run           # Check if generated files are up to date
 scripts/idstack-doctor                         # Diagnose plugin install (python3, presence, manifest version)
-scripts/idstack-doctor --quick                 # One python3 code for /idstack:start: OK, PYTHON_MISSING, PYTHON_OLD or PYTHON_STUB
+scripts/idstack-doctor --quick                 # One python3 code for /idstack:start: OK, PYTHON_MISSING, PYTHON_OLD, PYTHON_STUB or PYTHON_WINSTUB
 scripts/idstack-status                         # Course health dashboard (run in a project dir)
 scripts/idstack-status --readiness             # Pre-export readiness check only
 scripts/idstack-status --context               # Context-recovery lines the preamble reads
@@ -48,12 +48,12 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/integration-test.sh        # 71 behavioral tests across the scripts/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 13 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
-./test/test-doctor.sh             # 27 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches, --quick and --help
+./test/test-doctor.sh             # 35 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches, --quick and --help
 ./test/test-status.sh             # 46 tests for scripts/idstack-status, incl. the --readiness export gate and the arguments
 ./test/test-manifest-merge.sh     # scripts/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # scripts/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on the local python3; CI covers 3.9 and 3.12
-./test/test-skill-shell-zsh.sh    # 255 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
+./test/test-skill-shell-zsh.sh    # 257 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules directly
                                   # (test/extension-harness.mjs stubs browser globals for the ones that need them)
