@@ -128,6 +128,18 @@ setup_happy_path
 mock_claude_output "some-other-plugin
 status: enabled"
 check "not installed is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is not installed"
+check "from a clone, the fix gives the path of the clone" "'$DOCTOR_CMD'" 1 "claude plugin marketplace add \"/[^\"]*/idstack\"$"
+
+# A desktop user has no clone: the doctor runs from the Claude Code plugin
+# cache. The cache is not a marketplace source, so the fix gives GitHub (#186).
+CACHE_IDSTACK_DIR="$HOME/.claude/plugins/cache/idstack/idstack/9.9.9.9"
+mkdir -p "$CACHE_IDSTACK_DIR"
+cp -R "$MOCK_IDSTACK_DIR/." "$CACHE_IDSTACK_DIR/"
+CACHE_DOCTOR="$CACHE_IDSTACK_DIR/scripts/idstack-doctor"
+check "in the plugin cache, the fix gives the GitHub marketplace" "'$CACHE_DOCTOR'" 1 "claude plugin marketplace add https://github.com/savvides/idstack.git"
+check "in the plugin cache, the fix does not give a local path" "'$CACHE_DOCTOR' | grep -c 'marketplace add \"/'" 1 "^0$"
+check "in the plugin cache, the fix does not tell the user to run ./setup" "'$CACHE_DOCTOR' | grep -c 'run ./setup'" 1 "^0$"
+"$CACHE_DOCTOR" > "$TEST_ROOT/cache-not-installed.txt" 2>&1 || true
 
 # The v3.3.0.0 regression: a neighbouring plugin's "enabled" line was read as
 # idstack's, so a disabled idstack was diagnosed healthy. Pinned here too, at
@@ -276,6 +288,7 @@ cp "$TEST_ROOT/no-python.txt" "$STE_OUT/no-python.txt"
 cp "$TEST_ROOT/winstub.txt" "$STE_OUT/winstub.txt"
 cp "$TEST_ROOT/bad-arg.txt" "$STE_OUT/bad-arg.txt"
 cp "$TEST_ROOT/help.txt" "$STE_OUT/help.txt"
+cp "$TEST_ROOT/cache-not-installed.txt" "$STE_OUT/cache-not-installed.txt"
 
 check "doctor output obeys the writing standard (healthy and problem runs)" \
   "'$PYTHON' '$REPO_DIR/scripts/idstack-ste-check' --format text '$STE_OUT'/*.txt"

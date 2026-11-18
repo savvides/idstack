@@ -34,7 +34,7 @@ Requirements: bash and python3 3.9 or later. `package-extension.sh` also needs `
 | Option | Effect |
 |--------|--------|
 | (none) | Installs at user scope (`--scope user`). |
-| `--local` | Installs at project scope (`--scope project`). |
+| `--local` | Installs at project scope (`--scope project`). Claude Code writes this scope to `.claude/settings.json` in the current folder, so run `<your idstack clone>/setup --local` from the course folder. |
 | `-h`, `--help` | Prints the usage and exits 0. |
 
 The steps, in sequence:
@@ -86,6 +86,8 @@ The full diagnosis has four groups. Each `PROBLEM` line adds one to the count.
 | Claude Code install | `claude plugin list` has no `idstack@idstack`, or its entry is not enabled |
 
 If `claude` is not on `PATH`, the last group prints a WARNING and does not add a problem. If python3 is on `PATH` but fails the check, `--quick` prints `PYTHON_WINSTUB` when the path of python3 has a `WindowsApps` folder. This is the Windows shortcut that opens the Microsoft Store. A python3 in that folder that passes the check gives `OK`. In other cases it prints `PYTHON_STUB` on macOS when `xcode-select -p` fails. In all other cases it prints `PYTHON_OLD`.
+
+When idstack is not installed, the doctor prints the two commands that install it. The marketplace in the first command is the clone. If the doctor runs from the Claude Code plugin cache (its path has `/plugins/cache/`), the marketplace is `https://github.com/savvides/idstack.git`.
 
 | Exit | Meaning |
 |------|---------|

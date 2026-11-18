@@ -165,8 +165,16 @@ if command -v claude >/dev/null 2>&1; then
     fi
   else
     echo "  PROBLEM: idstack@idstack is not installed."
-    echo "  Fix: run ./setup from the repo. You can also install idstack manually:"
-    echo "    claude plugin marketplace add \"$IDSTACK_DIR\""
+    # In the Claude Code plugin cache there is no clone and no ./setup, and the
+    # cache is not a marketplace source: give the GitHub marketplace (#186).
+    case "$IDSTACK_DIR" in
+      */plugins/cache/*)
+        echo "  Fix: install idstack from GitHub with these two commands:"
+        echo "    claude plugin marketplace add https://github.com/savvides/idstack.git" ;;
+      *)
+        echo "  Fix: run ./setup from the repo. You can also install idstack manually:"
+        echo "    claude plugin marketplace add \"$IDSTACK_DIR\"" ;;
+    esac
     echo "    claude plugin install idstack@idstack"
     note_problem
   fi
