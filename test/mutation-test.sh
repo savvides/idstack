@@ -2766,6 +2766,10 @@ suite_mutation "report init keeps a stopped report" \
 suite_mutation "report init keeps an exports/ report inside the export tree" \
   scripts/idstack-report-section "            elif os.path.basename(folder) == 'exports' and os.path.basename(exports) == '.idstack':" "            elif False:" test-report-section.py
 
+# 73g. A report.md in a course folder keeps its copy outside .idstack/ again (#199).
+suite_mutation "report init keeps a course-folder report outside .idstack" \
+  scripts/idstack-report-section "            elif os.path.isdir(os.path.join(folder, '.idstack')):" "            elif False:" test-report-section.py
+
 # 73c. An earlier report that is not UTF-8 gives a traceback again (#199).
 suite_mutation "report init gives a traceback for a report that is not UTF-8" \
   scripts/idstack-report-section '    except UnicodeDecodeError:' '    except ZeroDivisionError:' test-report-section.py
