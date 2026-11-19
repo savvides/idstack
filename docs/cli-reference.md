@@ -39,17 +39,18 @@ Requirements: bash and python3 3.9 or later. `package-extension.sh` also needs `
 
 The steps, in sequence:
 
-1. Run `scripts/idstack-gen-skills`. Its standard output is discarded.
-2. Stop if `.claude-plugin/plugin.json` or `.claude-plugin/marketplace.json` is missing.
-3. Run `claude plugin marketplace add <clone>`, then `claude plugin marketplace update idstack`.
-4. Run `claude plugin install idstack@idstack --scope <scope>`, then `claude plugin update`.
+1. Run `scripts/idstack-doctor --quick`. Stop if python3 is missing or older than 3.9.
+2. Run `scripts/idstack-gen-skills`. Its standard output is discarded.
+3. Stop if `.claude-plugin/plugin.json` or `.claude-plugin/marketplace.json` is missing.
+4. Run `claude plugin marketplace add <clone>`, then `claude plugin marketplace update idstack`.
+5. Run `claude plugin install idstack@idstack --scope <scope>`, then `claude plugin update`.
 
-A failed `update` command does not stop setup. If `claude` is not on `PATH`, setup prints a WARNING and the two manual commands, and exits 0. The clone path is the physical path (`pwd -P`), not a symlink.
+A failed `update` command does not stop setup. If `claude` is not on `PATH`, setup prints an ERROR and the two manual commands on stderr, and exits 1. The clone path is the physical path (`pwd -P`), not a symlink.
 
 | Exit | Meaning |
 |------|---------|
-| 0 | Installed, `--help`, or `claude` is not on `PATH` |
-| 1 | `idstack-gen-skills` failed, or a plugin manifest is missing. Also a failed `marketplace add` or `plugin install`: then setup prints the manual command on stderr. |
+| 0 | Installed, or `--help` |
+| 1 | python3 is missing or older than 3.9, `idstack-gen-skills` failed, or a plugin manifest is missing. Also `claude` is not on `PATH`, or `marketplace add` or `plugin install` failed. In these last cases setup prints the manual commands on stderr. |
 | 2 | An unknown argument |
 
 Files: reads `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`. Writes `skills/<name>/SKILL.md` and `extension/shared/ste-rules.js` in the clone.
@@ -153,7 +154,7 @@ The script examined 16 templates. 0 have problems.
 `idstack-status` prints the course health dashboard for the course folder.
 
 ```bash
-scripts/idstack-status [--readiness | --context | -h | --help]
+scripts/idstack-status [--readiness | --context] [-h | --help]
 ```
 
 | Option | Output |
