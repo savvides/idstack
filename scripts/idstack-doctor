@@ -110,7 +110,7 @@ plugin_manifest="$IDSTACK_DIR/.claude-plugin/plugin.json"
 market_manifest="$IDSTACK_DIR/.claude-plugin/marketplace.json"
 if [ -f "$plugin_manifest" ]; then
   # Prefer a real JSON parse (also catches a malformed manifest); fall back to
-  # grep|sed only when python3 does not run (the Requirements check has its PROBLEM).
+  # grep|sed only when python3 does not run or is older than 3.9 (the Requirements check has its PROBLEM).
   version=""
   if [ "$PY_OK" = 1 ]; then
     version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("version",""))' "$plugin_manifest" 2>/dev/null || true)
