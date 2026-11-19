@@ -123,6 +123,34 @@ setup_happy_path
 mock_claude_output "idstack@idstack
 status: disabled"
 check "installed but disabled is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is installed but not enabled"
+check "installed but disabled gives the enable command" "'$DOCTOR_CMD'" 1 "Fix: claude plugin enable idstack@idstack"
+
+# A project-scope install is disabled when `claude plugin list` runs in another
+# folder. The enable command does not help there (#201). The fixtures are real output.
+setup_happy_path
+mock_claude_output "Installed plugins:
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: project
+    Status: ✘ disabled"
+check "a project-scope install seen from a different folder names the scope" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is installed for one project folder only"
+check "a project-scope install gives the user-scope install command" "'$DOCTOR_CMD'" 1 "claude plugin install idstack@idstack --scope user"
+check "a project-scope install does not give the enable command" "'$DOCTOR_CMD' | grep -c 'plugin enable'" 1 "^0$"
+"$DOCTOR_CMD" > "$TEST_ROOT/project-scope.txt" 2>&1 || true
+
+mock_claude_output "Installed plugins:
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: project
+    Status: ✘ disabled
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: user
+    Status: ✔ enabled"
+check "a project-scope and a user-scope install together are OK" "'$DOCTOR_CMD'" 0 "installed and enabled"
 
 setup_happy_path
 mock_claude_output "some-other-plugin
@@ -149,6 +177,7 @@ remove_mock_claude
 check "from a clone, with claude absent, the WARNING tells the user to run ./setup" "'$DOCTOR_CMD'" 0 "Then run ./setup from the repo"
 check "in the plugin cache, with claude absent, the WARNING does not mention ./setup" "'$CACHE_DOCTOR' | grep -cF './setup'" 1 "^0$"
 check "in the plugin cache, with claude absent, the WARNING sends the user to the desktop app" "'$CACHE_DOCTOR'" 0 "install idstack again from the Claude desktop app"
+check "in the plugin cache, with claude absent, the WARNING does not promise install commands" "'$CACHE_DOCTOR' | grep -c 'It prints the install commands'" 1 "^0$"
 "$CACHE_DOCTOR" > "$TEST_ROOT/cache-no-claude.txt" 2>&1 || true
 
 mock_claude_output "idstack@idstack
@@ -158,6 +187,7 @@ check "from a clone, a missing marketplace.json says that ./setup cannot install
 check "in the plugin cache, a missing marketplace.json is a PROBLEM" "'$CACHE_DOCTOR'" 1 "PROBLEM: missing.*marketplace\.json"
 check "in the plugin cache, a missing marketplace.json does not mention ./setup" "'$CACHE_DOCTOR' | grep -cF './setup'" 1 "^0$"
 check "in the plugin cache, a missing marketplace.json says to install idstack again" "'$CACHE_DOCTOR'" 1 "Install idstack again"
+check "in the plugin cache, a missing marketplace.json gives the README address" "'$CACHE_DOCTOR'" 1 "https://github.com/savvides/idstack#"
 "$CACHE_DOCTOR" > "$TEST_ROOT/cache-no-marketplace.txt" 2>&1 || true
 
 # The v3.3.0.0 regression: a neighbouring plugin's "enabled" line was read as
@@ -314,6 +344,7 @@ echo 'not json at all' > "$MOCK_IDSTACK_DIR/.claude-plugin/plugin.json"
 setup_happy_path
 remove_mock_claude
 "$DOCTOR_CMD" > "$STE_OUT/no-claude.txt" 2>&1 || true
+cp "$TEST_ROOT/project-scope.txt" "$STE_OUT/project-scope.txt"
 cp "$TEST_ROOT/no-python.txt" "$STE_OUT/no-python.txt"
 cp "$TEST_ROOT/winstub.txt" "$STE_OUT/winstub.txt"
 cp "$TEST_ROOT/bad-arg.txt" "$STE_OUT/bad-arg.txt"

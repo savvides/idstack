@@ -2719,6 +2719,10 @@ suite_mutation "idstack-doctor does not know that it runs in the plugin cache" \
 suite_mutation "idstack-doctor prints a second PROBLEM for a python3 that does not run" \
   scripts/idstack-doctor 'if [ "$PY_OK" = 1 ]; then' 'if command -v python3 >/dev/null 2>&1; then' test-doctor.sh
 
+# 71h. A project-scope install gets the enable fix again (#201) -> test-doctor must fail.
+suite_mutation "idstack-doctor gives the enable fix for a project-scope install" \
+  scripts/idstack-doctor 'grep -qi "scope: project"' 'grep -qi "scope: no-such-scope"' test-doctor.sh
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

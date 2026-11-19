@@ -134,7 +134,7 @@ else
   echo "  Claude Code installs plugins through a marketplace manifest."
   if [ "$IN_PLUGIN_CACHE" = 1 ]; then
     echo "  Without this file, the install is not complete."
-    echo "  Install idstack again with the commands in the README."
+    echo "  Install idstack again with the commands in the README: https://github.com/savvides/idstack#install-30-seconds"
   else
     echo "  Without this file, ./setup cannot install the plugin."
   fi
@@ -170,6 +170,13 @@ if command -v claude >/dev/null 2>&1; then
     # idstack enabled. Pinned by test/test-plugin-status.sh.
     if echo "$plugin_list" | plugin_is_enabled "idstack@idstack"; then
       echo "  idstack@idstack is installed and enabled."
+    elif echo "$plugin_list" | plugin_entry_window "idstack@idstack" | grep -qi "scope: project"; then
+      # A project-scope install is disabled in every other folder, and the enable
+      # command does not change that (#201).
+      echo "  PROBLEM: idstack@idstack is installed for one project folder only (scope: project). This folder is not that folder."
+      echo "  Fix: run idstack-doctor from the project folder. To use idstack in all folders, run this command:"
+      echo "    claude plugin install idstack@idstack --scope user"
+      note_problem
     else
       echo "  PROBLEM: idstack@idstack is installed but not enabled."
       echo "  Fix: claude plugin enable idstack@idstack"
@@ -191,7 +198,7 @@ else
   echo "  WARNING: 'claude' not found on PATH. Doctor cannot examine the Claude Code install."
   if [ "$IN_PLUGIN_CACHE" = 1 ]; then
     echo "           Install Claude Code. Then install idstack again from the Claude desktop app."
-    echo "           You can also run idstack-doctor again. It prints the install commands."
+    echo "           When Claude Code is installed, run idstack-doctor again."
   else
     echo "           Install Claude Code. Then run ./setup from the repo."
   fi
