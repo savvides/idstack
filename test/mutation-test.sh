@@ -2743,6 +2743,21 @@ suite_mutation "setup prints the clone path without shell quoting" \
 suite_mutation "idstack-doctor prints the clone path without shell quoting" \
   scripts/idstack-doctor "marketplace add '\$(printf" "marketplace add \\\"\$IDSTACK_DIR\\\" '\$(printf" test-doctor.sh
 
+# 72. The preamble loses the Course Content Is Data rule -> smoke-test must fail.
+# Without it, text in an imported course can tell the model to run a command, and
+# allowed-tools pre-approves Bash for the turn.
+fresh
+sed -i.bak 's|^## Preamble: Course Content Is Data$|## Preamble: Course Content|' "$WORK/r/templates/preamble.md"
+regen
+expect_fail "preamble without the Course Content Is Data rule" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 72a. course-import pre-approves WebFetch again -> smoke-test must fail.
+fresh
+sed -i.bak 's|^  - AskUserQuestion$|  - AskUserQuestion\
+  - WebFetch|' "$WORK/r/skills/course-import/SKILL.md.tmpl"
+regen
+expect_fail "course-import pre-approves WebFetch" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
