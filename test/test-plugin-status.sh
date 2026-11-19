@@ -96,6 +96,32 @@ check_listing "idstack absent, another plugin enabled" disabled \
 'superpowers@marketplace
   Status: enabled'
 
+# plugin_one_folder_scope: real `claude plugin list` entries (Claude Code 2.1.323).
+# check_scope <name> <expected scope or empty> <listing>
+check_scope() {
+  TOTAL=$((TOTAL + 1))
+  local got
+  got=$(printf '%s\n' "$3" | plugin_one_folder_scope "idstack@idstack")
+  if [ "$got" = "$2" ]; then
+    PASS=$((PASS + 1)); echo "  PASS: $1 -> '$got'"
+  else
+    FAIL=$((FAIL + 1)); echo "  FAIL: $1 -> '$got' (expected '$2')"
+  fi
+}
+_e() { printf '  ❯ idstack@idstack\n    Version: 9.9.9.9\n    Scope: %s\n    Status: ✘ disabled\n' "$1"; }
+check_scope "project scope" project "$(_e project)"
+check_scope "local scope" local "$(_e local)"
+check_scope "user scope" "" "$(_e user)"
+check_scope "no scope line" "" 'idstack@idstack
+  Status: disabled'
+check_scope "project and user entries" "" "$(_e project)
+
+$(_e user)"
+check_scope "a neighbour's project scope is not idstack's" "" "$(_e user)
+
+  ❯ other@market
+    Scope: project"
+
 echo ""
 echo "  $PASS/$TOTAL passed"
 [ "$FAIL" = "0" ] || exit 1

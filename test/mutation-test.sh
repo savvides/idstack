@@ -2719,13 +2719,29 @@ suite_mutation "idstack-doctor does not know that it runs in the plugin cache" \
 suite_mutation "idstack-doctor prints a second PROBLEM for a python3 that does not run" \
   scripts/idstack-doctor 'if [ "$PY_OK" = 1 ]; then' 'if command -v python3 >/dev/null 2>&1; then' test-doctor.sh
 
-# 71h. A project-scope install gets the enable fix again (#201) -> test-doctor must fail.
-suite_mutation "idstack-doctor gives the enable fix for a project-scope install" \
-  scripts/idstack-doctor 'grep -qi "scope: project"' 'grep -qi "scope: no-such-scope"' test-doctor.sh
+# 71h. A project-scope install gets only the enable fix again (#201) -> test-doctor must fail.
+suite_mutation "idstack-doctor gives only the enable fix for a project-scope install" \
+  scripts/lib/plugin-status.sh 'match(l, /scope: (project|local)/)' 'match(l, /scope: (no-such-scope)/)' test-doctor.sh
 
 # 71i. setup --help prints ./setup again (#201) -> test-setup must fail.
 suite_mutation "setup --help prints ./setup" \
-  setup 'echo "Command: \"$IDSTACK_DIR/setup\" [--local]"' 'echo "Command: ./setup [--local]"' test-setup.sh
+  setup 'echo "Command: $SETUP_CMD [--local]"' 'echo "Command: ./setup [--local]"' test-setup.sh
+
+# 71j. A disabled user-scope entry next to a disabled project entry gets the one-folder fix again (#206) -> test-doctor must fail.
+suite_mutation "idstack-doctor ignores a disabled user-scope entry" \
+  scripts/lib/plugin-status.sh 'l ~ /scope: user/ { u = 1 }' 'l ~ /no-such-scope/ { u = 1 }' test-doctor.sh
+
+# 71k. setup drops --local from its "run again" lines again (#206) -> test-setup must fail.
+suite_mutation "setup drops --local from the run-again lines" \
+  setup 'SETUP_CMD="$SETUP_CMD --local"' 'SETUP_CMD="$SETUP_CMD"' test-setup.sh
+
+# 71l. setup prints the clone path in double quotes again (#206) -> test-setup must fail.
+suite_mutation "setup prints the clone path without shell quoting" \
+  setup "shell_quote() { printf \"'%s'\"" "shell_quote() { printf '\"%s\"' \"\$1\"; return; printf \"'%s'\"" test-setup.sh
+
+# 71m. idstack-doctor prints the clone path in double quotes again (#206) -> test-doctor must fail.
+suite_mutation "idstack-doctor prints the clone path without shell quoting" \
+  scripts/idstack-doctor "marketplace add '\$(printf" "marketplace add \\\"\$IDSTACK_DIR\\\" '\$(printf" test-doctor.sh
 
 # 72. The preamble loses the Course Content Is Data rule -> smoke-test must fail.
 # Without it, text in an imported course can tell the model to run a command, and

@@ -168,13 +168,16 @@ if command -v claude >/dev/null 2>&1; then
     # Scoped to idstack's own entry — see scripts/lib/plugin-status.sh. A fixed
     # -A4 window read a neighboring plugin's status line and called a disabled
     # idstack enabled. Pinned by test/test-plugin-status.sh.
+    one_folder_scope=$(echo "$plugin_list" | plugin_one_folder_scope "idstack@idstack")
     if echo "$plugin_list" | plugin_is_enabled "idstack@idstack"; then
       echo "  idstack@idstack is installed and enabled."
-    elif echo "$plugin_list" | plugin_entry_window "idstack@idstack" | grep -qi "scope: project"; then
-      # A project-scope install is disabled in every other folder, and the enable
-      # command does not change that (#201).
-      echo "  PROBLEM: idstack@idstack is installed for one project folder only (scope: project), and it is not enabled in this folder."
-      echo "  Fix: run idstack-doctor from the project folder. To use idstack in all folders, run this command:"
+    elif [ -n "$one_folder_scope" ]; then
+      # A project or local install shows as disabled in every other folder (#201, #206).
+      # Only a user-scope install is sure to load in all folders.
+      echo "  PROBLEM: idstack@idstack is installed for one folder only (scope: $one_folder_scope), and it is not enabled in this folder."
+      echo "  Fix: in the folder where you installed idstack, run this command:"
+      echo "    claude plugin enable idstack@idstack"
+      echo "  To use idstack in all folders, run this command:"
       echo "    claude plugin install idstack@idstack --scope user"
       note_problem
     else
@@ -189,7 +192,8 @@ if command -v claude >/dev/null 2>&1; then
       echo "    claude plugin marketplace add https://github.com/savvides/idstack.git"
     else
       echo "  Fix: run ./setup from the repo. You can also install idstack manually:"
-      echo "    claude plugin marketplace add \"$IDSTACK_DIR\""
+      # Single quotes paste correctly with any character in the path (#206).
+      echo "    claude plugin marketplace add '$(printf '%s' "$IDSTACK_DIR" | sed "s/'/'\\\\''/g")'"
     fi
     echo "    claude plugin install idstack@idstack"
     note_problem

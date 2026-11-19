@@ -57,7 +57,7 @@ Files: reads `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
 
 ```bash
 $ ./setup --help
-Command: "<your idstack clone>/setup" [--local]
+Command: '<your idstack clone>/setup' [--local]
   --local  Installs idstack at project scope (./.claude/), not at user scope.
 ```
 
@@ -81,7 +81,7 @@ The full diagnosis has four groups. Each `PROBLEM` line adds one to the count.
 
 | Group | PROBLEM when |
 |-------|--------------|
-| Requirements | python3 is missing or older than 3.9, or python3 is the Windows shortcut for the Microsoft Store |
+| Requirements | python3 is missing, does not run, or is older than 3.9, or python3 is the Windows shortcut for the Microsoft Store |
 | Plugin manifests | `plugin.json` is missing or has no version that can be read, or `marketplace.json` is missing |
 | Skill files | One of the 16 `skills/<name>/SKILL.md` files is missing |
 | Claude Code install | `claude plugin list` has no `idstack@idstack`, or its entry is not enabled |
@@ -92,7 +92,7 @@ When idstack is not installed, the doctor prints the two commands that install i
 
 In the cache, the PROBLEM for a missing `marketplace.json` says to install idstack again with the commands in the README. It also gives the address of the install section. The WARNING for a missing `claude` command says to install Claude Code and to install idstack again from the Claude desktop app. It then says to run `idstack-doctor` again when Claude Code is installed, and it does not print the install commands. In a clone, both mention `./setup`.
 
-If the entry of `idstack@idstack` has `Scope: project` and is not enabled, the install is for one project folder only. The PROBLEM then says so and gives two fixes: run `idstack-doctor` from that folder, or run `claude plugin install idstack@idstack --scope user`. It does not give the enable command, which does not help in another folder. Any other entry that is not enabled still gets `claude plugin enable idstack@idstack`.
+If the entry of `idstack@idstack` has `Scope: project` or `Scope: local` and is not enabled, the install is for one folder only. The PROBLEM then names the scope and gives two fixes: `claude plugin enable idstack@idstack` in the folder where you installed idstack, or `claude plugin install idstack@idstack --scope user` for all folders. When a `Scope: user` entry is also there, or the entry has no scope, the fix is `claude plugin enable idstack@idstack`.
 
 | Exit | Meaning |
 |------|---------|
@@ -558,5 +558,5 @@ These files are not tools. Other scripts load them.
 
 | File | Loaded by | Content |
 |------|-----------|---------|
-| `scripts/lib/plugin-status.sh` | `idstack-doctor` | `plugin_entry_window` and `plugin_is_enabled`: read the idstack entry from `claude plugin list` |
+| `scripts/lib/plugin-status.sh` | `idstack-doctor` | `plugin_entry_window`, `plugin_is_enabled` and `plugin_one_folder_scope`: read the idstack entry from `claude plugin list` |
 | `scripts/lib/citations.py` | `idstack-report-section`, `test/check-citation-tiers.py` | `load_refs` and `check_evidence`: read the tiers in [`evidence/references.md`](../evidence/references.md) and examine an Evidence cell |
