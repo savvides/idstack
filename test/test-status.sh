@@ -140,6 +140,10 @@ check "an unknown argument exits 2" "$STATUS --bogus" 2 "ERROR: unknown argument
 check "an unknown argument shows the command" "$STATUS --bogus" 2 "^Command: idstack-status"
 check "an unknown argument prints no dashboard" "$STATUS --bogus 2>/dev/null | wc -c | tr -d ' '" 0 "^0$"
 check "an unknown argument after a valid flag exits 2" "$STATUS --context --bogus" 2 "ERROR: unknown argument: --bogus"
+# #200: the two output flags together are refused, not resolved by position.
+check "--readiness with --context exits 2" "$STATUS --readiness --context" 2 "not the two"
+check "--context with --readiness exits 2 and prints nothing" "$STATUS --context --readiness 2>/dev/null | wc -c | tr -d ' '" 0 "^0$"
+check "--help wins over --readiness with --context" "$STATUS --readiness --context --help" 0 "^Usage: idstack-status"
 check "the help text obeys the writing standard" \
   "( set -o pipefail; $STATUS --help | python3 '$STE_CHECK' --format text - )"
 check "the unknown argument message obeys the writing standard" \

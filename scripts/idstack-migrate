@@ -38,16 +38,19 @@ LATEST_VERSION="1.4"
 
 INIT=0
 MANIFEST=""
+BAD_FLAG=""
 for arg in "$@"; do
   case "$arg" in
     --init) INIT=1 ;;
     -h|--help)
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
-    -*) echo "idstack-migrate: unknown flag: $arg" >&2; exit 2 ;;
+    -*) [ -n "$BAD_FLAG" ] || BAD_FLAG="$arg" ;;
     *) [ -z "$MANIFEST" ] && MANIFEST="$arg" ;;
   esac
 done
+# After the loop, so that --help wins from any position.
+[ -z "$BAD_FLAG" ] || { echo "idstack-migrate: unknown flag: $BAD_FLAG" >&2; exit 2; }
 
 command -v python3 &>/dev/null || { echo "idstack-migrate: python3 is necessary" >&2; exit 3; }
 MANIFEST="${MANIFEST:-.idstack/project.json}"
