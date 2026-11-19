@@ -125,8 +125,9 @@ status: disabled"
 check "installed but disabled is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is installed but not enabled"
 check "installed but disabled gives the enable command" "'$DOCTOR_CMD'" 1 "Fix: claude plugin enable idstack@idstack"
 
-# A project-scope install is disabled when `claude plugin list` runs in another
-# folder. The enable command does not help there (#201). The fixtures are real output.
+# A project- or local-scope install is disabled when `claude plugin list` runs in
+# another folder, or after a disable in its own folder (#201, #206). The fixtures are
+# real output (Claude Code 2.1.323).
 setup_happy_path
 mock_claude_output "Installed plugins:
 
@@ -134,10 +135,41 @@ mock_claude_output "Installed plugins:
     Version: 9.9.9.9
     Scope: project
     Status: ✘ disabled"
-check "a project-scope install seen from a different folder names the scope" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is installed for one project folder only"
+check "a project-scope install seen from a different folder names the scope" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is installed for one folder only \(scope: project\)"
 check "a project-scope install gives the user-scope install command" "'$DOCTOR_CMD'" 1 "claude plugin install idstack@idstack --scope user"
-check "a project-scope install does not give the enable command" "'$DOCTOR_CMD' | grep -c 'plugin enable'" 1 "^0$"
+check "a project-scope install gives the enable command for its own folder" "'$DOCTOR_CMD'" 1 "in the folder where you installed idstack"
+check "a project-scope install does not send the user to the folder they are in" "'$DOCTOR_CMD' | grep -c 'from the project folder'" 1 "^0$"
 "$DOCTOR_CMD" > "$TEST_ROOT/project-scope.txt" 2>&1 || true
+
+mock_claude_output "Installed plugins:
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: local
+    Status: ✘ disabled"
+check "a local-scope install names the scope" "'$DOCTOR_CMD'" 1 "installed for one folder only \(scope: local\)"
+
+# A disabled user-scope entry: enable fixes it in every folder, also next to a
+# disabled project entry.
+mock_claude_output "Installed plugins:
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: user
+    Status: ✘ disabled"
+check "a disabled user-scope install gives the enable command" "'$DOCTOR_CMD'" 1 "Fix: claude plugin enable idstack@idstack"
+mock_claude_output "Installed plugins:
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: project
+    Status: ✘ disabled
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: user
+    Status: ✘ disabled"
+check "a project-scope and a user-scope install, both disabled, give the enable command" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is installed but not enabled"
 
 mock_claude_output "Installed plugins:
 
