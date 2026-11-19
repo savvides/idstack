@@ -381,7 +381,7 @@ check "gen-skills --bogus after --dry-run still exits 2" \
 check "migrate --help after an unknown flag prints the usage" \
   "$IDSTACK_DIR/scripts/idstack-migrate --bogus --help" 0 "INITIALIZED <path>"
 check "migrate --bogus --init makes no manifest" \
-  "mkdir -p '$TEST_DIR/mig-bogus' && cd '$TEST_DIR/mig-bogus' && { $IDSTACK_DIR/scripts/idstack-migrate --bogus --init 2>/dev/null; [ \$? -eq 2 ]; } && [ ! -e .idstack ]"
+  "mkdir -p '$TEST_DIR/mig-bogus' && ( cd '$TEST_DIR/mig-bogus' && { $IDSTACK_DIR/scripts/idstack-migrate --bogus --init 2>/dev/null; [ \$? -eq 2 ]; } && [ ! -e .idstack ] )"
 check "learnings delete --help prints the usage" \
   "$IDSTACK_DIR/scripts/idstack-learnings delete --help" 0 "^Usage: idstack-learnings"
 check "learnings promote -h prints the usage" \
