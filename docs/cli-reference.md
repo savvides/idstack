@@ -56,7 +56,7 @@ Files: reads `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
 
 ```bash
 $ ./setup --help
-Command: ./setup [--local]
+Command: "<your idstack clone>/setup" [--local]
   --local  Installs idstack at project scope (./.claude/), not at user scope.
 ```
 

@@ -12,17 +12,17 @@ for arg in "$@"; do
   case "$arg" in
     --local) CLAUDE_SCOPE="project" ;;
     -h|--help)
-      echo "Command: ./setup [--local]"
+      echo "Command: \"$IDSTACK_DIR/setup\" [--local]"
       echo "  --local  Installs idstack at project scope (./.claude/), not at user scope."
       exit 0
       ;;
-    *) echo "ERROR: unknown argument: $arg" >&2; echo "Run ./setup --help for more information." >&2; exit 2 ;;
+    *) echo "ERROR: unknown argument: $arg" >&2; echo "Run \"$IDSTACK_DIR/setup\" --help for more information." >&2; exit 2 ;;
   esac
 done
 
 # python3 3.9 or later is required by the scripts. Check first: the next step needs it.
 _py=$("$IDSTACK_DIR/scripts/idstack-doctor" --quick) || {
-  echo "ERROR: Setup needs python3 3.9 or later ($_py). Install it. Then run ./setup again." >&2
+  echo "ERROR: Setup needs python3 3.9 or later ($_py). Install it. Then run \"$IDSTACK_DIR/setup\" again." >&2
   exit 1
 }
 
@@ -59,7 +59,7 @@ if command -v claude >/dev/null 2>&1; then
   if ! claude plugin marketplace add "$IDSTACK_DIR"; then
     echo "" >&2
     echo "ERROR: The 'claude plugin marketplace add' command stopped with an error." >&2
-    echo "Run this command manually. Then run ./setup again:" >&2
+    echo "Run this command manually. Then run \"$IDSTACK_DIR/setup\" again:" >&2
     echo "    claude plugin marketplace add \"$IDSTACK_DIR\"" >&2
     exit 1
   fi
@@ -76,7 +76,7 @@ if command -v claude >/dev/null 2>&1; then
   echo "Setup installed idstack in Claude Code (scope: $CLAUDE_SCOPE)."
 else
   echo "ERROR: 'claude' not found on PATH. Setup did not install idstack in Claude Code." >&2
-  echo "Install Claude Code. Then run ./setup again. You can also install idstack manually:" >&2
+  echo "Install Claude Code. Then run \"$IDSTACK_DIR/setup\" again. You can also install idstack manually:" >&2
   echo "    claude plugin marketplace add \"$IDSTACK_DIR\"" >&2
   echo "    claude plugin install idstack@idstack --scope $CLAUDE_SCOPE" >&2
   exit 1
