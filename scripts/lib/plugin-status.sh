@@ -23,3 +23,14 @@ plugin_entry_window() {
 plugin_is_enabled() {
   plugin_entry_window "$1" | grep -qi "enabled"
 }
+
+# plugin_one_folder_scope <plugin-id> — stdin is `claude plugin list` output.
+# Prints "project" or "local" when that plugin has an entry with one of those
+# scopes and no user-scope entry. Prints nothing otherwise.
+plugin_one_folder_scope() {
+  plugin_entry_window "$1" | awk '
+    { l = tolower($0) }
+    l ~ /scope: user/ { u = 1 }
+    !s && match(l, /scope: (project|local)/) { s = substr(l, RSTART + 7, RLENGTH - 7) }
+    END { if (s != "" && !u) print s }'
+}

@@ -7,9 +7,11 @@ IDSTACK_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 # Default install: user-scope plugin so /idstack:<skill> is discovered.
 CLAUDE_SCOPE="user"  # claude plugin scope: user (global) or project (--local)
-# %q quotes the path, so a printed command pastes correctly with any character in it.
-DIR_Q=$(printf '%q' "$IDSTACK_DIR")
-SETUP_CMD="$DIR_Q/setup"
+# Single quotes, so a printed command pastes correctly with any character in the path.
+# printf %q would write accented letters as octal codes in a C locale.
+shell_quote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+DIR_Q=$(shell_quote "$IDSTACK_DIR")
+SETUP_CMD=$(shell_quote "$IDSTACK_DIR/setup")
 
 for arg in "$@"; do
   case "$arg" in

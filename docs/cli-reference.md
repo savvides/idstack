@@ -57,7 +57,7 @@ Files: reads `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
 
 ```bash
 $ ./setup --help
-Command: <your idstack clone>/setup [--local]
+Command: '<your idstack clone>/setup' [--local]
   --local  Installs idstack at project scope (./.claude/), not at user scope.
 ```
 
@@ -558,5 +558,5 @@ These files are not tools. Other scripts load them.
 
 | File | Loaded by | Content |
 |------|-----------|---------|
-| `scripts/lib/plugin-status.sh` | `idstack-doctor` | `plugin_entry_window` and `plugin_is_enabled`: read the idstack entry from `claude plugin list` |
+| `scripts/lib/plugin-status.sh` | `idstack-doctor` | `plugin_entry_window`, `plugin_is_enabled` and `plugin_one_folder_scope`: read the idstack entry from `claude plugin list` |
 | `scripts/lib/citations.py` | `idstack-report-section`, `test/check-citation-tiers.py` | `load_refs` and `check_evidence`: read the tiers in [`evidence/references.md`](../evidence/references.md) and examine an Evidence cell |
