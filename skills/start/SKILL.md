@@ -238,7 +238,8 @@ fi
 - This skill will create or update the manifest during its workflow.
 
 **If IDSTACK_NOT_FOUND:** Tell the user: "idstack cannot find its files. Install
-idstack again with these two commands in a terminal:
+idstack again with these three commands in a terminal:
+`claude plugin marketplace update idstack`,
 `claude plugin uninstall idstack@idstack` and
 `claude plugin install idstack@idstack`. Then start a new session." STOP.
 
