@@ -378,6 +378,30 @@ mkdir -p "$WORK/lock/.idstack"
 check "two concurrent merges lose no update" \
   "python3 -c 'import json; d=json.load(open(\"$WORK/lock/.idstack/project.json\")); assert d[\"quality_review\"][\"n\"]==40 and d[\"red_team_audit\"][\"n\"]==40, d'"
 
+# The lock, without timing (#203): hold .manifest.lock, start a merge, and make
+# sure that it waits. Test 29 alone passes with no lock when the writes do not overlap.
+mkdir -p "$WORK/held/.idstack"
+( cd "$WORK/held" && echo '{}' | "$MERGE" --create --section context --payload - --quiet )
+check "a merge waits while another process holds the lock" \
+  "python3 - '$MERGE' '$WORK/held' <<'PY'
+import fcntl, json, subprocess, sys
+merge, d = sys.argv[1], sys.argv[2]
+manifest = d + '/.idstack/project.json'
+lock = open(d + '/.idstack/.manifest.lock', 'a')
+fcntl.flock(lock, fcntl.LOCK_EX)
+p = subprocess.Popen([merge, '--section', 'quality_review', '--payload', '-', '--quiet'], cwd=d, stdin=subprocess.PIPE)
+p.stdin.write(b'{\"n\": 1}'); p.stdin.close()
+try:
+    p.wait(timeout=5)
+    sys.exit('the merge did not wait for the lock')
+except subprocess.TimeoutExpired:
+    pass
+assert json.load(open(manifest)).get('quality_review') != {'n': 1}
+lock.close()
+assert p.wait(timeout=30) == 0
+assert json.load(open(manifest))['quality_review'] == {'n': 1}
+PY"
+
 # --- Test 30: --expect-updated (#179). A stale read writes nothing ---
 seed_manifest
 cp "$WORK/project.json" "$WORK/expect-before.json"
