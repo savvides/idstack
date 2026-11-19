@@ -199,7 +199,7 @@ You can use idstack in the Code tab of the [Claude desktop app](https://claude.a
    ```
    /plugin marketplace add savvides/idstack
    ```
-   If you added the idstack marketplace before, also paste this line and press Return. Without it, Claude Code installs the version from the day you added the marketplace:
+   If you added the idstack marketplace before, also paste this line and press Return. Without it, Claude Code can install an old version:
    ```
    /plugin marketplace update idstack
    ```
