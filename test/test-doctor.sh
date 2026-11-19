@@ -123,6 +123,34 @@ setup_happy_path
 mock_claude_output "idstack@idstack
 status: disabled"
 check "installed but disabled is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is installed but not enabled"
+check "installed but disabled gives the enable command" "'$DOCTOR_CMD'" 1 "Fix: claude plugin enable idstack@idstack"
+
+# A project-scope install is disabled when `claude plugin list` runs in another
+# folder. The enable command does not help there (#201). The fixtures are real output.
+setup_happy_path
+mock_claude_output "Installed plugins:
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: project
+    Status: ✘ disabled"
+check "a project-scope install seen from a different folder names the scope" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack@idstack is installed for one project folder only"
+check "a project-scope install gives the user-scope install command" "'$DOCTOR_CMD'" 1 "claude plugin install idstack@idstack --scope user"
+check "a project-scope install does not give the enable command" "'$DOCTOR_CMD' | grep -c 'plugin enable'" 1 "^0$"
+"$DOCTOR_CMD" > "$TEST_ROOT/project-scope.txt" 2>&1 || true
+
+mock_claude_output "Installed plugins:
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: project
+    Status: ✘ disabled
+
+  ❯ idstack@idstack
+    Version: 9.9.9.9
+    Scope: user
+    Status: ✔ enabled"
+check "a project-scope and a user-scope install together are OK" "'$DOCTOR_CMD'" 0 "installed and enabled"
 
 setup_happy_path
 mock_claude_output "some-other-plugin
@@ -149,6 +177,7 @@ remove_mock_claude
 check "from a clone, with claude absent, the WARNING tells the user to run ./setup" "'$DOCTOR_CMD'" 0 "Then run ./setup from the repo"
 check "in the plugin cache, with claude absent, the WARNING does not mention ./setup" "'$CACHE_DOCTOR' | grep -cF './setup'" 1 "^0$"
 check "in the plugin cache, with claude absent, the WARNING sends the user to the desktop app" "'$CACHE_DOCTOR'" 0 "install idstack again from the Claude desktop app"
+check "in the plugin cache, with claude absent, the WARNING does not promise install commands" "'$CACHE_DOCTOR' | grep -c 'It prints the install commands'" 1 "^0$"
 "$CACHE_DOCTOR" > "$TEST_ROOT/cache-no-claude.txt" 2>&1 || true
 
 mock_claude_output "idstack@idstack
@@ -158,6 +187,7 @@ check "from a clone, a missing marketplace.json says that ./setup cannot install
 check "in the plugin cache, a missing marketplace.json is a PROBLEM" "'$CACHE_DOCTOR'" 1 "PROBLEM: missing.*marketplace\.json"
 check "in the plugin cache, a missing marketplace.json does not mention ./setup" "'$CACHE_DOCTOR' | grep -cF './setup'" 1 "^0$"
 check "in the plugin cache, a missing marketplace.json says to install idstack again" "'$CACHE_DOCTOR'" 1 "Install idstack again"
+check "in the plugin cache, a missing marketplace.json gives the README address" "'$CACHE_DOCTOR'" 1 "https://github.com/savvides/idstack#"
 "$CACHE_DOCTOR" > "$TEST_ROOT/cache-no-marketplace.txt" 2>&1 || true
 
 # The v3.3.0.0 regression: a neighbouring plugin's "enabled" line was read as
@@ -218,6 +248,16 @@ fake_cmd uname 'echo Linux'
 check "--quick prints PYTHON_OLD for an old python3 that is not the macOS stub" "'$DOCTOR_CMD' --quick" 1 "^PYTHON_OLD$"
 restore_quick_cmds
 
+# A python3 that does not run gives one PROBLEM, not a second one from the
+# plugin.json check (#201). That check reads the version with grep instead.
+setup_happy_path
+mock_claude_output "idstack@idstack
+status: enabled"
+fake_cmd python3 'exit 1'
+check "a python3 that does not run gives one PROBLEM" "'$DOCTOR_CMD' | grep -c 'PROBLEM'" 0 "^1$"
+check "a python3 that does not run still shows the plugin.json version" "'$DOCTOR_CMD'" 1 "found plugin.json \\(version 9\\.9\\.9\\.9\\)"
+restore_quick_cmds
+
 # --- the Microsoft Store shortcut on Windows (#185) ---
 # Windows has a python3 shortcut that opens the Microsoft Store. It fails when it
 # runs, and it lives in a WindowsApps folder. A python3 that works in that folder
@@ -236,6 +276,7 @@ fake_cmd uname 'echo MINGW64_NT-10.0-19045'
 fake_cmd python3 'exit 1' "$WIN_BIN"
 check "--quick prints PYTHON_WINSTUB for the Microsoft Store stub" "PATH='$WIN_PATH' '$DOCTOR_CMD' --quick" 1 "^PYTHON_WINSTUB$"
 check "the full run reports the Microsoft Store stub" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "PROBLEM: .*Microsoft Store"
+check "the Microsoft Store stub gives one PROBLEM" "PATH='$WIN_PATH' '$DOCTOR_CMD' | grep -c 'PROBLEM'" 0 "^1$"
 check "the full run sends the user to the Microsoft Store for the stub" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Fix: open the Microsoft Store app.*Python Software Foundation"
 check "the full run tells the user to run the doctor again after the install" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Install the newest version.*run idstack-doctor again"
 # The python.org installer gives no python3 command, so the shortcut stays first on PATH and the doctor says the same again.
@@ -303,6 +344,7 @@ echo 'not json at all' > "$MOCK_IDSTACK_DIR/.claude-plugin/plugin.json"
 setup_happy_path
 remove_mock_claude
 "$DOCTOR_CMD" > "$STE_OUT/no-claude.txt" 2>&1 || true
+cp "$TEST_ROOT/project-scope.txt" "$STE_OUT/project-scope.txt"
 cp "$TEST_ROOT/no-python.txt" "$STE_OUT/no-python.txt"
 cp "$TEST_ROOT/winstub.txt" "$STE_OUT/winstub.txt"
 cp "$TEST_ROOT/bad-arg.txt" "$STE_OUT/bad-arg.txt"

@@ -2715,6 +2715,18 @@ suite_mutation "idstack-doctor does not find the Microsoft Store stub" \
 suite_mutation "idstack-doctor does not know that it runs in the plugin cache" \
   scripts/idstack-doctor '*/plugins/cache/*) IN_PLUGIN_CACHE=1 ;;' '*/no-such-folder/*) IN_PLUGIN_CACHE=1 ;;' test-doctor.sh
 
+# 71g. A python3 that does not run gives a second PROBLEM again (#201) -> test-doctor must fail.
+suite_mutation "idstack-doctor prints a second PROBLEM for a python3 that does not run" \
+  scripts/idstack-doctor 'if [ "$PY_OK" = 1 ]; then' 'if command -v python3 >/dev/null 2>&1; then' test-doctor.sh
+
+# 71h. A project-scope install gets the enable fix again (#201) -> test-doctor must fail.
+suite_mutation "idstack-doctor gives the enable fix for a project-scope install" \
+  scripts/idstack-doctor 'grep -qi "scope: project"' 'grep -qi "scope: no-such-scope"' test-doctor.sh
+
+# 71i. setup --help prints ./setup again (#201) -> test-setup must fail.
+suite_mutation "setup --help prints ./setup" \
+  setup 'echo "Command: \"$IDSTACK_DIR/setup\" [--local]"' 'echo "Command: ./setup [--local]"' test-setup.sh
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

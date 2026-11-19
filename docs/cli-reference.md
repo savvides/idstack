@@ -39,24 +39,25 @@ Requirements: bash and python3 3.9 or later. `package-extension.sh` also needs `
 
 The steps, in sequence:
 
-1. Run `scripts/idstack-gen-skills`. Its standard output is discarded.
-2. Stop if `.claude-plugin/plugin.json` or `.claude-plugin/marketplace.json` is missing.
-3. Run `claude plugin marketplace add <clone>`, then `claude plugin marketplace update idstack`.
-4. Run `claude plugin install idstack@idstack --scope <scope>`, then `claude plugin update`.
+1. Run `scripts/idstack-doctor --quick`. Stop if python3 is missing, does not run, or is older than 3.9.
+2. Run `scripts/idstack-gen-skills`. Its standard output is discarded.
+3. Stop if `.claude-plugin/plugin.json` or `.claude-plugin/marketplace.json` is missing.
+4. Run `claude plugin marketplace add <clone>`, then `claude plugin marketplace update idstack`.
+5. Run `claude plugin install idstack@idstack --scope <scope>`, then `claude plugin update`.
 
-A failed `update` command does not stop setup. If `claude` is not on `PATH`, setup prints a WARNING and the two manual commands, and exits 0. The clone path is the physical path (`pwd -P`), not a symlink.
+A failed `update` command does not stop setup. If `claude` is not on `PATH`, setup prints an ERROR and the two manual commands on stderr, and exits 1. The clone path is the physical path (`pwd -P`), not a symlink.
 
 | Exit | Meaning |
 |------|---------|
-| 0 | Installed, `--help`, or `claude` is not on `PATH` |
-| 1 | `idstack-gen-skills` failed, or a plugin manifest is missing. Also a failed `marketplace add` or `plugin install`: then setup prints the manual command on stderr. |
+| 0 | Installed, or `--help` |
+| 1 | python3 is missing, does not run, or is older than 3.9, `idstack-gen-skills` failed, or a plugin manifest is missing. Also `claude` is not on `PATH`, or `marketplace add` or `plugin install` failed. In these last cases setup prints the manual commands on stderr. |
 | 2 | An unknown argument |
 
 Files: reads `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`. Writes `skills/<name>/SKILL.md` and `extension/shared/ste-rules.js` in the clone.
 
 ```bash
 $ ./setup --help
-Command: ./setup [--local]
+Command: "<your idstack clone>/setup" [--local]
   --local  Installs idstack at project scope (./.claude/), not at user scope.
 ```
 
@@ -87,7 +88,11 @@ The full diagnosis has four groups. Each `PROBLEM` line adds one to the count.
 
 If `claude` is not on `PATH`, the last group prints a WARNING and does not add a problem. If python3 is on `PATH` but fails the check, `--quick` prints `PYTHON_WINSTUB` when the path of python3 has a `WindowsApps` folder. This is the Windows shortcut that opens the Microsoft Store. A python3 in that folder that passes the check gives `OK`. In other cases it prints `PYTHON_STUB` on macOS when `xcode-select -p` fails. In all other cases it prints `PYTHON_OLD`.
 
-When idstack is not installed, the doctor prints the two commands that install it. The marketplace in the first command is the clone. If the doctor runs from the Claude Code plugin cache (its path has `/plugins/cache/`), there is no clone and no `./setup`. Then the marketplace is `https://github.com/savvides/idstack.git`. In the cache, the PROBLEM for a missing `marketplace.json` and the WARNING for a missing `claude` command also say to install idstack again. In a clone, they say to run `./setup`.
+When idstack is not installed, the doctor prints the two commands that install it. The marketplace in the first command is the clone. If the doctor runs from the Claude Code plugin cache (its path has `/plugins/cache/`), there is no clone and no `./setup`. Then the marketplace is `https://github.com/savvides/idstack.git`.
+
+In the cache, the PROBLEM for a missing `marketplace.json` says to install idstack again with the commands in the README. It also gives the address of the install section. The WARNING for a missing `claude` command says to install Claude Code and to install idstack again from the Claude desktop app. It then says to run `idstack-doctor` again when Claude Code is installed, and it does not print the install commands. In a clone, both mention `./setup`.
+
+If the entry of `idstack@idstack` has `Scope: project` and is not enabled, the install is for one project folder only. The PROBLEM then says so and gives two fixes: run `idstack-doctor` from that folder, or run `claude plugin install idstack@idstack --scope user`. It does not give the enable command, which does not help in another folder. Any other entry that is not enabled still gets `claude plugin enable idstack@idstack`.
 
 | Exit | Meaning |
 |------|---------|
@@ -149,7 +154,7 @@ The script examined 16 templates. 0 have problems.
 `idstack-status` prints the course health dashboard for the course folder.
 
 ```bash
-scripts/idstack-status [--readiness | --context | -h | --help]
+scripts/idstack-status [--readiness | --context] [-h | --help]
 ```
 
 | Option | Output |

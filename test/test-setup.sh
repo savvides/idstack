@@ -63,8 +63,19 @@ raw_setup() {
     cd "$WORK/env/idstack" && ./setup "$@" )
 }
 
+# far_setup <flags...> — like raw_setup, but starts setup from another folder,
+# as the README tells a user to do. $_sp is the path that setup must print.
+far_setup() {
+  ( export HOME="$WORK/env/home" \
+           PATH="$WORK/env/bin:$PATH" \
+           CLAUDE_STUB_LOG="$WORK/env/claude.log" \
+           CLAUDE_STUB_EXIT="${STUB_EXIT:-0}"
+    cd "$WORK" && "$WORK/env/idstack/setup" "$@" )
+}
+
 # --- flag parsing ---
 setup_env
+_sp="$(cd "$WORK/env/idstack" && pwd -P)/setup"
 check "unknown flag exits 2" \
   "raw_setup --bogus >/dev/null 2>&1; [ \$? -eq 2 ]"
 
@@ -75,6 +86,14 @@ check "--help exits 0 and documents --local" \
 setup_env
 check "--help text obeys the writing standard (ASD-STE100)" \
   "( set -o pipefail; raw_setup --help 2>&1 | python3 '$SRC/scripts/idstack-ste-check' --format text - )"
+
+check "setup --help from a different folder prints the path of setup" \
+  "far_setup --help | grep -qF 'Command: \"$_sp\" [--local]'"
+check "setup's unknown-argument error does not say ./setup" \
+  "far_setup --nope 2>&1 | grep -c -F './setup'" 1 "^0$"
+check "setup's unknown-argument error prints the path of setup" \
+  "far_setup --nope 2>&1 | grep -qF 'Run \"$_sp\" --help for more information.'"
+far_setup --nope >>"$WORK/ste-runs.txt" 2>&1
 
 # --- scope selection ---
 setup_env
@@ -96,6 +115,8 @@ setup_env
 STUB_EXIT=1 run_setup
 check "a failing 'claude' call prints manual-recovery steps" \
   "grep -q 'marketplace add' '$WORK/env/out.log'"
+check "the manual-recovery steps print the path of setup" \
+  "grep -qF 'Then run \"$_sp\" again:' '$WORK/env/out.log'"
 
 # --- missing prerequisites: no banner, nonzero exit (#184) ---
 # Hide the real `claude`: a PATH of only the system dirs, with python3 from the real PATH.
@@ -106,12 +127,16 @@ rm -f "$_bin/claude"; ln -sf "$(command -v python3)" "$_bin/python3"
 check "no 'claude' on PATH: exit 1 and no banner" \
   "( export HOME='$WORK/env/home' PATH='$_bin'; cd '$WORK/env/idstack' && ./setup ) >'$WORK/env/out.log' 2>&1; [ \$? -eq 1 ] && grep -q 'claude' '$WORK/env/out.log' && ! grep -q 'To use a skill' '$WORK/env/out.log'"
 cat "$WORK/env/out.log" >> "$WORK/ste-runs.txt"
+check "no 'claude' on PATH: the error prints the path of setup" \
+  "grep -qF 'Then run \"$_sp\" again.' '$WORK/env/out.log'"
 
 setup_env
 printf '#!/bin/sh\nexit 1\n' > "$WORK/env/bin/python3"; chmod +x "$WORK/env/bin/python3"
 check "python3 too old or missing: nonzero exit and no banner" \
   "raw_setup >'$WORK/env/out.log' 2>&1; [ \$? -ne 0 ] && ! grep -q 'To use a skill' '$WORK/env/out.log'"
 cat "$WORK/env/out.log" >> "$WORK/ste-runs.txt"
+check "python3 too old or missing: the error prints the path of setup" \
+  "grep -qF 'Then run \"$_sp\" again.' '$WORK/env/out.log'"
 
 setup_env
 check "happy path exits 0 and shows the banner" \
