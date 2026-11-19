@@ -373,7 +373,7 @@ def cmd_init(args):
             exports = os.path.dirname(folder)
             if os.path.basename(exports) == 'exports':
                 keep = os.path.join(os.path.dirname(exports), 'prev-reports', os.path.basename(folder))
-            elif os.path.basename(folder) == 'exports':
+            elif os.path.basename(folder) == 'exports' and os.path.basename(exports) == '.idstack':
                 keep = os.path.join(exports, 'prev-reports')
             elif os.path.isdir(os.path.join(folder, '.idstack')):
                 keep = os.path.join(folder, '.idstack', 'prev-reports')
