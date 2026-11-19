@@ -221,9 +221,11 @@ list_reports() {
       for f in "$COURSE_DIR"/*.md; do
         [ "$f" = "$COURSE_DIR/index.md" ] && continue
         [ -f "$f" ] || continue
-        # A report that still has the init status line is not finished.
+        # A report that still has the init status line, or the finish --stopped line, is not finished.
         if grep -qxF '**Status:** in progress. A section with a draft mark waits for your approval.' "$f" 2>/dev/null; then
           echo "  $f (in progress)"
+        elif grep -qxF '**Status:** stopped. The skill stopped before the end of the report.' "$f" 2>/dev/null; then
+          echo "  $f (stopped)"
         else
           echo "  $f"
         fi
