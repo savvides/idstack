@@ -173,7 +173,7 @@ if command -v claude >/dev/null 2>&1; then
     elif echo "$plugin_list" | plugin_entry_window "idstack@idstack" | grep -qi "scope: project"; then
       # A project-scope install is disabled in every other folder, and the enable
       # command does not change that (#201).
-      echo "  PROBLEM: idstack@idstack is installed for one project folder only (scope: project). This folder is not that folder."
+      echo "  PROBLEM: idstack@idstack is installed for one project folder only (scope: project), and it is not enabled in this folder."
       echo "  Fix: run idstack-doctor from the project folder. To use idstack in all folders, run this command:"
       echo "    claude plugin install idstack@idstack --scope user"
       note_problem

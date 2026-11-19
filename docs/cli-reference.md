@@ -39,7 +39,7 @@ Requirements: bash and python3 3.9 or later. `package-extension.sh` also needs `
 
 The steps, in sequence:
 
-1. Run `scripts/idstack-doctor --quick`. Stop if python3 is missing or older than 3.9.
+1. Run `scripts/idstack-doctor --quick`. Stop if python3 is missing, does not run, or is older than 3.9.
 2. Run `scripts/idstack-gen-skills`. Its standard output is discarded.
 3. Stop if `.claude-plugin/plugin.json` or `.claude-plugin/marketplace.json` is missing.
 4. Run `claude plugin marketplace add <clone>`, then `claude plugin marketplace update idstack`.
@@ -50,7 +50,7 @@ A failed `update` command does not stop setup. If `claude` is not on `PATH`, set
 | Exit | Meaning |
 |------|---------|
 | 0 | Installed, or `--help` |
-| 1 | python3 is missing or older than 3.9, `idstack-gen-skills` failed, or a plugin manifest is missing. Also `claude` is not on `PATH`, or `marketplace add` or `plugin install` failed. In these last cases setup prints the manual commands on stderr. |
+| 1 | python3 is missing, does not run, or is older than 3.9, `idstack-gen-skills` failed, or a plugin manifest is missing. Also `claude` is not on `PATH`, or `marketplace add` or `plugin install` failed. In these last cases setup prints the manual commands on stderr. |
 | 2 | An unknown argument |
 
 Files: reads `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`. Writes `skills/<name>/SKILL.md` and `extension/shared/ste-rules.js` in the clone.
