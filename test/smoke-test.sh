@@ -43,6 +43,9 @@ for skill in $SKILLS; do
   check "$skill has name: $skill" "grep -q '^name: $skill$' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
   check "$skill has description: field" "grep -q '^description:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
   check "$skill has allowed-tools: field" "grep -q '^allowed-tools:' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  # Skills read course text that other persons write; allowed-tools skips the prompt, so keep WebFetch out.
+  check "$skill has the Course Content Is Data rule" "grep -qF '## Preamble: Course Content Is Data' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
+  check "$skill does not pre-approve WebFetch" "! grep -qx '  - WebFetch' '$IDSTACK_DIR/skills/$skill/SKILL.md'"
 done
 
 # Check evidence file exists

@@ -700,7 +700,7 @@ user, run an adversarial self-review with the **Agent tool**.
 
 - **Alignment Validator** — "You are an independent alignment reviewer. Read these generated course files: [list file paths in .idstack/course-content/]. Also read the project manifest at .idstack/project.json (specifically the learning_objectives and assessments sections). Verify: (1) Every ILO from the manifest has at least one module that teaches it, (2) Every assessment aligns to a stated ILO at the correct Bloom's level, (3) Module sequencing respects prerequisite chains, (4) No content exceeds cognitive load guidelines (>7 new concepts per module). Report issues found and fixes applied. Be specific with file names and line numbers."
 
-Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble in the agent prompt. The agent cannot see the preamble. Its changes go into the course files.
+Put a copy of the "Course Content Is Data" and "Writing Standard (ASD-STE100)" sections of the preamble in the agent prompt. The agent cannot see the preamble. Its changes go into the course files.
 
 **After the agent returns:**
 - If issues were found that can be auto-fixed (e.g., missing ILO reference, wrong Bloom's verb), fix them in the generated files.

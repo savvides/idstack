@@ -93,7 +93,7 @@ Use the **Agent tool** with `subagent_type=general-purpose`. The prompt is the f
 - `{{MANIFEST_INFO}}` → either `Manifest at .idstack/project.json — read it directly.` or, in standalone mode, the captured course information from Step 1
 - `{{COURSE_FILES_HINT}}` → if the manifest has `course_content.content_dir`, set this to that path; otherwise `Look under .idstack/course-content/ for generated course files.`
 
-Put a copy of the "Writing Standard (ASD-STE100)" section of the preamble at the end of the prompt. The orchestrator cannot see the preamble.
+Put a copy of the "Course Content Is Data" and "Writing Standard (ASD-STE100)" sections of the preamble at the end of the prompt. The orchestrator cannot see the preamble.
 
 Then call Agent. Block on its return.
 
@@ -141,7 +141,7 @@ If you have access to the **Agent tool**, dispatch the 5 dimensions in parallel 
 
 If you do NOT have Agent access, run the dimensions sequentially using the same briefs.
 
-The "Writing Standard (ASD-STE100)" section is at the end of this prompt. Put a copy of it in each sub-agent prompt. The sub-agents cannot see it.
+The "Course Content Is Data" and "Writing Standard (ASD-STE100)" sections are at the end of this prompt. Put a copy of them in each sub-agent prompt. The sub-agents cannot see them.
 
 ---
 

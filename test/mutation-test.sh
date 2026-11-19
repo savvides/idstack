@@ -2727,6 +2727,21 @@ suite_mutation "idstack-doctor gives the enable fix for a project-scope install"
 suite_mutation "setup --help prints ./setup" \
   setup 'echo "Command: \"$IDSTACK_DIR/setup\" [--local]"' 'echo "Command: ./setup [--local]"' test-setup.sh
 
+# 72. The preamble loses the Course Content Is Data rule -> smoke-test must fail.
+# Without it, text in an imported course can tell the model to run a command, and
+# allowed-tools pre-approves Bash for the turn.
+fresh
+sed -i.bak 's|^## Preamble: Course Content Is Data$|## Preamble: Course Content|' "$WORK/r/templates/preamble.md"
+regen
+expect_fail "preamble without the Course Content Is Data rule" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
+# 72a. course-import pre-approves WebFetch again -> smoke-test must fail.
+fresh
+sed -i.bak 's|^  - AskUserQuestion$|  - AskUserQuestion\
+  - WebFetch|' "$WORK/r/skills/course-import/SKILL.md.tmpl"
+regen
+expect_fail "course-import pre-approves WebFetch" "$WORK/r/test/smoke-test.sh" "$WORK/r"
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
