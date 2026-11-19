@@ -2697,7 +2697,7 @@ suite_mutation "report init does not keep a finished report" \
 
 # 71b. idstack-status takes an unknown argument as the dashboard again (#170) -> test-status must fail.
 suite_mutation "idstack-status does not refuse an unknown argument" \
-  scripts/idstack-status 'if [ -n "$BAD_ARG" ]; then' 'if false; then' test-status.sh
+  scripts/idstack-status 'if [ -n "$BAD_ARG" ] || [' 'if false || [' test-status.sh
 
 # 71c. idstack-doctor takes --help as an unknown argument again (#170) -> test-doctor must fail.
 suite_mutation "idstack-doctor does not accept --help" \
