@@ -218,6 +218,16 @@ fake_cmd uname 'echo Linux'
 check "--quick prints PYTHON_OLD for an old python3 that is not the macOS stub" "'$DOCTOR_CMD' --quick" 1 "^PYTHON_OLD$"
 restore_quick_cmds
 
+# A python3 that does not run gives one PROBLEM, not a second one from the
+# plugin.json check (#201). That check reads the version with grep instead.
+setup_happy_path
+mock_claude_output "idstack@idstack
+status: enabled"
+fake_cmd python3 'exit 1'
+check "a python3 that does not run gives one PROBLEM" "'$DOCTOR_CMD' | grep -c 'PROBLEM'" 0 "^1$"
+check "a python3 that does not run still shows the plugin.json version" "'$DOCTOR_CMD'" 1 "found plugin.json \\(version 9\\.9\\.9\\.9\\)"
+restore_quick_cmds
+
 # --- the Microsoft Store shortcut on Windows (#185) ---
 # Windows has a python3 shortcut that opens the Microsoft Store. It fails when it
 # runs, and it lives in a WindowsApps folder. A python3 that works in that folder
@@ -236,6 +246,7 @@ fake_cmd uname 'echo MINGW64_NT-10.0-19045'
 fake_cmd python3 'exit 1' "$WIN_BIN"
 check "--quick prints PYTHON_WINSTUB for the Microsoft Store stub" "PATH='$WIN_PATH' '$DOCTOR_CMD' --quick" 1 "^PYTHON_WINSTUB$"
 check "the full run reports the Microsoft Store stub" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "PROBLEM: .*Microsoft Store"
+check "the Microsoft Store stub gives one PROBLEM" "PATH='$WIN_PATH' '$DOCTOR_CMD' | grep -c 'PROBLEM'" 0 "^1$"
 check "the full run sends the user to the Microsoft Store for the stub" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Fix: open the Microsoft Store app.*Python Software Foundation"
 check "the full run tells the user to run the doctor again after the install" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 1 "Install the newest version.*run idstack-doctor again"
 # The python.org installer gives no python3 command, so the shortcut stays first on PATH and the doctor says the same again.

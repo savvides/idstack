@@ -89,7 +89,9 @@ echo ""
 #    learnings and timeline logs all need it. The checks below fall back to
 #    grep where they can, so that doctor itself still runs without it.
 echo "Requirements:"
+PY_OK=0
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; then
+  PY_OK=1
   echo "  found python3 $(python3 -c 'import platform; print(platform.python_version())')"
 elif python3_is_in_windowsapps; then
   echo "  PROBLEM: python3 is the Windows shortcut that opens the Microsoft Store. It is not Python."
@@ -108,9 +110,9 @@ plugin_manifest="$IDSTACK_DIR/.claude-plugin/plugin.json"
 market_manifest="$IDSTACK_DIR/.claude-plugin/marketplace.json"
 if [ -f "$plugin_manifest" ]; then
   # Prefer a real JSON parse (also catches a malformed manifest); fall back to
-  # grep|sed only when python3 is unavailable.
+  # grep|sed only when python3 does not run (the Requirements check has its PROBLEM).
   version=""
-  if command -v python3 >/dev/null 2>&1; then
+  if [ "$PY_OK" = 1 ]; then
     version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("version",""))' "$plugin_manifest" 2>/dev/null || true)
   else
     version=$(grep -o '"version": *"[^"]*"' "$plugin_manifest" | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
