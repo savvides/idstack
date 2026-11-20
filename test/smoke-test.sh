@@ -51,10 +51,10 @@ done
 # Check evidence file exists
 check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md' ]"
 
-# Cowork and claude.ai chat refuse a plugin that has executables in a top-level
-# bin/ directory (https://claude.com/docs/plugins/platform-support.md). The
-# tools are in scripts/ for that reason.
-check "no top-level bin/ directory (Cowork refuses the plugin)" "[ ! -e '$IDSTACK_DIR/bin' ]"
+# claude.ai refuses a plugin that has executables in a top-level bin/ directory
+# (https://claude.com/docs/plugins/platform-support.md), and a plugin added there
+# syncs to Claude Code. The tools are in scripts/ for that reason.
+check "no top-level bin/ directory (claude.ai refuses the plugin)" "[ ! -e '$IDSTACK_DIR/bin' ]"
 # Check scripts exist and are executable
 for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-ste-check idstack-report-section; do
   check "scripts/$script exists" "[ -f '$IDSTACK_DIR/scripts/$script' ]"
@@ -364,7 +364,7 @@ RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$ID
     | sed "s|\${CLAUDE_PLUGIN_ROOT}|$RESOLVE_SIM/plugin|g"; echo 'printf "%s" "$_IDSTACK"'; } \
   | env -u CLAUDE_PLUGIN_ROOT -u IDSTACK_HOME HOME="$RESOLVE_SIM/home" bash)
 check "the substituted plugin root wins over a stale cache install" "[ '$RESOLVE_SIM_GOT' = '$RESOLVE_SIM/plugin' ]"
-# Cowork documents only the ${CLAUDE_SKILL_DIR} token. With no plugin root in
+# Claude Code also writes the ${CLAUDE_SKILL_DIR} token. With no plugin root in
 # the text, the chain must find the plugin two levels above the skill folder.
 mkdir -p "$RESOLVE_SIM/plugin/skills/learn"
 RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$IDSTACK_DIR/skills/learn/SKILL.md" \

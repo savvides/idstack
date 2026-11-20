@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- **The code comments and `CLAUDE.md` no longer name Cowork (#160).** idstack supports Claude Code only. The tools stay in `scripts/`, because claude.ai refuses a plugin with a top-level `bin/` folder. The resolve snippet still tries `${CLAUDE_SKILL_DIR}`, because Claude Code writes that token too.
+
 ### Fixed
 
 - **`scripts/idstack-doctor` and `setup` handle the cases that #201 left (#206).** A local-scope install now gets the one-folder PROBLEM, as a project-scope install does. That PROBLEM gives `claude plugin enable idstack@idstack` for the install folder, and no longer tells you to go to the folder you are in. When a disabled user-scope entry is also there, the fix is the enable command. The "run again" lines of `setup` keep `--local`. `setup` and the doctor put the clone path in single quotes, so a path with `"` or `$` pastes correctly.
