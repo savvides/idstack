@@ -281,11 +281,11 @@ fi
 Always cite evidence in Step Review tables and in reports.
 **If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
 considered, and rationale for each recommendation.
+**If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
+explain key decisions, skip exhaustive alternatives.
 
 `EXPORT_FORMAT`, `PREFERRED_LMS` and `AUTO_ADVANCE` lines are for
 `/idstack:course-export` and `/idstack:pipeline`. Other skills do not use them.
-**If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
-explain key decisions, skip exhaustive alternatives.
 
 ## Preamble: Designer Profile
 
