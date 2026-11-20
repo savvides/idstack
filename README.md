@@ -199,6 +199,10 @@ You can use idstack in the Code tab of the [Claude desktop app](https://claude.a
    ```
    /plugin marketplace add savvides/idstack
    ```
+   If you added the idstack marketplace before, also paste this line and press Return. Without it, Claude Code can install an old version:
+   ```
+   /plugin marketplace update idstack
+   ```
 4. Click **+** next to the message box, then **Add plugins**. Select **idstack** and install it.
 5. Start a new session. Select the course folder again with the folder button. Claude Code loads a plugin only when a session starts.
 6. Type `/idstack:start` and press Return. idstack checks your setup, then asks how you want to start.
@@ -592,15 +596,16 @@ cd <your idstack clone> && ./setup
 
 **`/idstack:<skill>` won't autocomplete or returns "Unknown skill"?** Run `scripts/idstack-doctor` from your idstack clone. It checks the plugin + marketplace manifests, the Claude Code install state, all 16 SKILL.md files, and python3. It reports each problem it finds, and for a Claude Code install problem it prints the command that fixes it.
 
-If you installed idstack from the Claude desktop app, you have no clone. Install idstack again with these three commands in a terminal. Run them one at a time:
+If you installed idstack from the Claude desktop app, you have no clone. Install idstack again with these four commands in a terminal. Run them one at a time:
 
 ```bash
 claude plugin marketplace add https://github.com/savvides/idstack.git
+claude plugin marketplace update idstack
 claude plugin uninstall idstack@idstack
 claude plugin install idstack@idstack
 ```
 
-The second command can tell you that idstack is not installed, and this is not a problem. Then start a new session.
+The second command gets the newest version: if you added the marketplace before, `marketplace add` does not do this. The third command can tell you that idstack is not installed, and this is not a problem. Then start a new session.
 
 ## Contributing
 
