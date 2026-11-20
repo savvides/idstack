@@ -104,6 +104,7 @@ jobs:
       # the resolve snippet must find the scripts from both.
       - name: Resolve snippet with a Windows plugin path
         run: |
+          # shellcheck disable=SC2016  # ${CLAUDE_PLUGIN_ROOT} and $_IDSTACK are literal text for the generated script
           T=$(cygpath -u "$RUNNER_TEMP")
           for root in "$(cygpath -w "$PWD")" "$(cygpath -m "$PWD")"; do
             ROOT="$root" python3 -c 'import os, sys; s = open("templates/snippets/idstack-resolve.sh").read(); sys.stdout.buffer.write(s.replace("${CLAUDE_PLUGIN_ROOT}", os.environ["ROOT"]).encode())' > "$T/resolve.sh"
