@@ -2758,6 +2758,9 @@ sed -i.bak 's|^  - AskUserQuestion$|  - AskUserQuestion\
 regen
 expect_fail "course-import pre-approves WebFetch" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 74a. The plugin-cache fix installs from a stale marketplace again (#205) -> test-doctor must fail.
+suite_mutation "idstack-doctor does not update the marketplace before the install" \
+  scripts/idstack-doctor 'echo "    claude plugin marketplace update idstack"' ':' test-doctor.sh
 # 76a. The merge reads stdin in the ANSI code page again, as a Windows python3 does (#136).
 suite_mutation "merge reads a cp1252 stdin as cp1252" \
   scripts/idstack-manifest-merge 'for _stream in (sys.stdin, sys.stdout):' 'for _stream in ():' test-manifest-merge.sh
