@@ -183,6 +183,37 @@ class ReportSectionTest(unittest.TestCase):
         self.assertEqual(self.read('loose/prev-reports/needs-analysis.md'), '# An earlier report\n')
         self.assertIn('REPORT_KEPT: loose/prev-reports/needs-analysis.md', result.stdout)
 
+    # #199: the copy stays out of .idstack/exports/, which a user zips and hands off.
+    def test_init_keeps_a_report_in_the_exports_folder_out_of_the_export_tree(self):
+        os.makedirs(self.path('.idstack/exports'))
+        self.write('.idstack/exports/r.md', '# An earlier report\n')
+        result = self.run_helper('init', '.idstack/exports/r.md', '--skill', 'needs-analysis',
+                                 '--title', 'Needs Analysis Report')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.read('.idstack/prev-reports/r.md'), '# An earlier report\n')
+        self.assertFalse(os.path.exists(self.path('.idstack/exports/prev-reports')))
+
+    def test_init_keeps_a_report_in_the_course_folder_in_idstack(self):
+        self.write('report.md', '# An earlier report\n')
+        result = self.run_helper('init', 'report.md', '--skill', 'needs-analysis',
+                                 '--title', 'Needs Analysis Report')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('REPORT_KEPT: .idstack/prev-reports/report.md', result.stdout)
+        self.assertFalse(os.path.exists(self.path('prev-reports')))
+
+    def test_init_with_an_earlier_report_that_is_not_utf8_exits_4(self):
+        os.makedirs(self.path('.idstack/exports/bio-101'))
+        with open(self.path(REPORT), 'wb') as f:
+            f.write(b'# R\xe9sum\xe9 in Latin-1\n')
+        result = self.run_helper('init', REPORT, '--skill', 'needs-analysis',
+                                 '--title', 'Needs Analysis Report')
+        self.assertEqual(result.returncode, 4)
+        self.assertTrue(result.stdout.startswith('REPORT_WRITE_FAILED: '), result.stdout)
+        self.assertIn('not UTF-8', result.stdout)
+        self.assertNotIn('Traceback', result.stderr)
+        with open(self.path(REPORT), 'rb') as f:
+            self.assertEqual(f.read(), b'# R\xe9sum\xe9 in Latin-1\n')
+
     def test_init_after_a_stopped_run_leaves_the_earlier_backup(self):
         # Run A finishes and init keeps it. Run B stops and ends with finish --stopped.
         self.finish_report()
@@ -419,6 +450,11 @@ class ReportSectionTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn('no section waits for approval', result.stdout)
 
+    def test_check_refuses_the_stopped_status_line_in_the_draft(self):
+        self.assert_refused('## Task analysis\n\n**Status:** stopped. The skill stopped before the end '
+                            'of the report.\n\n' + '\n'.join(TASKS.splitlines()[2:]) + '\n',
+                            'text that only the script writes')
+
     def test_check_refuses_a_draft_mark_in_the_draft(self):
         self.assert_refused('## Task analysis\n\n**Draft:** this section waits for your approval.\n\n'
                             + '\n'.join(TASKS.splitlines()[2:]) + '\n', 'text that only the script writes')
@@ -479,6 +515,18 @@ class ReportSectionTest(unittest.TestCase):
         result = self.run_helper('finish', REPORT)
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertNotIn('**Status:**', self.read(REPORT))
+
+    def test_finish_stopped_on_a_report_with_no_status_line_adds_one(self):
+        # A report written by hand (the tool was missing) has no status line (#199).
+        os.makedirs(self.path('.idstack/exports/bio-101'))
+        self.write(REPORT, '# Needs Analysis Report\n\nmeta\n\n## Summary\n\nText.\n\n---\n\nfooter\n')
+        result = self.run_helper('finish', REPORT, '--stopped')
+        self.assertEqual(result.returncode, 0, result.stdout)
+        text = self.read(REPORT)
+        self.assertEqual(text.count('**Status:** stopped.'), 1)
+        self.assertLess(text.index('**Status:** stopped.'), text.index('## Summary'))
+        result = self.init()
+        self.assertNotIn('REPORT_KEPT', result.stdout)
 
     def test_finish_refuses_a_draft_section(self):
         # Only the draft is wrong here: the Summary has text and is approved.

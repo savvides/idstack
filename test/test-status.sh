@@ -120,6 +120,10 @@ printf '%s\n' '# Draft' '' '**Status:** in progress. A section with a draft mark
   > .idstack/exports/test-course-123/draft-report.md
 check "a report with the status line is marked in progress" \
   "$STATUS | grep -qx '  .idstack/exports/test-course-123/draft-report.md (in progress)'"
+printf '%s\n' '# Stopped' '' '**Status:** stopped. The skill stopped before the end of the report.' '' \
+  > .idstack/exports/test-course-123/stopped-report.md
+check "a report with the stopped status line is marked stopped (#199)" \
+  "$STATUS | grep -qx '  .idstack/exports/test-course-123/stopped-report.md (stopped)'"
 ste_capture partial
 
 echo ""

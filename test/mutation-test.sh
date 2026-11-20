@@ -2813,6 +2813,34 @@ shell_mutation "the Moodle settings block does not git-ignore moodle.env" \
 shell_mutation "needs-analysis mode trigger loses moodle-api" \
   skills/needs-analysis/SKILL.md.tmpl '`canvas-api`, `moodle-api`' '`canvas-api`'
 
+# 73a. init keeps a report that a stopped skill finished again (#199) -> test-report-section must fail.
+suite_mutation "report init keeps a stopped report" \
+  scripts/idstack-report-section '(STATUS_LINE, STOPPED_STATUS_LINE) for line in earlier' '(STATUS_LINE,) for line in earlier' test-report-section.py
+
+# 73b. A report directly in .idstack/exports/ keeps its copy inside the export tree again (#199).
+suite_mutation "report init keeps an exports/ report inside the export tree" \
+  scripts/idstack-report-section "            elif os.path.basename(folder) == 'exports' and os.path.basename(exports) == '.idstack':" "            elif False:" test-report-section.py
+
+# 73g. A report.md in a course folder keeps its copy outside .idstack/ again (#199).
+suite_mutation "report init keeps a course-folder report outside .idstack" \
+  scripts/idstack-report-section "            elif os.path.isdir(os.path.join(folder, '.idstack')):" "            elif False:" test-report-section.py
+
+# 73c. An earlier report that is not UTF-8 gives a traceback again (#199).
+suite_mutation "report init gives a traceback for a report that is not UTF-8" \
+  scripts/idstack-report-section '    except UnicodeDecodeError:' '    except ZeroDivisionError:' test-report-section.py
+
+# 73d. check accepts a draft with the stopped status line again (#199).
+suite_mutation "report check accepts the stopped status line" \
+  scripts/idstack-report-section '(STATUS_LINE, STOPPED_STATUS_LINE, PLACEHOLDER, DRAFT_LINE)' '(STATUS_LINE, PLACEHOLDER, DRAFT_LINE)' test-report-section.py
+
+# 73e. finish --stopped adds no stopped line to a report with no status line again (#199).
+suite_mutation "report finish --stopped skips a report with no status line" \
+  scripts/idstack-report-section '        if first is None:' '        if first is None and False:' test-report-section.py
+
+# 73f. idstack-status shows a stopped report as a plain report again (#199) -> test-status must fail.
+suite_mutation "idstack-status does not mark a stopped report" \
+  scripts/idstack-status 'echo "  $f (stopped)"' 'echo "  $f"' test-status.sh
+
 # 74a. The plugin-cache fix installs from a stale marketplace again (#205) -> test-doctor must fail.
 suite_mutation "idstack-doctor does not update the marketplace before the install" \
   scripts/idstack-doctor 'echo "    claude plugin marketplace update idstack"' ':' test-doctor.sh

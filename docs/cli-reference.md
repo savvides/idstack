@@ -195,7 +195,9 @@ The dashboard and the readiness table read all of the lines of the timeline. Wit
 | 0 | Output printed, or `--help` |
 | 2 | python3 is missing, or an unknown argument |
 
-Files: reads `.idstack/timeline.jsonl`, `.idstack/learnings.jsonl` and `.idstack/project.json`. Lists the `.md` files, `course-export.imscc` and `scorm-export.zip` in `.idstack/exports/<course-slug>/`. It gets the slug from `idstack-slugify --from-manifest`. If that folder is missing and `.idstack/exports/` has only one subfolder, it uses that subfolder. A report that still has the `init` status line shows `(in progress)`. Writes nothing.
+Files: reads `.idstack/timeline.jsonl`, `.idstack/learnings.jsonl` and `.idstack/project.json`. Lists the `.md` files, `course-export.imscc` and `scorm-export.zip` in `.idstack/exports/<course-slug>/`. It gets the slug from `idstack-slugify --from-manifest`.
+
+If that folder is missing and `.idstack/exports/` has only one subfolder, it uses that subfolder. A report that still has the `init` status line shows `(in progress)`. A report with the stopped status line of `finish --stopped` shows `(stopped)`. Writes nothing.
 
 In this example the timeline has a quality score of 72, but the manifest still has the default `quality_review.overall_score` of 0:
 
@@ -376,13 +378,17 @@ scripts/idstack-report-section finish <report> [--stopped]
 
 `init` options: `--skill` and `--title` are necessary. `--project` is the course name in the meta line. Without it, `init` reads `project_name` from `.idstack/project.json`, or uses `Untitled course`. `--mode` adds `mode: <mode>`. `--run-id` sets the run ID. The default is six random hex characters.
 
-The copy goes to `.idstack/prev-reports/<course-slug>/`, where `<course-slug>` is the name of the report's folder in `.idstack/exports/`. A report that is not in an `exports/<course-slug>/` folder gets its copy in a `prev-reports/` folder beside it. The path in `REPORT_KEPT:` is relative to the current folder. A second finished report replaces the copy of the first. `init` does not keep a report that a stopped skill finished, because its stopped status line shows that the report is not complete. If `init` cannot write the copy, it exits 4 and the report does not change.
+The copy goes to `.idstack/prev-reports/<course-slug>/`, where `<course-slug>` is the name of the report's folder in `.idstack/exports/`.
 
-`finish --stopped` puts `idstack did not write this section because the skill stopped.` in each reserved section that has its placeholder. The Summary placeholder does not change, so the Summary must have text. It also puts `**Status:** stopped. The skill stopped before the end of the report.` where the status line was. A second `finish --stopped` keeps one such line, and `finish` with no `--stopped` removes it.
+A report directly in `.idstack/exports/` gets its copy in `.idstack/prev-reports/`, out of the export folder. A report in a folder that has a `.idstack/` folder (for example a `report.md` in the course folder) gets its copy in that `.idstack/prev-reports/`. Any other report gets its copy in a `prev-reports/` folder beside it.
+
+The path in `REPORT_KEPT:` is relative to the current folder. A second finished report replaces the copy of the first. `init` does not keep a report that a stopped skill finished, because its stopped status line shows that the report is not complete. If `init` cannot write the copy, it exits 4 and the report does not change. An earlier report that is not UTF-8 text also gives `REPORT_WRITE_FAILED:` and exit 4, with no change.
+
+`finish --stopped` puts `idstack did not write this section because the skill stopped.` in each reserved section that has its placeholder. The Summary placeholder does not change, so the Summary must have text. It also puts `**Status:** stopped. The skill stopped before the end of the report.` where the status line was. A report with no status line (for example a report written by hand) gets the stopped line before its first section. Then `init` does not keep it as a finished report. A second `finish --stopped` keeps one such line, and `finish` with no `--stopped` removes it.
 
 `check` refuses a draft for these problems:
 
-- Structure: a `# ` title, a `### Finding` block, a `---` line, text before the first `## `, or text that only the script writes. Also an empty or repeated section, or a section with no table (Summary, Limitations and Next steps can have no table).
+- Structure: a `# ` title, a `### Finding` block, a `---` line, text before the first `## `, or text that only the script writes (the in-progress or stopped status line, a placeholder or a draft mark). Also an empty or repeated section, or a section with no table (Summary, Limitations and Next steps can have no table).
 - Tables: the first column is not `ID`, no rows, a wrong number of cells or a repeated ID. Outside the fact sections, the last columns must be `Justification | Evidence`, with a justification in each row.
 - Evidence: text other than citations, a code that is not in `evidence/references.md`, or a different tier.
 - Findings: a severity other than `critical`, `warning` or `info`, or rows that are not in that sequence.
