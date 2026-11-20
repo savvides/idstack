@@ -441,6 +441,22 @@ GW_ERR=$("$MERGE" --section quality_review --payload "$WORK/payload.json" --mani
 check "a .gitignore that cannot be written warns on stderr and the merge still writes" \
   "printf '%s' \"\$GW_ERR\" | grep -q 'gitignore' && python3 -c 'import json; assert json.load(open(\"$GW/project.json\"))[\"quality_review\"]=={\"x\": 1}'"
 
+# Non-ASCII text through stdin, a payload file and the slug (#136). A Windows python3 reads a pipe in
+# the ANSI code page; PYTHONIOENCODING=cp1252 makes that pipe on every OS. The bytes are UTF-8: "Café — é".
+mkdir -p "$WORK/utf8/.idstack"
+printf '{"n": "Caf\303\251 \342\200\224 \303\251"}' > "$WORK/utf8/p.json"
+printf '{"project_name": "Caf\303\251 \342\200\224 Bio 101"}' > "$WORK/utf8/name.json"
+cat > "$WORK/utf8/check.py" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+assert d["quality_review"] == {"n": "Caf\u00e9 \u2014 \u00e9"}, d["quality_review"]
+assert d["red_team_audit"] == {"n": "Caf\u00e9 \u2014 \u00e9"}, d["red_team_audit"]
+PY
+check "non-ASCII text in a payload from a cp1252 stdin and from a file stays UTF-8" \
+  "cd '$WORK/utf8' && PYTHONIOENCODING=cp1252 '$MERGE' --create --section quality_review --payload - --quiet < p.json && '$MERGE' --section red_team_audit --payload p.json --quiet && python3 check.py .idstack/project.json"
+check "the slug of a non-ASCII project name" \
+  "[ \"\$('$REPO_ROOT/scripts/idstack-slugify' --from-manifest '$WORK/utf8/name.json')\" = cafe-bio-101 ]"
+
 echo ""
 echo "manifest-merge: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

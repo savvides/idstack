@@ -99,6 +99,19 @@ jobs:
           echo "python3: $(PATH="$WA:$PATH" command -v python3)"
           echo "$out (exit $rc)"
           [ "$rc" = 1 ] && [ "$out" = PYTHON_WINSTUB ]
+      # Claude Code writes the plugin path into the skill text in place of
+      # ${CLAUDE_PLUGIN_ROOT}. On Windows that path can be C:\... or C:/...;
+      # the resolve snippet must find the scripts from both.
+      - name: Resolve snippet with a Windows plugin path
+        run: |
+          T=$(cygpath -u "$RUNNER_TEMP")
+          for root in "$(cygpath -w "$PWD")" "$(cygpath -m "$PWD")"; do
+            ROOT="$root" python3 -c 'import os, sys; s = open("templates/snippets/idstack-resolve.sh").read(); sys.stdout.buffer.write(s.replace("${CLAUDE_PLUGIN_ROOT}", os.environ["ROOT"]).encode())' > "$T/resolve.sh"
+            printf '%s\n' 'echo "_IDSTACK=$_IDSTACK"' '"$_IDSTACK/scripts/idstack-doctor" --quick' >> "$T/resolve.sh"
+            out=$(cd "$T" && bash resolve.sh)
+            echo "$out"
+            printf '%s\n' "$out" | grep -qx OK
+          done
       # Not run here, because the harness and not the shipped scripts needs POSIX:
       # smoke-test.sh runs test-setup.sh, and its file checks are the same on every OS;
       # test-setup.sh builds a PATH of symlinks into /usr/bin, and Git Bash's ln -s makes copies;

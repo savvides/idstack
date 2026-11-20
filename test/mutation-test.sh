@@ -2758,6 +2758,13 @@ sed -i.bak 's|^  - AskUserQuestion$|  - AskUserQuestion\
 regen
 expect_fail "course-import pre-approves WebFetch" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 76a. The merge reads stdin in the ANSI code page again, as a Windows python3 does (#136).
+suite_mutation "merge reads a cp1252 stdin as cp1252" \
+  scripts/idstack-manifest-merge 'for _stream in (sys.stdin, sys.stdout):' 'for _stream in ():' test-manifest-merge.sh
+# 76b. ste-check reads and writes a cp1252 pipe as cp1252 again (#136).
+suite_mutation "ste-check reads a cp1252 pipe as cp1252" \
+  scripts/idstack-ste-check 'for _stream in (sys.stdin, sys.stdout):' 'for _stream in ():' test-ste-check.py
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
