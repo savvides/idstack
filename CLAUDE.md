@@ -99,7 +99,7 @@ The python `test-*.py` suites take no argument; only the `check-*.py` scripts ta
 
 CI matrix: ubuntu (Python 3.9 + 3.12) and macOS (3.12). 3.9 is the leg that catches modern-only Python syntax reaching the preamble's embedded scripts — it is what macOS ships. `mutation-test.sh` runs once, pinned to 3.9. The test, mutation and release jobs pin Node 22 for the extension and rendered-landing tests.
 
-The tools are in `scripts/`, not `bin/`: Cowork and claude.ai chat refuse a plugin that has executables in a top-level `bin/` directory (https://claude.com/docs/plugins/platform-support.md), and smoke-test fails if `bin/` comes back. Cowork documents only the `${CLAUDE_SKILL_DIR}` token, so the resolve snippet also tries two levels above it. Nobody has run idstack in Cowork end to end yet.
+idstack supports Claude Code only. The tools are in `scripts/`, not `bin/`: claude.ai refuses a plugin that has executables in a top-level `bin/` directory (https://claude.com/docs/plugins/platform-support.md), and a plugin added in claude.ai syncs to Claude Code. smoke-test fails if `bin/` comes back. The resolve snippet also tries two levels above `${CLAUDE_SKILL_DIR}`, which Claude Code writes into skill text (https://code.claude.com/docs/en/skills.md).
 
 No build step for users. No dependencies beyond bash and python3 3.9 or later; `scripts/idstack-doctor` reports a missing or older python3. Skills are plain Markdown files.
 

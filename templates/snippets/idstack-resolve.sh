@@ -1,8 +1,8 @@
 # Resolve the idstack install dir. Re-derived at the top of every bash block —
 # blocks run in separate shells, so a value derived in an earlier block is not
 # available here. Priority: the plugin root that Claude Code writes into the
-# skill text, then the plugin root two levels above the skill folder (the
-# token that Claude Code and Cowork both write), then IDSTACK_HOME, then the
+# skill text, then the plugin root two levels above the skill folder (Claude
+# Code also writes the CLAUDE_SKILL_DIR token), then IDSTACK_HOME, then the
 # Claude Code marketplace cache. Empty
 # if none found; guard "$_IDSTACK/scripts/..." calls accordingly.
 _IDSTACK=""
