@@ -49,7 +49,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 21 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
 ./test/test-doctor.sh             # 64 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches, --quick and --help
-./test/test-status.sh             # 46 tests for scripts/idstack-status, incl. the --readiness export gate and the arguments
+./test/test-status.sh             # 47 tests for scripts/idstack-status, incl. the --readiness export gate and the arguments
 ./test/test-manifest-merge.sh     # scripts/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # scripts/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on the local python3; CI covers 3.9 and 3.12
@@ -62,7 +62,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # scripts/idstack-ste-check unit tests (smoke-test also runs them)
-python3 test/test-report-section.py     # 52 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
+python3 test/test-report-section.py     # 57 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md: titles, data-tiers,
                                        # the aria-label shares and tier ranges. Fails on a card that shows a number of studies
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
