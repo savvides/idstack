@@ -13,6 +13,9 @@
 #
 # Exit code: 0 after it prints, 2 for an unknown argument or if python3 is missing.
 
+# Windows: a native python3 writes a pipe in the ANSI code page and fails on non-ASCII text (#136).
+export PYTHONUTF8=1
+
 # Readiness thresholds (the bar a course must clear to be reported READY):
 #   READY_QUALITY_MIN          = 70   (quality_review.overall_score must be >=)
 #   READY_ACCESS_MIN           = 80   (accessibility_review.score.overall must be >=)

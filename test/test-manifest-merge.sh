@@ -23,6 +23,11 @@ fi
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
+# Windows: the python3 -c checks name these paths in their code, where Git Bash does not convert /tmp/... (C:/... works in both).
+case "$(uname -s)" in MINGW*|MSYS*) ON_WINDOWS=1; WORK=$(cygpath -m "$WORK"); MERGE=$(cygpath -m "$MERGE") ;; esac
+# NTFS has no POSIX file modes or read-only folders, Git Bash's ln -s makes a copy and ulimit -f fails:
+# these checks run on macOS and Linux only.
+posix_check() { if [ -n "${ON_WINDOWS:-}" ]; then echo "  SKIP: $1 (Windows)"; else check "$@"; fi; }
 
 # Fresh manifest used by each test (rewritten between cases).
 seed_manifest() {
@@ -176,7 +181,7 @@ set +e
 MIG_OUT=$( ulimit -f 4; "$MIGRATE" "$FAILMIG/project.json" 2>/dev/null )
 MIG_EC=$?
 set -e
-check "migrate that cannot write exits non-zero, prints nothing and keeps the manifest" \
+posix_check "migrate that cannot write exits non-zero, prints nothing and keeps the manifest" \
   "[ $MIG_EC -ne 0 ] && [ -z \"\$MIG_OUT\" ] && cmp -s '$FAILMIG/project.json' '$FAILMIG/before.json' && [ -z \"\$(ls -A '$FAILMIG' | grep -v -e '^project.json\$' -e '^before.json\$')\" ]"
 
 # migrate once pasted the path into its python source, so a quote broke it.
@@ -184,7 +189,7 @@ QUOTEMIG="$WORK/o'neil course"
 mkdir -p "$QUOTEMIG"
 echo '{"version": "1.3", "project_name": "q"}' > "$QUOTEMIG/project.json"
 chmod 640 "$QUOTEMIG/project.json"
-check "migrate works at a path with a quote and keeps the file mode" \
+posix_check "migrate works at a path with a quote and keeps the file mode" \
   "\"\$MIGRATE\" \"\$QUOTEMIG/project.json\" >/dev/null 2>&1 && python3 -c 'import json, os, sys; p = sys.argv[1]; assert json.load(open(p))[\"version\"] == \"1.4\"; assert os.stat(p).st_mode & 0o777 == 0o640, oct(os.stat(p).st_mode)' \"\$QUOTEMIG/project.json\""
 
 # migrate once replaced a symlinked manifest with a plain file and left the target at the old version.
@@ -193,7 +198,7 @@ mkdir -p "$LINKMIG/real"
 echo '{"version": "1.0", "project_name": "l"}' > "$LINKMIG/real/project.json"
 ln -s "$LINKMIG/real/project.json" "$LINKMIG/project.json"
 "$MIGRATE" "$LINKMIG/project.json" >/dev/null 2>&1 || true
-check "migrate writes through a symlinked manifest" \
+posix_check "migrate writes through a symlinked manifest" \
   "[ -L '$LINKMIG/project.json' ] && python3 -c 'import json, sys; assert json.load(open(sys.argv[1]))[\"version\"] == \"1.4\"' '$LINKMIG/real/project.json'"
 
 # migrate once gave a python traceback when it could not make its tempfile.
@@ -208,7 +213,7 @@ if [ "$(id -u)" -ne 0 ]; then
   RO_EC=$?
   set -e
   chmod 755 "$ROMIG"
-  check "migrate in a read-only folder exits 1 with a clear message and keeps the manifest" \
+  posix_check "migrate in a read-only folder exits 1 with a clear message and keeps the manifest" \
     "[ $RO_EC -eq 1 ] && printf '%s' \"\$RO_ERR\" | grep -q 'The manifest did not change' && ! printf '%s' \"\$RO_ERR\" | grep -q Traceback && cmp -s '$ROMIG/project.json' '$ROMIG/before.json'"
 fi
 
@@ -285,7 +290,7 @@ check "a --section with no --payload is refused" "[ $EC2 -ne 0 ]"
 seed_manifest
 chmod 644 "$WORK/project.json"
 echo '{}' | "$MERGE" --section quality_review --payload - --manifest "$WORK/project.json" --quiet
-check "merge keeps the manifest mode 644" \
+posix_check "merge keeps the manifest mode 644" \
   "python3 -c 'import os, sys; m = os.stat(sys.argv[1]).st_mode & 0o777; assert m == 0o644, oct(m)' '$WORK/project.json'"
 
 # --- Test 21: a symlinked manifest stays a link, and its target gets the write (#168) ---
@@ -294,7 +299,7 @@ seed_manifest
 cp "$WORK/project.json" "$WORK/linkmerge/real/project.json"
 ln -s "$WORK/linkmerge/real/project.json" "$WORK/linkmerge/project.json"
 echo '{"x": 1}' | "$MERGE" --section quality_review --payload - --manifest "$WORK/linkmerge/project.json" --quiet || true
-check "merge writes through a symlinked manifest" \
+posix_check "merge writes through a symlinked manifest" \
   "[ -L '$WORK/linkmerge/project.json' ] && python3 -c 'import json, sys; assert json.load(open(sys.argv[1]))[\"quality_review\"] == {\"x\": 1}' '$WORK/linkmerge/real/project.json'"
 
 # --- Test 22: a read-only folder gives exit 6 and a clear message, not a traceback ---
@@ -308,7 +313,7 @@ if [ "$(id -u)" -ne 0 ]; then
   RO_EC=$?
   set -e
   chmod 755 "$WORK/romerge"
-  check "merge in a read-only folder exits 6 with no traceback" \
+  posix_check "merge in a read-only folder exits 6 with no traceback" \
     "[ $RO_EC -eq 6 ] && ! printf '%s' \"\$RO_ERR\" | grep -q Traceback && cmp -s '$WORK/romerge/project.json' '$WORK/project.json'"
 fi
 
@@ -348,7 +353,7 @@ echo '{}' > "$WORK/mode/p.json"
 check "a new manifest has mode 644 under umask 022, and a merge keeps it" \
   "( umask 022; cd '$WORK/mode' && '$MERGE' --create --section context --payload p.json --quiet && [ \"\$(mode_of .idstack/project.json)\" = 644 ] && '$MERGE' --section context --payload p.json --quiet && [ \"\$(mode_of .idstack/project.json)\" = 644 ] )"
 chmod 640 "$WORK/mode/.idstack/project.json"
-check "a merge keeps mode 640 of an existing manifest" \
+posix_check "a merge keeps mode 640 of an existing manifest" \
   "( umask 022; cd '$WORK/mode' && '$MERGE' --section context --payload p.json --quiet && [ \"\$(mode_of .idstack/project.json)\" = 640 ] )"
 
 # --- Test 28: the home folder (#178). Merge and migrate --init write nothing there ---
@@ -363,7 +368,7 @@ check "merge in the home folder exits 9 and writes nothing" \
   "[ $HOME_EC -eq 9 ] && printf '%s' \"\$HOME_ERR\" | grep -q 'home folder' && [ ! -e '$WORK/home/.idstack' ]"
 check "migrate --init in the home folder exits 9 and writes nothing" \
   "[ $HOME_MIG_EC -eq 9 ] && printf '%s' \"\$HOME_MIG_ERR\" | grep -q 'home folder' && [ ! -e '$WORK/home/.idstack' ]"
-check "a symlink to the home folder is also refused" \
+posix_check "a symlink to the home folder is also refused" \
   "ln -s '$WORK/home' '$WORK/homelink' && cd '$WORK/homelink' && HOME='$WORK/home' '$MERGE' --create --section context --payload ../mode/p.json --quiet; [ \$? -eq 9 ]"
 
 # --- Test 29: the lock (#179). Two writers at the same time lose no update ---
@@ -384,12 +389,19 @@ mkdir -p "$WORK/held/.idstack"
 ( cd "$WORK/held" && echo '{}' | "$MERGE" --create --section context --payload - --quiet )
 check "a merge waits while another process holds the lock" \
   "python3 - '$MERGE' '$WORK/held' <<'PY'
-import fcntl, json, subprocess, sys
+import json, os, subprocess, sys
 merge, d = sys.argv[1], sys.argv[2]
 manifest = d + '/.idstack/project.json'
 lock = open(d + '/.idstack/.manifest.lock', 'a')
-fcntl.flock(lock, fcntl.LOCK_EX)
-p = subprocess.Popen([merge, '--section', 'quality_review', '--payload', '-', '--quiet'], cwd=d, stdin=subprocess.PIPE)
+try:
+    import fcntl
+    fcntl.flock(lock, fcntl.LOCK_EX)
+except ImportError:  # Windows: the merge locks byte 0 with msvcrt
+    import msvcrt
+    lock.seek(0)
+    msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
+cmd = [sys.executable, merge] if os.name == 'nt' else [merge]  # Windows runs no shebang
+p = subprocess.Popen(cmd + ['--section', 'quality_review', '--payload', '-', '--quiet'], cwd=d, stdin=subprocess.PIPE)
 p.stdin.write(b'{\"n\": 1}'); p.stdin.close()
 try:
     p.wait(timeout=5)

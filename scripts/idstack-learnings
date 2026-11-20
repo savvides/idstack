@@ -26,9 +26,14 @@
 # stderr), and for an unknown search option. --help as the first argument runs
 # before the python3 check, so it also works without python3.
 
+# Windows: a native python3 writes a pipe in the ANSI code page and fails on non-ASCII text (#136).
+export PYTHONUTF8=1
+
 LOCAL=".idstack/learnings.jsonl"
 GLOBAL_DIR="$HOME/.idstack/global"
 GLOBAL="$GLOBAL_DIR/learnings.jsonl"
+# Windows: Git Bash does not convert a path with a quote or a space for the native python3 (#136).
+command -v cygpath >/dev/null 2>&1 && GLOBAL=$(cygpath -m "$GLOBAL")
 
 usage() {
   echo "Usage: idstack-learnings log '<json>' | search [--limit N] [--type T] [--keyword K] [--cross-project] | delete <key> | promote <key>" >&2

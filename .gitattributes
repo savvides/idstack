@@ -1,0 +1,3 @@
+# LF in every checkout. Git for Windows sets core.autocrlf=true, which gave the
+# scripts and the generated SKILL.md files CRLF line endings (#136).
+* text=auto eol=lf

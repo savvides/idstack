@@ -57,7 +57,7 @@ Exit codes:
 """
 
 import argparse
-import fcntl
+import errno
 import json
 import os
 import re
@@ -66,6 +66,15 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
+
+# Windows: a native python3 writes a pipe in the ANSI code page and fails on non-ASCII text (#136).
+sys.stdout.reconfigure(encoding="utf-8")
+
+try:
+    import fcntl
+except ImportError:  # Windows: Git Bash runs the native Python, which has msvcrt and no fcntl (#136)
+    fcntl = None
+    import msvcrt
 
 # Whitelisted top-level sections — must match the canonical schema in
 # templates/manifest-schema.md. Adding a new section requires updating both.
@@ -137,6 +146,21 @@ def parse_args():
     return args
 
 
+def lock_exclusive(f):
+    """Wait for the exclusive lock on the open file f. The process keeps it until it exits."""
+    if fcntl:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        return
+    f.seek(0)  # every writer locks the same byte, byte 0
+    while True:
+        try:
+            msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)  # LK_LOCK stops after 10 tries, 1 s apart
+            return
+        except OSError as exc:
+            if exc.errno != errno.EDEADLOCK:
+                raise
+
+
 def die(code, message):
     print(f"idstack-manifest-merge: error: {message}", file=sys.stderr)
     sys.exit(code)
@@ -185,8 +209,17 @@ def load_manifest(manifest_path):
 def create_manifest(manifest_path):
     """Seed a canonical manifest with idstack-migrate --init, so the migrations
     stay the only definition of each section's default."""
+    cmd = [MIGRATE, "--init", manifest_path]
+    if os.name == "nt":
+        # Windows runs no shebang. Find Git Bash in an absolute PATH folder only: which() and a bare
+        # "bash" also search the current folder, and System32\bash.exe (WSL) comes before PATH.
+        bash = next((os.path.join(d, "bash.exe") for d in os.environ.get("PATH", "").split(os.pathsep)
+                     if os.path.isabs(d) and os.path.isfile(os.path.join(d, "bash.exe"))), None)
+        if not bash:
+            die(6, "cannot make the manifest: bash.exe is not on PATH. Run the skill from Git Bash.")
+        cmd.insert(0, bash)
     result = subprocess.run(
-        [MIGRATE, "--init", manifest_path],
+        cmd,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         universal_newlines=True,
@@ -243,14 +276,13 @@ def main():
         die(9, "this folder is your home folder. idstack does not write a course manifest here. "
                "Go to a course folder, then run the skill again.")
 
-    # shortcut: fcntl is for macOS and Linux only; use msvcrt if idstack ever runs on Windows.
     lock_dir = os.path.dirname(os.path.abspath(args.manifest))
     if args.create:
         os.makedirs(lock_dir, exist_ok=True)
     if os.path.isdir(lock_dir):
         try:
             lock = open(os.path.join(lock_dir, ".manifest.lock"), "a")
-            fcntl.flock(lock, fcntl.LOCK_EX)  # held until the process exits
+            lock_exclusive(lock)  # held until the process exits
         except OSError as exc:
             die(6, f"cannot lock the manifest folder {lock_dir!r}: {exc}")
         # Keep the lock file out of git. A failure must not block the merge, but must not be silent.

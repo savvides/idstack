@@ -2626,7 +2626,7 @@ suite_mutation "migrate --init makes a manifest in the home folder" \
   scripts/idstack-migrate "sys.exit(0 if os.environ.get('HOME')" "sys.exit(1 if os.environ.get('HOME')" test-manifest-merge.sh
 # 70g. The merge takes no lock again.
 suite_mutation "merge takes no lock" \
-  scripts/idstack-manifest-merge 'fcntl.flock(lock, fcntl.LOCK_EX)  # held until the process exits' 'pass' test-manifest-merge.sh
+  scripts/idstack-manifest-merge 'lock_exclusive(lock)  # held until the process exits' 'pass' test-manifest-merge.sh
 # 70h. --expect-updated stops checking.
 suite_mutation "--expect-updated does not check" \
   scripts/idstack-manifest-merge 'args.expect_updated is not None and manifest.get("updated") != args.expect_updated' 'False' test-manifest-merge.sh

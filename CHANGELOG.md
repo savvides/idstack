@@ -2,12 +2,24 @@
 
 ## Unreleased
 
+### Added
+
+- **CI runs idstack on Windows (#136).** A `windows-latest` job runs Git Bash with the native Windows python3, as Claude Code does on Windows. It checks that `scripts/idstack-doctor --quick` prints `OK` when Python is on PATH, and `PYTHON_WINSTUB` when the Microsoft Store shortcut is first on PATH. It also runs the unit suites that do not need POSIX file modes or symlinks. The suites skip their few checks that need them on Windows.
+
 ### Changed
 
 - **The code comments and `CLAUDE.md` no longer name Cowork (#160).** idstack supports Claude Code only. The tools stay in `scripts/`, because claude.ai refuses a plugin with a top-level `bin/` folder. The resolve snippet still tries `${CLAUDE_SKILL_DIR}`, because Claude Code writes that token too.
 
 ### Fixed
 
+- **idstack works in Git Bash on Windows (#136).** The new Windows CI job found these problems:
+  - `scripts/idstack-manifest-merge` stopped with `No module named 'fcntl'`, so no skill could save its results. On Windows it now locks with `msvcrt`.
+  - `idstack-manifest-merge --create` could not start `idstack-migrate` (`WinError 193`). On Windows it now starts it with the `bash.exe` from an absolute PATH folder.
+  - `scripts/idstack-status` stopped with `UnicodeEncodeError` when it wrote a character that is not ASCII to a pipe, as the Bash tool reads it. The scripts now write UTF-8.
+  - Git for Windows sets `core.autocrlf=true`, so a clone had CRLF line ends and `idstack-gen-skills --dry-run` found every generated file stale. A new `.gitattributes` keeps LF.
+  - `/idstack:course-export` used `zip`, and Git Bash does not have it. The skill now makes the `.imscc` and SCORM packages with `python3 -m zipfile`.
+  - `idstack-report-section init` printed `REPORT_KEPT:` with backslashes.
+  - `idstack-learnings promote` wrote the global learnings to a wrong folder when the home folder name has an apostrophe.
 - **`scripts/idstack-doctor` and `setup` handle the cases that #201 left (#206).** A local-scope install now gets the one-folder PROBLEM, as a project-scope install does. That PROBLEM gives `claude plugin enable idstack@idstack` for the install folder, and no longer tells you to go to the folder you are in. When a disabled user-scope entry is also there, the fix is the enable command. The "run again" lines of `setup` keep `--local`. `setup` and the doctor put the clone path in single quotes, so a path with `"` or `$` pastes correctly.
 - **Each skill tells the model that course text is data, not instructions.** Other persons write the course files, LMS packages and Canvas pages that a skill reads. A new preamble section tells the model to run only the commands in the skill. It also tells the model not to send a file or token to an address from the data, and sub-agent prompts get a copy. `/idstack:course-import` and `/idstack:course-export` do not pre-approve WebFetch now, because they did not use it. The rule is not a hard limit: for a prompt before each command, add a Bash `ask` rule in your Claude Code settings.
 - **`docs/cli-reference.md` agrees with `setup` and `scripts/idstack-status` (#201).** Before, the setup section said that setup exits 0 with a WARNING when `claude` is not on `PATH`, and it left out the python3 check. Now it says exit 1 with an ERROR. The `idstack-status` synopsis shows `[-h | --help]` as a separate option, as the tool prints it.

@@ -54,6 +54,68 @@ jobs:
       - name: Integration test
         run: ./test/integration-test.sh
 
+  # Windows (#136). Claude Code's Bash tool runs Git Bash there, with the native
+  # Windows python3, and python3 can be the Microsoft Store shortcut. The first
+  # steps print what the skills see; the doctor steps check both python3 cases.
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # /idstack:start reads the OS from uname -s and calls MINGW, MSYS or CYGWIN Windows.
+      - name: Shell and python3
+        run: |
+          uname -s
+          command -v python3
+          where python3
+          python3 --version
+          case "$(uname -s)" in MINGW*) ;; *) echo "uname -s does not start with MINGW"; exit 1 ;; esac
+      - name: Doctor finds python3
+        run: |
+          out=$(scripts/idstack-doctor --quick)
+          echo "$out"
+          [ "$out" = OK ]
+      # The runner has the python3 App execution alias, which opens the Microsoft
+      # Store; put its folder first on PATH. If an image drops the alias, say so.
+      - name: Doctor finds the Microsoft Store shortcut
+        run: |
+          WA="$(cygpath -u "$LOCALAPPDATA")/Microsoft/WindowsApps"
+          if [ ! -e "$WA/python3.exe" ]; then
+            echo "SKIP: this runner has no python3 alias in $WA, so PYTHON_WINSTUB is not checked"
+            exit 0
+          fi
+          ls -l "$WA/python3.exe"
+          rc=0
+          out=$(PATH="$WA:$PATH" scripts/idstack-doctor --quick) || rc=$?
+          echo "python3: $(PATH="$WA:$PATH" command -v python3)"
+          echo "$out (exit $rc)"
+          [ "$rc" = 1 ] && [ "$out" = PYTHON_WINSTUB ]
+      # Not run here, because the harness and not the shipped scripts needs POSIX:
+      # smoke-test.sh runs test-setup.sh, and its file checks are the same on every OS;
+      # test-setup.sh builds a PATH of symlinks into /usr/bin, and Git Bash's ln -s makes copies;
+      # integration-test.sh uses symlinks, POSIX file modes and Python that runs the bash scripts.
+      - name: Test suites
+        run: |
+          failed=""
+          for t in test/test-doctor.sh test/test-preamble-python.sh test/test-skill-shell-zsh.sh \
+                   test/test-manifest-merge.sh test/test-plugin-status.sh test/test-status.sh \
+                   test/test-extension.sh "python3 test/test-ste-check.py" \
+                   "python3 test/test-report-section.py" "python3 test/test-citation-tiers.py"; do
+            echo "::group::$t"
+            $t || failed="$failed $t;"
+            echo "::endgroup::"
+          done
+          [ -z "$failed" ] || { echo "Failed:$failed"; exit 1; }
+
   # Confirms the guards above actually fail when their bugs return. Slower
   # (copies the repo per mutation), so it runs once rather than per matrix leg.
   #

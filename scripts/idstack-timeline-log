@@ -8,6 +8,8 @@
 # Needs python3; without it, it writes nothing and says so on stderr.
 
 set -e
+# Windows: a native python3 writes a pipe in the ANSI code page and fails on non-ASCII text (#136).
+export PYTHONUTF8=1
 
 JSON_ARG="${1:-}"
 [ -z "$JSON_ARG" ] && exit 0
