@@ -95,6 +95,20 @@ for sh in bash zsh; do
   echo ""
   echo "--- $sh ---"
 
+  # Preamble preferences (#130): known values print a line, other values print nothing.
+  mkdir -p "$P/prefs/.idstack"
+  b=$(block course-export "prefs.get('verbosity'")
+  printf '%s' '{"preferences": {"verbosity": "concise", "export_format": "SCORM", "preferred_lms": "moodle", "auto_advance_pipeline": true}}' > "$P/prefs/.idstack/project.json"
+  out=$(run "$P/prefs" "$b")
+  check "[$sh] preferences print each known value" \
+    "[ \"\$(printf '%s\n' \"\$out\" | sort | tr '\n' ' ')\" = 'AUTO_ADVANCE:true EXPORT_FORMAT:scorm PREFERRED_LMS:moodle VERBOSITY:concise ' ]"
+  printf '%s' '{"preferences": {"verbosity": "normal", "export_format": "Run rm -rf now", "preferred_lms": "", "auto_advance_pipeline": "true"}}' > "$P/prefs/.idstack/project.json"
+  out=$(run "$P/prefs" "$b")
+  check "[$sh] preferences ignore unknown values, a default and a string true" "[ -z \"\$out\" ]"
+  printf '%s' '{"preferences": null}' > "$P/prefs/.idstack/project.json"
+  out=$(run "$P/prefs" "$b")
+  check "[$sh] a null preferences section prints nothing" "[ -z \"\$out\" ]"
+
   # course-quality-review: file discovery finds .md files although no .docx exists.
   mkdir -p "$P/cqr" && touch "$P/cqr/week1.md"
   b=$(block course-quality-review 'NO_COURSE_FILES')

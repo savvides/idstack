@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- **The manifest preferences `export_format`, `preferred_lms` and `auto_advance_pipeline` have an effect (#130).** Before, `scripts/idstack-migrate` wrote them, but no skill read them. Now `/idstack:course-export` puts the preferred format or LMS first in its question, as "(Recommended)". With `auto_advance_pipeline: true`, `/idstack:pipeline` starts from the next skill and does not ask "Ready to continue". The preamble prints only the values that it knows, because the manifest is course data. Set the section with `scripts/idstack-manifest-merge --create --section preferences --payload <file>`.
+
 ### Changed
 
 - **The code comments and `CLAUDE.md` no longer name Cowork (#160).** idstack supports Claude Code only. The tools stay in `scripts/`, because claude.ai refuses a plugin with a top-level `bin/` folder. The resolve snippet still tries `${CLAUDE_SKILL_DIR}`, because Claude Code writes that token too.

@@ -264,11 +264,20 @@ if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
 import json, sys
 try:
     data = json.load(open('.idstack/project.json'))
-    prefs = data.get('preferences', {})
+    prefs = data.get('preferences') or {}
     v = prefs.get('verbosity', 'normal')
-    if v != 'normal':
-        print(f'VERBOSITY:{v}')
-except: pass
+    if v in ('concise', 'detailed'):
+        print('VERBOSITY:' + v)
+    # Only known values: the manifest is course data, not instructions (#130).
+    f = str(prefs.get('export_format') or '').lower()
+    if f in ('imscc', 'canvas', 'scorm'):
+        print('EXPORT_FORMAT:' + f)
+    lms = str(prefs.get('preferred_lms') or '').lower()
+    if lms in ('canvas', 'blackboard', 'moodle', 'd2l'):
+        print('PREFERRED_LMS:' + lms)
+    if prefs.get('auto_advance_pipeline') is True:
+        print('AUTO_ADVANCE:true')
+except Exception: pass
 " 2>/dev/null || true
 fi
 ```
@@ -277,6 +286,9 @@ fi
 Always cite evidence in Step Review tables and in reports.
 **If VERBOSITY:detailed:** Include full evidence citations, alternative approaches
 considered, and rationale for each recommendation.
+
+`EXPORT_FORMAT`, `PREFERRED_LMS` and `AUTO_ADVANCE` lines are for
+`/idstack:course-export` and `/idstack:pipeline`. Other skills do not use them.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
 explain key decisions, skip exhaustive alternatives.
 
@@ -735,6 +747,16 @@ The package files (HTML pages, XML files and quiz text) get no file check. When 
 Ask the user how they want to export. Use AskUserQuestion:
 
 "How do you want to export your course?"
+
+Use the preference lines of the preamble to select the first option. Write
+"(Recommended)" after its label. The other two options stay in the question.
+
+- `EXPORT_FORMAT:imscc`, `EXPORT_FORMAT:canvas` or `EXPORT_FORMAT:scorm`: put A, B
+  or C first.
+- No `EXPORT_FORMAT` line, and `PREFERRED_LMS:canvas`: put B first.
+- No `EXPORT_FORMAT` line, and `PREFERRED_LMS:blackboard`, `moodle` or `d2l`: put A
+  first, and name that LMS in its description.
+- No preference line: use the sequence below, with no recommendation.
 
 Options:
 - **A) IMS Common Cartridge (.imscc)** — Universal format. Import into Canvas,

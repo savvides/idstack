@@ -2810,6 +2810,22 @@ suite_mutation "idstack-status does not mark a stopped report" \
 suite_mutation "idstack-doctor does not update the marketplace before the install" \
   scripts/idstack-doctor 'echo "    claude plugin marketplace update idstack"' ':' test-doctor.sh
 
+# 75a. The preamble stops printing EXPORT_FORMAT (#130) -> test-skill-shell-zsh (through smoke-test) must fail.
+shell_mutation "the preamble does not print EXPORT_FORMAT" \
+  templates/preamble.md "        print('EXPORT_FORMAT:' + f)" "        pass"
+
+# 75b. The preamble prints a preference value that is not in the list (#130).
+shell_mutation "the preamble prints any export_format value" \
+  templates/preamble.md "    if f in ('imscc', 'canvas', 'scorm'):" "    if f:"
+
+# 75c. course-export ignores the preferences again (#130) -> smoke-test must fail.
+shell_mutation "course-export does not read EXPORT_FORMAT" \
+  skills/course-export/SKILL.md.tmpl "- \`EXPORT_FORMAT:imscc\`, \`EXPORT_FORMAT:canvas\` or \`EXPORT_FORMAT:scorm\`: put A, B" "- Put A, B"
+
+# 75d. pipeline asks its first question with AUTO_ADVANCE:true again (#130) -> smoke-test must fail.
+shell_mutation "pipeline does not read AUTO_ADVANCE" \
+  skills/pipeline/SKILL.md.tmpl "If the preamble printed \`AUTO_ADVANCE:true\`, do not ask this question." "Ask this question."
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

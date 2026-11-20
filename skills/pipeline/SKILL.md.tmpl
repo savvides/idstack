@@ -90,6 +90,11 @@ in the chat. The course dashboard has the list. For example:
 Ask: "Ready to continue the pipeline from /idstack:assessment-design?" (using AskUserQuestion
 with options: "Yes, continue" / "Start from a different skill" / "Re-run a completed skill")
 
+If the preamble printed `AUTO_ADVANCE:true`, do not ask this question. Tell the
+user: "The manifest preference auto_advance_pipeline is on, so the pipeline
+continues from the next skill." Then go to Step 3. This preference does not
+change the questions in each skill.
+
 If the user picks "Start from a different skill" or "Re-run a completed skill",
 write the skill list in chat as a numbered list (1 = `/idstack:needs-analysis` …
 8 = `/idstack:course-export`) and ask the user to type a number. Do not use
