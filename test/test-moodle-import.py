@@ -21,7 +21,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 SCRIPT = os.path.join(REPO_ROOT, 'scripts', 'idstack-moodle-import')
 STE_CHECK = os.path.join(REPO_ROOT, 'scripts', 'idstack-ste-check')
 FIXTURES = os.path.join(REPO_ROOT, 'test', 'fixtures', 'moodle')
-TOKEN = 'abc123def456abc123def456abc12345'
+TOKEN = 'faketokenfaketokenfaketoken'  # letters only: the script accepts it, a secret scanner does not flag it
 
 
 def fixture(name):
