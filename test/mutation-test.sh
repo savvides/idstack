@@ -2813,6 +2813,10 @@ shell_mutation "the Moodle settings block does not git-ignore moodle.env" \
 shell_mutation "needs-analysis mode trigger loses moodle-api" \
   skills/needs-analysis/SKILL.md.tmpl '`canvas-api`, `moodle-api`' '`canvas-api`'
 
+# 74a. The plugin-cache fix installs from a stale marketplace again (#205) -> test-doctor must fail.
+suite_mutation "idstack-doctor does not update the marketplace before the install" \
+  scripts/idstack-doctor 'echo "    claude plugin marketplace update idstack"' ':' test-doctor.sh
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

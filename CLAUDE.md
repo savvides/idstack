@@ -49,7 +49,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/integration-test.sh        # 71 behavioral tests across the scripts/ scripts; also proves the suite
                                   # leaves the working tree untouched
 ./test/test-setup.sh              # 21 behavioral tests for ./setup (flags, scope, failure handling, regeneration)
-./test/test-doctor.sh             # 63 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches, --quick and --help
+./test/test-doctor.sh             # 64 behavioral tests for scripts/idstack-doctor's PROBLEM/WARNING branches, --quick and --help
 ./test/test-status.sh             # 46 tests for scripts/idstack-status, incl. the --readiness export gate and the arguments
 ./test/test-manifest-merge.sh     # scripts/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # scripts/lib/plugin-status.sh unit tests

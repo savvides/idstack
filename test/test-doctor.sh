@@ -199,6 +199,9 @@ mkdir -p "$CACHE_IDSTACK_DIR"
 cp -R "$MOCK_IDSTACK_DIR/." "$CACHE_IDSTACK_DIR/"
 CACHE_DOCTOR="$CACHE_IDSTACK_DIR/scripts/idstack-doctor"
 check "in the plugin cache, the fix gives the GitHub marketplace" "'$CACHE_DOCTOR'" 1 "claude plugin marketplace add https://github.com/savvides/idstack.git"
+# #205: add does not refresh a marketplace added earlier, so install got the old version.
+check "in the plugin cache, the fix updates the marketplace before the install" \
+  "'$CACHE_DOCTOR' | grep -A1 'marketplace add https' | grep -q 'claude plugin marketplace update idstack'"
 check "in the plugin cache, the fix does not give a local path" "'$CACHE_DOCTOR' | grep -c \"marketplace add '/\"" 1 "^0$"
 check "in the plugin cache, the fix does not tell the user to run ./setup" "'$CACHE_DOCTOR' | grep -c 'run ./setup'" 1 "^0$"
 "$CACHE_DOCTOR" > "$TEST_ROOT/cache-not-installed.txt" 2>&1 || true

@@ -188,8 +188,10 @@ if command -v claude >/dev/null 2>&1; then
   else
     echo "  PROBLEM: idstack@idstack is not installed."
     if [ "$IN_PLUGIN_CACHE" = 1 ]; then
-      echo "  Fix: install idstack from GitHub with these two commands:"
+      echo "  Fix: install idstack from GitHub with these three commands:"
       echo "    claude plugin marketplace add https://github.com/savvides/idstack.git"
+      # A marketplace added earlier is not refreshed by add, so install would get the old version (#205).
+      echo "    claude plugin marketplace update idstack"
     else
       echo "  Fix: run ./setup from the repo. You can also install idstack manually:"
       # Single quotes paste correctly with any character in the path (#206).
