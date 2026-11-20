@@ -2758,6 +2758,61 @@ sed -i.bak 's|^  - AskUserQuestion$|  - AskUserQuestion\
 regen
 expect_fail "course-import pre-approves WebFetch" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 76a. The Moodle import puts the token in the URL again (#129) -> test-moodle-import must fail.
+# A URL is written to web server logs and proxies; the POST body is not.
+suite_mutation "the Moodle import sends the token in the URL" \
+  scripts/idstack-moodle-import "req = urllib.request.Request(url, data=body," "req = urllib.request.Request(url + '?' + body.decode('ascii'), data=body," test-moodle-import.py
+
+# 76b. The Moodle import sends the token over plain http to any host (#129) -> test-moodle-import must fail.
+suite_mutation "the Moodle import accepts plain http for any host" \
+  scripts/idstack-moodle-import "if parts.scheme == 'http' and host not in LOOPBACK_HOSTS:" "if False:" test-moodle-import.py
+
+# 76c. The loopback check matches a prefix (#129) -> test-moodle-import must fail.
+# http://localhost.example.invalid is not this computer.
+suite_mutation "the Moodle import takes localhost.example.invalid for this computer" \
+  scripts/idstack-moodle-import "if parts.scheme == 'http' and host not in LOOPBACK_HOSTS:" "if parts.scheme == 'http' and not host.startswith(('localhost', '127.0.0.1')):" test-moodle-import.py
+
+# 76d. The Moodle import follows a redirect (#129) -> test-moodle-import must fail.
+suite_mutation "the Moodle import follows redirects" \
+  scripts/idstack-moodle-import "class NoRedirect(urllib.request.HTTPRedirectHandler):" "class NoRedirect(urllib.request.BaseHandler):" test-moodle-import.py
+
+# 76e. The Moodle import copies the quiz password (#129) -> test-moodle-import must fail.
+suite_mutation "the Moodle import copies the quiz password" \
+  scripts/idstack-moodle-import "'has_overall_feedback': bool(q.get('hasfeedback'))})" "'has_overall_feedback': bool(q.get('hasfeedback')), 'password': q.get('password')})" test-moodle-import.py
+
+# 76f. The grading call asks for active definitions only again (#129) -> test-moodle-import must fail.
+# Moodle 4.5 then answers invalid_method_name when one assignment uses simple grading.
+suite_mutation "the Moodle grading call sends activeonly=1" \
+  scripts/idstack-moodle-import "('activeonly', '0')" "('activeonly', '1')" test-moodle-import.py
+
+# 76g. A Moodle error in an HTTP 200 body is read as data (#129) -> test-moodle-import must fail.
+suite_mutation "the Moodle import ignores an error in a 200 response" \
+  scripts/idstack-moodle-import "    return isinstance(data, dict) and 'exception' in data" "    return False" test-moodle-import.py
+
+# 76k. Plain http to this computer goes through a proxy again (#129) -> test-moodle-import must fail.
+# The proxy would get the token as clear text.
+suite_mutation "the Moodle import uses a proxy for plain http" \
+  scripts/idstack-moodle-import "return urllib.request.build_opener(NoRedirect, urllib.request.ProxyHandler({}))" "return urllib.request.build_opener(NoRedirect)" test-moodle-import.py
+
+# 76l. A response with only a warning is read as empty data again (#129) -> test-moodle-import must fail.
+suite_mutation "the Moodle import drops the warnings of a response" \
+  scripts/idstack-moodle-import "for w in (data.get('warnings') or []) if isinstance(data, dict) else []:" "for w in []:" test-moodle-import.py
+
+# 76h. A course-import block reads .idstack/moodle.env in the shell (#129) -> smoke-test must fail.
+shell_mutation "a course-import block sources moodle.env" \
+  skills/course-import/SKILL.md.tmpl '"$_IDSTACK/scripts/idstack-moodle-import"' '. ./.idstack/moodle.env
+"$_IDSTACK/scripts/idstack-moodle-import"'
+
+# 76i. The Moodle settings block stops adding moodle.env to .gitignore (#129) -> smoke-test
+# must fail (through test-skill-shell-zsh).
+shell_mutation "the Moodle settings block does not git-ignore moodle.env" \
+  skills/course-import/SKILL.md.tmpl "grep -qx 'moodle.env' .idstack/.gitignore 2>/dev/null || echo 'moodle.env' >> .idstack/.gitignore" 'true'
+
+# 76j. A mode trigger loses moodle-api (#129) -> smoke-test must fail.
+# needs-analysis would then run a Moodle import as a new course.
+shell_mutation "needs-analysis mode trigger loses moodle-api" \
+  skills/needs-analysis/SKILL.md.tmpl '`canvas-api`, `moodle-api`' '`canvas-api`'
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

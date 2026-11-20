@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- **`/idstack:course-import` reads a course from Moodle through the Moodle web services (#129).** The fourth import option is now "LMS API (Canvas or Moodle)". The new Path F reads the sections and activities, the assignments with their rubrics and marking guides, the quizzes, forums, pages and course competencies. It only reads: it changes nothing in Moodle. The new script `scripts/idstack-moodle-import` does the calls. It sends the token only in the body of each POST request, never in a URL or a command line. It refuses plain http (except for a Moodle on this computer) and redirects. You paste the token into `.idstack/moodle.env`, not into the chat. A teacher can use the key for the Moodle mobile web service (Preferences → Security keys). That key cannot read rubrics and marking guides, and the report then says so. `test/test-moodle-import.py` runs the script against responses recorded from Moodle 4.5 in Docker. D2L and Blackboard are still to do.
+- **A Moodle import starts the same modes as a Canvas import.** `/idstack:needs-analysis`, `/idstack:assessment-design` and `/idstack:course-builder` treat `import_metadata.source` `moodle-api` as they treat `canvas-api`. The manifest schema stays 1.4: `moodle-api` is a new value of an existing field.
+
 ### Changed
 
 - **The code comments and `CLAUDE.md` no longer name Cowork (#160).** idstack supports Claude Code only. The tools stay in `scripts/`, because claude.ai refuses a plugin with a top-level `bin/` folder. The resolve snippet still tries `${CLAUDE_SKILL_DIR}`, because Claude Code writes that token too.

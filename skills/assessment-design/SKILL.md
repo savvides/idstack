@@ -732,7 +732,7 @@ Make one row for each objective. Use the IDs `ILO-1`, `ILO-2` and so on. Ask the
 ### Mode 3: Audit Existing Assessments
 
 **Condition (BOTH must be true):**
-- `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
+- `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`, `moodle-api`
 - `import_metadata.items_imported.assessments` is more than 0 (the import found assessments), OR `assessments.items` is non-empty (from an earlier assessment-design run), OR `course_content.assessments` is non-empty (from an earlier course-builder run)
 
 **Announce the chosen mode to the user as the first sentence:**

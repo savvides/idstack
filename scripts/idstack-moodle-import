@@ -1,0 +1,345 @@
+#!/usr/bin/env python3
+"""Read a Moodle course through the Moodle web services, for /idstack:course-import.
+
+Usage:
+  idstack-moodle-import [--env PATH]
+
+Reads MOODLE_BASE_URL, MOODLE_COURSE_ID and MOODLE_TOKEN from the settings file
+(default .idstack/moodle.env). Prints one JSON object on stdout: the course, its
+sections and activities, the assignments with their rubrics and marking guides,
+the quizzes, forums, pages and competencies. It only reads. It writes nothing
+to Moodle.
+
+The token goes only in the body of each POST request. It is never in a URL, on
+a command line or in the output. The address must use https. Plain http is
+accepted only for a Moodle on this computer (localhost, 127.0.0.1 or ::1).
+A redirect stops the import, so the token is not sent to a different address.
+
+Before each call, the script reads the list of functions that the token can
+call (core_webservice_get_site_info). It does not call a function that is not
+in the list, and it writes the function name in "not_available".
+
+Exit codes:
+  0  the import is complete ("not_available" and "errors" tell what is missing)
+  1  the settings file is missing or not correct
+  2  the Moodle address is not safe or not correct
+  3  Moodle refused the token, or the token cannot read the course contents
+  4  idstack cannot get a usable response from Moodle
+  5  the course is not found, or the token user cannot open it
+"""
+
+import argparse
+import http.client
+import json
+import re
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timezone
+from html.parser import HTMLParser
+
+LOOPBACK_HOSTS = {'localhost', '127.0.0.1', '::1'}
+TIMEOUT_SECONDS = 60
+CONTENTS = 'core_course_get_contents'
+
+
+def fail(code, exit_code, text):
+    print('%s: %s' % (code, text), file=sys.stderr)
+    sys.exit(exit_code)
+
+
+def read_settings(path):
+    try:
+        with open(path, encoding='utf-8-sig') as f:
+            lines = f.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        fail('MOODLE_ENV_MISSING', 1, 'idstack cannot read %s. Run the Moodle settings step again.' % path)
+    values = {}
+    for line in lines:
+        m = re.match(r'\s*(?:export\s+)?(MOODLE_[A-Z_]+)=(.*)$', line)
+        if m:
+            value = m.group(2).strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in '\'"':
+                value = value[1:-1]
+            values[m.group(1)] = value.strip()
+    return values
+
+
+def endpoint(base):
+    """The REST URL for a site address. Stops on an address that is not safe."""
+    if not base or re.search(r'\s', base):
+        fail('MOODLE_URL_BAD', 2, 'The Moodle address is empty or has a space in it.')
+    try:
+        parts = urllib.parse.urlsplit(base)
+        host, _port = parts.hostname, parts.port
+        base.encode('ascii')
+    except (ValueError, UnicodeEncodeError):
+        fail('MOODLE_URL_BAD', 2, 'The Moodle address is not a correct address. Use only ASCII characters.')
+    if (parts.scheme not in ('https', 'http') or not host or parts.username is not None
+            or parts.password is not None or parts.query or parts.fragment):
+        fail('MOODLE_URL_BAD', 2, 'The Moodle address must be like https://moodle.example.edu, '
+             'with no user name, no "?" and no "#".')
+    if parts.scheme == 'http' and host not in LOOPBACK_HOSTS:
+        fail('MOODLE_URL_NOT_HTTPS', 2, 'The Moodle address must start with https://. idstack does not '
+             'send your token on a connection that is not encrypted.')
+    return base.rstrip('/') + '/webservice/rest/server.php'
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.error.HTTPError(req.full_url, code, msg, headers, fp)
+
+
+def opener(url):
+    # Plain http is only for this computer: a proxy would get the token as clear text.
+    if url.startswith('http://'):
+        return urllib.request.build_opener(NoRedirect, urllib.request.ProxyHandler({}))
+    return urllib.request.build_opener(NoRedirect)
+
+
+def printable(value):
+    return re.sub(r'[^\x20-\x7e]', '?', str(value))
+
+
+def call(url, token, function, params):
+    """POST one web service call. Returns the decoded JSON (it can be a Moodle error)."""
+    body = urllib.parse.urlencode([('wstoken', token), ('wsfunction', function),
+                                   ('moodlewsrestformat', 'json')] + params).encode('ascii')
+    req = urllib.request.Request(url, data=body, method='POST', headers={
+        'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'})
+    try:
+        with opener(url).open(req, timeout=TIMEOUT_SECONDS) as response:
+            raw = response.read()
+    except urllib.error.HTTPError as e:
+        if 300 <= e.code < 400:
+            to = printable(e.headers.get('Location') or 'a different address').split('/webservice/')[0]
+            fail('MOODLE_REDIRECT', 4, 'Moodle sent a redirect to %s. If that is your Moodle, write '
+                 'that address in .idstack/moodle.env.' % to)
+        fail('MOODLE_HTTP_ERROR', 4, 'Moodle sent HTTP %d for %s. Make sure that the web services '
+             'and the REST protocol are on.' % (e.code, function))
+    except (urllib.error.URLError, OSError, http.client.HTTPException) as e:
+        fail('MOODLE_NO_CONNECTION', 4, 'idstack cannot connect to Moodle (%s). Check the address.'
+             % printable(getattr(e, 'reason', e)))
+    try:
+        return json.loads(raw.decode('utf-8'))
+    except ValueError:
+        fail('MOODLE_BAD_RESPONSE', 4, 'Moodle did not send JSON for %s. Make sure that the REST '
+             'protocol is on.' % function)
+
+
+def moodle_error(data):
+    return isinstance(data, dict) and 'exception' in data
+
+
+def first_line(text):
+    return (str(text or '').strip().splitlines() or [''])[0][:200]
+
+
+class _Text(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+        self.skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        self.parts.append(' ')
+        self.skip += tag in ('script', 'style')
+
+    def handle_endtag(self, tag):
+        self.parts.append(' ')
+        if tag in ('script', 'style') and self.skip:
+            self.skip -= 1
+
+    def handle_data(self, data):
+        if not self.skip:
+            self.parts.append(data)
+
+
+def text(value):
+    """Plain text from Moodle HTML, with the white space made into single spaces."""
+    if not value:
+        return ''
+    parser = _Text()
+    parser.feed(str(value))
+    parser.close()
+    return ' '.join(''.join(parser.parts).split())
+
+
+def day(timestamp):
+    return datetime.fromtimestamp(timestamp, timezone.utc).strftime('%Y-%m-%d') if timestamp else ''
+
+
+def rubric(definition):
+    criteria = sorted((definition.get('rubric') or {}).get('rubric_criteria') or [],
+                      key=lambda c: c.get('sortorder', 0))
+    return {'name': text(definition.get('name')), 'criteria': [
+        {'description': text(c.get('description')),
+         'levels': [{'score': lv.get('score'), 'definition': text(lv.get('definition'))}
+                    for lv in sorted(c.get('levels') or [], key=lambda lv: lv.get('score') or 0)]}
+        for c in criteria]}
+
+
+def marking_guide(definition):
+    criteria = sorted((definition.get('guide') or {}).get('guide_criteria') or [],
+                      key=lambda c: c.get('sortorder', 0))
+    return {'name': text(definition.get('name')), 'criteria': [
+        {'shortname': text(c.get('shortname')), 'description': text(c.get('description')),
+         'max_score': c.get('maxscore')} for c in criteria]}
+
+
+def main():
+    try:
+        run()
+    except (AttributeError, TypeError, ValueError, KeyError, IndexError, OverflowError, OSError) as e:
+        # A response with an unexpected shape. The message names only the Python error type.
+        fail('MOODLE_BAD_RESPONSE', 4, 'Moodle sent data that idstack cannot read (%s).' % type(e).__name__)
+
+
+def run():
+    ap = argparse.ArgumentParser(description='Read a Moodle course through the Moodle web services.')
+    ap.add_argument('--env', default='.idstack/moodle.env', help='settings file (default .idstack/moodle.env)')
+    args = ap.parse_args()
+
+    settings = read_settings(args.env)
+    course_id = settings.get('MOODLE_COURSE_ID', '')
+    token = settings.get('MOODLE_TOKEN', '')
+    if not re.fullmatch(r'[0-9]+', course_id):
+        fail('MOODLE_COURSE_ID_BAD', 1, 'The course ID in %s must be a number.' % args.env)
+    if not token:
+        fail('MOODLE_TOKEN_EMPTY', 1, 'Add the token to %s.' % args.env)
+    if not re.fullmatch(r'[A-Za-z0-9]+', token):
+        fail('MOODLE_TOKEN_BAD', 1, 'The token in %s must have only letters and digits. '
+             'Copy the token again.' % args.env)
+    url = endpoint(settings.get('MOODLE_BASE_URL', ''))
+
+    def clean(message):
+        # Moodle messages go to the output: never let one carry the token.
+        return printable(first_line(message).replace(token, '[token]'))
+
+    info = call(url, token, 'core_webservice_get_site_info', [])
+    if moodle_error(info):
+        if info.get('errorcode') == 'invalidtoken':
+            fail('MOODLE_TOKEN_REJECTED', 3, 'Moodle did not accept the token. Make a new token and '
+                 'copy all of it.')
+        fail('MOODLE_ACCESS_REFUSED', 3, 'Moodle refused the token (%s): %s'
+             % (printable(info.get('errorcode', '')), clean(info.get('message'))))
+    if not isinstance(info, dict):
+        raise TypeError('site info')
+    available = {f.get('name') for f in info.get('functions') or []}
+    if CONTENTS not in available:
+        fail('MOODLE_FUNCTION_MISSING', 3, 'The token cannot call %s, so idstack cannot read the '
+             'course structure. Use a token for the Moodle app service, or ask your Moodle '
+             'administrator to add the function.' % CONTENTS)
+
+    out = {'source': 'moodle-api',
+           'moodle': {'release': info.get('release', ''), 'version': info.get('version', '')},
+           'course': {'id': int(course_id), 'fullname': '', 'shortname': '', 'summary': '',
+                      'format': '', 'start_date': '', 'end_date': ''},
+           'sections': [], 'assignments': [], 'quizzes': [], 'forums': [], 'pages': [],
+           'competencies': [], 'counts': {}, 'not_available': [], 'errors': []}
+
+    def fetch(function, params):
+        if function not in available:
+            out['not_available'].append(function)
+            return None
+        data = call(url, token, function, params)
+        if moodle_error(data):
+            out['errors'].append({'function': function, 'errorcode': printable(data.get('errorcode', '')),
+                                  'message': clean(data.get('message'))})
+            return None
+        # A function with no access can answer with an empty list and a warning only.
+        for w in (data.get('warnings') or []) if isinstance(data, dict) else []:
+            out['errors'].append({'function': function, 'errorcode': printable(w.get('warningcode', '')),
+                                  'message': clean(w.get('message'))})
+        return data
+
+    by_course = [('courseids[0]', course_id)]
+    courses = fetch('core_course_get_courses_by_field', [('field', 'id'), ('value', course_id)])
+    if courses is not None:
+        if not courses.get('courses'):
+            fail('MOODLE_COURSE_NOT_FOUND', 5, 'Moodle has no course with the ID %s that the token '
+                 'user can see.' % course_id)
+        c = courses['courses'][0]
+        out['course'].update({'fullname': text(c.get('fullname')), 'shortname': text(c.get('shortname')),
+                              'summary': text(c.get('summary')), 'format': c.get('format', ''),
+                              'start_date': day(c.get('startdate')), 'end_date': day(c.get('enddate'))})
+
+    contents = call(url, token, CONTENTS, [('courseid', course_id)])
+    if moodle_error(contents) or not isinstance(contents, list):
+        fail('MOODLE_COURSE_NO_ACCESS', 5, 'Moodle did not give the course contents (%s). Make sure '
+             'that the token user is a teacher in the course.'
+             % (contents.get('errorcode', '') if isinstance(contents, dict) else 'no list'))
+    for s in contents:
+        out['sections'].append({
+            'number': s.get('section'), 'name': text(s.get('name')), 'summary': text(s.get('summary')),
+            'visible': bool(s.get('visible', 1)),
+            'activities': [{'cmid': m.get('id'), 'type': m.get('modname', ''), 'name': text(m.get('name')),
+                            'visible': bool(m.get('visible', 1))} for m in s.get('modules') or []]})
+
+    assigns = fetch('mod_assign_get_assignments', by_course)
+    for course in (assigns or {}).get('courses') or []:
+        for a in course.get('assignments') or []:
+            grade = a.get('grade') or 0
+            out['assignments'].append({
+                'cmid': a.get('cmid'), 'name': text(a.get('name')), 'description': text(a.get('intro')),
+                'grade_type': 'points' if grade > 0 else ('scale' if grade < 0 else 'none'),
+                'max_grade': grade if grade > 0 else 0, 'due_date': day(a.get('duedate')),
+                'submission_types': sorted(cfg.get('plugin') for cfg in a.get('configs') or []
+                                           if cfg.get('subtype') == 'assignsubmission'
+                                           and cfg.get('name') == 'enabled' and cfg.get('value') == '1'),
+                'grading_method': 'unknown', 'rubric': None, 'marking_guide': None})
+
+    if out['assignments']:
+        # activeonly=1 fails (invalid_method_name) when one assignment uses simple grading.
+        grading = fetch('core_grading_get_definitions',
+                        [('cmids[%d]' % i, str(a['cmid'])) for i, a in enumerate(out['assignments'])]
+                        + [('areaname', 'submissions'), ('activeonly', '0')])
+        if grading is not None:
+            areas = {area.get('cmid'): area for area in grading.get('areas') or []}
+            for a in out['assignments']:
+                area = areas.get(a['cmid']) or {}
+                method = area.get('activemethod') or 'simple'
+                a['grading_method'] = method
+                for d in area.get('definitions') or []:
+                    if d.get('method') == method == 'rubric':
+                        a['rubric'] = rubric(d)
+                    elif d.get('method') == method == 'guide':
+                        a['marking_guide'] = marking_guide(d)
+
+    # The quiz response also has the quiz password. Copy only the fields below.
+    for q in (fetch('mod_quiz_get_quizzes_by_courses', by_course) or {}).get('quizzes') or []:
+        out['quizzes'].append({
+            'cmid': q.get('coursemodule'), 'name': text(q.get('name')), 'description': text(q.get('intro')),
+            'max_grade': q.get('grade'), 'time_limit_minutes': (q.get('timelimit') or 0) // 60,
+            'attempts': q.get('attempts', 0), 'behaviour': q.get('preferredbehaviour', ''),
+            'has_overall_feedback': bool(q.get('hasfeedback'))})
+
+    for f in fetch('mod_forum_get_forums_by_courses', by_course) or []:
+        out['forums'].append({
+            'cmid': f.get('cmid'), 'name': text(f.get('name')), 'description': text(f.get('intro')),
+            'type': f.get('type', ''), 'graded': bool(f.get('assessed') or f.get('grade_forum'))})
+
+    for p in (fetch('mod_page_get_pages_by_courses', by_course) or {}).get('pages') or []:
+        out['pages'].append({'cmid': p.get('coursemodule'), 'name': text(p.get('name'))})
+
+    for item in fetch('core_competency_list_course_competencies', [('id', course_id)]) or []:
+        comp = item.get('competency') or {}
+        out['competencies'].append({'idnumber': text(comp.get('idnumber')),
+                                    'shortname': text(comp.get('shortname')),
+                                    'description': text(comp.get('description'))})
+
+    out['counts'] = {
+        'sections': len(out['sections']),
+        'activities': sum(len(s['activities']) for s in out['sections']),
+        'assignments': len(out['assignments']),
+        'rubrics': sum(1 for a in out['assignments'] if a['rubric']),
+        'marking_guides': sum(1 for a in out['assignments'] if a['marking_guide']),
+        'quizzes': len(out['quizzes']), 'forums': len(out['forums']), 'pages': len(out['pages']),
+        'competencies': len(out['competencies'])}
+    json.dump(out, sys.stdout, indent=1, ensure_ascii=False)
+    print()
+
+
+if __name__ == '__main__':
+    main()
