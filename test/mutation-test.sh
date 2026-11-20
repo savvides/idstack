@@ -2697,7 +2697,7 @@ suite_mutation "report init does not keep a finished report" \
 
 # 71b. idstack-status takes an unknown argument as the dashboard again (#170) -> test-status must fail.
 suite_mutation "idstack-status does not refuse an unknown argument" \
-  scripts/idstack-status 'if [ -n "$BAD_ARG" ]; then' 'if false; then' test-status.sh
+  scripts/idstack-status 'if [ -n "$BAD_ARG" ] || [' 'if false || [' test-status.sh
 
 # 71c. idstack-doctor takes --help as an unknown argument again (#170) -> test-doctor must fail.
 suite_mutation "idstack-doctor does not accept --help" \
@@ -2742,6 +2742,26 @@ suite_mutation "setup prints the clone path without shell quoting" \
 # 71m. idstack-doctor prints the clone path in double quotes again (#206) -> test-doctor must fail.
 suite_mutation "idstack-doctor prints the clone path without shell quoting" \
   scripts/idstack-doctor "marketplace add '\$(printf" "marketplace add \\\"\$IDSTACK_DIR\\\" '\$(printf" test-doctor.sh
+
+# 71n. idstack-gen-skills stops at the first unknown argument again (#200) -> integration-test must fail.
+suite_mutation "idstack-gen-skills --bogus --help does not print the help" \
+  scripts/idstack-gen-skills '*) [ -n "$BAD_ARG" ] || BAD_ARG="$1"; shift ;;' '*) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;' integration-test.sh
+
+# 71o. idstack-migrate stops at the first unknown flag again (#200) -> integration-test must fail.
+suite_mutation "idstack-migrate --bogus --help does not print the help" \
+  scripts/idstack-migrate '-*) [ -n "$BAD_FLAG" ] || BAD_FLAG="$arg" ;;' '-*) echo "idstack-migrate: unknown flag: $arg" >&2; exit 2 ;;' integration-test.sh
+
+# 71p. idstack-learnings delete reads --help as a key again (#200) -> integration-test must fail.
+suite_mutation "idstack-learnings delete reads --help as a key" \
+  scripts/idstack-learnings 'case "$KEY" in -h|--help)' 'case "$KEY" in --xhelp)' integration-test.sh
+
+# 71q. A missing --limit value wins over an unknown search option again (#200) -> integration-test must fail.
+suite_mutation "idstack-learnings search exits 1 before it sees the unknown option" \
+  scripts/idstack-learnings '[ $# -ge 2 ] || { MISSING="$1"; break; } ;;' '[ $# -ge 2 ] || { echo "idstack-learnings: give a value after $1." >&2; exit 1; } ;;' integration-test.sh
+
+# 71r. idstack-status takes --readiness with --context again (#200) -> test-status must fail.
+suite_mutation "idstack-status accepts --readiness with --context" \
+  scripts/idstack-status '[ "$READINESS_ONLY$CONTEXT_ONLY" = 11 ]' 'false' test-status.sh
 
 # 72. The preamble loses the Course Content Is Data rule -> smoke-test must fail.
 # Without it, text in an imported course can tell the model to run a command, and

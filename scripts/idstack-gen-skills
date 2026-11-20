@@ -27,6 +27,7 @@ DRY_RUN=0
 GENERATED=0
 ERRORS=0
 
+BAD_ARG=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1; shift ;;
@@ -35,9 +36,11 @@ while [ $# -gt 0 ]; do
       # Pattern-based range — robust to header edits.
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
-    *) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;
+    *) [ -n "$BAD_ARG" ] || BAD_ARG="$1"; shift ;;
   esac
 done
+# After the loop, so that --help wins from any position.
+[ -z "$BAD_ARG" ] || { echo "ERROR: unknown argument: $BAD_ARG" >&2; exit 2; }
 
 if [ ! -f "$PREAMBLE" ]; then
   echo "ERROR: templates/preamble.md is missing ($PREAMBLE)" >&2

@@ -373,6 +373,30 @@ check "migrate --help gives the exit code for an unknown flag" \
 check "migrate --help gives the INITIALIZED line" \
   "$IDSTACK_DIR/scripts/idstack-migrate --help" 0 "INITIALIZED <path>"
 
+# The cases left after #170 (#200). --help wins from any position in each tool.
+check "gen-skills --help after an unknown argument prints the usage" \
+  "$IDSTACK_DIR/scripts/idstack-gen-skills --bogus --help" 0 "\[-h\|--help\]"
+check "gen-skills --bogus after --dry-run still exits 2" \
+  "$IDSTACK_DIR/scripts/idstack-gen-skills --dry-run --bogus" 2 "unknown argument: --bogus"
+check "migrate --help after an unknown flag prints the usage" \
+  "$IDSTACK_DIR/scripts/idstack-migrate --bogus --help" 0 "INITIALIZED <path>"
+check "migrate --bogus --init makes no manifest" \
+  "mkdir -p '$TEST_DIR/mig-bogus' && ( cd '$TEST_DIR/mig-bogus' && { $IDSTACK_DIR/scripts/idstack-migrate --bogus --init 2>/dev/null; [ \$? -eq 2 ]; } && [ ! -e .idstack ] )"
+check "learnings delete --help prints the usage" \
+  "$IDSTACK_DIR/scripts/idstack-learnings delete --help" 0 "^Usage: idstack-learnings"
+check "learnings promote -h prints the usage" \
+  "$IDSTACK_DIR/scripts/idstack-learnings promote -h" 0 "^Usage: idstack-learnings"
+check "search: an unknown option before a --limit with no value exits 2" \
+  "$IDSTACK_DIR/scripts/idstack-learnings search --bogus --limit" 2 "unknown option: --bogus"
+check "search: a --limit with no value still exits 1" \
+  "$IDSTACK_DIR/scripts/idstack-learnings search --limit" 1 "give a value after --limit"
+check "the learnings usage line shows -h|--help" \
+  "$IDSTACK_DIR/scripts/idstack-learnings" 2 "<key> . -h.--help$"
+# Accepted, not fixed: the skills send a course name as the argument, so a name
+# such as --help must stay a name and give a one-line slug.
+check "slugify reads --help as a name" \
+  "$IDSTACK_DIR/scripts/idstack-slugify --help" 0 "^help$"
+
 echo ""
 
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
