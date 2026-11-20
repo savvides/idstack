@@ -228,7 +228,7 @@ def ste_problems(path):
     try:
         result = subprocess.run([sys.executable, STE_CHECK, '--format', 'markdown', path],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                universal_newlines=True)
+                                universal_newlines=True, encoding='utf-8')  # the checker writes UTF-8 (#136)
     except OSError as exc:
         raise SystemExit(fail(2, 'cannot run %s: %s' % (STE_CHECK, exc)))
     if result.returncode == 2:

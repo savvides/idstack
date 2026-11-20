@@ -483,7 +483,7 @@ _STAGE="$_EXPORT_DIR/.imscc-staging"
 _OUT="$(cd "$_EXPORT_DIR" && pwd)/course-export.imscc"
 [ -f "$_STAGE/imsmanifest.xml" ] || { echo "PACKAGE_FAILED: $_STAGE/imsmanifest.xml is missing"; exit 1; }
 rm -f "$_OUT"
-( cd "$_STAGE" && python3 -m zipfile -c ../course-export.imscc . ) || { echo "PACKAGE_FAILED: zip error. The staging folder is still at $_STAGE"; exit 1; }
+( cd "$_STAGE" && python3 -I -m zipfile -c ../course-export.imscc . ) || { echo "PACKAGE_FAILED: zip error. The staging folder is still at $_STAGE"; exit 1; }
 [ -s "$_OUT" ] || { echo "PACKAGE_FAILED: $_OUT is empty"; exit 1; }
 rm -rf "$_STAGE"
 echo "Export saved to $_EXPORT_DIR/course-export.imscc"
@@ -1045,7 +1045,7 @@ _STAGE="$_EXPORT_DIR/.scorm-staging"
 _OUT="$(cd "$_EXPORT_DIR" && pwd)/scorm-export.zip"
 [ -f "$_STAGE/imsmanifest.xml" ] || { echo "PACKAGE_FAILED: $_STAGE/imsmanifest.xml is missing"; exit 1; }
 rm -f "$_OUT"
-( cd "$_STAGE" && python3 -m zipfile -c ../scorm-export.zip imsmanifest.xml content ) || { echo "PACKAGE_FAILED: zip error. The staging folder is still at $_STAGE"; exit 1; }
+( cd "$_STAGE" && python3 -I -m zipfile -c ../scorm-export.zip imsmanifest.xml content ) || { echo "PACKAGE_FAILED: zip error. The staging folder is still at $_STAGE"; exit 1; }
 [ -s "$_OUT" ] || { echo "PACKAGE_FAILED: $_OUT is empty"; exit 1; }
 echo "SCORM package saved to $_EXPORT_DIR/scorm-export.zip"
 ```

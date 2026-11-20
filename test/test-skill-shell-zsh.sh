@@ -216,6 +216,8 @@ PY
   run "$P/exp" "$b" >/dev/null
   echo '<manifest/>' > "$P/exp/.idstack/exports/demo-course/.imscc-staging/imsmanifest.xml"
   echo '<p>m1</p>' > "$P/exp/.idstack/exports/demo-course/.imscc-staging/modules/m1.html"
+  # A course file named zipfile.py must not take the place of the module that makes the package.
+  echo 'raise SystemExit(0)' > "$P/exp/.idstack/exports/demo-course/.imscc-staging/zipfile.py"
   b=$(block course-export 'course-export.imscc"' "<export folder>=.idstack/exports/demo-course")
   out=$(run "$P/exp" "$b")
   check "[$sh] course-export writes course-export.imscc into the export folder" \

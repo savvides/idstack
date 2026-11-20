@@ -189,8 +189,10 @@ QUOTEMIG="$WORK/o'neil course"
 mkdir -p "$QUOTEMIG"
 echo '{"version": "1.3", "project_name": "q"}' > "$QUOTEMIG/project.json"
 chmod 640 "$QUOTEMIG/project.json"
-posix_check "migrate works at a path with a quote and keeps the file mode" \
-  "\"\$MIGRATE\" \"\$QUOTEMIG/project.json\" >/dev/null 2>&1 && python3 -c 'import json, os, sys; p = sys.argv[1]; assert json.load(open(p))[\"version\"] == \"1.4\"; assert os.stat(p).st_mode & 0o777 == 0o640, oct(os.stat(p).st_mode)' \"\$QUOTEMIG/project.json\""
+check "migrate works at a path with a quote" \
+  "\"\$MIGRATE\" \"\$QUOTEMIG/project.json\" >/dev/null 2>&1 && python3 -c 'import json, sys; assert json.load(open(sys.argv[1]))[\"version\"] == \"1.4\"' \"\$QUOTEMIG/project.json\""
+posix_check "migrate keeps the file mode at a path with a quote" \
+  "python3 -c 'import os, sys; p = sys.argv[1]; assert os.stat(p).st_mode & 0o777 == 0o640, oct(os.stat(p).st_mode)' \"\$QUOTEMIG/project.json\""
 
 # migrate once replaced a symlinked manifest with a plain file and left the target at the old version.
 LINKMIG="$WORK/linkmig"

@@ -2764,6 +2764,9 @@ suite_mutation "merge reads a cp1252 stdin as cp1252" \
 # 76b. ste-check reads and writes a cp1252 pipe as cp1252 again (#136).
 suite_mutation "ste-check reads a cp1252 pipe as cp1252" \
   scripts/idstack-ste-check 'for _stream in (sys.stdin, sys.stdout):' 'for _stream in ():' test-ste-check.py
+# 76c. course-export lets a zipfile.py in the staging folder replace the zipfile module again (#136).
+suite_mutation "course-export imports zipfile from the staging folder" \
+  skills/course-export/SKILL.md.tmpl 'python3 -I -m zipfile -c ../course-export.imscc' 'python3 -m zipfile -c ../course-export.imscc' test-skill-shell-zsh.sh
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
