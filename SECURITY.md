@@ -13,6 +13,7 @@ Only the maintainer can read the report. We reply in the report.
 ## What is sensitive
 
 - **Canvas tokens.** `/idstack:course-import` and `/idstack:course-export` keep your Canvas token in `.idstack/canvas.env` in your course folder. Git ignores this file, and only you can read it. Do not paste a token in an issue, a pull request or a log. If a token goes public, remove it in Canvas and make a new one.
+- **Moodle tokens.** `/idstack:course-import` keeps your Moodle web service token in `.idstack/moodle.env` in your course folder. Git ignores this file, and only you can read it. If a token goes public, reset it in Moodle (Preferences → Security keys) or ask your Moodle administrator to remove it.
 - **Course and student data.** The `.idstack/` folder in a course folder holds the manifest, the reports and the session history of that course. A course can include student names, grades or work. Do not attach these files to a public issue. Remove student data from an example before you share it.
 - **The Chrome extension API key.** The extension keeps your Google AI Studio API key in your browser. See [PRIVACY.md](PRIVACY.md).
 

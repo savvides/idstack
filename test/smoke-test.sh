@@ -56,14 +56,14 @@ check "evidence/references.md exists" "[ -f '$IDSTACK_DIR/evidence/references.md
 # syncs to Claude Code. The tools are in scripts/ for that reason.
 check "no top-level bin/ directory (claude.ai refuses the plugin)" "[ ! -e '$IDSTACK_DIR/bin' ]"
 # Check scripts exist and are executable
-for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-ste-check idstack-report-section; do
+for script in idstack-migrate idstack-timeline-log idstack-learnings idstack-status idstack-gen-skills idstack-doctor idstack-slugify idstack-ste-check idstack-report-section idstack-moodle-import; do
   check "scripts/$script exists" "[ -f '$IDSTACK_DIR/scripts/$script' ]"
   check "scripts/$script is executable" "[ -x '$IDSTACK_DIR/scripts/$script' ]"
 done
 
 # Bash syntax gate for most shell entry points. scripts/idstack-timeline-log and
 # scripts/package-extension.sh are not checked here; idstack-manifest-merge,
-# idstack-ste-check and idstack-report-section are python.
+# idstack-ste-check, idstack-report-section and idstack-moodle-import are python.
 for script in setup scripts/idstack-doctor scripts/idstack-gen-skills scripts/idstack-learnings scripts/idstack-status scripts/idstack-migrate scripts/idstack-slugify scripts/lib/plugin-status.sh test/test-helper.sh; do
   check "$script passes bash -n" "bash -n '$IDSTACK_DIR/$script'"
 done
@@ -778,6 +778,40 @@ for f in sys.argv[1:]:
 print('\n'.join(bad))
 sys.exit(1 if bad else 0)
 PY"
+# The Moodle token goes only from .idstack/moodle.env to the import script, which
+# sends it in a POST body. A skill block that reads it could put it in a command
+# line or a URL. Only the settings block names it, to keep a pasted token.
+MOODLE_GUARD=$(mktemp)
+cat > "$MOODLE_GUARD" <<'PY'
+import re, sys
+# The exact lines of the course-import settings block. Any other line that names
+# moodle.env or MOODLE_TOKEN (or _TOKEN_LINE in a Moodle block) can read the token.
+ALLOWED = {
+    "_TOKEN_LINE=$(grep '^MOODLE_TOKEN=' .idstack/moodle.env 2>/dev/null || echo \"MOODLE_TOKEN=''\")",
+    "printf \"MOODLE_BASE_URL='%s'\\nMOODLE_COURSE_ID='%s'\\n%s\\n\" \"$_URL\" \"$_COURSE\" \"$_TOKEN_LINE\" > .idstack/moodle.env",
+    "chmod 600 .idstack/moodle.env",
+    "grep -qx 'moodle.env' .idstack/.gitignore 2>/dev/null || echo 'moodle.env' >> .idstack/.gitignore",
+    'echo "Moodle settings file: $PWD/.idstack/moodle.env"',
+}
+bad = []
+for f in sys.argv[1:]:
+    for m in re.finditer(r'```bash\n(.*?)```', open(f, encoding='utf-8').read(), re.S):
+        block = m.group(1)
+        for line in block.splitlines():
+            names = 'moodle.env' in line or 'MOODLE_TOKEN' in line
+            names = names or ('_TOKEN_LINE' in line and 'moodle.env' in block)
+            if names and line.strip() not in ALLOWED:
+                bad.append('%s: %s' % (f, line.strip()))
+print('\n'.join(bad))
+sys.exit(1 if bad else 0)
+PY
+check "no skill bash block reads or uses the Moodle token" "python3 '$MOODLE_GUARD' $(echo $SHELL_SRC)"
+rm -f "$MOODLE_GUARD"
+# The mode triggers of needs-analysis, assessment-design and course-builder list the
+# import sources. A list without moodle-api runs a Moodle import in build-new mode.
+check "each import-source mode trigger names moodle-api next to canvas-api" \
+  "! grep -n 'import_metadata.source.*\`canvas-api\`' '$IDSTACK_DIR'/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/manifest-schema.md' | grep -v '\`moodle-api\`'"
+check "idstack-moodle-import tests pass (fake Moodle with recorded responses)" "python3 '$IDSTACK_DIR/test/test-moodle-import.py'"
 # The list is fixed. A gate on the "Report template:" text skipped a skill that
 # lost its only copy of that text, so the check never ran for it.
 for name in $REPORT_PRODUCING_SKILLS pipeline; do

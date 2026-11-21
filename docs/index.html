@@ -1278,8 +1278,8 @@
         <figcaption class="session-head">Claude Code · sample session</figcaption>
         <div class="session-body">
           <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">/idstack:course-import</span></p>
-          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">How do you want to import your course? LMS or SCORM package file · PDF or Word file · Paste course documents · Canvas API</span></p>
-          <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">Canvas API. Here is my Canvas URL and course ID.</span></p>
+          <p class="session-line"><span class="session-who">idstack</span><span class="session-said">How do you want to import your course? LMS or SCORM package file · PDF or Word file · Paste course documents · LMS API (Canvas or Moodle)</span></p>
+          <p class="session-line session-you"><span class="session-who">you</span><span class="session-said">LMS API, Canvas. Here is my Canvas URL and course ID.</span></p>
           <p class="session-line"><span class="session-who">idstack</span><span class="session-said">Paste your access token into <code>.idstack/canvas.env</code>, not into the chat. Then tell me when it is done.</span></p>
           <p class="session-line"><span class="session-who">idstack</span><span class="session-said">Connected. Found 12 modules, 8 assignments, 4 discussions, 6 outcomes. Import quality triage: 4 flags (4 warning). The most important: all 8 assessments are auto-graded quizzes with no rubrics. Read the draft in <code>.idstack/exports/bio-101/course-import.md</code>.</span></p>
           <p class="session-line session-more"><span class="session-who"></span><span class="session-said">In the report:</span></p>
@@ -1459,7 +1459,7 @@
             <span class="node-phase"><span data-fw="addie" class="g-a">Implement</span><span data-fw="ubd" class="g-a">Publish</span><span data-fw="sam" class="g-a">Iterative development</span></span>
             <span class="node-num" aria-hidden="true"></span>
             <span class="node-label">course-export</span>
-            <span class="node-desc">Common Cartridge, SCORM, or Canvas API.</span>
+            <span class="node-desc">Common Cartridge, SCORM, or the Canvas or Moodle API.</span>
           </li>
         </ol>
 
@@ -1470,7 +1470,7 @@
           </div>
           <div class="pipeline-aside">
             <span class="aside-tag">course-import<span class="aside-phase"><span data-fw="addie">Analyze</span><span data-fw="ubd">Stage 1: results</span><span data-fw="sam">Preparation</span></span></span>
-            <span>Extracts existing modules, assignments, and syllabi from an IMSCC or SCORM package, a PDF or Word file, pasted documents, or the Canvas API.</span>
+            <span>Extracts existing modules, assignments, and syllabi from an IMSCC or SCORM package, a PDF or Word file, pasted documents, or the Canvas or Moodle API.</span>
           </div>
           <div class="pipeline-aside">
             <span class="aside-tag">learn</span>
@@ -1644,7 +1644,7 @@
         </div>
         <div>
           <h3>Does idstack work with Canvas, Blackboard and Moodle?</h3>
-          <p>Yes. <code>/idstack:course-import</code> reads a Common Cartridge file from Canvas, Blackboard, Moodle or D2L, and it can connect to Canvas through the Canvas API. <code>/idstack:course-export</code> writes a Common Cartridge file for these four systems or a SCORM package, or it sends the course to Canvas.</p>
+          <p>Yes. <code>/idstack:course-import</code> reads a Common Cartridge file from Canvas, Blackboard, Moodle or D2L, and it can read a course from Canvas or Moodle through their APIs. <code>/idstack:course-export</code> writes a Common Cartridge file for these four systems or a SCORM package, or it sends the course to Canvas.</p>
         </div>
         <div>
           <h3>Is idstack free, and what do I need to run it?</h3>
