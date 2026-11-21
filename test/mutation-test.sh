@@ -2826,6 +2826,57 @@ shell_mutation "course-export does not read EXPORT_FORMAT" \
 shell_mutation "pipeline does not read AUTO_ADVANCE" \
   skills/pipeline/SKILL.md.tmpl "If the preamble printed \`AUTO_ADVANCE:true\`, do not ask this question." "Ask this question."
 
+# 80a. The Canvas dry run sends a write method again (#132) -> test-canvas-diff must fail.
+suite_mutation "idstack-canvas-diff sends a non-GET request" \
+  scripts/idstack-canvas-diff "argv = ['curl', '-q', '-K', '-', '-s'," "argv = ['curl', '-q', '-K', '-', '-X', 'PATCH', '-s'," test-canvas-diff.py
+
+# 80b. The Canvas dry run puts the token in an argument (#132) -> test-canvas-diff must fail.
+suite_mutation "idstack-canvas-diff puts the token in curl argv" \
+  scripts/idstack-canvas-diff "'-w', '\\n%{http_code}', url]" "'-w', '\\n%{http_code}', '-H', 'Authorization: Bearer ' + token, url]" test-canvas-diff.py
+
+# 80c. The Canvas dry run stops finding conflicts (#132) -> test-canvas-diff must fail.
+suite_mutation "idstack-canvas-diff misses a change made in Canvas after the snapshot" \
+  scripts/idstack-canvas-diff "if base_hash != sha(current):" "if False:" test-canvas-diff.py
+
+# 80d. The Canvas dry run lets the proposal steer the URL (#132) -> test-canvas-diff must fail.
+suite_mutation "idstack-canvas-diff accepts any canvas_id" \
+  scripts/idstack-canvas-diff "if not re.fullmatch(KINDS[kind]['id_re'], canvas_id):" "if not canvas_id:" test-canvas-diff.py
+
+# 80f. curl reads ~/.curlrc again, which can set a method or -L (#132) -> test-canvas-diff must fail.
+suite_mutation "idstack-canvas-diff lets ~/.curlrc change the request" \
+  scripts/idstack-canvas-diff "argv = ['curl', '-q', '-K'," "argv = ['curl', '-K'," test-canvas-diff.py
+
+# 80g. diff no longer reads the course first, so a wrong course ID gives NOT FOUND rows (#132).
+suite_mutation "idstack-canvas-diff takes a wrong course for an empty course" \
+  scripts/idstack-canvas-diff "    check_course(settings)
+    cache = {}" "    cache = {}" test-canvas-diff.py
+
+# 80h. A list that answers 404 gives an empty baseline that looks complete again (#132).
+suite_mutation "idstack-canvas-diff takes a list 404 for an empty list" \
+  scripts/idstack-canvas-diff "    if not isinstance(items, list) or not all(" "    if items is None:
+        return [], ''
+    if not isinstance(items, list) or not all(" test-canvas-diff.py
+
+# 80i. A joined write flag in the curl argv (-dx=1 is a POST) is not seen again (#132).
+suite_mutation "idstack-canvas-diff sends a joined -d flag" \
+  scripts/idstack-canvas-diff "argv = ['curl', '-q', '-K', '-', '-s'," "argv = ['curl', '-q', '-K', '-', '-dx=1', '-s'," test-canvas-diff.py
+
+# 80j. A bare URL in a Canvas title is a live link in the report again (#132).
+suite_mutation "idstack-canvas-diff lets a bare URL become a link" \
+  scripts/idstack-canvas-diff "    t = re.sub(r'(?i)(https?|ftp|mailto|www)([:.])'," "    t = t or re.sub(r'(?i)(https?|ftp|mailto|www)([:.])'," test-canvas-diff.py
+
+# 80k. A copy of canvas.env (an editor backup) puts the token in the report again (#132).
+suite_mutation "idstack-canvas-diff reads a copy of the token file" \
+  scripts/idstack-canvas-diff "        if token in text:" "        if False:" test-canvas-diff.py
+
+# 80l. A failed Canvas dry run leaves the report of an earlier run again (#132).
+suite_mutation "idstack-canvas-diff keeps an old report after a failed run" \
+  scripts/idstack-canvas-diff "    for old in glob.glob(os.path.join('.idstack', 'exports', '*', REPORT_NAME)):" "    for old in []:" test-canvas-diff.py
+
+# 80m. The .idstack/ rule compares names again: a linked .idstack/ (any disk) or .IDSTACK (macOS) gets past it (#132).
+suite_mutation "idstack-canvas-diff compares the .idstack folder by name" \
+  scripts/idstack-canvas-diff "        if same(top, '.idstack') and" "        if inner[0] == '.idstack' and" test-canvas-diff.py
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]

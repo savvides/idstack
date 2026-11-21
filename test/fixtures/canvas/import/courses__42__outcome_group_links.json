@@ -1,0 +1,5 @@
+[
+  {"url": "/api/v1/courses/42/outcome_groups/3/outcomes/101", "context_id": 42, "context_type": "Course", "outcome_group": {"id": 3, "title": "Course outcomes"}, "outcome": {"id": 101, "title": "Outcome 1", "context_id": 42, "context_type": "Course", "url": "/api/v1/outcomes/101"}},
+  {"url": "/api/v1/courses/42/outcome_groups/3/outcomes/202", "context_id": 42, "context_type": "Course", "outcome_group": {"id": 3, "title": "Course outcomes"}, "outcome": {"id": 202, "title": "Writing", "context_id": 1, "context_type": "Account", "url": "/api/v1/outcomes/202"}},
+  {"url": "/api/v1/courses/42/outcome_groups/4/outcomes/101", "context_id": 42, "context_type": "Course", "outcome_group": {"id": 4, "title": "Week 1"}, "outcome": {"id": 101, "title": "Outcome 1", "context_id": 42, "context_type": "Course", "url": "/api/v1/outcomes/101"}}
+]

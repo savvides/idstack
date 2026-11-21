@@ -32,6 +32,8 @@ scripts/idstack-report-section append <report> <draft>   # Check, then add the s
 scripts/idstack-report-section approve <report> [--draft <f>]  # Remove each draft mark; print SECTION_APPROVED: <heading>; delete the draft
 scripts/idstack-report-section finish <report> # Fail on a placeholder or a draft that remains; remove the status line.
                                            # --stopped (skill stopped early) leaves a stopped status line and fills each empty reserved section
+scripts/idstack-canvas-diff snapshot           # Canvas sync dry run (#132), GET only: record a hash baseline of pages, assignments, outcomes
+scripts/idstack-canvas-diff diff <proposal>    # Write .idstack/exports/<course-slug>/canvas-sync-dry-run.md: what a push changes, conflicts marked. Design: docs/lms-sync.md
 scripts/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
 scripts/idstack-timeline-log '<json>'          # Append one event to .idstack/timeline.jsonl (adds "ts"; never fails the skill)
 scripts/idstack-learnings log|search|delete|promote   # Project learnings in .idstack/learnings.jsonl; promote copies to ~/.idstack/global/
@@ -42,7 +44,7 @@ scripts/idstack-learnings log|search|delete|promote   # Project learnings in .id
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash, node and python suites, but not `mutation-test.sh`, which CI runs in its own job):
 
 ```bash
-./test/smoke-test.sh              # 689 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 690 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 81 behavioral tests across the scripts/ scripts; also proves the suite
@@ -62,6 +64,8 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # scripts/idstack-ste-check unit tests (smoke-test also runs them)
+python3 test/test-canvas-diff.py        # 54 tests for scripts/idstack-canvas-diff on the fixtures in test/fixtures/canvas/ with a fake curl: each state,
+                                        # every request a GET, the token only on stdin (smoke-test also runs them)
 python3 test/test-report-section.py     # 57 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md: titles, data-tiers,
                                        # the aria-label shares and tier ranges. Fails on a card that shows a number of studies

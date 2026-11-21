@@ -5,6 +5,7 @@
 ### Added
 
 - **The manifest preferences `export_format`, `preferred_lms` and `auto_advance_pipeline` have an effect (#130).** Before, `scripts/idstack-migrate` wrote them, but no skill read them. Now `/idstack:course-export` puts the preferred format or LMS first in its question, as "(Recommended)". With `auto_advance_pipeline: true`, `/idstack:pipeline` starts from the next skill and does not ask "Ready to continue". The preamble prints only the values that it knows, because the manifest is course data. Set the section with `scripts/idstack-manifest-merge --create --section preferences --payload <file>`.
+- **A dry run for LMS sync: `scripts/idstack-canvas-diff` shows what a push to Canvas changes (#132).** `snapshot` records a hash of each page, assignment and course outcome right after an import. `diff <proposal>` compares the improved text (an ILO from the manifest, or a fixed page) with Canvas now, and writes `canvas-sync-dry-run.md` with a diff for each change. A text that someone changed in Canvas after the snapshot is marked `CONFLICT`. The script sends only GET requests, and a test fails if it gets a write call or puts the token in an argument. The design, the open questions and the write path (not built yet) are in `docs/lms-sync.md`.
 
 ### Changed
 
