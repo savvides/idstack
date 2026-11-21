@@ -20,6 +20,7 @@ Requirements: bash and python3 3.9 or later. `package-extension.sh` also needs `
 | [`idstack-report-section`](#idstack-report-section) | Builds a report one approved section at a time | The skills that write a report |
 | [`idstack-canvas-diff`](#idstack-canvas-diff) | Shows what a push to Canvas changes, with conflicts. Reads only | You, by hand (no skill calls it yet) |
 | [`idstack-ste-check`](#idstack-ste-check) | Finds some ASD-STE100 problems in a file | Each skill, `idstack-report-section`, the tests |
+| [`idstack-moodle-import`](#idstack-moodle-import) | Reads a Moodle course through the web services | `/idstack:course-import` (Path F) |
 | [`idstack-timeline-log`](#idstack-timeline-log) | Adds one event to the timeline | The skills, at the end of a run |
 | [`idstack-learnings`](#idstack-learnings) | Logs, finds, deletes and promotes learnings | The skills, `/idstack:learn` |
 | [`package-extension.sh`](#package-extensionsh) | Makes the Chrome extension zip file | Maintainers, before a Web Store upload |
@@ -505,6 +506,51 @@ note.txt:1: semicolon: write two sentences: "You should not run this; it has bee
 note.txt:1: verb-form: use a simple tense, not "has been"
 note.txt:1: word: "should": use "must" or "idstack recommends that you"
 idstack-ste-check: 3 problem(s) in 1 file(s)
+```
+
+## idstack-moodle-import
+
+`idstack-moodle-import` reads a Moodle course through the Moodle web services. `/idstack:course-import` runs it in Path F. It only reads. It writes nothing to Moodle.
+
+```bash
+scripts/idstack-moodle-import [--env PATH]
+```
+
+The settings file (default `.idstack/moodle.env`) has three lines: `MOODLE_BASE_URL='https://moodle.example.edu'`, `MOODLE_COURSE_ID='123'` and `MOODLE_TOKEN='<token>'`. The skill writes the first two. You paste the token. The token must have only letters and digits.
+
+The token goes only in the body of each POST request to `<address>/webservice/rest/server.php`. It is never in a URL, on a command line or in the output. The address must use `https`. Plain `http` is accepted only for a Moodle on this computer (`localhost`, `127.0.0.1` or `::1`). A redirect stops the import, so the token does not go to a different address. For plain `http`, the script uses no proxy.
+
+The script first calls `core_webservice_get_site_info`, which gives the list of functions that the token can call. Then it calls the functions below that are in the list. It writes each function that is not in the list in `not_available`, and each Moodle error or warning in `errors`. Moodle sends an error with HTTP 200, so the script reads the body. A response that idstack cannot read gives `MOODLE_BAD_RESPONSE`.
+
+| Function | Data | In the Moodle app service |
+|----------|------|---------------------------|
+| `core_course_get_courses_by_field` | Course name, summary, dates, format | Yes |
+| `core_course_get_contents` | Sections and their activities (necessary) | Yes |
+| `mod_assign_get_assignments` | Assignments | Yes |
+| `core_grading_get_definitions` | Rubrics and marking guides | No |
+| `mod_quiz_get_quizzes_by_courses` | Quizzes (not the questions, not the password) | Yes |
+| `mod_forum_get_forums_by_courses` | Forums | Yes |
+| `mod_page_get_pages_by_courses` | Page names | Yes |
+| `core_competency_list_course_competencies` | Course competencies | Yes |
+
+The output is one JSON object on stdout: `source` (`moodle-api`), `moodle` (release and version), `course`, `sections` (each with `activities`), `assignments` (each with `grading_method` and a `rubric` or `marking_guide`), `quizzes`, `forums`, `pages`, `competencies`, `counts`, `not_available` and `errors`. The text is plain text, not HTML. Dates are `YYYY-MM-DD` in UTC. `grading_method` is `rubric`, `guide`, `simple` (no advanced grading) or `unknown` (the token cannot call `core_grading_get_definitions`).
+
+An error goes to stderr as `CODE: text`.
+
+| Exit | Codes | Meaning |
+|------|-------|---------|
+| 0 | | The import is complete. Read `not_available` and `errors` |
+| 1 | `MOODLE_ENV_MISSING`, `MOODLE_TOKEN_EMPTY`, `MOODLE_TOKEN_BAD`, `MOODLE_COURSE_ID_BAD` | The settings file is missing or not correct |
+| 2 | `MOODLE_URL_NOT_HTTPS`, `MOODLE_URL_BAD` | The address is not safe or not correct. Nothing was sent |
+| 3 | `MOODLE_TOKEN_REJECTED`, `MOODLE_ACCESS_REFUSED`, `MOODLE_FUNCTION_MISSING` | Moodle refused the token, or the token cannot call `core_course_get_contents` |
+| 4 | `MOODLE_REDIRECT`, `MOODLE_HTTP_ERROR`, `MOODLE_NO_CONNECTION`, `MOODLE_BAD_RESPONSE` | No usable response from Moodle |
+| 5 | `MOODLE_COURSE_NOT_FOUND`, `MOODLE_COURSE_NO_ACCESS` | The course is not found, or the token user cannot open it |
+
+Files: reads the settings file. Writes nothing. `test/test-moodle-import.py` runs it against responses recorded from Moodle 4.5 (`test/fixtures/moodle/`).
+
+```bash
+$ scripts/idstack-moodle-import | python3 -c 'import json,sys; print(json.load(sys.stdin)["counts"])'
+{'sections': 4, 'activities': 9, 'assignments': 3, 'rubrics': 1, 'marking_guides': 1, 'quizzes': 1, 'forums': 2, 'pages': 2, 'competencies': 2}
 ```
 
 ## idstack-timeline-log

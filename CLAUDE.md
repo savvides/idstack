@@ -35,6 +35,7 @@ scripts/idstack-report-section finish <report> # Fail on a placeholder or a draf
 scripts/idstack-canvas-diff snapshot           # Canvas sync dry run (#132), GET only: record a hash baseline of pages, assignments, outcomes
 scripts/idstack-canvas-diff diff <proposal>    # Write .idstack/exports/<course-slug>/canvas-sync-dry-run.md: what a push changes, conflicts marked. Design: docs/lms-sync.md
 scripts/package-extension.sh                   # Package Chrome extension into build/ for Web Store distribution
+scripts/idstack-moodle-import [--env <f>]      # Read a Moodle course through the web services (read only); token from .idstack/moodle.env, sent only in the POST body
 scripts/idstack-timeline-log '<json>'          # Append one event to .idstack/timeline.jsonl (adds "ts"; never fails the skill)
 scripts/idstack-learnings log|search|delete|promote   # Project learnings in .idstack/learnings.jsonl; promote copies to ~/.idstack/global/
 ```
@@ -44,7 +45,7 @@ scripts/idstack-learnings log|search|delete|promote   # Project learnings in .id
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash, node and python suites, but not `mutation-test.sh`, which CI runs in its own job):
 
 ```bash
-./test/smoke-test.sh              # 690 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 695 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 81 behavioral tests across the scripts/ scripts; also proves the suite
@@ -55,7 +56,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-manifest-merge.sh     # scripts/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # scripts/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on the local python3; CI covers 3.9 and 3.12
-./test/test-skill-shell-zsh.sh    # 263 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
+./test/test-skill-shell-zsh.sh    # 275 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules directly
                                   # (test/extension-harness.mjs stubs browser globals for the ones that need them)
@@ -67,6 +68,8 @@ python3 test/test-ste-check.py          # scripts/idstack-ste-check unit tests (
 python3 test/test-canvas-diff.py        # 54 tests for scripts/idstack-canvas-diff on the fixtures in test/fixtures/canvas/ with a fake curl: each state,
                                         # every request a GET, the token only on stdin (smoke-test also runs them)
 python3 test/test-report-section.py     # 57 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
+python3 test/test-moodle-import.py      # 26 tests for scripts/idstack-moodle-import against a fake Moodle that sends the responses
+                                        # recorded from Moodle 4.5 in test/fixtures/moodle/ (see its README). smoke-test also runs them
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md: titles, data-tiers,
                                        # the aria-label shares and tier ranges. Fails on a card that shows a number of studies
 python3 test/check-citation-tiers.py . # Verifies each [Code-N] [Tn] in skills, templates, README and landing page has its references.md tier
@@ -213,6 +216,8 @@ Every skill template follows this pattern:
 Never put model-filled or course-derived text (titles, HTML, file paths, hrefs, names, keywords, log JSON) in a quoted shell string. Read it with a quoted heredoc, `IFS= read -r X <<'MARKER'` (`-d '' ... || true` for multi-line), or have the model Write a file and send it with `--data-urlencode "field@file"`. `test/test-skill-shell-zsh.sh` checks this in bash 3.2 and zsh.
 
 Canvas curl calls take the token on stdin: `printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - ...`. Never `-H "...$CANVAS_TOKEN"`: the token then shows in `ps`.
+
+The Moodle token never goes through the shell. Only `scripts/idstack-moodle-import` reads `.idstack/moodle.env`, and it sends the token as `wstoken` in the POST body. A skill block that sources, prints or names the token fails smoke-test.
 
 The shared preamble includes: interaction conventions (defines how skills use `AskUserQuestion`, `Agent`, and `Skill`), writing standard (the ASD-STE100 rules and word list), manifest check, preferences check, designer profile check, and context recovery (reads timeline + learnings for welcome-back messages and pipeline guidance).
 

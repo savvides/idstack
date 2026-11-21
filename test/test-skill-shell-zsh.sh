@@ -280,6 +280,28 @@ PY
   run "$P/canvas" "$(block course-export "_TOKEN_LINE=" "<canvas url>=https://canvas.example.edu" "<course id>=456")" >/dev/null
   check "[$sh] rewriting the Canvas settings keeps the token" \
     "grep -qx \"CANVAS_TOKEN='secret-token-123'\" '$P/canvas/.idstack/canvas.env'"
+
+  # Moodle: the settings file, then the import script reads it in a later shell.
+  mkdir -p "$P/moodle/.idstack" && (cd "$P/moodle" && git init -q) && printf 'exports/' > "$P/moodle/.idstack/.gitignore"
+  mb() { block course-import "IDSTACK_MOODLE_URL" "<moodle url>=$1" "<course id>=$2"; }
+  run "$P/moodle" "$(mb 'https://moodle.example.edu/$(touch pwned)`touch pwned`' 123)" >/dev/null
+  check "[$sh] Moodle settings file is private (mode 600)" \
+    "ls -l '$P/moodle/.idstack/moodle.env' | grep -q '^-rw-------'"
+  check "[$sh] Moodle settings file is git-ignored after a .gitignore with no newline" \
+    "(cd '$P/moodle' && git check-ignore -q .idstack/moodle.env && git check-ignore -q .idstack/exports/)"
+  check "[$sh] Moodle settings keep the address as text and run no command" \
+    "grep -qF 'touch pwned)' '$P/moodle/.idstack/moodle.env' && [ ! -e '$P/moodle/pwned' ]"
+  sed "s/^MOODLE_TOKEN=''/MOODLE_TOKEN='abc123'/" "$P/moodle/.idstack/moodle.env" > "$P/moodle/env.tmp" && mv "$P/moodle/env.tmp" "$P/moodle/.idstack/moodle.env"
+  run "$P/moodle" "$(mb https://moodle.example.edu 456)" >/dev/null
+  check "[$sh] rewriting the Moodle settings keeps the token" \
+    "grep -qx \"MOODLE_TOKEN='abc123'\" '$P/moodle/.idstack/moodle.env' && grep -qx \"MOODLE_COURSE_ID='456'\" '$P/moodle/.idstack/moodle.env'"
+  mkdir -p "$P/moodle-bad"
+  out=$(run "$P/moodle-bad" "$(mb https://moodle.example.edu 12a)")
+  check "[$sh] Moodle settings refuse a course ID that is not a number" \
+    "printf '%s' \"\$out\" | grep -q '^MOODLE_COURSE_ID_BAD' && [ ! -e '$P/moodle-bad/.idstack/moodle.env' ]"
+  out=$(run "$P/moodle-bad" "$(block course-import 'scripts/idstack-moodle-import')")
+  check "[$sh] the Moodle import block finds the script and stops with no settings file" \
+    "printf '%s' \"\$out\" | grep -q '^MOODLE_ENV_MISSING'"
   # Canvas push blocks. Each one writes its files, runs, and the files go.
   # push <block> <dir> [file=text ...]: runs the push block in <dir> with the fake curl.
   # $FAKE and $FAKE_LIST steer the fake curl. $out gets the output.
