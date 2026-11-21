@@ -295,7 +295,8 @@ PY
   mkdir -p "$P/moodle/.idstack" && (cd "$P/moodle" && git init -q) && printf 'exports/' > "$P/moodle/.idstack/.gitignore"
   mb() { block course-import "IDSTACK_MOODLE_URL" "<moodle url>=$1" "<course id>=$2"; }
   run "$P/moodle" "$(mb 'https://moodle.example.edu/$(touch pwned)`touch pwned`' 123)" >/dev/null
-  check "[$sh] Moodle settings file is private (mode 600)" \
+  # NTFS has no POSIX file modes, as for canvas.env above.
+  [ -n "${ON_WINDOWS:-}" ] || check "[$sh] Moodle settings file is private (mode 600)" \
     "ls -l '$P/moodle/.idstack/moodle.env' | grep -q '^-rw-------'"
   check "[$sh] Moodle settings file is git-ignored after a .gitignore with no newline" \
     "(cd '$P/moodle' && git check-ignore -q .idstack/moodle.env && git check-ignore -q .idstack/exports/)"
