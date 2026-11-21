@@ -2873,7 +2873,7 @@ suite_mutation "idstack-canvas-diff reads a copy of the token file" \
 suite_mutation "idstack-canvas-diff keeps an old report after a failed run" \
   scripts/idstack-canvas-diff "    for old in glob.glob(os.path.join('.idstack', 'exports', '*', REPORT_NAME)):" "    for old in []:" test-canvas-diff.py
 
-# 80m. The .idstack/ rule compares names again, and .IDSTACK gets past it on macOS (#132).
+# 80m. The .idstack/ rule compares names again: a linked .idstack/ (any disk) or .IDSTACK (macOS) gets past it (#132).
 suite_mutation "idstack-canvas-diff compares the .idstack folder by name" \
   scripts/idstack-canvas-diff "        if same(top, '.idstack') and" "        if inner[0] == '.idstack' and" test-canvas-diff.py
 

@@ -616,6 +616,19 @@ class CanvasDiff(unittest.TestCase):
             if os.path.exists(os.path.join(self.proj, name, 'secret.txt')):
                 self.bad_proposal(dict(base, source={'file': name + '/secret.txt'}), 'only course-content/')
 
+    def test_a_linked_idstack_folder_is_still_idstack(self):
+        # Any disk: when .idstack is a link to store/, the real path names store/, not .idstack/.
+        os.rename(os.path.join(self.proj, '.idstack'), os.path.join(self.proj, 'store'))
+        os.symlink('store', os.path.join(self.proj, '.idstack'))
+        self.write('.idstack/secret.txt', 'secret')
+        self.write('.idstack/course-content/fix.html', '<p>Fixed text</p>')
+        base = {'id': 'X-1', 'kind': 'page', 'canvas_id': 'week-1-overview', 'field': 'body'}
+        self.bad_proposal(dict(base, source={'file': 'store/secret.txt'}), 'only course-content/')
+        self.write('proposal.json', json.dumps({'changes': [
+            dict(base, source={'file': 'store/course-content/fix.html'})]}))
+        r = self.run_tool('diff', 'proposal.json')
+        self.assertEqual(r.returncode, 0, r.stdout)
+
     def test_more_bad_settings(self):
         for env in ("CANVAS_BASE_URL='%s'\nCANVAS_COURSE_ID='42'\nCANVAS_TOKEN='a\\b'\n" % BASE,
                     "CANVAS_BASE_URL='%s#x'\nCANVAS_COURSE_ID='42'\nCANVAS_TOKEN='t'\n" % BASE,
