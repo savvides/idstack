@@ -189,6 +189,8 @@ def marking_guide(definition):
 
 
 def main():
+    # A native Windows python3 writes a pipe in the ANSI code page, which cannot hold every course name (#136).
+    sys.stdout.reconfigure(encoding='utf-8')
     try:
         run()
     except (AttributeError, TypeError, ValueError, KeyError, IndexError, OverflowError, OSError) as e:

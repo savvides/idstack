@@ -123,6 +123,19 @@ class MoodleImportTest(unittest.TestCase):
         self.assertNotIn('<p>', week1['summary'])
         self.assertEqual([a['type'] for a in week1['activities']], ['page', 'url', 'quiz'])
 
+    def test_non_ascii_course_name_on_a_cp1252_pipe(self):
+        # A native Windows python3 writes a pipe in cp1252, which has no "ā" (#136).
+        course = json.loads(fixture('core_course_get_courses_by_field.json'))
+        course['courses'][0]['fullname'] = 'Māori data ethics'
+        FakeMoodle.routes['core_course_get_courses_by_field'] = (200, {}, json.dumps(course).encode())
+        self.settings()
+        env = {k: v for k, v in os.environ.items() if 'proxy' not in k.lower()}
+        env['PYTHONIOENCODING'] = 'cp1252'
+        r = subprocess.run([sys.executable, SCRIPT], cwd=self.root, env=env,
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout.decode('utf-8'))['course']['fullname'], 'Māori data ethics')
+
     def test_rubric_marking_guide_and_simple_grading(self):
         self.settings()
         out, _ = self.import_ok()

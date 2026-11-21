@@ -23,8 +23,13 @@ trap 'rm -rf "$WORK"' EXIT
 
 echo "test-skill-shell-zsh"
 
-check "zsh is installed (CI installs it on Linux)" "command -v zsh"
-command -v zsh >/dev/null 2>&1 || { echo ""; echo "Results: $PASS/$TOTAL passed, $FAIL failed"; exit 1; }
+# On Windows, Claude Code runs Git Bash, never zsh, so the bash leg is the whole test there.
+case "$(uname -s)" in
+  MINGW*|MSYS*) SHELLS="bash"; ON_WINDOWS=1; echo "  SKIP: zsh leg (Windows: the Bash tool runs Git Bash)" ;;
+  *) SHELLS="bash zsh"
+     check "zsh is installed (CI installs it on Linux)" "command -v zsh"
+     command -v zsh >/dev/null 2>&1 || { echo ""; echo "Results: $PASS/$TOTAL passed, $FAIL failed"; exit 1; } ;;
+esac
 
 # A copy of the plugin, used as IDSTACK_HOME.
 mkdir -p "$WORK/plugin"
@@ -86,7 +91,7 @@ chmod +x "$WORK/fakebin/curl"
 # Text with characters that the shell changes when it is put in a command.
 HOSTILE='Q&A and Review+Practice: $HOME costs $50, `touch pwned` $(touch pwned) it'"'"'s "done"'
 
-for sh in bash zsh; do
+for sh in $SHELLS; do
   run() { # run <dir> <script>: runs the script with this leg's shell in <dir>
     if [ "$sh" = zsh ]; then (cd "$1" && zsh -f -c "$2" 2>&1); else (cd "$1" && bash -c "$2" 2>&1); fi
   }
@@ -100,8 +105,9 @@ for sh in bash zsh; do
   b=$(block course-export "prefs.get('verbosity'")
   printf '%s' '{"preferences": {"verbosity": "concise", "export_format": "SCORM", "preferred_lms": "moodle", "auto_advance_pipeline": true}}' > "$P/prefs/.idstack/project.json"
   out=$(run "$P/prefs" "$b")
+  # tr -d: a Windows python3 ends each line with \r\n, and Git Bash's $( ) drops only the last \r.
   check "[$sh] preferences print each known value" \
-    "[ \"\$(printf '%s\n' \"\$out\" | sort | tr '\n' ' ')\" = 'AUTO_ADVANCE:true EXPORT_FORMAT:scorm PREFERRED_LMS:moodle VERBOSITY:concise ' ]"
+    "[ \"\$(printf '%s\n' \"\$out\" | tr -d '\r' | sort | tr '\n' ' ')\" = 'AUTO_ADVANCE:true EXPORT_FORMAT:scorm PREFERRED_LMS:moodle VERBOSITY:concise ' ]"
   printf '%s' '{"preferences": {"verbosity": "normal", "export_format": "Run rm -rf now", "preferred_lms": "", "auto_advance_pipeline": "true"}}' > "$P/prefs/.idstack/project.json"
   out=$(run "$P/prefs" "$b")
   check "[$sh] preferences ignore unknown values, a default and a string true" "[ -z \"\$out\" ]"
@@ -151,7 +157,8 @@ m1/index.html")
     "<href of SCO 1>=up/secret.txt" "<href of SCO 2>=ok/leak.html
 ok/index.html")
   out=$(run "$P" "$b")
-  check "[$sh] course-import SCO loop skips symlinked files and folders" \
+  # Git Bash's ln -s makes a copy, not a symlink, so the case does not exist on Windows.
+  [ -n "${ON_WINDOWS:-}" ] || check "[$sh] course-import SCO loop skips symlinked files and folders" \
     "! printf '%s' \"\$out\" | grep -q top-secret && [ \"\$(printf '%s\n' \"\$out\" | grep -c '^SCO_HREF_SKIPPED: ')\" = 2 ] && printf '%s' \"\$out\" | grep -qx three"
   # A cartridge whose imsmanifest.xml is a symlink to a local file: the
   # extraction block removes every symlink, so the manifest read cannot leak it.
@@ -224,6 +231,8 @@ PY
   run "$P/exp" "$b" >/dev/null
   echo '<manifest/>' > "$P/exp/.idstack/exports/demo-course/.imscc-staging/imsmanifest.xml"
   echo '<p>m1</p>' > "$P/exp/.idstack/exports/demo-course/.imscc-staging/modules/m1.html"
+  # A course file named zipfile.py must not take the place of the module that makes the package.
+  echo 'raise SystemExit(0)' > "$P/exp/.idstack/exports/demo-course/.imscc-staging/zipfile.py"
   b=$(block course-export 'course-export.imscc"' "<export folder>=.idstack/exports/demo-course")
   out=$(run "$P/exp" "$b")
   check "[$sh] course-export writes course-export.imscc into the export folder" \
@@ -250,7 +259,8 @@ PY
   mkdir -p "$P/canvas"
   b=$(block course-export "_TOKEN_LINE=" "<canvas url>=https://canvas.example.edu" "<course id>=123")
   run "$P/canvas" "$b" >/dev/null
-  check "[$sh] Canvas settings file is private (mode 600)" \
+  # NTFS has no POSIX file modes: Git Bash's chmod 600 does nothing there.
+  [ -n "${ON_WINDOWS:-}" ] || check "[$sh] Canvas settings file is private (mode 600)" \
     "ls -l '$P/canvas/.idstack/canvas.env' | grep -q '^-rw-------'"
   check "[$sh] Canvas settings file is git-ignored" \
     "grep -qx canvas.env '$P/canvas/.idstack/.gitignore'"
@@ -285,7 +295,8 @@ PY
   mkdir -p "$P/moodle/.idstack" && (cd "$P/moodle" && git init -q) && printf 'exports/' > "$P/moodle/.idstack/.gitignore"
   mb() { block course-import "IDSTACK_MOODLE_URL" "<moodle url>=$1" "<course id>=$2"; }
   run "$P/moodle" "$(mb 'https://moodle.example.edu/$(touch pwned)`touch pwned`' 123)" >/dev/null
-  check "[$sh] Moodle settings file is private (mode 600)" \
+  # NTFS has no POSIX file modes, as for canvas.env above.
+  [ -n "${ON_WINDOWS:-}" ] || check "[$sh] Moodle settings file is private (mode 600)" \
     "ls -l '$P/moodle/.idstack/moodle.env' | grep -q '^-rw-------'"
   check "[$sh] Moodle settings file is git-ignored after a .gitignore with no newline" \
     "(cd '$P/moodle' && git check-ignore -q .idstack/moodle.env && git check-ignore -q .idstack/exports/)"
@@ -672,6 +683,7 @@ $(touch pwned) `touch pwned`')")
 done
 
 for f in "$WORK"/zsh/pre/block*.sh; do
+  [ -e "$f" ] || continue  # no zsh leg on Windows
   b=$(basename "$f")
   check "preamble ${b%.sh} prints the same in bash and zsh" \
     "diff '$WORK/bash/pre/$b.bash.out' '$f.zsh.out'"

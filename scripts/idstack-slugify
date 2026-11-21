@@ -30,6 +30,8 @@
 #   3  no argument and no stdin
 
 set -e
+# Windows: a native python3 writes a pipe in the ANSI code page and fails on non-ASCII text (#136).
+export PYTHONUTF8=1
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "idstack-slugify: python3 is necessary" >&2

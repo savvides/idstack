@@ -34,6 +34,15 @@ class SteCheckTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.work)
 
+    def test_non_ascii_text_on_a_cp1252_pipe(self):
+        # A Windows python3 reads and writes a pipe in the ANSI code page (#136).
+        # PYTHONIOENCODING=cp1252 makes that pipe on every OS. cp1252 has no byte 0x81, which
+        # is in the UTF-8 of 'a with macron', so the text does not survive a cp1252 round trip.
+        env = dict(os.environ, PYTHONIOENCODING='cp1252')
+        proc = subprocess.run([sys.executable, CHECKER, '-'], input='M\u0101ori is open; you can use it.\n'.encode('utf-8'),
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=REPO_ROOT, env=env)
+        self.assertIn('"M\u0101ori is open; you can use it."', proc.stdout.decode('utf-8'))
+
     def write(self, name, text):
         path = os.path.join(self.work, name)
         with open(path, 'w', encoding='utf-8') as handle:

@@ -57,6 +57,11 @@ import subprocess
 import sys
 import tempfile
 
+# Windows: a native python3 reads and writes a pipe in the ANSI code page, which breaks non-ASCII text (#136).
+for _stream in (sys.stdin, sys.stdout):
+    if _stream:
+        _stream.reconfigure(encoding="utf-8")
+
 HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(HERE, 'lib'))
 from citations import check_evidence, load_refs  # noqa: E402
@@ -228,7 +233,7 @@ def ste_problems(path):
     try:
         result = subprocess.run([sys.executable, STE_CHECK, '--format', 'markdown', path],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                universal_newlines=True)
+                                universal_newlines=True, encoding='utf-8')  # the checker writes UTF-8 (#136)
     except OSError as exc:
         raise SystemExit(fail(2, 'cannot run %s: %s' % (STE_CHECK, exc)))
     if result.returncode == 2:
@@ -382,7 +387,7 @@ def cmd_init(args):
             os.makedirs(keep, exist_ok=True)
             backup = os.path.join(keep, os.path.basename(args.report))
             write_atomic(backup, earlier)
-            print('REPORT_KEPT: %s' % os.path.relpath(backup))
+            print('REPORT_KEPT: %s' % os.path.relpath(backup).replace(os.sep, '/'))  # a Markdown link needs /
     write_atomic(args.report, '\n'.join(lines) + '\n')
     print('REPORT_STARTED: %s' % args.report)
     return 0
