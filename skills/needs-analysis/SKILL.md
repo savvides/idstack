@@ -616,7 +616,7 @@ Before gathering context, decide which mode this skill is operating in. Read
 `import_metadata` from the manifest:
 
 - **Audit-existing mode** — both of these must be true:
-  - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`
+  - `import_metadata.source` is one of `cartridge`, `scorm`, `canvas-api`, `moodle-api`
   - `import_metadata.items_imported.modules > 0` (i.e., the import actually produced content)
 - **Design-new mode** — anything else (no manifest, no import_metadata, a `paste` or `pdf` source, or zero modules imported).
 
@@ -1358,7 +1358,7 @@ The audit of an imported course (Mode 3) also adds `"alignment_status": "weak|mo
 
 ### Mode field — design-new vs audit-existing
 
-`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `needs_analysis.mode` is `audit-existing` when `import_metadata.source` is `cartridge`, `scorm` or `canvas-api` and `import_metadata.items_imported.modules > 0`. `course_content.mode` is `gap-fill` when `import_metadata.source` is one of those values and `import_metadata.items_imported.modules > 0` or `course_content.modules` is non-empty. assessment-design's Mode 3 uses the same source values with `import_metadata.items_imported.assessments > 0`, `assessments.items` or `course_content.assessments`. `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report's header metadata line under the title, as `mode: Mode N` (`idstack-report-section init --mode`).
+`needs_analysis.mode` and `course_content.mode` record which operating mode the corresponding skill ran in. Trigger: `needs_analysis.mode` is `audit-existing` when `import_metadata.source` is `cartridge`, `scorm`, `canvas-api` or `moodle-api` and `import_metadata.items_imported.modules > 0`. `course_content.mode` is `gap-fill` when `import_metadata.source` is one of those values and `import_metadata.items_imported.modules > 0` or `course_content.modules` is non-empty. assessment-design's Mode 3 uses the same source values with `import_metadata.items_imported.assessments > 0`, `assessments.items` or `course_content.assessments`. `assessments.mode` is in the schema, but `/idstack:assessment-design` does not write it. The skill records its mode (Mode 1, Mode 2 or Mode 3) only in the report's header metadata line under the title, as `mode: Mode N` (`idstack-report-section init --mode`).
 
 Allowed values per skill:
 - `needs_analysis.mode`: `"design-new"` or `"audit-existing"`
