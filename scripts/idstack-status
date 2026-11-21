@@ -4,6 +4,7 @@
 #        idstack-status --readiness    (pre-export readiness table only)
 #        idstack-status --context      (machine lines for a skill's context recovery)
 #        idstack-status --help         (this text, same as -h)
+# --readiness and --context together exit 2. --help wins over every other argument.
 # Shows: project name, skills completed, quality score trend, dimensions, next step.
 #
 # --context prints QUALITY_TREND, LAST_PRESENCE, SKILLS_COMPLETED, LAST_SKILL,
@@ -37,8 +38,12 @@ for arg in "$@"; do
     *) [ -n "$BAD_ARG" ] || BAD_ARG="$arg" ;;
   esac
 done
-if [ -n "$BAD_ARG" ]; then
-  echo "ERROR: unknown argument: $BAD_ARG" >&2
+if [ -n "$BAD_ARG" ] || [ "$READINESS_ONLY$CONTEXT_ONLY" = 11 ]; then
+  if [ -n "$BAD_ARG" ]; then
+    echo "ERROR: unknown argument: $BAD_ARG" >&2
+  else
+    echo "ERROR: give --readiness or --context, not the two." >&2
+  fi
   echo "Command: idstack-status [--readiness | --context] [-h | --help]" >&2
   exit 2
 fi
@@ -224,9 +229,11 @@ list_reports() {
       for f in "$COURSE_DIR"/*.md; do
         [ "$f" = "$COURSE_DIR/index.md" ] && continue
         [ -f "$f" ] || continue
-        # A report that still has the init status line is not finished.
+        # A report that still has the init status line, or the finish --stopped line, is not finished.
         if grep -qxF '**Status:** in progress. A section with a draft mark waits for your approval.' "$f" 2>/dev/null; then
           echo "  $f (in progress)"
+        elif grep -qxF '**Status:** stopped. The skill stopped before the end of the report.' "$f" 2>/dev/null; then
+          echo "  $f (stopped)"
         else
           echo "  $f"
         fi

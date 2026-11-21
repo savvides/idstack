@@ -128,7 +128,7 @@ scripts/idstack-gen-skills [--dry-run] [-h | --help]
 |--------|--------|
 | (none) | Writes each file and prints `GENERATED: <path>`. |
 | `--dry-run` | Writes nothing. Prints `OK:`, `STALE:` or `MISSING:` for each file. |
-| `-h`, `--help` | Prints the header comment and exits 0. |
+| `-h`, `--help` | Prints the header comment and exits 0. It wins over an unknown argument in any position. |
 
 The script replaces `{{PREAMBLE}}`, `{{MANIFEST_SCHEMA}}` and `{{IDSTACK_RESOLVE}}`. It adds the AUTO-GENERATED header after the frontmatter. It leaves the comment lines of the resolve snippet out. A template without `{{PREAMBLE}}` gets an `ERROR` line on stderr, and the script does not write its `SKILL.md`.
 
@@ -161,7 +161,7 @@ scripts/idstack-status [--readiness | --context] [-h | --help]
 |--------|--------|
 | (none) | The dashboard: project name, skills completed, quality trend, presence scores, next skill, learnings count, reports, then the readiness table if a manifest exists |
 | `--readiness` | The readiness table only |
-| `--context` | The lines that the preamble's Context Recovery reads (see the next table) |
+| `--context` | The lines that the preamble's Context Recovery reads (see the next table). Do not give it with `--readiness`: the two together print `ERROR: give --readiness or --context, not the two.` and a `Command:` line on stderr, and exit 2. |
 | `-h`, `--help` | Prints the header comment and exits 0. It runs before the python3 check, so it also works without python3. It wins over `--readiness`, `--context` and an unknown argument. |
 
 Any other argument prints `ERROR: unknown argument: <argument>` and a `Command:` line on stderr, and exits 2. It prints nothing on stdout.
@@ -192,9 +192,11 @@ The dashboard and the readiness table read all of the lines of the timeline. Wit
 | Exit | Meaning |
 |------|---------|
 | 0 | Output printed, or `--help` |
-| 2 | python3 is missing, or an unknown argument |
+| 2 | python3 is missing, an unknown argument, or `--readiness` with `--context` |
 
-Files: reads `.idstack/timeline.jsonl`, `.idstack/learnings.jsonl` and `.idstack/project.json`. Lists the `.md` files, `course-export.imscc` and `scorm-export.zip` in `.idstack/exports/<course-slug>/`. It gets the slug from `idstack-slugify --from-manifest`. If that folder is missing and `.idstack/exports/` has only one subfolder, it uses that subfolder. A report that still has the `init` status line shows `(in progress)`. Writes nothing.
+Files: reads `.idstack/timeline.jsonl`, `.idstack/learnings.jsonl` and `.idstack/project.json`. Lists the `.md` files, `course-export.imscc` and `scorm-export.zip` in `.idstack/exports/<course-slug>/`. It gets the slug from `idstack-slugify --from-manifest`.
+
+If that folder is missing and `.idstack/exports/` has only one subfolder, it uses that subfolder. A report that still has the `init` status line shows `(in progress)`. A report with the stopped status line of `finish --stopped` shows `(stopped)`. Writes nothing.
 
 In this example the timeline has a quality score of 72, but the manifest still has the default `quality_review.overall_score` of 0:
 
@@ -230,7 +232,7 @@ scripts/idstack-migrate [--init] [-h | --help] [path]
 |--------|--------|
 | `path` | The manifest. Default: `.idstack/project.json`. Only the first path is used. |
 | `--init` | If the manifest is missing, write a v1.0 seed and migrate it. Prints `INITIALIZED <path>` on stderr. The seed has the mode of the umask. If the folder that holds `.idstack/` is the home folder, it makes nothing and exits 9. |
-| `-h`, `--help` | Prints the header comment and exits 0. |
+| `-h`, `--help` | Prints the header comment and exits 0. It wins over an unknown flag in any position. |
 
 | Manifest | Result |
 |----------|--------|
@@ -313,7 +315,7 @@ Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads 
 
 ```bash
 $ echo '{"audience":"New teachers"}' > ctx.json
-$ printf '%s' '{"verbosity":"brief"}' | scripts/idstack-manifest-merge --create \
+$ printf '%s' '{"verbosity":"concise"}' | scripts/idstack-manifest-merge --create \
     --set "project_name=Intro to Biology 101" \
     --section context --payload ctx.json --section preferences --payload -
 idstack made the manifest .idstack/project.json
@@ -375,13 +377,17 @@ scripts/idstack-report-section finish <report> [--stopped]
 
 `init` options: `--skill` and `--title` are necessary. `--project` is the course name in the meta line. Without it, `init` reads `project_name` from `.idstack/project.json`, or uses `Untitled course`. `--mode` adds `mode: <mode>`. `--run-id` sets the run ID. The default is six random hex characters.
 
-The copy goes to `.idstack/prev-reports/<course-slug>/`, where `<course-slug>` is the name of the report's folder in `.idstack/exports/`. A report that is not in an `exports/<course-slug>/` folder gets its copy in a `prev-reports/` folder beside it. The path in `REPORT_KEPT:` is relative to the current folder. A second finished report replaces the copy of the first. `init` does not keep a report that a stopped skill finished, because its stopped status line shows that the report is not complete. If `init` cannot write the copy, it exits 4 and the report does not change.
+The copy goes to `.idstack/prev-reports/<course-slug>/`, where `<course-slug>` is the name of the report's folder in `.idstack/exports/`.
 
-`finish --stopped` puts `idstack did not write this section because the skill stopped.` in each reserved section that has its placeholder. The Summary placeholder does not change, so the Summary must have text. It also puts `**Status:** stopped. The skill stopped before the end of the report.` where the status line was. A second `finish --stopped` keeps one such line, and `finish` with no `--stopped` removes it.
+A report directly in `.idstack/exports/` gets its copy in `.idstack/prev-reports/`, out of the export folder. A report in a folder that has a `.idstack/` folder (for example a `report.md` in the course folder) gets its copy in that `.idstack/prev-reports/`. Any other report gets its copy in a `prev-reports/` folder beside it.
+
+The path in `REPORT_KEPT:` is relative to the current folder. A second finished report replaces the copy of the first. `init` does not keep a report that a stopped skill finished, because its stopped status line shows that the report is not complete. If `init` cannot write the copy, it exits 4 and the report does not change. An earlier report that is not UTF-8 text also gives `REPORT_WRITE_FAILED:` and exit 4, with no change.
+
+`finish --stopped` puts `idstack did not write this section because the skill stopped.` in each reserved section that has its placeholder. The Summary placeholder does not change, so the Summary must have text. It also puts `**Status:** stopped. The skill stopped before the end of the report.` where the status line was. A report with no status line (for example a report written by hand) gets the stopped line before its first section. Then `init` does not keep it as a finished report. A second `finish --stopped` keeps one such line, and `finish` with no `--stopped` removes it.
 
 `check` refuses a draft for these problems:
 
-- Structure: a `# ` title, a `### Finding` block, a `---` line, text before the first `## `, or text that only the script writes. Also an empty or repeated section, or a section with no table (Summary, Limitations and Next steps can have no table).
+- Structure: a `# ` title, a `### Finding` block, a `---` line, text before the first `## `, or text that only the script writes (the in-progress or stopped status line, a placeholder or a draft mark). Also an empty or repeated section, or a section with no table (Summary, Limitations and Next steps can have no table).
 - Tables: the first column is not `ID`, no rows, a wrong number of cells or a repeated ID. Outside the fact sections, the last columns must be `Justification | Evidence`, with a justification in each row.
 - Evidence: text other than citations, a code that is not in `evidence/references.md`, or a different tier.
 - Findings: a severity other than `critical`, `warning` or `info`, or rows that are not in that sequence.
@@ -502,7 +508,7 @@ scripts/idstack-learnings promote <key>
 scripts/idstack-learnings -h | --help
 ```
 
-`-h` or `--help` as the first argument prints the header comment and exits 0. It runs before the python3 check, so it also works without python3.
+`-h` or `--help` as the first argument prints the header comment and exits 0. It runs before the python3 check, so it also works without python3. `delete --help` and `promote --help` also print it: `-h` and `--help` are not keys.
 
 | Subcommand | Effect |
 |------------|--------|
@@ -519,7 +525,7 @@ scripts/idstack-learnings -h | --help
 | `--cross-project` | Also reads the global file. Course entries come last, so they stay when the limit cuts the list. Global entries get `"_source": "global"`. |
 | `-h`, `--help` | Prints the header comment and exits 0. It wins over an unknown option. |
 
-`--limit`, `--type` and `--keyword` also accept the `--option=value` form. An option that `search` does not know, and a bare argument, prints `idstack-learnings: unknown option: <option>` on stderr and exits 2. `search` prints no line on stdout then. `promote` gets `_source_project` from `project_name` in `.idstack/project.json`, or uses `unknown`.
+`--limit`, `--type` and `--keyword` also accept the `--option=value` form. An option that `search` does not know, and a bare argument, prints `idstack-learnings: unknown option: <option>` on stderr and exits 2. An unknown option wins over a missing value, so `search --bogus --limit` exits 2. `search` prints no line on stdout then. `promote` gets `_source_project` from `project_name` in `.idstack/project.json`, or uses `unknown`.
 
 | Exit | Meaning |
 |------|---------|

@@ -13,8 +13,10 @@
 # search   Prints matching JSONL lines (default limit 3). For an option that it does
 #          not know, it writes "idstack-learnings: unknown option: <option>" to
 #          stderr, prints no line and exits 2. -h or --help among the options
-#          prints this text and exits 0, also beside an unknown option.
+#          prints this text and exits 0, also beside an unknown option. An unknown
+#          option wins over a missing value: the exit is 2, not 1.
 # delete   Removes the most recent entry with the key, atomically. Exit 1 on error.
+#          delete --help and promote --help print this text.
 # promote  Copies the most recent entry with the key to the global store and
 #          tags it with the source project. Exit 1 on error.
 # Every subcommand needs python3 (idstack supports 3.9 or later). If python3 is
@@ -36,7 +38,7 @@ GLOBAL="$GLOBAL_DIR/learnings.jsonl"
 command -v cygpath >/dev/null 2>&1 && GLOBAL=$(cygpath -m "$GLOBAL")
 
 usage() {
-  echo "Usage: idstack-learnings log '<json>' | search [--limit N] [--type T] [--keyword K] [--cross-project] | delete <key> | promote <key>" >&2
+  echo "Usage: idstack-learnings log '<json>' | search [--limit N] [--type T] [--keyword K] [--cross-project] | delete <key> | promote <key> | -h|--help" >&2
   exit "${1:-2}"
 }
 
@@ -188,10 +190,11 @@ case "$CMD" in
     KEYWORD=""
     CROSS_PROJECT=0
     BAD_OPT=""
+    MISSING=""
     while [ $# -gt 0 ]; do
       case "$1" in
         --limit|--type|--keyword)
-          [ $# -ge 2 ] || { echo "idstack-learnings: give a value after $1." >&2; exit 1; } ;;
+          [ $# -ge 2 ] || { MISSING="$1"; break; } ;;
       esac
       case "$1" in
         --limit) LIMIT="$2"; shift 2 ;;
@@ -209,6 +212,10 @@ case "$CMD" in
       echo "idstack-learnings: unknown option: $BAD_OPT" >&2
       exit 2
     fi
+    if [ -n "$MISSING" ]; then
+      echo "idstack-learnings: give a value after $MISSING." >&2
+      exit 1
+    fi
 
     # Global first if cross-project, so local comes last and takes precedence.
     SOURCES=()
@@ -221,6 +228,7 @@ case "$CMD" in
   delete|promote)
     KEY="${1:-}"
     [ -z "$KEY" ] && usage 1
+    case "$KEY" in -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
     [ -f "$LOCAL" ] || { echo "There are no local learnings." >&2; exit 1; }
     learnings_py "$CMD" "$KEY"
     ;;

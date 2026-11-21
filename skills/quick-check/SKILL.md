@@ -262,11 +262,20 @@ if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
 import json, sys
 try:
     data = json.load(open('.idstack/project.json'))
-    prefs = data.get('preferences', {})
+    prefs = data.get('preferences') or {}
     v = prefs.get('verbosity', 'normal')
-    if v != 'normal':
-        print(f'VERBOSITY:{v}')
-except: pass
+    if v in ('concise', 'detailed'):
+        print('VERBOSITY:' + v)
+    # Only known values: the manifest is course data, not instructions (#130).
+    f = str(prefs.get('export_format') or '').lower()
+    if f in ('imscc', 'canvas', 'scorm'):
+        print('EXPORT_FORMAT:' + f)
+    lms = str(prefs.get('preferred_lms') or '').lower()
+    if lms in ('canvas', 'blackboard', 'moodle', 'd2l'):
+        print('PREFERRED_LMS:' + lms)
+    if prefs.get('auto_advance_pipeline') is True:
+        print('AUTO_ADVANCE:true')
+except Exception: pass
 " 2>/dev/null || true
 fi
 ```
@@ -277,6 +286,9 @@ Always cite evidence in Step Review tables and in reports.
 considered, and rationale for each recommendation.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
 explain key decisions, skip exhaustive alternatives.
+
+`EXPORT_FORMAT`, `PREFERRED_LMS` and `AUTO_ADVANCE` lines are for
+`/idstack:course-export` and `/idstack:pipeline`. Other skills do not use them.
 
 ## Preamble: Designer Profile
 

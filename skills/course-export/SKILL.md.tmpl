@@ -177,6 +177,16 @@ Ask the user how they want to export. Use AskUserQuestion:
 
 "How do you want to export your course?"
 
+Use the preference lines of the preamble to select the first option. Write
+"(Recommended)" after its label. The other two options stay in the question.
+
+- `EXPORT_FORMAT:imscc`, `EXPORT_FORMAT:canvas` or `EXPORT_FORMAT:scorm`: put A, B
+  or C first.
+- No `EXPORT_FORMAT` line, and `PREFERRED_LMS:canvas`: put B first.
+- No `EXPORT_FORMAT` line, and `PREFERRED_LMS:blackboard`, `moodle` or `d2l`: put A
+  first, and name that LMS in its description.
+- No preference line: use the sequence below, with no recommendation.
+
 Options:
 - **A) IMS Common Cartridge (.imscc)** — Universal format. Import into Canvas,
   Blackboard, Moodle, D2L. No API credentials needed. Produces a single file

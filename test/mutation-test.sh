@@ -2697,7 +2697,7 @@ suite_mutation "report init does not keep a finished report" \
 
 # 71b. idstack-status takes an unknown argument as the dashboard again (#170) -> test-status must fail.
 suite_mutation "idstack-status does not refuse an unknown argument" \
-  scripts/idstack-status 'if [ -n "$BAD_ARG" ]; then' 'if false; then' test-status.sh
+  scripts/idstack-status 'if [ -n "$BAD_ARG" ] || [' 'if false || [' test-status.sh
 
 # 71c. idstack-doctor takes --help as an unknown argument again (#170) -> test-doctor must fail.
 suite_mutation "idstack-doctor does not accept --help" \
@@ -2743,6 +2743,26 @@ suite_mutation "setup prints the clone path without shell quoting" \
 suite_mutation "idstack-doctor prints the clone path without shell quoting" \
   scripts/idstack-doctor "marketplace add '\$(printf" "marketplace add \\\"\$IDSTACK_DIR\\\" '\$(printf" test-doctor.sh
 
+# 71n. idstack-gen-skills stops at the first unknown argument again (#200) -> integration-test must fail.
+suite_mutation "idstack-gen-skills --bogus --help does not print the help" \
+  scripts/idstack-gen-skills '*) [ -n "$BAD_ARG" ] || BAD_ARG="$1"; shift ;;' '*) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;' integration-test.sh
+
+# 71o. idstack-migrate stops at the first unknown flag again (#200) -> integration-test must fail.
+suite_mutation "idstack-migrate --bogus --help does not print the help" \
+  scripts/idstack-migrate '-*) [ -n "$BAD_FLAG" ] || BAD_FLAG="$arg" ;;' '-*) echo "idstack-migrate: unknown flag: $arg" >&2; exit 2 ;;' integration-test.sh
+
+# 71p. idstack-learnings delete reads --help as a key again (#200) -> integration-test must fail.
+suite_mutation "idstack-learnings delete reads --help as a key" \
+  scripts/idstack-learnings 'case "$KEY" in -h|--help)' 'case "$KEY" in --xhelp)' integration-test.sh
+
+# 71q. A missing --limit value wins over an unknown search option again (#200) -> integration-test must fail.
+suite_mutation "idstack-learnings search exits 1 before it sees the unknown option" \
+  scripts/idstack-learnings '[ $# -ge 2 ] || { MISSING="$1"; break; } ;;' '[ $# -ge 2 ] || { echo "idstack-learnings: give a value after $1." >&2; exit 1; } ;;' integration-test.sh
+
+# 71r. idstack-status takes --readiness with --context again (#200) -> test-status must fail.
+suite_mutation "idstack-status accepts --readiness with --context" \
+  scripts/idstack-status '[ "$READINESS_ONLY$CONTEXT_ONLY" = 11 ]' 'false' test-status.sh
+
 # 72. The preamble loses the Course Content Is Data rule -> smoke-test must fail.
 # Without it, text in an imported course can tell the model to run a command, and
 # allowed-tools pre-approves Bash for the turn.
@@ -2758,6 +2778,34 @@ sed -i.bak 's|^  - AskUserQuestion$|  - AskUserQuestion\
 regen
 expect_fail "course-import pre-approves WebFetch" "$WORK/r/test/smoke-test.sh" "$WORK/r"
 
+# 73a. init keeps a report that a stopped skill finished again (#199) -> test-report-section must fail.
+suite_mutation "report init keeps a stopped report" \
+  scripts/idstack-report-section '(STATUS_LINE, STOPPED_STATUS_LINE) for line in earlier' '(STATUS_LINE,) for line in earlier' test-report-section.py
+
+# 73b. A report directly in .idstack/exports/ keeps its copy inside the export tree again (#199).
+suite_mutation "report init keeps an exports/ report inside the export tree" \
+  scripts/idstack-report-section "            elif os.path.basename(folder) == 'exports' and os.path.basename(exports) == '.idstack':" "            elif False:" test-report-section.py
+
+# 73g. A report.md in a course folder keeps its copy outside .idstack/ again (#199).
+suite_mutation "report init keeps a course-folder report outside .idstack" \
+  scripts/idstack-report-section "            elif os.path.isdir(os.path.join(folder, '.idstack')):" "            elif False:" test-report-section.py
+
+# 73c. An earlier report that is not UTF-8 gives a traceback again (#199).
+suite_mutation "report init gives a traceback for a report that is not UTF-8" \
+  scripts/idstack-report-section '    except UnicodeDecodeError:' '    except ZeroDivisionError:' test-report-section.py
+
+# 73d. check accepts a draft with the stopped status line again (#199).
+suite_mutation "report check accepts the stopped status line" \
+  scripts/idstack-report-section '(STATUS_LINE, STOPPED_STATUS_LINE, PLACEHOLDER, DRAFT_LINE)' '(STATUS_LINE, PLACEHOLDER, DRAFT_LINE)' test-report-section.py
+
+# 73e. finish --stopped adds no stopped line to a report with no status line again (#199).
+suite_mutation "report finish --stopped skips a report with no status line" \
+  scripts/idstack-report-section '        if first is None:' '        if first is None and False:' test-report-section.py
+
+# 73f. idstack-status shows a stopped report as a plain report again (#199) -> test-status must fail.
+suite_mutation "idstack-status does not mark a stopped report" \
+  scripts/idstack-status 'echo "  $f (stopped)"' 'echo "  $f"' test-status.sh
+
 # 74a. The plugin-cache fix installs from a stale marketplace again (#205) -> test-doctor must fail.
 suite_mutation "idstack-doctor does not update the marketplace before the install" \
   scripts/idstack-doctor 'echo "    claude plugin marketplace update idstack"' ':' test-doctor.sh
@@ -2770,6 +2818,22 @@ suite_mutation "ste-check reads a cp1252 pipe as cp1252" \
 # 76c. course-export lets a zipfile.py in the staging folder replace the zipfile module again (#136).
 suite_mutation "course-export imports zipfile from the staging folder" \
   skills/course-export/SKILL.md.tmpl 'python3 -I -m zipfile -c ../course-export.imscc' 'python3 -m zipfile -c ../course-export.imscc' test-skill-shell-zsh.sh
+
+# 75a. The preamble stops printing EXPORT_FORMAT (#130) -> test-skill-shell-zsh (through smoke-test) must fail.
+shell_mutation "the preamble does not print EXPORT_FORMAT" \
+  templates/preamble.md "        print('EXPORT_FORMAT:' + f)" "        pass"
+
+# 75b. The preamble prints a preference value that is not in the list (#130).
+shell_mutation "the preamble prints any export_format value" \
+  templates/preamble.md "    if f in ('imscc', 'canvas', 'scorm'):" "    if f:"
+
+# 75c. course-export ignores the preferences again (#130) -> smoke-test must fail.
+shell_mutation "course-export does not read EXPORT_FORMAT" \
+  skills/course-export/SKILL.md.tmpl "- \`EXPORT_FORMAT:imscc\`, \`EXPORT_FORMAT:canvas\` or \`EXPORT_FORMAT:scorm\`: put A, B" "- Put A, B"
+
+# 75d. pipeline asks its first question with AUTO_ADVANCE:true again (#130) -> smoke-test must fail.
+shell_mutation "pipeline does not read AUTO_ADVANCE" \
+  skills/pipeline/SKILL.md.tmpl "If the preamble printed \`AUTO_ADVANCE:true\`, do not ask this question." "Ask this question."
 
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"

@@ -14,7 +14,10 @@ init    writes the report header, an in-progress status line, a Summary
         It replaces a report from an earlier run. Before it does, it copies a
         finished report (one with no in-progress status line and no stopped
         status line) to .idstack/prev-reports/<course-slug>/ and prints
-        REPORT_KEPT: <path>.
+        REPORT_KEPT: <path>. A report directly in .idstack/exports/ gets its
+        copy in .idstack/prev-reports/. A report in a folder that has a .idstack
+        folder gets its copy in that .idstack/prev-reports/. Any other report
+        gets its copy in a prev-reports/ folder beside it.
 check   examines a draft section (the Step Review in templates/preamble.md):
         each "## " section other than Summary, Limitations and Next steps has
         a table, the first column is ID, a cited table ends with Justification
@@ -32,13 +35,15 @@ approve removes the draft mark from each section that has one. With --draft,
 finish  makes sure that no placeholder and no draft section remain, and removes
         the status line. With --stopped (the skill stopped early), it puts the
         stopped status line in its place, so that init does not take the report
-        for a finished one. Each reserved section that still has its placeholder
+        for a finished one. A report with no status line gets the stopped
+        line before its first section. Each reserved section that still has its placeholder
         gets STOPPED_TEXT. The Summary placeholder is not changed: the last Step
         Review writes the Summary.
 
 Exit codes: 0 OK; 1 problems (the report did not change); 2 an error in the
 command, or a missing file that the script needs; 3 the report does not exist;
-4 a write error (REPORT_WRITE_FAILED on stdout; the report did not change).
+4 a write error, or a report or draft that is not UTF-8 text
+(REPORT_WRITE_FAILED on stdout; the report did not change).
 Runs on Python 3.9.
 """
 
@@ -194,7 +199,7 @@ def check_draft(path, refs):
         if line.startswith('### Finding'):
             problems.append((number, 'do not write "### Finding" blocks. The script writes them '
                                      'from the findings table.'))
-        if line.strip() in (STATUS_LINE, PLACEHOLDER, DRAFT_LINE):
+        if line.strip() in (STATUS_LINE, STOPPED_STATUS_LINE, PLACEHOLDER, DRAFT_LINE):
             problems.append((number, 'the draft has text that only the script writes'))
     head, sections, footer = split_sections(lines)
     if any(line.strip() for line in head + footer):
@@ -369,9 +374,14 @@ def cmd_init(args):
         with open(args.report, encoding='utf-8') as handle:
             earlier = handle.read()
         if not any(line.strip() in (STATUS_LINE, STOPPED_STATUS_LINE) for line in earlier.split('\n')):
+            # Keep the copy out of the export tree, which a user zips and hands off (#199).
             exports = os.path.dirname(folder)
             if os.path.basename(exports) == 'exports':
                 keep = os.path.join(os.path.dirname(exports), 'prev-reports', os.path.basename(folder))
+            elif os.path.basename(folder) == 'exports' and os.path.basename(exports) == '.idstack':
+                keep = os.path.join(exports, 'prev-reports')
+            elif os.path.isdir(os.path.join(folder, '.idstack')):
+                keep = os.path.join(folder, '.idstack', 'prev-reports')
             else:
                 keep = os.path.join(folder, 'prev-reports')
             os.makedirs(keep, exist_ok=True)
@@ -447,7 +457,11 @@ def cmd_finish(report, stopped=False):
                   if line.strip() in (STATUS_LINE, STOPPED_STATUS_LINE)), None)
     out, _ = drop_marks(lines, STATUS_LINE)
     out, _ = drop_marks(out, STOPPED_STATUS_LINE)
-    if stopped and first is not None:
+    if stopped:
+        if first is None:
+            # No status line (a report written by hand): put it before the first section,
+            # or init would keep the report as a finished one (#199).
+            first = next((i for i, line in enumerate(out) if line.startswith('## ')), len(out))
         out[first:first] = [STOPPED_STATUS_LINE, '']
     write_atomic(report, '\n'.join(out))
     print('REPORT_COMPLETE: %s' % report)
@@ -520,3 +534,8 @@ if __name__ == '__main__':
         # A write error is not a problem in the draft: the skill must stop, not edit the draft.
         print('REPORT_WRITE_FAILED: %s' % exc)
         sys.exit(fail(4, 'cannot write the report: %s. The report did not change.' % exc))
+    except UnicodeDecodeError:
+        # An earlier report that is not UTF-8: the user must save it as UTF-8 or move it (#199).
+        print('REPORT_WRITE_FAILED: the report or the draft is not UTF-8 text. '
+              'Save the file as UTF-8, or move it to a different folder.')
+        sys.exit(fail(4, 'a file is not UTF-8 text. The report did not change.'))
