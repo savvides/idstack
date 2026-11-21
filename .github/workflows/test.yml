@@ -124,6 +124,7 @@ jobs:
       # smoke-test.sh runs test-setup.sh, and its file checks are the same on every OS;
       # test-setup.sh builds a PATH of symlinks into /usr/bin, and Git Bash's ln -s makes copies;
       # integration-test.sh uses symlinks, POSIX file modes and Python that runs the bash scripts.
+      # test-canvas-diff.py puts a fake curl (a Python script) first in PATH; Windows starts only curl.exe.
       - name: Test suites
         run: |
           failed=""

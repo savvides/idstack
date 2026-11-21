@@ -1,0 +1,1 @@
+{"id": 13, "course_id": 42, "name": "Lab tool", "description": "<p>Open the lab.</p>", "points_possible": 10, "updated_at": "2026-09-02T08:40:00Z", "published": true, "submission_types": ["external_tool"], "external_tool_tag_attributes": {"url": "https://tool.example/launch"}}

@@ -471,6 +471,12 @@ rm -rf "$STE_NOCHK"
 if command -v python3 &>/dev/null; then
   check "report-section unit tests pass" "python3 '$IDSTACK_DIR/test/test-report-section.py'"
 fi
+
+# Canvas sync dry run (#132): read-only. The suite fails if the script gets a
+# write method or curl data flag, or puts the token in an argument.
+if command -v python3 &>/dev/null; then
+  check "canvas-diff unit tests pass" "python3 '$IDSTACK_DIR/test/test-canvas-diff.py'"
+fi
 check "preamble has the Step Review section" "grep -q '^## Preamble: Step Review' '$IDSTACK_DIR/templates/preamble.md'"
 # The concise setting once told skills to drop citations. Each table row now
 # needs its citation, so that text must not come back.
