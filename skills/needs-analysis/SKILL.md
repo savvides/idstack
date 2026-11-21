@@ -264,11 +264,20 @@ if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
 import json, sys
 try:
     data = json.load(open('.idstack/project.json'))
-    prefs = data.get('preferences', {})
+    prefs = data.get('preferences') or {}
     v = prefs.get('verbosity', 'normal')
-    if v != 'normal':
-        print(f'VERBOSITY:{v}')
-except: pass
+    if v in ('concise', 'detailed'):
+        print('VERBOSITY:' + v)
+    # Only known values: the manifest is course data, not instructions (#130).
+    f = str(prefs.get('export_format') or '').lower()
+    if f in ('imscc', 'canvas', 'scorm'):
+        print('EXPORT_FORMAT:' + f)
+    lms = str(prefs.get('preferred_lms') or '').lower()
+    if lms in ('canvas', 'blackboard', 'moodle', 'd2l'):
+        print('PREFERRED_LMS:' + lms)
+    if prefs.get('auto_advance_pipeline') is True:
+        print('AUTO_ADVANCE:true')
+except Exception: pass
 " 2>/dev/null || true
 fi
 ```
@@ -279,6 +288,9 @@ Always cite evidence in Step Review tables and in reports.
 considered, and rationale for each recommendation.
 **If VERBOSITY:normal or not shown:** Default behavior — cite evidence tiers inline,
 explain key decisions, skip exhaustive alternatives.
+
+`EXPORT_FORMAT`, `PREFERRED_LMS` and `AUTO_ADVANCE` lines are for
+`/idstack:course-export` and `/idstack:pipeline`. Other skills do not use them.
 
 ## Preamble: Designer Profile
 
@@ -1029,7 +1041,7 @@ The merge tool replaces only the named top-level sections, preserves every other
 | `quality_review` | course-quality-review | QM standards, CoI presence, alignment audit, cross-domain checks, scores. No skill writes `review_history`. `scripts/idstack-migrate` adds it as `[]`, and a /idstack:course-quality-review write replaces the whole section, so the field and its contents are removed. The timeline (`.idstack/timeline.jsonl`) keeps the score of each review. |
 | `red_team_audit` | red-team | Confidence score, dimensions, findings (with stable ids), top actions. |
 | `accessibility_review` | accessibility-review | WCAG / UDL scores, violations, recommendations, quick wins. |
-| `preferences` | (user, by hand) | Verbosity, export format, preferred LMS, auto-advance. `scripts/idstack-migrate` writes the defaults. No skill writes this section; the preamble reads `verbosity`. |
+| `preferences` | (user) | Verbosity, export format, preferred LMS, auto-advance. `scripts/idstack-migrate` writes the defaults. No skill writes this section. The preamble reads it: `verbosity` (`normal`, `concise`, `detailed`) changes the chat text of each skill, `export_format` (`imscc`, `canvas`, `scorm`) and `preferred_lms` (`canvas`, `blackboard`, `moodle`, `d2l`) select the first option of the `/idstack:course-export` question, and `auto_advance_pipeline: true` makes `/idstack:pipeline` start without its first question. Other values are ignored. To set them, give the full section to `scripts/idstack-manifest-merge --create --section preferences --payload <file>`. |
 
 ### Full schema (canonical shape)
 

@@ -129,7 +129,7 @@ scripts/idstack-gen-skills [--dry-run] [-h | --help]
 |--------|--------|
 | (none) | Writes each file and prints `GENERATED: <path>`. |
 | `--dry-run` | Writes nothing. Prints `OK:`, `STALE:` or `MISSING:` for each file. |
-| `-h`, `--help` | Prints the header comment and exits 0. |
+| `-h`, `--help` | Prints the header comment and exits 0. It wins over an unknown argument in any position. |
 
 The script replaces `{{PREAMBLE}}`, `{{MANIFEST_SCHEMA}}` and `{{IDSTACK_RESOLVE}}`. It adds the AUTO-GENERATED header after the frontmatter. It leaves the comment lines of the resolve snippet out. A template without `{{PREAMBLE}}` gets an `ERROR` line on stderr, and the script does not write its `SKILL.md`.
 
@@ -162,7 +162,7 @@ scripts/idstack-status [--readiness | --context] [-h | --help]
 |--------|--------|
 | (none) | The dashboard: project name, skills completed, quality trend, presence scores, next skill, learnings count, reports, then the readiness table if a manifest exists |
 | `--readiness` | The readiness table only |
-| `--context` | The lines that the preamble's Context Recovery reads (see the next table) |
+| `--context` | The lines that the preamble's Context Recovery reads (see the next table). Do not give it with `--readiness`: the two together print `ERROR: give --readiness or --context, not the two.` and a `Command:` line on stderr, and exit 2. |
 | `-h`, `--help` | Prints the header comment and exits 0. It runs before the python3 check, so it also works without python3. It wins over `--readiness`, `--context` and an unknown argument. |
 
 Any other argument prints `ERROR: unknown argument: <argument>` and a `Command:` line on stderr, and exits 2. It prints nothing on stdout.
@@ -193,7 +193,7 @@ The dashboard and the readiness table read all of the lines of the timeline. Wit
 | Exit | Meaning |
 |------|---------|
 | 0 | Output printed, or `--help` |
-| 2 | python3 is missing, or an unknown argument |
+| 2 | python3 is missing, an unknown argument, or `--readiness` with `--context` |
 
 Files: reads `.idstack/timeline.jsonl`, `.idstack/learnings.jsonl` and `.idstack/project.json`. Lists the `.md` files, `course-export.imscc` and `scorm-export.zip` in `.idstack/exports/<course-slug>/`. It gets the slug from `idstack-slugify --from-manifest`.
 
@@ -233,7 +233,7 @@ scripts/idstack-migrate [--init] [-h | --help] [path]
 |--------|--------|
 | `path` | The manifest. Default: `.idstack/project.json`. Only the first path is used. |
 | `--init` | If the manifest is missing, write a v1.0 seed and migrate it. Prints `INITIALIZED <path>` on stderr. The seed has the mode of the umask. If the folder that holds `.idstack/` is the home folder, it makes nothing and exits 9. |
-| `-h`, `--help` | Prints the header comment and exits 0. |
+| `-h`, `--help` | Prints the header comment and exits 0. It wins over an unknown flag in any position. |
 
 | Manifest | Result |
 |----------|--------|
@@ -316,7 +316,7 @@ Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads 
 
 ```bash
 $ echo '{"audience":"New teachers"}' > ctx.json
-$ printf '%s' '{"verbosity":"brief"}' | scripts/idstack-manifest-merge --create \
+$ printf '%s' '{"verbosity":"concise"}' | scripts/idstack-manifest-merge --create \
     --set "project_name=Intro to Biology 101" \
     --section context --payload ctx.json --section preferences --payload -
 idstack made the manifest .idstack/project.json
@@ -554,7 +554,7 @@ scripts/idstack-learnings promote <key>
 scripts/idstack-learnings -h | --help
 ```
 
-`-h` or `--help` as the first argument prints the header comment and exits 0. It runs before the python3 check, so it also works without python3.
+`-h` or `--help` as the first argument prints the header comment and exits 0. It runs before the python3 check, so it also works without python3. `delete --help` and `promote --help` also print it: `-h` and `--help` are not keys.
 
 | Subcommand | Effect |
 |------------|--------|
@@ -571,7 +571,7 @@ scripts/idstack-learnings -h | --help
 | `--cross-project` | Also reads the global file. Course entries come last, so they stay when the limit cuts the list. Global entries get `"_source": "global"`. |
 | `-h`, `--help` | Prints the header comment and exits 0. It wins over an unknown option. |
 
-`--limit`, `--type` and `--keyword` also accept the `--option=value` form. An option that `search` does not know, and a bare argument, prints `idstack-learnings: unknown option: <option>` on stderr and exits 2. `search` prints no line on stdout then. `promote` gets `_source_project` from `project_name` in `.idstack/project.json`, or uses `unknown`.
+`--limit`, `--type` and `--keyword` also accept the `--option=value` form. An option that `search` does not know, and a bare argument, prints `idstack-learnings: unknown option: <option>` on stderr and exits 2. An unknown option wins over a missing value, so `search --bogus --limit` exits 2. `search` prints no line on stdout then. `promote` gets `_source_project` from `project_name` in `.idstack/project.json`, or uses `unknown`.
 
 | Exit | Meaning |
 |------|---------|
