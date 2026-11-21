@@ -43,8 +43,11 @@ PYTHON="$(command -v python3)"
 # any mock that a test adds. `claude` is absent unless a test installs it.
 MOCK_BIN="$TEST_ROOT/bin"
 mkdir -p "$MOCK_BIN"
-for _c in bash sh env command dirname echo grep head python3 readlink sed tr awk cat ls rm mkdir ln chmod mktemp printf sort wc basename find touch cp cut; do
-  _p=$(command -v "$_c" 2>/dev/null) && ln -sf "$_p" "$MOCK_BIN/$_c"
+# A small script that runs the real command, not a symlink: Git Bash copies on ln -s,
+# and a copied command does not find its DLLs on this pinned PATH.
+link_cmd() { rm -f "$2"; printf '#!/bin/sh\nexec "%s" "$@"\n' "$1" > "$2"; chmod +x "$2"; }
+for _c in bash sh env dirname echo grep head python3 readlink sed tr awk cat ls rm mkdir ln chmod mktemp printf sort wc basename find touch cp cut; do
+  _p=$(command -v "$_c" 2>/dev/null) && link_cmd "$_p" "$MOCK_BIN/$_c"
 done
 export PATH="$MOCK_BIN"
 
@@ -245,7 +248,7 @@ status: enabled"
 rm "$MOCK_BIN/python3"
 check "missing python3 is a PROBLEM" "'$DOCTOR_CMD'" 1 "PROBLEM: idstack needs python3 3.9"
 "$DOCTOR_CMD" > "$TEST_ROOT/no-python.txt" 2>&1 || true
-ln -sf "$PYTHON" "$MOCK_BIN/python3"
+link_cmd "$PYTHON" "$MOCK_BIN/python3"
 
 setup_happy_path
 mock_claude_output "idstack@idstack
@@ -258,8 +261,7 @@ check "python3 3.9 or later is found" "'$DOCTOR_CMD'" 0 "found python3 3\\.(9|[1
 # check that ran first would block that user every time.
 # The OK checks compare the whole output: the full report also ends with an
 # OK line, so a regex would pass even if --quick were ignored.
-# Fakes REPLACE the file in MOCK_BIN. Remove it first: MOCK_BIN/python3 is a
-# symlink to the real interpreter, and a redirect would write through it.
+# Fakes REPLACE the file in MOCK_BIN: fake_cmd removes it first.
 fake_cmd() { # fake_cmd <name> <shell body> [folder, default MOCK_BIN]
   local _dir="${3:-$MOCK_BIN}"
   rm -f "$_dir/$1"
@@ -268,7 +270,7 @@ fake_cmd() { # fake_cmd <name> <shell body> [folder, default MOCK_BIN]
 }
 restore_quick_cmds() {
   rm -f "$MOCK_BIN/uname" "$MOCK_BIN/xcode-select" "$MOCK_BIN/python3"
-  ln -sf "$PYTHON" "$MOCK_BIN/python3"
+  link_cmd "$PYTHON" "$MOCK_BIN/python3"
 }
 
 setup_happy_path
@@ -324,7 +326,7 @@ fake_cmd python3 'exit 1' "$WIN_BIN_BS"
 check "--quick prints PYTHON_WINSTUB when the folder path has backslashes" "PATH='$WIN_BIN_BS':'$MOCK_BIN' '$DOCTOR_CMD' --quick" 1 "^PYTHON_WINSTUB$"
 
 rm -f "$WIN_BIN/python3"
-ln -sf "$PYTHON" "$WIN_BIN/python3"
+link_cmd "$PYTHON" "$WIN_BIN/python3"
 check "--quick prints only OK for a python3 that works in a WindowsApps folder" "[ \"\$(PATH='$WIN_PATH' '$DOCTOR_CMD' --quick 2>&1)\" = OK ]"
 check "the full run finds a python3 that works in a WindowsApps folder" "PATH='$WIN_PATH' '$DOCTOR_CMD'" 0 "found python3 3\\.(9|[1-9][0-9])"
 

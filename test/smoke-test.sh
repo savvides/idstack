@@ -281,7 +281,7 @@ block = [b for b in re.findall(r"```bash\n(.*?)```", s, re.S) if "idstack-slugif
 env = dict(os.environ, IDSTACK_HOME=sys.argv[2])
 env.pop("CLAUDE_PLUGIN_ROOT", None)
 d = tempfile.mkdtemp()
-r = subprocess.run(["bash", "-c", block], cwd=d, env=env, stdout=subprocess.PIPE,
+r = subprocess.run([shutil.which("bash") or "bash", "-c", block], cwd=d, env=env, stdout=subprocess.PIPE,
                    stderr=subprocess.STDOUT, universal_newlines=True)
 made = os.path.exists(os.path.join(d, ".idstack", "exports", "project-name"))
 shutil.rmtree(d)

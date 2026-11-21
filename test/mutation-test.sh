@@ -2626,7 +2626,7 @@ suite_mutation "migrate --init makes a manifest in the home folder" \
   scripts/idstack-migrate "sys.exit(0 if os.environ.get('HOME')" "sys.exit(1 if os.environ.get('HOME')" test-manifest-merge.sh
 # 70g. The merge takes no lock again.
 suite_mutation "merge takes no lock" \
-  scripts/idstack-manifest-merge 'fcntl.flock(lock, fcntl.LOCK_EX)  # held until the process exits' 'pass' test-manifest-merge.sh
+  scripts/idstack-manifest-merge 'lock_exclusive(lock)  # held until the process exits' 'pass' test-manifest-merge.sh
 # 70h. --expect-updated stops checking.
 suite_mutation "--expect-updated does not check" \
   scripts/idstack-manifest-merge 'args.expect_updated is not None and manifest.get("updated") != args.expect_updated' 'False' test-manifest-merge.sh
@@ -2809,6 +2809,15 @@ suite_mutation "idstack-status does not mark a stopped report" \
 # 74a. The plugin-cache fix installs from a stale marketplace again (#205) -> test-doctor must fail.
 suite_mutation "idstack-doctor does not update the marketplace before the install" \
   scripts/idstack-doctor 'echo "    claude plugin marketplace update idstack"' ':' test-doctor.sh
+# 76a. The merge reads stdin in the ANSI code page again, as a Windows python3 does (#136).
+suite_mutation "merge reads a cp1252 stdin as cp1252" \
+  scripts/idstack-manifest-merge 'for _stream in (sys.stdin, sys.stdout):' 'for _stream in ():' test-manifest-merge.sh
+# 76b. ste-check reads and writes a cp1252 pipe as cp1252 again (#136).
+suite_mutation "ste-check reads a cp1252 pipe as cp1252" \
+  scripts/idstack-ste-check 'for _stream in (sys.stdin, sys.stdout):' 'for _stream in ():' test-ste-check.py
+# 76c. course-export lets a zipfile.py in the staging folder replace the zipfile module again (#136).
+suite_mutation "course-export imports zipfile from the staging folder" \
+  skills/course-export/SKILL.md.tmpl 'python3 -I -m zipfile -c ../course-export.imscc' 'python3 -m zipfile -c ../course-export.imscc' test-skill-shell-zsh.sh
 
 # 75a. The preamble stops printing EXPORT_FORMAT (#130) -> test-skill-shell-zsh (through smoke-test) must fail.
 shell_mutation "the preamble does not print EXPORT_FORMAT" \

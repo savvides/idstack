@@ -371,6 +371,7 @@ class ReportSectionTest(unittest.TestCase):
         result = self.append(TASKS)
         self.assertEqual(result.returncode, 3)
 
+    @unittest.skipIf(os.name == 'nt', 'NTFS has no POSIX file modes')
     def test_init_and_append_keep_a_readable_file_mode(self):
         # mkstemp makes a 0600 file, and the rename once kept that mode.
         old_umask = os.umask(0o022)
@@ -395,7 +396,7 @@ class ReportSectionTest(unittest.TestCase):
         with open(real, encoding='utf-8') as f:
             self.assertIn('## Task analysis', f.read())
 
-    @unittest.skipIf(os.geteuid() == 0, 'root can write a read-only folder')
+    @unittest.skipIf(os.name == 'nt' or os.geteuid() == 0, 'root, and Windows, can write a read-only folder')
     def test_a_write_error_exits_4_with_no_traceback(self):
         self.init()
         before = self.read(REPORT)

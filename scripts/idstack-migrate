@@ -33,6 +33,8 @@
 # full shape in templates/manifest-schema.md.
 
 set -e
+# Windows: a native python3 writes a pipe in the ANSI code page and fails on non-ASCII text (#136).
+export PYTHONUTF8=1
 
 LATEST_VERSION="1.4"
 
