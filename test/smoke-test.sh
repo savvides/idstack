@@ -827,6 +827,12 @@ check "assessment-design Mode 3 asks for ILOs when an import found none" \
 check "assessment-design Mode 2 saves the ILOs it classifies" \
   "grep -qF 'In Mode 2, also put each approved \`## Learning objectives\` row in' '$IDSTACK_DIR/skills/assessment-design/SKILL.md.tmpl'"
 
+# The manifest preferences that the preamble prints are used (#130).
+check "course-export selects its first option from EXPORT_FORMAT and PREFERRED_LMS" \
+  "grep -qF '\`EXPORT_FORMAT:imscc\`, \`EXPORT_FORMAT:canvas\` or \`EXPORT_FORMAT:scorm\`: put A, B' '$IDSTACK_DIR/skills/course-export/SKILL.md' && grep -qF '\`PREFERRED_LMS:canvas\`: put B first' '$IDSTACK_DIR/skills/course-export/SKILL.md'"
+check "pipeline skips its first question for AUTO_ADVANCE:true" \
+  "grep -qF 'If the preamble printed \`AUTO_ADVANCE:true\`, do not ask this question.' '$IDSTACK_DIR/skills/pipeline/SKILL.md'"
+
 # docs/frameworks.md is the one map of skills to framework phases (ADDIE,
 # backward design, SAM). A new skill must have a row in it.
 check "every skill is in the framework map (docs/frameworks.md)" \

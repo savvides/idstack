@@ -315,7 +315,7 @@ Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads 
 
 ```bash
 $ echo '{"audience":"New teachers"}' > ctx.json
-$ printf '%s' '{"verbosity":"brief"}' | scripts/idstack-manifest-merge --create \
+$ printf '%s' '{"verbosity":"concise"}' | scripts/idstack-manifest-merge --create \
     --set "project_name=Intro to Biology 101" \
     --section context --payload ctx.json --section preferences --payload -
 idstack made the manifest .idstack/project.json
