@@ -1,0 +1,4 @@
+[
+  {"id": 7, "course_id": 42, "name": "Case study 1", "description": "<p>Analyze the case and write 500 words.</p>", "points_possible": 20, "updated_at": "2026-09-02T08:00:00Z", "published": true},
+  {"id": 9, "course_id": 42, "name": "Old quiz", "description": "<p>Answer the questions.</p>", "points_possible": 5, "updated_at": "2026-09-02T08:10:00Z", "published": false}
+]

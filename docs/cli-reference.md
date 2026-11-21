@@ -18,6 +18,7 @@ Requirements: bash and python3 3.9 or later. `package-extension.sh` also needs `
 | [`idstack-manifest-merge`](#idstack-manifest-merge) | Replaces manifest sections in one atomic write | Each skill that writes a manifest section |
 | [`idstack-slugify`](#idstack-slugify) | Makes the `<course-slug>` folder name | Each skill that writes to `.idstack/exports/` |
 | [`idstack-report-section`](#idstack-report-section) | Builds a report one approved section at a time | The skills that write a report |
+| [`idstack-canvas-diff`](#idstack-canvas-diff) | Shows what a push to Canvas changes, with conflicts. Reads only | You, by hand (no skill calls it yet) |
 | [`idstack-ste-check`](#idstack-ste-check) | Finds some ASD-STE100 problems in a file | Each skill, `idstack-report-section`, the tests |
 | [`idstack-timeline-log`](#idstack-timeline-log) | Adds one event to the timeline | The skills, at the end of a run |
 | [`idstack-learnings`](#idstack-learnings) | Logs, finds, deletes and promotes learnings | The skills, `/idstack:learn` |
@@ -425,6 +426,40 @@ Report path: .idstack/exports/intro-to-biology-101/needs-analysis.md
 $ scripts/idstack-report-section approve .idstack/exports/intro-to-biology-101/needs-analysis.md --draft draft.md
 SECTION_APPROVED: Findings
 ```
+
+## idstack-canvas-diff
+
+`idstack-canvas-diff` shows the changes that a push of idstack improvements to a live Canvas course makes. It only reads from Canvas: each request is a GET. The design, the proposal format and the open questions are in [`lms-sync.md`](lms-sync.md). No idstack tool pushes these changes yet (#132).
+
+```bash
+scripts/idstack-canvas-diff snapshot
+scripts/idstack-canvas-diff diff <proposal.json>
+scripts/idstack-canvas-diff -h | --help
+```
+
+`-h` or `--help` prints the header comment and exits 0. It wins over the other arguments in any position, and the script sends no request. Any other argument prints `ERROR: unknown argument: <arguments>` and the usage on stderr, and exits 2.
+
+| Subcommand | Effect | stdout on success |
+|------------|--------|-------------------|
+| `snapshot` | Reads the pages (one GET for each page, for the body), the assignments and the course outcomes. Writes `.idstack/canvas-baseline.json`: for each item, the Canvas ID, title, `updated_at` and a sha256 of each field that a push can change. The file keeps the titles, but no body or description text. Run it right after `/idstack:course-import`. | `BASELINE: .idstack/canvas-baseline.json (<n> items)`, then `BASELINE_PARTIAL: <kind>: ...` for a list that has more pages. `BASELINE_SKIPPED: <n> pages ...` is for pages with a URL name that has a character other than `A-Z`, `a-z`, `0-9`, `_` and `-` |
+| `diff` | Validates the proposal, reads each item that it names, and gives each row one state: `CONFLICT`, `NO BASELINE`, `BLOCKED`, `NOT FOUND`, `CHANGE` or `NO CHANGE`. Writes `.idstack/exports/<course-slug>/canvas-sync-dry-run.md` with a unified diff for each change. | `Report path: <report>`, then the count of each state |
+
+Both subcommands read `CANVAS_BASE_URL`, `CANVAS_COURSE_ID` and `CANVAS_TOKEN` from `.idstack/canvas.env`. The URL must start with `https://`. curl gets the token on stdin (`curl -K -`), never as an argument. The proposal cannot give a URL: the script makes each URL from a fixed template for `page`, `assignment` or `outcome`, and validates the ID.
+
+A `{"file": ...}` source must be in the course folder. In `.idstack/`, the script reads only `course-content/`. It compares the folders by identity, so another case of the name does not get past it. No row, file or objective can contain the token. The script does not examine Canvas text or the course name for the token. curl gets `-q` first, so `~/.curlrc` is not read.
+
+`diff` refuses a baseline for a different course. With no baseline file, each changed row is `NO BASELINE`.
+
+| Exit | Meaning |
+|------|---------|
+| 0 | Done |
+| 2 | No subcommand, a bad proposal, a bad, missing or unreadable `.idstack/canvas.env`, or a manifest or baseline that is not a JSON object. `INPUT_BAD:` for a file with a different shape. A missing manifest or baseline is not an error. A proposal problem prints one `PROPOSAL_BAD:` line for each row, and the script sends no request. |
+| 4 | A write error. stdout gets `WRITE_FAILED: <error>`, and the file does not change. |
+| 5 | A Canvas request failed. Canvas has no such course, or a list answers 404. Or HTTP 401, or a status other than 200 or 404. Or an answer that is not JSON, a curl error or a timeout of 60 seconds. stdout gets `CANVAS_FAILED: <reason>`, and the script writes no file. |
+
+Before it reads its inputs, each run of `diff` or `snapshot` deletes each `canvas-sync-dry-run.md` in `.idstack/exports/*/` and prints `REPORT_REMOVED: <report>`. Thus an old report cannot look like the result of a failed run or of an old baseline.
+
+Files: reads `.idstack/canvas.env`, `.idstack/project.json` (for `{"ilo": ...}` sources and the course slug) and `.idstack/canvas-baseline.json`. Writes through a tempfile in the folder of the real file and a rename. Runs `scripts/idstack-slugify --from-manifest`. Limit: each list reads one page (`per_page=100`) and does not follow the `Link` header. An item after the first page has no baseline, so `diff` marks it `NO BASELINE`.
 
 ## idstack-ste-check
 

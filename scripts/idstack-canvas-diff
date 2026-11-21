@@ -1,0 +1,551 @@
+#!/usr/bin/env python3
+"""Show the changes that a push to Canvas makes. This script only reads from Canvas.
+
+Usage:
+  idstack-canvas-diff snapshot
+  idstack-canvas-diff diff PROPOSAL
+
+Run it in the course folder. Both subcommands read the Canvas URL, the course ID
+and the token from .idstack/canvas.env, the file that /idstack:course-import and
+/idstack:course-export write.
+
+snapshot  reads the pages, the assignments and the course outcomes from Canvas.
+          It writes .idstack/canvas-baseline.json: for each item, its Canvas ID,
+          title, updated_at and a sha256 of each field that a push can change.
+          The file keeps the titles, but no body or description text. Run it
+          right after an import.
+diff      reads PROPOSAL (a JSON file, format in docs/lms-sync.md) and each item
+          that it names from Canvas. It compares each item with the baseline and
+          with the proposed text, then writes
+          .idstack/exports/<course-slug>/canvas-sync-dry-run.md.
+
+Each request to Canvas is a GET. curl gets the token on stdin (curl -K -), never
+in an argument. The proposal cannot give a URL or a path: the script makes each
+URL from a fixed template and an ID that it validates.
+
+Exit codes:
+  0  done
+  2  a bad command, proposal or settings file, or a missing file
+  4  a write error (the file did not change)
+  5  a Canvas request failed (the script wrote no file)
+Runs on Python 3.9.
+"""
+
+import datetime
+import glob
+import difflib
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import urllib.parse
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+SETTINGS = '.idstack/canvas.env'
+BASELINE = '.idstack/canvas-baseline.json'
+MANIFEST = '.idstack/project.json'
+REPORT_NAME = 'canvas-sync-dry-run.md'
+PER_PAGE = 100
+
+# The only items and fields that a proposal can name. 'path' is the GET for one item.
+KINDS = {
+    'page': {'path': 'courses/{course}/pages/{id}', 'id_re': r'[A-Za-z0-9_-]{1,255}',
+             'title': 'title', 'fields': ('title', 'body')},
+    'assignment': {'path': 'courses/{course}/assignments/{id}', 'id_re': r'[0-9]{1,20}',
+                   'title': 'name', 'fields': ('name', 'description')},
+    'outcome': {'path': 'outcomes/{id}', 'id_re': r'[0-9]{1,20}',
+                'title': 'title', 'fields': ('title', 'description')},
+}
+
+STATES = {  # state -> the result of a push. The order is the order of the summary.
+    'CONFLICT': 'Someone changed this text in Canvas after the snapshot. A push removes '
+                'that change. Examine the item in Canvas before a push.',
+    'NO BASELINE': 'idstack has no snapshot of this text, so it cannot find a change '
+                   'that someone made in Canvas. A push must not change this item.',
+    'BLOCKED': 'idstack does not push this item. It is an outcome of the account or of a '
+               'different course, or the assignment of a quiz, a discussion or a tool.',
+    'NOT FOUND': 'Canvas has no item with this ID. A push does nothing.',
+    'CHANGE': 'A push replaces the text in Canvas with the proposed text.',
+    'NO CHANGE': 'The text in Canvas is the same as the proposed text. A push does nothing.',
+}
+
+
+class Stop(Exception):
+    def __init__(self, code, msg):
+        Exception.__init__(self, msg)
+        self.code = code
+
+
+def load_settings():
+    if not os.path.isfile(SETTINGS):
+        raise Stop(2, 'CANVAS_ENV_MISSING: no %s in this folder. Run /idstack:course-import '
+                      '(Canvas API) first.' % SETTINGS)
+    vals = {}
+    try:
+        with open(SETTINGS, encoding='utf-8', errors='replace') as f:
+            lines = f.read().splitlines()
+    except OSError as e:
+        raise Stop(2, 'CANVAS_ENV_UNREADABLE: idstack cannot read %s (%s).' % (SETTINGS, e.strerror))
+    for line in lines:
+        m = re.match(r"^(?:export\s+)?(CANVAS_[A-Z_]+)=(['\"]?)(.*)\2\s*$", line)
+        if m:
+            vals[m.group(1)] = m.group(3)
+    base = vals.get('CANVAS_BASE_URL', '').rstrip('/')
+    course = vals.get('CANVAS_COURSE_ID', '')
+    token = vals.get('CANVAS_TOKEN', '')
+    u = urllib.parse.urlsplit(base)
+    if u.scheme != 'https' or not u.netloc or u.query or u.fragment or re.search(r"[\s'\"\\]", base):
+        raise Stop(2, 'CANVAS_URL_NOT_HTTPS: the Canvas URL in %s must be an https:// address.' % SETTINGS)
+    if not re.fullmatch(r'[0-9]{1,20}', course):
+        raise Stop(2, 'CANVAS_COURSE_ID_BAD: the course ID in %s must be a number.' % SETTINGS)
+    if not token:
+        raise Stop(2, 'CANVAS_TOKEN_EMPTY: add the token to %s.' % SETTINGS)
+    if re.search(r'[\s"\\]', token):
+        raise Stop(2, 'CANVAS_TOKEN_BAD: the token in %s has a space, a quotation mark or a backslash.' % SETTINGS)
+    return base, course, token
+
+
+def canvas_request(settings, path):
+    """GET base/api/v1/<path>. Returns (parsed JSON or None for HTTP 404, response headers)."""
+    base, _, token = settings
+    url = '%s/api/v1/%s' % (base, path)
+    # The token and the https-only rule go on stdin, so that ps never shows the token.
+    config = 'header = "Authorization: Bearer %s"\nproto = "=https"\n' % token
+    # -q must be first: it stops curl from reading ~/.curlrc, which can set a method or -L.
+    argv = ['curl', '-q', '-K', '-', '-s', '-D', '-', '--max-time', '60', '-w', '\n%{http_code}', url]
+    try:
+        p = subprocess.run(argv, input=config, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                           encoding='utf-8', errors='replace')
+    except OSError as e:
+        raise Stop(5, 'CANVAS_FAILED: idstack cannot run curl (%s).' % e)
+    if p.returncode == 28:
+        raise Stop(5, 'CANVAS_FAILED: Canvas did not answer in 60 seconds for /api/v1/%s.' % path)
+    if p.returncode != 0:
+        raise Stop(5, 'CANVAS_FAILED: curl error %d for /api/v1/%s.' % (p.returncode, path))
+    body, _, code = p.stdout.rpartition('\n')
+    headers = ''
+    while body.startswith('HTTP/'):  # -D - puts each header block (proxy CONNECT too) before the body
+        parts = re.split(r'\r?\n\r?\n', body, 1)
+        headers, body = parts[0], (parts[1] if len(parts) > 1 else '')
+    if code == '404':
+        return None, headers
+    if code == '401':
+        raise Stop(5, 'CANVAS_FAILED: HTTP 401. Canvas did not accept the token in %s.' % SETTINGS)
+    if code != '200':
+        raise Stop(5, 'CANVAS_FAILED: HTTP %s for /api/v1/%s.' % (code or '(none)', path))
+    try:
+        data = json.loads(body)
+    except ValueError:
+        raise Stop(5, 'CANVAS_FAILED: the answer for /api/v1/%s is not JSON.' % path)
+    return data, headers
+
+
+def canvas_item(settings, path):
+    """One item: a JSON object, or None for HTTP 404."""
+    data, _ = canvas_request(settings, path)
+    if data is not None and not isinstance(data, dict):
+        raise Stop(5, 'CANVAS_FAILED: the answer for /api/v1/%s is not one item.' % path)
+    return data
+
+
+def norm(text):
+    return ('' if text is None else str(text)).replace('\r\n', '\n').strip()
+
+
+def sha(text):
+    return hashlib.sha256(norm(text).encode('utf-8')).hexdigest()
+
+
+def item_key(kind, item):
+    return '%s:%s' % (kind, item.get('url') if kind == 'page' else item.get('id'))
+
+
+def item_path(kind, course, cid):
+    return KINDS[kind]['path'].format(course=course, id=urllib.parse.quote(str(cid), safe=''))
+
+
+def write_atomic(target, text):
+    real = os.path.realpath(target)
+    d = os.path.dirname(real)
+    tmp = None
+    try:
+        os.makedirs(d, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=d, prefix='.canvas-diff-')
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(text)
+        if os.path.exists(real):
+            shutil.copymode(real, tmp)
+        os.replace(tmp, real)
+    except BaseException as e:  # also a text that cannot be encoded, or Ctrl-C: never leave the tempfile
+        if tmp and os.path.exists(tmp):
+            os.unlink(tmp)
+        if isinstance(e, OSError):
+            raise Stop(4, 'WRITE_FAILED: %s: %s' % (target, e))
+        raise
+
+
+def now_iso():
+    return datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def get_list(settings, path, kind, partial):
+    items, headers = canvas_request(settings, path)
+    # A 404 here means a wrong course ID or a missing feature, not an empty course.
+    if not isinstance(items, list) or not all(isinstance(i, dict) for i in items):
+        raise Stop(5, 'CANVAS_FAILED: the answer for /api/v1/%s is not a list of items.' % path)
+    # shortcut: reads only the first page, it does not follow Link rel="next". An item
+    # after it has no baseline, so diff marks it NO BASELINE (safe). Add paging for big courses.
+    if re.search(r'^link:.*rel="next"', headers, re.I | re.M):
+        partial.append(kind)
+    return items
+
+
+def check_course(settings):
+    if canvas_item(settings, 'courses/%s' % settings[1]) is None:
+        raise Stop(5, 'CANVAS_FAILED: Canvas has no course %s, or the token cannot read it. '
+                      'Examine CANVAS_COURSE_ID in %s.' % (settings[1], SETTINGS))
+
+
+def cmd_snapshot():
+    settings = load_settings()
+    course = settings[1]
+    check_course(settings)
+    partial = []
+    skipped = 0
+    found = []  # (kind, item)
+    for p in get_list(settings, 'courses/%s/pages?per_page=%d' % (course, PER_PAGE), 'page', partial):
+        if not re.fullmatch(KINDS['page']['id_re'], str(p.get('url', ''))):
+            skipped += 1
+            continue
+        full = canvas_item(settings, item_path('page', course, p['url']))
+        if full is not None and full.get('url'):
+            found.append(('page', full))
+    for a in get_list(settings, 'courses/%s/assignments?per_page=%d' % (course, PER_PAGE), 'assignment', partial):
+        found.append(('assignment', a))
+    seen = set()
+    for link in get_list(settings, 'courses/%s/outcome_group_links?per_page=%d' % (course, PER_PAGE), 'outcome', partial):
+        oid = str((link.get('outcome') or {}).get('id', ''))
+        if not re.fullmatch(KINDS['outcome']['id_re'], oid) or oid in seen:
+            continue
+        seen.add(oid)
+        full = canvas_item(settings, item_path('outcome', course, oid))
+        if full is not None:
+            found.append(('outcome', full))
+    items = {}
+    for kind, it in found:
+        spec = KINDS[kind]
+        items[item_key(kind, it)] = {
+            'title': norm(it.get(spec['title'])),
+            'updated_at': it.get('updated_at') or '',
+            # A field that Canvas did not send gets no hash, so diff gives NO BASELINE, not CHANGE.
+            'fields': {f: sha(it.get(f)) for f in spec['fields'] if f in it},
+        }
+    doc = {'canvas_course_id': course, 'taken_at': now_iso(), 'partial': partial, 'items': items}
+    write_atomic(BASELINE, json.dumps(doc, indent=2, sort_keys=True) + '\n')
+    print('BASELINE: %s (%d items)' % (BASELINE, len(items)))
+    for kind in partial:
+        print('BASELINE_PARTIAL: %s: Canvas has more than one page of items. Items after the first '
+              'page have no baseline.' % kind)
+    if skipped:
+        print('BASELINE_SKIPPED: %d pages have a URL name with characters other than A-Z, a-z, 0-9, '
+              '"_" and "-". They have no baseline.' % skipped)
+    return 0
+
+
+def load_json(path, what):
+    try:
+        with open(path, encoding='utf-8') as f:
+            return json.load(f)
+    except OSError:
+        raise Stop(2, '%s_MISSING: %s' % (what, path))
+    except ValueError as e:
+        raise Stop(2, '%s_BAD: %s is not valid JSON (%s).' % (what, path, e))
+
+
+def same(a, b):
+    return os.path.exists(a) and os.path.exists(b) and os.path.samefile(a, b)
+
+
+def read_source(change, manifest, token):
+    src = change.get('source')
+    if not isinstance(src, dict) or len(src) != 1:
+        raise ValueError('"source" must be {"ilo": "<ILO id>"} or {"file": "<path>"}')
+    if 'ilo' in src:
+        lo = manifest.get('learning_objectives')
+        ilos = lo.get('ilos') if isinstance(lo, dict) else None
+        for ilo in ilos if isinstance(ilos, list) else []:
+            if isinstance(ilo, dict) and ilo.get('id') == src['ilo']:
+                return norm(ilo.get('objective')), str(src['ilo'])
+        raise ValueError('no %s in %s' % (src['ilo'], MANIFEST))
+    if 'file' in src:
+        rel = str(src['file'])
+        real = os.path.realpath(rel)
+        root = os.path.realpath('.')
+        # The report shows the file, so it must not read a file outside the course or the token file.
+        if os.path.isabs(rel) or os.path.commonpath([root, real]) != root:
+            raise ValueError('the file %s is not in the course folder' % rel)
+        # .idstack/ holds canvas.env. Compare folders by identity: a case-insensitive disk
+        # opens .idstack/ under other names (.IDSTACK, .idſtack).
+        inner = os.path.relpath(real, root).split(os.sep)
+        top, sub = os.path.join(root, inner[0]), os.path.join(root, *inner[:2])
+        if same(top, '.idstack') and not (len(inner) > 2 and same(sub, '.idstack/course-content')):
+            raise ValueError('idstack does not read %s. In .idstack/ it reads only course-content/' % rel)
+        try:
+            with open(real, encoding='utf-8') as f:
+                text = norm(f.read())
+        except (OSError, UnicodeDecodeError) as e:
+            raise ValueError('cannot read %s (%s)' % (rel, e))
+        if token in text:  # a copy or a hard link of canvas.env outside .idstack/
+            raise ValueError('idstack does not read %s: it contains the Canvas token' % rel)
+        return text, rel
+    raise ValueError('"source" must be {"ilo": "<ILO id>"} or {"file": "<path>"}')
+
+
+def load_proposal(path, manifest, token):
+    doc = load_json(path, 'PROPOSAL')
+    changes = doc.get('changes') if isinstance(doc, dict) else None
+    if not isinstance(changes, list) or not changes:
+        raise Stop(2, 'PROPOSAL_BAD: %s has no "changes" list.' % path)
+    out, ids, targets, errors = [], set(), set(), []
+    for n, c in enumerate(changes, 1):
+        where = 'change %d' % n
+        try:
+            if not isinstance(c, dict):
+                raise ValueError('is not an object')
+            # Checked first, so that no message below can print the token.
+            if token in json.dumps(c, ensure_ascii=False):
+                raise ValueError('the row contains the Canvas token')
+            cid = str(c.get('id', ''))
+            where = cid or where
+            if not re.fullmatch(r'[A-Za-z0-9_.-]{1,40}', cid):
+                raise ValueError('"id" must be letters, digits, ".", "_" or "-"')
+            if cid in ids:
+                raise ValueError('the ID is used two times')
+            ids.add(cid)
+            kind = c.get('kind')
+            if not isinstance(kind, str) or kind not in KINDS:
+                raise ValueError('"kind" must be one of %s' % ', '.join(sorted(KINDS)))
+            canvas_id = str(c.get('canvas_id', ''))
+            if not re.fullmatch(KINDS[kind]['id_re'], canvas_id):
+                raise ValueError('"canvas_id" %r is not a %s ID' % (canvas_id, kind))
+            if kind != 'page':
+                canvas_id = str(int(canvas_id))  # "07" and "7" are one item
+            field = c.get('field')
+            if not isinstance(field, str) or field not in KINDS[kind]['fields']:
+                raise ValueError('"field" must be one of %s' % ', '.join(KINDS[kind]['fields']))
+            if (kind, canvas_id, field) in targets:
+                raise ValueError('a different row also changes %s %s %s' % (kind, canvas_id, field))
+            targets.add((kind, canvas_id, field))
+            text, source = read_source(c, manifest, token)
+            if token in text:
+                raise ValueError('the proposed text contains the Canvas token')
+            if not text:
+                raise ValueError('the proposed text is empty. A push must not clear a field')
+            out.append({'id': cid, 'kind': kind, 'canvas_id': canvas_id, 'field': field,
+                        'proposed': text, 'source': source, 'reason': norm(c.get('reason'))})
+        except ValueError as e:
+            errors.append('PROPOSAL_BAD: %s: %s' % (where, e))
+    if errors:
+        raise Stop(2, '\n'.join(errors))
+    return out
+
+
+def classify(change, item, course, baseline):
+    """Returns (state, current text)."""
+    if item is None:
+        return 'NOT FOUND', ''
+    current = norm(item.get(change['field']))
+    if change['kind'] == 'outcome' and not (item.get('context_type') == 'Course'
+                                            and str(item.get('context_id')) == course):
+        return 'BLOCKED', current
+    # A quiz or a graded discussion owns its assignment. Out of scope (docs/lms-sync.md).
+    # shortcut: the New Quizzes flag name is from memory, not checked on a live Canvas.
+    types = [t for t in item.get('submission_types') or [] if isinstance(t, str)] \
+        if isinstance(item.get('submission_types'), list) else []
+    if change['kind'] == 'assignment' and (
+            item.get('quiz_id') or item.get('discussion_topic') or item.get('is_quiz_assignment')
+            or item.get('is_quiz_lti_assignment')
+            or set(types) & {'online_quiz', 'discussion_topic', 'external_tool'}):
+        return 'BLOCKED', current
+    if current == change['proposed']:
+        return 'NO CHANGE', current
+    base = baseline.get('items', {}).get(item_key(change['kind'], item))
+    fields = base.get('fields') if isinstance(base, dict) else None
+    base_hash = fields.get(change['field']) if isinstance(fields, dict) else None
+    if not base_hash:
+        return 'NO BASELINE', current
+    if base_hash != sha(current):
+        return 'CONFLICT', current
+    return 'CHANGE', current
+
+
+def cell(text):
+    # Course text outside a fence: no table break, no HTML, no live link or image.
+    t = ' '.join(norm(text).split())
+    for ch in '\\|[]`*_~':
+        t = t.replace(ch, '\\' + ch)
+    # GFM makes a bare URL, a www. name or an e-mail address a link, also after a backslash
+    # escape (GitHub, remark). A zero-width space after the scheme or www, and before "@", stops it.
+    t = re.sub(r'(?i)(https?|ftp|mailto|www)([:.])', '\\1\u200b\\2', t).replace('@', '\u200b@')
+    return t.replace('<', '&lt;') or '-'
+
+
+def fenced(lang, text):
+    run = max([len(r) for r in re.findall(r'`+', text)] + [2])
+    fence = '`' * (run + 1)
+    return '%s%s\n%s\n%s' % (fence, lang, text, fence)
+
+
+def display_lines(text):
+    # Canvas keeps HTML on one long line. Break it at tags so the diff shows the changed part.
+    return re.sub(r'>\s*<', '>\n<', text).split('\n')
+
+
+def slug():
+    try:
+        p = subprocess.run([os.path.join(HERE, 'idstack-slugify'), '--from-manifest'],
+                           stdout=subprocess.PIPE, universal_newlines=True)
+        s = p.stdout.strip()
+    except OSError:
+        s = ''
+    return s if re.fullmatch(r'[a-z0-9-]+', s) else 'untitled-course'
+
+
+def version():
+    try:
+        with open(os.path.join(HERE, '..', 'VERSION'), encoding='utf-8') as f:
+            return f.read().strip()
+    except OSError:
+        return 'unknown'
+
+
+def remove_old_reports():
+    # Each run of diff or snapshot first removes each report of an earlier run (any course
+    # slug). Thus a run that fails at any point, also with a traceback or Ctrl-C, leaves no
+    # old report, and a new baseline leaves no report made against the old one.
+    for old in glob.glob(os.path.join('.idstack', 'exports', '*', REPORT_NAME)):
+        try:
+            os.unlink(old)
+        except OSError as e:
+            raise Stop(4, 'WRITE_FAILED: cannot remove the old report %s: %s' % (old, e))
+        print('REPORT_REMOVED: %s (it was from an earlier run)' % old)
+
+
+def cmd_diff(proposal_path):
+    return run_diff(proposal_path, os.path.join('.idstack', 'exports', slug(), REPORT_NAME))
+
+
+def load_baseline(course):
+    baseline = load_json(BASELINE, 'BASELINE') if os.path.isfile(BASELINE) else {}
+    items = baseline.get('items', {}) if isinstance(baseline, dict) else None
+    if not isinstance(items, dict) or not all(isinstance(v, dict) for v in items.values()):
+        raise Stop(2, 'BASELINE_BAD: %s does not have the shape that snapshot writes. Run snapshot again.'
+                   % BASELINE)
+    if baseline and str(baseline.get('canvas_course_id')) != course:
+        raise Stop(2, 'BASELINE_OTHER_COURSE: %s is for Canvas course %s, not %s. Run snapshot again.'
+                   % (BASELINE, cell(baseline.get('canvas_course_id')), course))
+    return baseline
+
+
+def run_diff(proposal_path, report):
+    manifest = load_json(MANIFEST, 'MANIFEST') if os.path.isfile(MANIFEST) else {}
+    if not isinstance(manifest, dict):
+        raise Stop(2, 'MANIFEST_BAD: %s is not a JSON object.' % MANIFEST)
+    settings = load_settings()
+    course = settings[1]
+    changes = load_proposal(proposal_path, manifest, settings[2])
+    baseline = load_baseline(course)
+    check_course(settings)
+    cache = {}
+    for c in changes:
+        k = (c['kind'], c['canvas_id'])
+        if k not in cache:
+            cache[k] = canvas_item(settings, item_path(c['kind'], course, c['canvas_id']))
+    rows = []
+    for c in changes:
+        k = (c['kind'], c['canvas_id'])
+        item = cache[k]
+        state, current = classify(c, item, course, baseline)
+        title = item.get(KINDS[c['kind']]['title']) if item else ''
+        rows.append((c, state, current, title))
+
+    counts = {s: sum(1 for r in rows if r[1] == s) for s in STATES}
+    name = norm(manifest.get('project_name')) or 'Untitled course'
+    out = ['# Canvas sync dry run', '',
+           'Course: %s · Canvas course %s · %s · run without a change to Canvas'
+           % (cell(name), course, now_iso()), '',
+           '## Summary', '',
+           'idstack read %d items from Canvas and did not change Canvas. '
+           % sum(1 for v in cache.values() if v is not None)
+           + 'Of the %d proposed texts, a push changes %d. ' % (len(rows), counts['CHANGE'])
+           + 'Conflicts: %d. Texts with no baseline: %d. ' % (counts['CONFLICT'], counts['NO BASELINE'])
+           + 'Examine each conflict before a push.', '',
+           '| State | Count | Result of a push |', '|-------|-------|------------------|']
+    for s, what in STATES.items():
+        out.append('| %s | %d | %s |' % (s, counts[s], what))
+    out += ['', '## Proposed changes', '',
+            '| ID | Item | Field | Source | Reason | State |',
+            '|----|------|-------|--------|--------|-------|']
+    for c, state, _, title in rows:
+        out.append('| %s | %s %s: %s | %s | %s | %s | %s |' % (
+            cell(c['id']), c['kind'], cell(c['canvas_id']), cell(title), c['field'],
+            cell(c['source']), cell(c['reason']), state))
+    for c, state, current, _ in rows:
+        out += ['', '## %s: %s %s, %s' % (cell(c['id']), c['kind'], cell(c['canvas_id']), c['field']), '',
+                '**%s.** %s' % (state, STATES[state]), '']
+        if state in ('NOT FOUND', 'NO CHANGE') or current == c['proposed']:
+            continue
+        diff = list(difflib.unified_diff(display_lines(current), display_lines(c['proposed']),
+                                         'Canvas now', 'proposed', lineterm=''))
+        if not diff:  # the two texts differ only in the white space between tags
+            diff = list(difflib.unified_diff(current.split('\n'), c['proposed'].split('\n'),
+                                             'Canvas now', 'proposed', lineterm=''))
+            out += ['The two texts differ only in white space between HTML tags.', '']
+        out.append(fenced('diff', '\n'.join(diff)))
+    taken = baseline.get('taken_at')
+    out += ['', '## Limitations', '',
+            '- idstack sent only GET requests. Canvas did not change.',
+            '- The baseline is from %s.' % cell(taken) if taken else
+            '- There is no baseline file. Run `scripts/idstack-canvas-diff snapshot` right after an import.',
+            '- idstack compares only the text of each field. It does not compare files, dates or points.']
+    partial = baseline.get('partial')
+    if partial:
+        out.append('- The baseline has only the first page of items of these kinds: %s.'
+                   % cell(', '.join(str(k) for k in partial) if isinstance(partial, list) else partial))
+    out += ['', '---', '',
+            'Generated by `scripts/idstack-canvas-diff` · idstack v%s · [Course dashboard](index.md)' % version(), '']
+    write_atomic(report, '\n'.join(out))
+    print('Report path: %s' % report)
+    print('  '.join('%s: %d' % (s, counts[s]) for s in STATES))
+    return 0
+
+
+def main(argv):
+    if '-h' in argv or '--help' in argv:  # wins in any position, as in the other scripts/ tools
+        print(__doc__)
+        return 0
+    try:
+        if argv[:1] in (['snapshot'], ['diff']):
+            remove_old_reports()
+        if argv[:1] == ['snapshot'] and len(argv) == 1:
+            return cmd_snapshot()
+        if argv[:1] == ['diff'] and len(argv) == 2:
+            return cmd_diff(argv[1])
+        sys.stderr.write('ERROR: unknown argument: %s\nUsage: idstack-canvas-diff snapshot | diff PROPOSAL\n'
+                         % (' '.join(argv) or '(none)'))
+        return 2
+    except Stop as e:
+        print(str(e))
+        return e.code
+    except (ValueError, TypeError, AttributeError, KeyError, RecursionError) as e:
+        # A file with an unexpected shape. The message is not printed: it can quote file text.
+        print('INPUT_BAD: a file has a shape that idstack does not expect (%s).' % type(e).__name__)
+        return 2
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
