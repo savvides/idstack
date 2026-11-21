@@ -445,9 +445,13 @@ scripts/idstack-canvas-diff -h | --help
 | `snapshot` | Reads the pages (one GET for each page, for the body), the assignments and the course outcomes. Writes `.idstack/canvas-baseline.json`: for each item, the Canvas ID, title, `updated_at` and a sha256 of each field that a push can change. The file keeps the titles, but no body or description text. Run it right after `/idstack:course-import`. | `BASELINE: .idstack/canvas-baseline.json (<n> items)`, then `BASELINE_PARTIAL: <kind>: ...` for a list that has more pages. `BASELINE_SKIPPED: <n> pages ...` is for pages with a URL name that has a character other than `A-Z`, `a-z`, `0-9`, `_` and `-` |
 | `diff` | Validates the proposal, reads each item that it names, and gives each row one state: `CONFLICT`, `NO BASELINE`, `BLOCKED`, `NOT FOUND`, `CHANGE` or `NO CHANGE`. Writes `.idstack/exports/<course-slug>/canvas-sync-dry-run.md` with a unified diff for each change. | `Report path: <report>`, then the count of each state |
 
-Both subcommands read `CANVAS_BASE_URL`, `CANVAS_COURSE_ID` and `CANVAS_TOKEN` from `.idstack/canvas.env`. The URL must start with `https://`. curl gets the token on stdin (`curl -K -`), never as an argument. The proposal cannot give a URL: the script makes each URL from a fixed template for `page`, `assignment` or `outcome`, and validates the ID.
+Both subcommands read `CANVAS_BASE_URL`, `CANVAS_COURSE_ID` and `CANVAS_TOKEN` from `.idstack/canvas.env`. A UTF-8 BOM and the spaces at the two ends of a line are ignored. The URL must start with `https://`. curl gets the token on stdin (`curl -K -`), never as an argument. The proposal cannot give a URL: the script makes each URL from a fixed template for `page`, `assignment` or `outcome`, and validates the ID.
 
-A `{"file": ...}` source must be in the course folder. In `.idstack/`, the script reads only `course-content/`. It compares the folders by identity, so another case of the name does not get past it. No row, file or objective can contain the token. The script does not examine Canvas text or the course name for the token. curl gets `-q` first, so `~/.curlrc` is not read.
+A `{"file": ...}` source must be in the course folder. In `.idstack/`, the script reads only `course-content/`. It compares the folders by identity, so another case of the name does not get past it. No row, file or objective can contain the token. The script does not examine Canvas text or the course name for the token. curl gets `-q` first, so `~/.curlrc` is not read, and `-g`, so `{a,b}` or `[1-2]` in the URL does not make more requests.
+
+The script imports no network module: each request goes through curl. A `PROPOSAL_BAD:` message shows a file name or an ILO ID in quotes, with each line break as `\n`. Thus a row cannot add a line to the output.
+
+Canvas JSON can contain a lone surrogate, for example `"\ud800"`. The hash keeps it, and the report shows it as `?`.
 
 `diff` refuses a baseline for a different course. With no baseline file, each changed row is `NO BASELINE`.
 
@@ -456,7 +460,7 @@ A `{"file": ...}` source must be in the course folder. In `.idstack/`, the scrip
 | 0 | Done |
 | 2 | No subcommand, a bad proposal, a bad, missing or unreadable `.idstack/canvas.env`, or a manifest or baseline that is not a JSON object. `INPUT_BAD:` for a file with a different shape. A missing manifest or baseline is not an error. A proposal problem prints one `PROPOSAL_BAD:` line for each row, and the script sends no request. |
 | 4 | A write error. stdout gets `WRITE_FAILED: <error>`, and the file does not change. |
-| 5 | A Canvas request failed. Canvas has no such course, or a list answers 404. Or HTTP 401, or a status other than 200 or 404. Or an answer that is not JSON, a curl error or a timeout of 60 seconds. stdout gets `CANVAS_FAILED: <reason>`, and the script writes no file. |
+| 5 | A Canvas request failed. Canvas has no such course, or a list answers 404. Or HTTP 401, or a status other than 200 or 404. Or an answer that is not JSON or does not have the expected shape, a curl error or a timeout of 60 seconds. stdout gets `CANVAS_FAILED: <reason>`, and the script writes no file. |
 
 Before it reads its inputs, each run of `diff` or `snapshot` deletes each `canvas-sync-dry-run.md` in `.idstack/exports/*/` and prints `REPORT_REMOVED: <report>`. Thus an old report cannot look like the result of a failed run or of an old baseline.
 

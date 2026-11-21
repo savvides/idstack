@@ -74,6 +74,14 @@ STATES = {  # state -> the result of a push. The order is the order of the summa
 }
 
 
+SHAPE_ERRORS = (ValueError, TypeError, AttributeError, KeyError, RecursionError)
+
+
+def canvas_shape(e):
+    return Stop(5, 'CANVAS_FAILED: an answer from Canvas has a shape that idstack does not expect (%s).'
+                % type(e).__name__)
+
+
 class Stop(Exception):
     def __init__(self, code, msg):
         Exception.__init__(self, msg)
@@ -87,11 +95,11 @@ def load_settings():
     vals = {}
     try:
         with open(SETTINGS, encoding='utf-8', errors='replace') as f:
-            lines = f.read().splitlines()
+            lines = f.read().lstrip('\ufeff').splitlines()  # Notepad writes a BOM
     except OSError as e:
         raise Stop(2, 'CANVAS_ENV_UNREADABLE: idstack cannot read %s (%s).' % (SETTINGS, e.strerror))
     for line in lines:
-        m = re.match(r"^(?:export\s+)?(CANVAS_[A-Z_]+)=(['\"]?)(.*)\2\s*$", line)
+        m = re.match(r"^(?:export\s+)?(CANVAS_[A-Z_]+)=(['\"]?)(.*)\2$", line.strip())
         if m:
             vals[m.group(1)] = m.group(3)
     base = vals.get('CANVAS_BASE_URL', '').rstrip('/')
@@ -116,7 +124,8 @@ def canvas_request(settings, path):
     # The token and the https-only rule go on stdin, so that ps never shows the token.
     config = 'header = "Authorization: Bearer %s"\nproto = "=https"\n' % token
     # -q must be first: it stops curl from reading ~/.curlrc, which can set a method or -L.
-    argv = ['curl', '-q', '-K', '-', '-s', '-D', '-', '--max-time', '60', '-w', '\n%{http_code}', url]
+    # -g: a {a,b} or [1-2] in the URL is text, not a set of requests that each get the token.
+    argv = ['curl', '-q', '-K', '-', '-s', '-g', '-D', '-', '--max-time', '60', '-w', '\n%{http_code}', url]
     try:
         p = subprocess.run(argv, input=config, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                            encoding='utf-8', errors='replace')
@@ -157,7 +166,8 @@ def norm(text):
 
 
 def sha(text):
-    return hashlib.sha256(norm(text).encode('utf-8')).hexdigest()
+    # surrogatepass: Canvas JSON can hold a lone surrogate ("\ud800"); hash it, do not crash.
+    return hashlib.sha256(norm(text).encode('utf-8', 'surrogatepass')).hexdigest()
 
 
 def item_key(kind, item):
@@ -175,7 +185,7 @@ def write_atomic(target, text):
     try:
         os.makedirs(d, exist_ok=True)
         fd, tmp = tempfile.mkstemp(dir=d, prefix='.canvas-diff-')
-        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        with os.fdopen(fd, 'w', encoding='utf-8', errors='replace') as f:  # a lone surrogate becomes ?
             f.write(text)
         if os.path.exists(real):
             shutil.copymode(real, tmp)
@@ -212,6 +222,23 @@ def check_course(settings):
 
 def cmd_snapshot():
     settings = load_settings()
+    try:
+        doc = read_snapshot(settings)
+    except SHAPE_ERRORS as e:
+        raise canvas_shape(e)
+    skipped = doc.pop('skipped')
+    write_atomic(BASELINE, json.dumps(doc, indent=2, sort_keys=True) + '\n')
+    print('BASELINE: %s (%d items)' % (BASELINE, len(doc['items'])))
+    for kind in doc['partial']:
+        print('BASELINE_PARTIAL: %s: Canvas has more than one page of items. Items after the first '
+              'page have no baseline.' % kind)
+    if skipped:
+        print('BASELINE_SKIPPED: %d pages have a URL name with characters other than A-Z, a-z, 0-9, '
+              '"_" and "-". They have no baseline.' % skipped)
+    return 0
+
+
+def read_snapshot(settings):
     course = settings[1]
     check_course(settings)
     partial = []
@@ -244,16 +271,8 @@ def cmd_snapshot():
             # A field that Canvas did not send gets no hash, so diff gives NO BASELINE, not CHANGE.
             'fields': {f: sha(it.get(f)) for f in spec['fields'] if f in it},
         }
-    doc = {'canvas_course_id': course, 'taken_at': now_iso(), 'partial': partial, 'items': items}
-    write_atomic(BASELINE, json.dumps(doc, indent=2, sort_keys=True) + '\n')
-    print('BASELINE: %s (%d items)' % (BASELINE, len(items)))
-    for kind in partial:
-        print('BASELINE_PARTIAL: %s: Canvas has more than one page of items. Items after the first '
-              'page have no baseline.' % kind)
-    if skipped:
-        print('BASELINE_SKIPPED: %d pages have a URL name with characters other than A-Z, a-z, 0-9, '
-              '"_" and "-". They have no baseline.' % skipped)
-    return 0
+    return {'canvas_course_id': course, 'taken_at': now_iso(), 'partial': partial, 'items': items,
+            'skipped': skipped}
 
 
 def load_json(path, what):
@@ -280,27 +299,27 @@ def read_source(change, manifest, token):
         for ilo in ilos if isinstance(ilos, list) else []:
             if isinstance(ilo, dict) and ilo.get('id') == src['ilo']:
                 return norm(ilo.get('objective')), str(src['ilo'])
-        raise ValueError('no %s in %s' % (src['ilo'], MANIFEST))
+        raise ValueError('no %r in %s' % (src['ilo'], MANIFEST))
     if 'file' in src:
         rel = str(src['file'])
         real = os.path.realpath(rel)
         root = os.path.realpath('.')
         # The report shows the file, so it must not read a file outside the course or the token file.
         if os.path.isabs(rel) or os.path.commonpath([root, real]) != root:
-            raise ValueError('the file %s is not in the course folder' % rel)
+            raise ValueError('the file %r is not in the course folder' % rel)
         # .idstack/ holds canvas.env. Compare folders by identity: a case-insensitive disk
         # opens .idstack/ under other names (.IDSTACK, .idſtack).
         inner = os.path.relpath(real, root).split(os.sep)
         top, sub = os.path.join(root, inner[0]), os.path.join(root, *inner[:2])
         if same(top, '.idstack') and not (len(inner) > 2 and same(sub, '.idstack/course-content')):
-            raise ValueError('idstack does not read %s. In .idstack/ it reads only course-content/' % rel)
+            raise ValueError('idstack does not read %r. In .idstack/ it reads only course-content/' % rel)
         try:
             with open(real, encoding='utf-8') as f:
                 text = norm(f.read())
         except (OSError, UnicodeDecodeError) as e:
-            raise ValueError('cannot read %s (%s)' % (rel, e))
+            raise ValueError('cannot read %r (%s)' % (rel, type(e).__name__))
         if token in text:  # a copy or a hard link of canvas.env outside .idstack/
-            raise ValueError('idstack does not read %s: it contains the Canvas token' % rel)
+            raise ValueError('idstack does not read %r: it contains the Canvas token' % rel)
         return text, rel
     raise ValueError('"source" must be {"ilo": "<ILO id>"} or {"file": "<path>"}')
 
@@ -320,9 +339,9 @@ def load_proposal(path, manifest, token):
             if token in json.dumps(c, ensure_ascii=False):
                 raise ValueError('the row contains the Canvas token')
             cid = str(c.get('id', ''))
-            where = cid or where
             if not re.fullmatch(r'[A-Za-z0-9_.-]{1,40}', cid):
                 raise ValueError('"id" must be letters, digits, ".", "_" or "-"')
+            where = cid  # only a valid ID: a raw one can print a false status line
             if cid in ids:
                 raise ValueError('the ID is used two times')
             ids.add(cid)
@@ -459,6 +478,18 @@ def run_diff(proposal_path, report):
     course = settings[1]
     changes = load_proposal(proposal_path, manifest, settings[2])
     baseline = load_baseline(course)
+    try:
+        out, counts = read_and_compare(settings, changes, baseline, manifest)
+    except SHAPE_ERRORS as e:  # the proposal and the baseline are validated above, so it is Canvas
+        raise canvas_shape(e)
+    write_atomic(report, '\n'.join(out))
+    print('Report path: %s' % report)
+    print('  '.join('%s: %d' % (s, counts[s]) for s in STATES))
+    return 0
+
+
+def read_and_compare(settings, changes, baseline, manifest):
+    course = settings[1]
     check_course(settings)
     cache = {}
     for c in changes:
@@ -518,10 +549,7 @@ def run_diff(proposal_path, report):
                    % cell(', '.join(str(k) for k in partial) if isinstance(partial, list) else partial))
     out += ['', '---', '',
             'Generated by `scripts/idstack-canvas-diff` · idstack v%s · [Course dashboard](index.md)' % version(), '']
-    write_atomic(report, '\n'.join(out))
-    print('Report path: %s' % report)
-    print('  '.join('%s: %d' % (s, counts[s]) for s in STATES))
-    return 0
+    return out, counts
 
 
 def main(argv):

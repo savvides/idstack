@@ -69,7 +69,7 @@ A baseline that is for a different Canvas course is refused. Each run first read
 
 Before it reads its inputs, each run of `diff` or `snapshot` deletes the report of an earlier run. Thus a failed run leaves no report, and a new baseline leaves no report made against the old one. Thus a report never shows a part of the course as all of it.
 
-curl gets `-q` as its first option, so `~/.curlrc` cannot add a method, a redirect or a trace file.
+curl gets `-q` as its first option, so `~/.curlrc` cannot add a method, a redirect or a trace file. It also gets `-g`, so a `{a,b}` in the URL does not send the token to more than one address. The script imports no network module, and a test fails if it does.
 
 ## The write path (later)
 

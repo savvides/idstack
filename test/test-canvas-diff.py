@@ -6,6 +6,7 @@ and stdin of each call, so the tests can prove that each request is a GET and th
 the token never goes into an argument. No test touches the network.
 """
 
+import ast
 import json
 import os
 import re
@@ -264,7 +265,7 @@ class CanvasDiff(unittest.TestCase):
             argv = c['argv']
             # An allow-list: the whole argv is fixed, so no joined form (-Xpatch, -dx=1) can hide.
             # -q first: curl does not read ~/.curlrc.
-            self.assertEqual(argv[:-1], ['-q', '-K', '-', '-s', '-D', '-', '--max-time', '60',
+            self.assertEqual(argv[:-1], ['-q', '-K', '-', '-s', '-g', '-D', '-', '--max-time', '60',
                                          '-w', '\n%{http_code}'], argv)
             self.assertFalse([a for a in argv if bad_flags.match(a)], argv)
             self.assertFalse([a for a in argv if TOKEN in a], 'token in argv')
@@ -279,6 +280,23 @@ class CanvasDiff(unittest.TestCase):
                                    r"""--json|-L|--location[a-z-]*)['"]""", src), 'a curl write or redirect flag')
         self.assertEqual(src.count("'curl'"), 1, 'one place builds the curl command')
         self.assertIn("['curl', '-q',", src)
+
+    def test_imports_are_an_allow_list(self):
+        # curl is not the only way to send a request: no network module, and no import by name.
+        with open(SCRIPT) as f:
+            tree = ast.parse(f.read())
+        names = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names.update(a.name for a in node.names)
+            elif isinstance(node, ast.ImportFrom):
+                names.add(node.module or '')
+            elif isinstance(node, ast.Name) and node.id in ('__import__', 'eval', 'exec', 'compile'):
+                self.fail('%s in the script' % node.id)
+            elif isinstance(node, ast.Attribute) and node.attr in ('__import__', 'import_module'):
+                self.fail('%s in the script' % node.attr)
+        self.assertEqual(names, {'datetime', 'glob', 'difflib', 'hashlib', 'json', 'os', 're', 'shutil',
+                                 'subprocess', 'sys', 'tempfile', 'urllib.parse'})
 
     # --- refusals ---------------------------------------------------------------
 
@@ -305,7 +323,7 @@ class CanvasDiff(unittest.TestCase):
         self.bad_proposal(dict(base, source={'file': '.idstack/canvas.env'}), 'does not read')
         self.bad_proposal(dict(base, source={'file': '../outside.html'}), 'not in the course folder')
         self.bad_proposal(dict(base, source={'file': '/etc/hosts'}), 'not in the course folder')
-        self.bad_proposal(dict(base, source={'ilo': 'ILO-9'}), 'no ILO-9')
+        self.bad_proposal(dict(base, source={'ilo': 'ILO-9'}), "no 'ILO-9'")
         self.bad_proposal(dict(base, source={'url': 'https://x'}), '"source"')
 
     def test_empty_proposed_text_is_refused(self):
@@ -697,13 +715,81 @@ class CanvasDiff(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.proj, REPORT)))
         self.assertEqual(self.leftovers(), [])
 
-    def test_text_that_cannot_be_written_leaves_no_tempfile(self):
+    def test_a_lone_surrogate_in_a_proposal_is_written_as_a_question_mark(self):
         self.snapshot()
         self.write('p.json', json.dumps({'changes': [dict(PROPOSAL['changes'][0], reason='x\ud800y')]}))
         r = self.run_tool('diff', 'p.json')
-        self.assertEqual(r.returncode, 2, r.stdout)
-        self.assertIn('INPUT_BAD', r.stdout)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn('x?y', self.read(r.stdout.split('Report path: ')[1].split('\n')[0]))
         self.assertEqual(self.leftovers(), [])
+
+    def test_a_failed_replace_leaves_no_tempfile(self):
+        os.makedirs(os.path.join(self.proj, '.idstack/canvas-baseline.json'))  # os.replace cannot replace it
+        r = self.run_tool('snapshot', canvas='import')
+        self.failed(r, 4)
+        self.assertIn('WRITE_FAILED', r.stdout)
+        self.assertEqual(self.leftovers(), [])
+
+    def canvas_copy(self, which):
+        fx = os.path.join(self.tmp, 'fx-' + which)
+        shutil.copytree(os.path.join(FIX, which), fx)
+        return fx
+
+    def edit_fixture(self, fx, name, change):
+        p = os.path.join(fx, name + '.json')
+        with open(p) as f:
+            d = json.load(f)
+        d = change(d)
+        with open(p, 'w') as f:
+            json.dump(d, f)  # ensure_ascii: a lone surrogate is written as the JSON escape "\ud800"
+
+    def test_a_bad_shape_from_canvas_exits_5(self):
+        fx = self.canvas_copy('import')
+        self.edit_fixture(fx, 'courses__42__outcome_group_links', lambda d: [{'outcome': 'x'}])
+        r = self.run_tool('snapshot', canvas=fx)
+        self.failed(r)
+        self.assertIn('CANVAS_FAILED: an answer from Canvas', r.stdout)
+        self.assertFalse(os.path.exists(os.path.join(self.proj, '.idstack/canvas-baseline.json')))
+        self.snapshot()
+        r = self.run_tool('diff', 'proposal.json', body='[' * 100000)  # too deep for json: RecursionError
+        self.failed(r)
+        self.assertIn('CANVAS_FAILED', r.stdout)
+        self.assertFalse(os.path.exists(os.path.join(self.proj, REPORT)))
+
+    def test_a_lone_surrogate_from_canvas_does_not_stop_the_run(self):
+        fx = self.canvas_copy('import')
+        self.edit_fixture(fx, 'courses__42__pages__syllabus-notes',
+                          lambda d: dict(d, title='Notes \ud800', body='<p>a\ud800b</p>'))
+        r = self.run_tool('snapshot', canvas=fx)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        baseline = json.loads(self.read('.idstack/canvas-baseline.json'))
+        self.assertIn('page:week-1-overview', baseline['items'])  # the other pages are still there
+        fx = self.canvas_copy('now')
+        self.edit_fixture(fx, 'courses__42__pages__syllabus-notes', lambda d: dict(d, title='Notes \ud800'))
+        r = self.run_tool('diff', 'proposal.json', canvas=fx)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn('Notes ?', self.read(r.stdout.split('Report path: ')[1].split('\n')[0]))
+
+    def test_proposal_text_cannot_add_a_line_to_the_output(self):
+        base = {'id': 'X-1', 'kind': 'page', 'canvas_id': 'x', 'field': 'body'}
+        forged = 'a\nReport path: /etc/x'
+        for change in (dict(base, id=forged, source={'file': 'fixes/week-1.html'}),
+                       dict(base, source={'ilo': forged}),
+                       dict(base, source={'file': forged}),
+                       dict(base, source={'file': '../' + forged}),
+                       dict(base, source={'file': '.idstack/' + forged})):
+            self.write('bad.json', json.dumps({'changes': [change]}))
+            r = self.run_tool('diff', 'bad.json')
+            self.assertEqual(r.returncode, 2, r.stdout)
+            for line in r.stdout.splitlines():
+                self.assertTrue(line.startswith(('PROPOSAL_BAD: ', 'REPORT_REMOVED: ')), repr(line))
+
+    def test_settings_with_a_bom_and_white_space_are_read(self):
+        with open(os.path.join(self.proj, '.idstack/canvas.env'), 'w', encoding='utf-8-sig', newline='') as f:
+            f.write("  CANVAS_BASE_URL='%s'  \r\n\tCANVAS_COURSE_ID='42'\r\nCANVAS_TOKEN='%s' \r\n"
+                    % (BASE, TOKEN))
+        r = self.run_tool('snapshot', canvas='import')
+        self.assertEqual(r.returncode, 0, r.stdout)
 
     def test_duplicate_row_id_and_id_spellings_are_refused(self):
         a = dict(PROPOSAL['changes'][2])

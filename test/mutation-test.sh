@@ -2944,6 +2944,13 @@ suite_mutation "idstack-canvas-diff keeps an old report after a failed run" \
 suite_mutation "idstack-canvas-diff compares the .idstack folder by name" \
   scripts/idstack-canvas-diff "        if same(top, '.idstack') and" "        if inner[0] == '.idstack' and" test-canvas-diff.py
 
+# 80n. The script imports a network module, so a request can go around curl again (#132).
+suite_mutation "idstack-canvas-diff imports urllib.request" \
+  scripts/idstack-canvas-diff "import urllib.parse
+" "import urllib.parse
+import urllib.request
+" test-canvas-diff.py
+
 echo ""
 echo "guarded: $pass   NOT guarded: $fail   skipped: $skip"
 [ "$fail" -eq 0 ]
