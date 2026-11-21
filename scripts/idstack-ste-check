@@ -41,6 +41,11 @@ import re
 import sys
 from html.parser import HTMLParser
 
+# Windows: a native python3 reads and writes a pipe in the ANSI code page, which breaks non-ASCII text (#136).
+for _stream in (sys.stdin, sys.stdout):
+    if _stream:
+        _stream.reconfigure(encoding="utf-8")
+
 HERE = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_WORD_LIST = os.path.join(HERE, '..', 'templates', 'preamble.md')
 BEGIN_MARKER = '<!-- ste-core:begin -->'
