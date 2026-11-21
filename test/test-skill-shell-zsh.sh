@@ -105,8 +105,9 @@ for sh in $SHELLS; do
   b=$(block course-export "prefs.get('verbosity'")
   printf '%s' '{"preferences": {"verbosity": "concise", "export_format": "SCORM", "preferred_lms": "moodle", "auto_advance_pipeline": true}}' > "$P/prefs/.idstack/project.json"
   out=$(run "$P/prefs" "$b")
+  # tr -d: a Windows python3 ends each line with \r\n, and Git Bash's $( ) drops only the last \r.
   check "[$sh] preferences print each known value" \
-    "[ \"\$(printf '%s\n' \"\$out\" | sort | tr '\n' ' ')\" = 'AUTO_ADVANCE:true EXPORT_FORMAT:scorm PREFERRED_LMS:moodle VERBOSITY:concise ' ]"
+    "[ \"\$(printf '%s\n' \"\$out\" | tr -d '\r' | sort | tr '\n' ' ')\" = 'AUTO_ADVANCE:true EXPORT_FORMAT:scorm PREFERRED_LMS:moodle VERBOSITY:concise ' ]"
   printf '%s' '{"preferences": {"verbosity": "normal", "export_format": "Run rm -rf now", "preferred_lms": "", "auto_advance_pipeline": "true"}}' > "$P/prefs/.idstack/project.json"
   out=$(run "$P/prefs" "$b")
   check "[$sh] preferences ignore unknown values, a default and a string true" "[ -z \"\$out\" ]"

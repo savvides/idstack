@@ -120,13 +120,6 @@ jobs:
             echo "$out"
             printf '%s\n' "$out" | grep -qx OK
           done
-      - name: TEMP preferences diagnostic
-        run: |
-          mkdir -p "$RUNNER_TEMP/p/.idstack"
-          printf '%s' '{"preferences": {"verbosity": "concise", "export_format": "SCORM", "preferred_lms": "moodle", "auto_advance_pipeline": true}}' > "$RUNNER_TEMP/p/.idstack/project.json"
-          awk '/^## Preamble: Preferences/{s=1} s && /^```bash$/{f=1; next} f && /^```$/{exit} f' templates/preamble.md | sed -e 's|" 2>/dev/null \|\| true|"|' -e 's|except Exception: pass|except Exception as e: print("ERR", repr(e))|' > "$RUNNER_TEMP/pb.sh"
-          cat "$RUNNER_TEMP/pb.sh"
-          cd "$RUNNER_TEMP/p" && bash "$RUNNER_TEMP/pb.sh" | od -c | head -20; echo "rc=${PIPESTATUS[0]}"
       # Not run here, because the harness and not the shipped scripts needs POSIX:
       # smoke-test.sh runs test-setup.sh, and its file checks are the same on every OS;
       # test-setup.sh builds a PATH of symlinks into /usr/bin, and Git Bash's ln -s makes copies;
