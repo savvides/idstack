@@ -2921,7 +2921,7 @@ suite_mutation "idstack-canvas-diff takes a wrong course for an empty course" \
 # 80h. A list that answers 404 gives an empty baseline that looks complete again (#132).
 suite_mutation "idstack-canvas-diff takes a list 404 for an empty list" \
   scripts/idstack-canvas-diff "    if not isinstance(items, list) or not all(" "    if items is None:
-        return [], ''
+        return []
     if not isinstance(items, list) or not all(" test-canvas-diff.py
 
 # 80i. A joined write flag in the curl argv (-dx=1 is a POST) is not seen again (#132).
