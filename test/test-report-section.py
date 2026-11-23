@@ -353,9 +353,10 @@ class ReportSectionTest(unittest.TestCase):
     def test_check_refuses_a_row_with_the_wrong_cell_count(self):
         self.assert_refused(TASKS + '| T-2 | Short row |\n', 'the row has 2 cells')
 
-    def test_check_accepts_a_pipe_inside_inline_code(self):
-        # A pipe in `code` is not a column. The row used to have 6 cells, not 5.
-        result = self.check(TASKS.replace('Write a lab report', 'Run `a|b` now'))
+    def test_check_refuses_an_unescaped_pipe_inside_inline_code(self):
+        # GitHub Markdown splits the cell on a pipe in `code` and drops the extra cell.
+        self.assert_refused(TASKS.replace('Write a lab report', 'Run `a|b` now'), 'as \\|')
+        result = self.check(TASKS.replace('Write a lab report', 'Run `a\\|b` now'))
         self.assertEqual(result.returncode, 0, result.stdout)
 
     # append ---------------------------------------------------------------

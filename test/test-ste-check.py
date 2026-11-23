@@ -264,6 +264,12 @@ class SteCheckTest(unittest.TestCase):
         self.assert_clean(self.check_file('a.html', step % words20))
         self.assert_problem(self.check_file('b.html', step % ('more ' + words20)), 'sentence-length')
 
+    def test_an_inline_element_does_not_end_a_numbered_step(self):
+        words20 = ' '.join(['word'] * 19) + ' end.'
+        step = '<ol><li><span>%s<br>Next.</span></li></ol>'
+        self.assert_clean(self.check_file('a.html', step % words20))
+        self.assert_problem(self.check_file('b.html', step % ('more more ' + words20)), 'sentence-length')
+
     def test_markdown_table_without_leading_pipe_is_cells(self):
         text = ('Week | Module | Topics\n--- | --- | ---\n'
                 '1 | Module 1: Introduction to data | Variables and data types\n'
@@ -274,12 +280,12 @@ class SteCheckTest(unittest.TestCase):
         self.assert_problem(self.check_file('b.md', '| W | M |\n|---|---|\n| 1 | a |\n\n' + long), 'sentence-length')
         self.assert_problem(self.check_file('c.md', long + '---\n'), 'sentence-length')
 
-    def test_a_pipe_inside_code_or_an_escaped_pipe_stays_in_the_cell(self):
-        # A pipe in `code` was a column break, so the checker read the code.
+    def test_an_escaped_pipe_stays_in_the_cell(self):
+        # An escaped pipe in `code` stays in the cell, so the checker does not read the code.
         self.assert_clean(self.check_file(
-            'a.md', '| ID | Text |\n|----|------|\n| A-1 | Run `echo should|wc` now. |\n'))
+            'a.md', '| ID | Text |\n|----|------|\n| A-1 | Run `echo should\\|wc` now. |\n'))
         self.assert_clean(self.check_file(
-            'b.md', '| ID | Text |\n|----|------|\n| A-1 | Run `a|b; c` now. |\n'))
+            'b.md', '| ID | Text |\n|----|------|\n| A-1 | Run `a\\|b; c` now. |\n'))
         # An escaped pipe was also a column break, so a long sentence was two short cells.
         left = ' '.join(['alpha'] * 15)
         right = ' '.join(['beta'] * 15)
