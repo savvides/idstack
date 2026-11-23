@@ -264,6 +264,8 @@ def finding_blocks(section_lines, refs):
         for _, row in rows:
             row_id, severity, saw, recommendation, justification, evidence = row
             _, tier = check_evidence(evidence, refs)
+            # \| keeps a pipe in a table cell. Outside a table, and in `code`, it shows the backslash.
+            saw, recommendation, justification = (c.replace('\\|', '|') for c in (saw, recommendation, justification))
             blocks += ['', '### Finding %s' % row_id, '',
                        '**Severity:** %s · **Evidence tier:** %s' % (severity.strip().lower(), tier), '',
                        '**What we saw:** %s' % saw, '',

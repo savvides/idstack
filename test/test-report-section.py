@@ -402,6 +402,14 @@ class ReportSectionTest(unittest.TestCase):
         self.assertIn('**Why it matters:** Practice improves transfer. [Alignment-14] [T1]', text)
         self.assertIn('**Recommendation:** You can link the glossary.', text)
 
+    def test_finding_block_unescapes_a_pipe(self):
+        # The block is not in a table, so \\| would show the backslash.
+        self.init()
+        self.append(FINDINGS.replace('No module teaches the lab report.', 'The step runs `a\\|b` in the lab.'))
+        text = self.read(REPORT)
+        self.assertIn('**What we saw:** The step runs `a|b` in the lab.', text)
+        self.assertIn('| The step runs `a\\|b` in the lab. |', text)
+
     def test_append_replacing_findings_does_not_double_the_blocks(self):
         self.init()
         self.append(FINDINGS)
