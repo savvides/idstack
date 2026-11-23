@@ -676,11 +676,7 @@ Common gaps and their impact:
 
 **Condition:** No `.idstack/project.json` found.
 
-Tell the user one question, and stop for the answer: "No project manifest found. Give the path of a syllabus file, or paste the learning objectives."
-
-If the user pastes objectives, ask how the course is structured, and stop for the answer. Then ask what assessments the course uses, and stop for the answer.
-
-Also look for course files in the working directory:
+First, look for course files in the working directory:
 
 ```bash
 _FILES=$(find . -maxdepth 1 -type f \( -name '*.md' -o -name '*.docx' -o -name '*.pdf' -o -name '*.txt' -o -name 'syllabus*' -o -name 'outline*' -o -name 'course*' \) | sort)
@@ -688,7 +684,10 @@ if [ -n "$_FILES" ]; then echo "$_FILES"; else echo "NO_COURSE_FILES"; fi
 ```
 
 If you find a syllabus or course outline, read it and use it as the basis for review.
-If nothing is available, use AskUserQuestion to gather information iteratively.
+
+If you find no syllabus or outline, tell the user one question, and stop for the answer: "No project manifest found. Give the path of a syllabus file, or paste the learning objectives."
+
+If the user pastes objectives, ask how the course is structured, and stop for the answer. Then ask what assessments the course uses, and stop for the answer.
 
 ---
 
