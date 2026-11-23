@@ -935,14 +935,9 @@ in the report agrees with an entry in `alignment_matrix.gaps` or in
 `expertise_reversal_flags`.
 
 Write the `learning_objectives` section via
-`scripts/idstack-manifest-merge`. /idstack:course-import and /idstack:assessment-design
-also write this section. The merge tool replaces the named section whole, so read the
-existing section first, add the results of this session to it, and pass the full
-merged section. An approved row of this session replaces the existing entry with the
-same ILO ID. Keep the entries that this session did not change. If the user chose
-"start again", replace the full section with the results of this session. The tool preserves every other section verbatim, validates JSON,
-writes atomically (tempfile + rename), and updates the top-level `updated` timestamp
-for you:
+`scripts/idstack-manifest-merge`. The merge tool replaces only the named section, preserves
+every other section verbatim, validates JSON, writes atomically (tempfile + rename), and
+updates the top-level `updated` timestamp for you:
 
 ```bash
 _IDSTACK=""
@@ -975,7 +970,7 @@ IDSTACK_UPDATED
 PAYLOAD
 ```
 
-Replace the placeholder payload above with the merged section. Include the COMPLETE
+Replace the placeholder payload above with the actual session data. Include the COMPLETE
 section structure — do not omit fields. `--create` makes a canonical manifest first if `.idstack/project.json` does not
 exist yet (the standalone case). It never replaces a manifest that exists.
 
@@ -983,10 +978,15 @@ Replace `<updated value>` with the value that you wrote down. If the line had no
 value, leave it empty. If the command exits with code 8, another session changed
 the manifest after you read it, and the tool wrote nothing.
 
-Run the stamp command again and read `.idstack/project.json` again. Read the
-`learning_objectives` section. Add your changes to that section and put the full
-section in the payload. Then run the merge command one more time with the new
-value. If it exits with code 8 again, stop and tell the user.
+Do not merge your results into the new section, because this session approved the
+full section. Run the stamp command again and read the `learning_objectives` section in
+`.idstack/project.json`. Tell the user which parts changed. Then ask with
+AskUserQuestion: "Another session changed your learning objectives after this session
+read them. Do you want to replace them with the results of this session?" Options:
+"Replace" (save the results of this session) and "Stop" (keep the manifest as it is).
+
+If the user picks "Replace", run the merge command one more time with the new value.
+If it exits with code 8 again, stop and tell the user.
 
 If the tool exits with a different non-zero code (for example, exit 2 for a malformed
 manifest or a command-line error), report the error to the user and stop. Never

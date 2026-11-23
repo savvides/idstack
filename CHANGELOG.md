@@ -16,7 +16,7 @@
 
 ### Fixed
 
-- **`/idstack:needs-analysis` and `/idstack:learning-objectives` pass the manifest stamp to the merge (#226).** Before, a later save replaced `context`, `needs_analysis`, `project_name` or `learning_objectives` when another session had written in the meantime. The merge command now gets `--expect-updated`. On exit code 8, the skill reads the manifest again, adds its changes to the sections that changed, and tries one more time.
+- **Two more skills pass the manifest stamp to the merge (#226).** These are `/idstack:needs-analysis` and `/idstack:learning-objectives`. Before, a later save replaced `context`, `needs_analysis`, `project_name` or `learning_objectives` when another session had written in the meantime. The merge command now gets `--expect-updated`. On exit code 8, needs-analysis reads the manifest again, adds its changes to the sections that changed, and tries one more time. learning-objectives still replaces the full section. On exit code 8, it tells the user what changed and asks before it replaces the section.
 - **idstack works in Git Bash on Windows (#136).** The new Windows CI job found these problems:
   - `scripts/idstack-manifest-merge` stopped with `No module named 'fcntl'`, so no skill could save its results. On Windows it now locks with `msvcrt`.
   - `idstack-manifest-merge --create` could not start `idstack-migrate` (`WinError 193`). On Windows it now starts it with the `bash.exe` from an absolute PATH folder.
