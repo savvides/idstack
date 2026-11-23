@@ -558,6 +558,23 @@ check "preamble Step Review gives the exact report link line" \
   "printf '%s' \"\$SR_TEXT\" | grep -qF 'Read the draft in [<path>](<path>).'"
 check "no template tells the model to leave out the option descriptions" \
   "! grep -iE 'do not add a description|without a description|no description' '$IDSTACK_DIR'/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md'"
+# The preamble says ask one question and stop for the answer. These skills listed
+# several questions in one turn. AskUserQuestion also refuses an option that has
+# no description, and the writing-check question named two options with none.
+check "course-quality-review asks alignment questions one at a time" \
+  "awk '/### If No Alignment Data Available/,/^## Cross-Domain Evidence Checks/' '$IDSTACK_DIR/skills/course-quality-review/SKILL.md.tmpl' | grep -qF 'stop for the answer' && ! awk '/### If No Alignment Data Available/,/^## Cross-Domain Evidence Checks/' '$IDSTACK_DIR/skills/course-quality-review/SKILL.md.tmpl' | grep -qF 'targeted questions'"
+check "course-quality-review no-manifest prompt is one question" \
+  "! grep -qF 'how is it structured, and what assessments' '$IDSTACK_DIR/skills/course-quality-review/SKILL.md.tmpl'"
+check "course-builder asks for instructor information one question at a time" \
+  "awk '/### Step 2: Gather Instructor Information/,/^### Step 3/' '$IDSTACK_DIR/skills/course-builder/SKILL.md.tmpl' | grep -qF 'stop for the answer' && ! awk '/### Step 2: Gather Instructor Information/,/^### Step 3/' '$IDSTACK_DIR/skills/course-builder/SKILL.md.tmpl' | grep -qF 'Give me this information'"
+check "course-export asks for the Canvas URL and the course ID one at a time" \
+  "awk '/### B1. Get Credentials/,/^### B2. Validate Connection/' '$IDSTACK_DIR/skills/course-export/SKILL.md.tmpl' | grep -qF 'stop for the answer' && ! awk '/### B1. Get Credentials/,/^### B2. Validate Connection/' '$IDSTACK_DIR/skills/course-export/SKILL.md.tmpl' | grep -qF 'for two items'"
+check "course-import asks for Canvas credentials one at a time" \
+  "awk '/### C1. Get credentials/,/^### C2. Validate connection/' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl' | grep -qF 'stop for the answer' && ! awk '/### C1. Get credentials/,/^### C2. Validate connection/' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl' | grep -qF 'for two items'"
+check "course-import asks for Moodle settings one at a time" \
+  "awk '/### F1. Get the settings/,/^### F2. Read the course/' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl' | grep -qF 'stop for the answer' && ! awk '/### F1. Get the settings/,/^### F2. Read the course/' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl' | grep -qF 'for two items'"
+check "course-export writing-check question gives each option a description" \
+  "awk '/## Writing Standard Check \\(course content\\)/,/## Export Format Selection/' '$IDSTACK_DIR/skills/course-export/SKILL.md.tmpl' | grep -qF 'Continue the export' && awk '/## Writing Standard Check \\(course content\\)/,/## Export Format Selection/' '$IDSTACK_DIR/skills/course-export/SKILL.md.tmpl' | grep -qF 'description'"
 check "no skill template tells the model to repeat a review table word for word" \
   "! grep -iE 'word for word' '$IDSTACK_DIR'/skills/*/SKILL.md.tmpl '$IDSTACK_DIR/templates/preamble.md' | grep -qiE 'table|row|section|review'"
 check "no skill template tells the model to show a review table in the chat" \
