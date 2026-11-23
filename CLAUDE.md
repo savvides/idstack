@@ -65,10 +65,10 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # scripts/idstack-ste-check unit tests (smoke-test also runs them)
-python3 test/test-canvas-diff.py        # 60 tests for scripts/idstack-canvas-diff on the fixtures in test/fixtures/canvas/ with a fake curl: each state,
+python3 test/test-canvas-diff.py        # 61 tests for scripts/idstack-canvas-diff on the fixtures in test/fixtures/canvas/ with a fake curl: each state,
                                         # every request a GET, the token only on stdin (smoke-test also runs them)
 python3 test/test-report-section.py     # 57 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
-python3 test/test-moodle-import.py      # 27 tests for scripts/idstack-moodle-import against a fake Moodle that sends the responses
+python3 test/test-moodle-import.py      # 29 tests for scripts/idstack-moodle-import against a fake Moodle that sends the responses
                                         # recorded from Moodle 4.5 in test/fixtures/moodle/ (see its README). smoke-test also runs them
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md: titles, data-tiers,
                                        # the aria-label shares and tier ranges. Fails on a card that shows a number of studies

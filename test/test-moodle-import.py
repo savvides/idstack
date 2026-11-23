@@ -264,6 +264,15 @@ class MoodleImportTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(FakeMoodle.seen)
 
+    def test_uppercase_http_on_this_computer_does_not_use_a_proxy(self):
+        # urlsplit accepts HTTP:// as http, then the request URL kept that case.
+        # opener() only skipped the proxy when the URL started with lowercase http://.
+        self.settings(base='HTTP://127.0.0.1:%d' % self.server.server_address[1])
+        r = self.run_import(env={'http_proxy': 'http://127.0.0.1:9', 'HTTP_PROXY': 'http://127.0.0.1:9'})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(FakeMoodle.seen)
+        self.assertNotIn(TOKEN, r.stdout + r.stderr)
+
     def test_moodle_message_never_carries_the_token(self):
         FakeMoodle.routes['core_grading_get_definitions'] = (200, {}, json.dumps(
             {'exception': 'x', 'errorcode': 'bad', 'message': 'token %s is bad' % TOKEN}).encode())
@@ -296,6 +305,16 @@ class MoodleImportTest(unittest.TestCase):
         self.assertEqual(r.returncode, 4)
         self.assertIn('MOODLE_REDIRECT', r.stderr)
         self.assertEqual(len(FakeMoodle.seen), 1)
+
+    def test_redirect_location_does_not_carry_the_token(self):
+        FakeMoodle.routes['core_webservice_get_site_info'] = (
+            302, {'Location': 'https://evil.example/login?wstoken=%s' % TOKEN}, b'')
+        self.settings()
+        r = self.run_import()
+        self.assertEqual(r.returncode, 4, r.stderr)
+        self.assertIn('MOODLE_REDIRECT', r.stderr)
+        self.assertNotIn(TOKEN, r.stdout + r.stderr)
+        self.assertIn('[token]', r.stderr)
 
     def test_plain_http_is_refused_except_on_this_computer(self):
         for base, code in [('http://moodle.example.invalid', 'MOODLE_URL_NOT_HTTPS'),

@@ -16,6 +16,9 @@
 
 ### Fixed
 
+- **`scripts/idstack-canvas-diff` does not send the token to a different host.** A Canvas URL with a user name, such as `https://canvas.example.edu@other.example`, is an `https://` address, and curl connects to the host after `@`. The script now stops with `CANVAS_URL_NOT_HTTPS` and sends no request.
+- **`scripts/idstack-moodle-import` keeps the token off a proxy when the scheme is `HTTP://`.** Before, only a lowercase `http://` address skipped the proxy. `HTTP://127.0.0.1` sent the token to the proxy as clear text. Any letter case now skips the proxy for a Moodle on this computer.
+- **A Moodle redirect message does not contain the token.** When the redirect address contains the token, the message shows `[token]`.
 - **idstack works in Git Bash on Windows (#136).** The new Windows CI job found these problems:
   - `scripts/idstack-manifest-merge` stopped with `No module named 'fcntl'`, so no skill could save its results. On Windows it now locks with `msvcrt`.
   - `idstack-manifest-merge --create` could not start `idstack-migrate` (`WinError 193`). On Windows it now starts it with the `bash.exe` from an absolute PATH folder.
