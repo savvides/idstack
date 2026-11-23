@@ -16,6 +16,9 @@
 
 ### Fixed
 
+- **A second save in the same second no longer drops a manifest section.** `idstack-manifest-merge` writes `updated` with microseconds. `--expect-updated` then sees that write and exits 8, and the first section stays. Before, the stamp had a resolution of one second, so a second merge with the first read replaced the section. `--create` with a stamp that does not match a missing manifest exits 8 and makes no file.
+- **The home profile stays free of a course manifest, and a symlinked manifest shares one lock.** A course `.idstack` that points at the home profile exits 9 and writes nothing. A manifest whose real path is that profile does the same. The lock file is next to the real manifest, so a symlinked manifest and its target wait for each other. `idstack-migrate` keeps an explicit `0` in `red_team_audit.findings_summary` when it moves an old `summary`.
+
 - **idstack works in Git Bash on Windows (#136).** The new Windows CI job found these problems:
   - `scripts/idstack-manifest-merge` stopped with `No module named 'fcntl'`, so no skill could save its results. On Windows it now locks with `msvcrt`.
   - `idstack-manifest-merge --create` could not start `idstack-migrate` (`WinError 193`). On Windows it now starts it with the `bash.exe` from an absolute PATH folder.

@@ -459,6 +459,138 @@ check "non-ASCII text in a payload from a cp1252 stdin and from a file stays UTF
 check "the slug of a non-ASCII project name" \
   "[ \"\$('$REPO_ROOT/scripts/idstack-slugify' --from-manifest '$WORK/utf8/name.json')\" = cafe-bio-101 ]"
 
+# A write used to keep the same updated value for a whole second. A second
+# merge with the first read then replaced the section.
+mkdir -p "$WORK/samesec"
+check "a second merge in the same second keeps the first section" \
+  "python3 - '$MERGE' '$WORK/samesec' <<'PY'
+import datetime, json, os, subprocess, sys
+from datetime import timezone
+merge, work = sys.argv[1], sys.argv[2]
+manifest = os.path.join(work, 'project.json')
+cmd = [sys.executable, merge] if os.name == 'nt' else [merge]
+lost = []
+for i in range(12):
+    now = datetime.datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    with open(manifest, 'w', encoding='utf-8') as handle:
+        json.dump({'version': '1.4', 'project_name': 't', 'created': now, 'updated': now, 'context': {'keep': 1}}, handle)
+    first = os.path.join(work, 'a.json')
+    second = os.path.join(work, 'b.json')
+    with open(first, 'w', encoding='utf-8') as handle:
+        json.dump({'n': 1}, handle)
+    with open(second, 'w', encoding='utf-8') as handle:
+        json.dump({'n': 2}, handle)
+    one = subprocess.run(cmd + ['--section', 'quality_review', '--payload', first, '--manifest', manifest, '--expect-updated', now, '--quiet'])
+    if one.returncode != 0:
+        lost.append('first write %d exited %d' % (i, one.returncode))
+        break
+    two = subprocess.run(cmd + ['--section', 'quality_review', '--payload', second, '--manifest', manifest, '--expect-updated', now, '--quiet'], stderr=subprocess.DEVNULL)
+    data = json.load(open(manifest, encoding='utf-8'))
+    if two.returncode != 8 or data.get('quality_review') != {'n': 1}:
+        lost.append('i=%d rc=%d section=%s updated=%s seed=%s' % (i, two.returncode, data.get('quality_review'), data.get('updated'), now))
+if lost:
+    sys.stderr.write('\n'.join(lost) + '\n')
+    sys.exit(1)
+PY"
+
+# Two writes in one microsecond must still change updated.
+check "a same-microsecond stamp moves forward" \
+  "python3 - '$MERGE' <<'PY'
+import sys
+from datetime import datetime, timezone
+merge = sys.argv[1]
+ns = {'__name__': 'merge_under_test', '__file__': merge}
+exec(open(merge, encoding='utf-8').read(), ns)
+class Frozen(datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return cls(2026, 1, 1, 0, 0, 0, 5, tzinfo=timezone.utc)
+ns['datetime'] = Frozen
+got = ns['fresh_updated']('2026-01-01T00:00:00.000005Z')
+assert got == '2026-01-01T00:00:00.000006Z', got
+other = ns['fresh_updated']('2020-01-01T00:00:00Z')
+assert other == '2026-01-01T00:00:00.000005Z', other
+PY"
+
+# --create must not leave a manifest when --expect-updated refuses the write.
+mkdir -p "$WORK/create-stale"
+echo '{}' > "$WORK/create-stale/p.json"
+set +e
+CS_ERR=$("$MERGE" --create --expect-updated "1999-01-01T00:00:00Z" --section context --payload "$WORK/create-stale/p.json" --manifest "$WORK/create-stale/.idstack/project.json" 2>&1 >/dev/null)
+CS_EC=$?
+set -e
+check "--create with a stale --expect-updated exits 8 and makes no manifest" \
+  "[ $CS_EC -eq 8 ] && printf '%s' \"\$CS_ERR\" | grep -q 'changed after you read' && [ ! -e '$WORK/create-stale/.idstack' ]"
+
+# An explicit 0 is a real count. The old summary must not replace it.
+cat > "$WORK/zeros.json" <<'EOF'
+{
+  "version": "1.3",
+  "project_name": "z",
+  "red_team_audit": {
+    "summary": {"critical_count": 4, "warning_count": 2, "info_count": 1},
+    "findings_summary": {"critical": 0, "warning": 7, "info": 0}
+  }
+}
+EOF
+check "migrate keeps an explicit zero in findings_summary" \
+  "\"$REPO_ROOT/scripts/idstack-migrate\" '$WORK/zeros.json' >/dev/null && python3 -c 'import json; d=json.load(open(\"$WORK/zeros.json\")); fs=d[\"red_team_audit\"][\"findings_summary\"]; assert fs=={\"critical\": 0, \"warning\": 7, \"info\": 0}, fs; assert \"summary\" not in d[\"red_team_audit\"]'"
+
+# A course .idstack that points at the home profile is the home folder (#178).
+# Git Bash ln -s copies, so this block runs on macOS and Linux only.
+if [ -z "${ON_WINDOWS:-}" ]; then
+  mkdir -p "$WORK/homeprof/.idstack" "$WORK/courselink"
+  ln -s "$WORK/homeprof/.idstack" "$WORK/courselink/.idstack"
+  echo '{}' > "$WORK/courselink/p.json"
+  set +e
+  LINK_ERR=$(cd "$WORK/courselink" && HOME="$WORK/homeprof" "$MERGE" --create --section context --payload p.json 2>&1 >/dev/null)
+  LINK_EC=$?
+  LINK_MIG_ERR=$(cd "$WORK/courselink" && HOME="$WORK/homeprof" "$REPO_ROOT/scripts/idstack-migrate" --init 2>&1 >/dev/null)
+  LINK_MIG_EC=$?
+  set -e
+  check "merge through a symlinked .idstack into the home profile exits 9 and writes nothing" \
+    "[ $LINK_EC -eq 9 ] && printf '%s' \"\$LINK_ERR\" | grep -q 'home folder' && [ ! -f '$WORK/homeprof/.idstack/project.json' ] && [ ! -e '$WORK/homeprof/.idstack/.manifest.lock' ]"
+  check "migrate --init through a symlinked .idstack into the home profile exits 9 and writes nothing" \
+    "[ $LINK_MIG_EC -eq 9 ] && printf '%s' \"\$LINK_MIG_ERR\" | grep -q 'home folder' && [ ! -f '$WORK/homeprof/.idstack/project.json' ]"
+fi
+
+# The lock has to sit on the real file. A merge through the symlink and a
+# merge through the target then wait for each other.
+mkdir -p "$WORK/linklock"
+posix_check "a merge through a symlinked manifest waits for the lock on the real file" \
+  "python3 - '$MERGE' '$WORK/linklock' <<'PY'
+import json, os, subprocess, sys
+merge, d = sys.argv[1], sys.argv[2]
+real = os.path.join(d, 'real')
+os.makedirs(real)
+manifest_real = os.path.join(real, 'project.json')
+with open(manifest_real, 'w', encoding='utf-8') as handle:
+    json.dump({'version': '1.4', 'project_name': 's', 'updated': '2020-01-01T00:00:00Z', 'context': {'v': 1}}, handle)
+link_dir = os.path.join(d, 'via')
+os.makedirs(link_dir)
+link = os.path.join(link_dir, 'project.json')
+os.symlink(manifest_real, link)
+lock = open(os.path.join(real, '.manifest.lock'), 'a')
+import fcntl
+fcntl.flock(lock, fcntl.LOCK_EX)
+cmd = [sys.executable, merge] if os.name == 'nt' else [merge]
+proc = subprocess.Popen(cmd + ['--section', 'quality_review', '--payload', '-', '--manifest', link, '--quiet'], stdin=subprocess.PIPE)
+proc.stdin.write(b'{\"n\": 1}')
+proc.stdin.close()
+try:
+    proc.wait(timeout=2)
+    sys.exit('the merge did not wait for the lock on the real file')
+except subprocess.TimeoutExpired:
+    pass
+lock.close()
+rc = proc.wait(timeout=30)
+data = json.load(open(manifest_real, encoding='utf-8'))
+if rc != 0 or data.get('quality_review') != {'n': 1}:
+    sys.exit('after the lock, rc=%s section=%s' % (rc, data.get('quality_review')))
+if not os.path.islink(link):
+    sys.exit('the manifest symlink was replaced')
+PY"
+
 echo ""
 echo "manifest-merge: $PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
