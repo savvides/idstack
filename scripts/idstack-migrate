@@ -229,21 +229,19 @@ def migrate_1_3_to_1_4(data):
     if isinstance(rt, dict):
         # Old shape: red_team_audit.summary.{critical_count, warning_count, info_count}
         # New shape: red_team_audit.findings_summary.{critical, warning, info}
-        # An explicit 0 is a real count. Copy an old count only when the new
-        # key is absent. When findings_summary itself is absent, the defaults
-        # below are not real counts, so the old summary replaces them.
+        # An explicit 0 is a real count, so copy an old count only when the
+        # new key is absent. An all-zero findings_summary is the v1.2 seed,
+        # not real counts, so the old summary replaces it.
         old_summary = rt.pop('summary', None)
-        had_findings = isinstance(rt.get('findings_summary'), dict)
         if isinstance(old_summary, dict):
-            fs = rt.get('findings_summary') if had_findings else None
+            fs = rt.get('findings_summary')
+            real = isinstance(fs, dict) and any(fs.get(k) for k in ('critical', 'warning', 'info'))
             if not isinstance(fs, dict):
-                fs = {'critical': 0, 'warning': 0, 'info': 0}
-                rt['findings_summary'] = fs
-                had_findings = False
+                fs = rt['findings_summary'] = {'critical': 0, 'warning': 0, 'info': 0}
             for old, new in (('critical_count', 'critical'),
                              ('warning_count',  'warning'),
                              ('info_count',     'info')):
-                if old in old_summary and (not had_findings or new not in fs):
+                if old in old_summary and (not real or new not in fs):
                     fs[new] = old_summary[old]
         # Add the new optional fields introduced in v1.4 (preserve existing values).
         rt.setdefault('focus', '')

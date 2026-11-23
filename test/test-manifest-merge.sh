@@ -510,6 +510,11 @@ got = ns['fresh_updated']('2026-01-01T00:00:00.000005Z')
 assert got == '2026-01-01T00:00:00.000006Z', got
 other = ns['fresh_updated']('2020-01-01T00:00:00Z')
 assert other == '2026-01-01T00:00:00.000005Z', other
+ahead = ns['fresh_updated']('2026-01-01T00:00:01.000000Z')
+assert ahead == '2026-01-01T00:00:01.000001Z', ahead
+for bad in ('', None, 'not a stamp', 5):
+    got = ns['fresh_updated'](bad)
+    assert got == '2026-01-01T00:00:00.000005Z', (bad, got)
 PY"
 
 # --create must not leave a manifest when --expect-updated refuses the write.
@@ -535,6 +540,20 @@ cat > "$WORK/zeros.json" <<'EOF'
 EOF
 check "migrate keeps an explicit zero in findings_summary" \
   "\"$REPO_ROOT/scripts/idstack-migrate\" '$WORK/zeros.json' >/dev/null && python3 -c 'import json; d=json.load(open(\"$WORK/zeros.json\")); fs=d[\"red_team_audit\"][\"findings_summary\"]; assert fs=={\"critical\": 0, \"warning\": 7, \"info\": 0}, fs; assert \"summary\" not in d[\"red_team_audit\"]'"
+
+# An all-zero findings_summary is the v1.2 seed. The old summary replaces it.
+cat > "$WORK/seedzeros.json" <<'EOF'
+{
+  "version": "1.3",
+  "project_name": "z",
+  "red_team_audit": {
+    "summary": {"critical_count": 4, "warning_count": 2, "info_count": 1},
+    "findings_summary": {"critical": 0, "warning": 0, "info": 0}
+  }
+}
+EOF
+check "migrate replaces an all-zero findings_summary with the old counts" \
+  "\"$REPO_ROOT/scripts/idstack-migrate\" '$WORK/seedzeros.json' >/dev/null && python3 -c 'import json; d=json.load(open(\"$WORK/seedzeros.json\")); fs=d[\"red_team_audit\"][\"findings_summary\"]; assert fs=={\"critical\": 4, \"warning\": 2, \"info\": 1}, fs'"
 
 # A course .idstack that points at the home profile is the home folder (#178).
 # Git Bash ln -s copies, so this block runs on macOS and Linux only.

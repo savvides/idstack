@@ -37,8 +37,9 @@ Usage:
               another session wrote in between. Nothing is written (exit 8).
   --quiet     Suppress progress output. Errors still go to stderr.
 
-  The merge holds an exclusive lock (.idstack/.manifest.lock) from its read to
-  its write, so two merges at the same time do not lose a section.
+  The merge holds an exclusive lock (.manifest.lock in the real folder of the
+  manifest) from its read to its write, so two merges at the same time do not
+  lose a section.
 
 Exit codes:
   0  success
@@ -171,17 +172,23 @@ def die(code, message):
 
 
 def fresh_updated(previous):
-    """A UTC stamp that is not equal to previous.
+    """A UTC stamp that is later than previous.
 
     The stamp has microseconds, so a second write in the same second changes
-    updated and --expect-updated can see it. Two writes in the same
-    microsecond move the second stamp one microsecond forward.
+    updated and --expect-updated can see it. When the clock does not move past
+    previous (a coarse clock, or a clock set back), the stamp is previous plus
+    one microsecond, so updated never takes an earlier value again.
     """
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    if stamp == previous:
-        base = datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
-        stamp = (base + timedelta(microseconds=1)).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    return stamp
+    now = datetime.now(timezone.utc)
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            prev = datetime.strptime(previous, fmt).replace(tzinfo=timezone.utc)
+        except (TypeError, ValueError):
+            continue
+        if now <= prev:
+            now = prev + timedelta(microseconds=1)
+        break
+    return now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def manifest_in_home(manifest_path):
