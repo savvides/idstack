@@ -18,12 +18,16 @@ init    writes the report header, an in-progress status line, a Summary
         copy in .idstack/prev-reports/. A report in a folder that has a .idstack
         folder gets its copy in that .idstack/prev-reports/. Any other report
         gets its copy in a prev-reports/ folder beside it.
+        A line break in an argument or in project_name is exit 2, and the
+        report does not change. A project_name that is not text becomes
+        "Untitled course".
 check   examines a draft section (the Step Review in templates/preamble.md):
         each "## " section other than Summary, Limitations and Next steps has
         a table, the first column is ID, a cited table ends with Justification
         and Evidence, each Evidence cell has only
         citations whose tiers agree with evidence/references.md, a findings
         table is in severity order, and the text obeys scripts/idstack-ste-check.
+        A pipe inside inline code, or an escaped pipe, is not a new column.
 append  runs check, then puts each section of the draft in the report, marked as a
         draft that waits for approval. A section with the same heading is
         replaced in place. A new section goes before the footer. A findings table
@@ -65,6 +69,7 @@ for _stream in (sys.stdin, sys.stdout):
 HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(HERE, 'lib'))
 from citations import check_evidence, load_refs  # noqa: E402
+from table_cells import split_pipes  # noqa: E402
 
 REFERENCES = os.path.join(HERE, '..', 'evidence', 'references.md')
 STE_CHECK = os.path.join(HERE, 'idstack-ste-check')
@@ -80,8 +85,8 @@ FACT_SECTIONS = ('Project context', 'Course information', 'Imported structure',
                  'Readiness', 'Export contents', 'Generated artifacts')
 FINDING_COLUMNS = ['ID', 'Severity', 'What we saw', 'Recommendation', 'Justification', 'Evidence']
 SEVERITY_RANK = {'critical': 0, 'warning': 1, 'info': 2}
-CELL_SPLIT_RE = re.compile(r'(?<!\\)\|')
 SEPARATOR_RE = re.compile(r'^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$')
+LINE_BREAK_RE = re.compile(r'[\r\n]')
 
 
 class Problems(Exception):
@@ -116,7 +121,7 @@ def cells(line):
         text = text[1:]
     if text.endswith('|') and not text.endswith('\\|'):
         text = text[:-1]
-    return [c.strip() for c in CELL_SPLIT_RE.split(text)]
+    return [c.strip() for c in split_pipes(text)]
 
 
 def tables(section_lines, first_number):
@@ -337,7 +342,10 @@ def cmd_append(report, draft, refs):
 def project_name():
     try:
         with open(os.path.join('.idstack', 'project.json'), encoding='utf-8') as handle:
-            name = json.load(handle).get('project_name') or ''
+            data = json.load(handle)
+        name = data.get('project_name') if isinstance(data, dict) else ''
+        if not isinstance(name, str):
+            name = ''
     except (OSError, ValueError, AttributeError):
         name = ''
     return name.strip() or 'Untitled course'
@@ -352,13 +360,27 @@ def cmd_init(args):
         if PLACEHOLDER_ARG_RE.search(value):
             return fail(2, 'replace %s in --%s with its value. Then run the command again.'
                         % (PLACEHOLDER_ARG_RE.search(value).group(0), name))
+    # A line break becomes a new heading, so the report is no longer one document.
+    for name in ('title', 'project', 'mode', 'skill', 'run_id'):
+        value = getattr(args, name) or ''
+        if LINE_BREAK_RE.search(value):
+            return fail(2, 'the --%s value has a line break. Put the value on one line. '
+                        'Then run the command again.' % name.replace('_', '-'))
+    for heading in args.reserve:
+        if LINE_BREAK_RE.search(heading):
+            return fail(2, 'the --reserve value has a line break. Put the heading on one line. '
+                        'Then run the command again.')
+    project = args.project or project_name()
+    if LINE_BREAK_RE.search(project):
+        return fail(2, 'the project name has a line break. Put project_name on one line. '
+                    'Then run the command again.')
     try:
         with open(VERSION_FILE, encoding='utf-8') as handle:
             version = handle.read().strip()
     except OSError:
         version = 'unknown'
     today = datetime.date.today()
-    meta = ['idstack', '`/idstack:%s`' % args.skill, args.project or project_name(),
+    meta = ['idstack', '`/idstack:%s`' % args.skill, project,
             '%d %s %d' % (today.day, today.strftime('%B'), today.year),
             'run %s' % (args.run_id or os.urandom(3).hex())]
     if args.mode:

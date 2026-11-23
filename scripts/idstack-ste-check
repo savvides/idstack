@@ -10,7 +10,10 @@ templates/preamble.md.
 
 Rules that this script examines:
   sentence-length    more than 20 words in a numbered step, more than 25 words in other text
-                     (headings, table headers and other labels are not examined)
+                     (headings, table headers and other labels are not examined).
+                     A bullet inside a numbered list is other text. A step inside
+                     a div is a numbered step. A pipe inside code, or an escaped
+                     pipe, stays in the cell.
   paragraph-length   more than 6 sentences in a paragraph
   semicolon          a semicolon in text
   contraction        a contraction, for example "don't"
@@ -47,6 +50,8 @@ for _stream in (sys.stdin, sys.stdout):
         _stream.reconfigure(encoding="utf-8")
 
 HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, os.path.join(HERE, 'lib'))
+from table_cells import split_pipes  # noqa: E402
 DEFAULT_WORD_LIST = os.path.join(HERE, '..', 'templates', 'preamble.md')
 BEGIN_MARKER = '<!-- ste-core:begin -->'
 END_MARKER = '<!-- ste-core:end -->'
@@ -289,7 +294,7 @@ class UnitParser(HTMLParser):
                     break
             if block in LABEL_TAGS:
                 kind = 'label'
-            elif block in ('li', 'p') and 'li' in self.stack and 'ol' in self.stack:
+            elif nearest_list(self.stack) == 'ol' and block in ('li', 'p', 'div'):
                 kind = 'procedural'
             else:
                 kind = 'descriptive'
@@ -363,6 +368,21 @@ class UnitParser(HTMLParser):
 # ---------------------------------------------------------------------------
 # Markdown and plain text
 # ---------------------------------------------------------------------------
+
+def nearest_list(stack):
+    """Return the ol or ul that contains this text.
+
+    A div, p or li does not end a numbered step. A table cell or any other
+    element does, so a bullet inside a step stays a bullet.
+    """
+    for tag in reversed(stack):
+        if tag in ('ol', 'ul'):
+            return tag
+        if tag in ('li', 'p', 'div'):
+            continue
+        return None
+    return None
+
 
 LIST_ITEM_RE = re.compile(r'^(\s*)([-*+]|\d+[.)])\s+(.*)$')
 TABLE_SEPARATOR_RE = re.compile(r'^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$')
@@ -441,7 +461,12 @@ def markdown_units(text):
             current = None
             if TABLE_SEPARATOR_RE.match(stripped):
                 continue
-            for cell in stripped.strip('|').split('|'):
+            row = stripped.strip()
+            if row.startswith('|'):
+                row = row[1:]
+            if row.endswith('|') and not row.endswith('\\|'):
+                row = row[:-1]
+            for cell in split_pipes(row):
                 if cell.strip():
                     units.append(Unit(number, 'label' if header else 'descriptive',
                                       markdown_inline(cell.strip()), False))

@@ -113,6 +113,43 @@ class ReportSectionTest(unittest.TestCase):
         self.assertIn('replace <mode> in --mode', result.stderr)
         self.assertFalse(os.path.exists(self.path(REPORT)))
 
+    def test_init_uses_untitled_course_when_project_name_is_not_text(self):
+        # A number is valid JSON. init used to raise AttributeError and exit 1.
+        self.write('.idstack/project.json', '{"project_name": 101}')
+        result = self.run_helper('init', REPORT, '--skill', 'needs-analysis',
+                                 '--title', 'Needs Analysis Report')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertIn('Untitled course', self.read(REPORT))
+        self.assertNotIn('101', self.read(REPORT))
+
+    def test_init_refuses_a_line_break_in_the_title(self):
+        result = self.run_helper('init', REPORT, '--skill', 'needs-analysis',
+                                 '--title', 'Needs Analysis\n## Injected')
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('line break', result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertFalse(os.path.exists(self.path(REPORT)))
+
+    def test_init_refuses_a_line_break_in_the_project_name(self):
+        self.write('.idstack/project.json', '{"project_name": "Bio 101\\n## Injected"}')
+        result = self.run_helper('init', REPORT, '--skill', 'needs-analysis',
+                                 '--title', 'Needs Analysis Report')
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('line break', result.stderr)
+        self.assertFalse(os.path.exists(self.path(REPORT)))
+        self.assertNotIn('## Injected', result.stdout)
+
+    def test_init_refuses_a_line_break_in_a_reserved_heading(self):
+        self.init()
+        before = self.read(REPORT)
+        result = self.run_helper('init', REPORT, '--skill', 'needs-analysis',
+                                 '--title', 'Needs Analysis Report', '--reserve', 'Score\n## X')
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('line break', result.stderr)
+        self.assertEqual(self.read(REPORT), before)
+        self.assertNotIn('REPORT_STARTED', result.stdout)
+
     def test_init_replaces_an_earlier_report(self):
         self.init()
         self.append(TASKS)
@@ -255,6 +292,15 @@ class ReportSectionTest(unittest.TestCase):
         self.assert_refused(TASKS.replace('[Needs-8] [T3]', '[Needs-8] [Alignment-14] [T3] [T1]'),
                             'gives more than one tier')
 
+    def test_check_two_tiers_does_not_call_the_cell_other_text(self):
+        # The cell is only citations. A second message said to move the row to Limitations.
+        result = self.check(TASKS.replace('[Needs-8] [T3]', '[Needs-8] [Alignment-14] [T3] [T1]'))
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn('gives more than one tier', result.stdout)
+        self.assertNotIn('must have only citations', result.stdout)
+        extra = self.check(TASKS.replace('[Needs-8] [T3]', '[Needs-8] [Alignment-14] [T3] [T1] and a note'))
+        self.assertIn('must have only citations', extra.stdout)
+
     def test_check_accepts_mixed_tiers_written_after_each_code(self):
         result = self.check(TASKS.replace('[Needs-8] [T3]', '[Needs-8] [T3] [Alignment-14] [T1]'))
         self.assertEqual(result.returncode, 0, result.stdout)
@@ -306,6 +352,11 @@ class ReportSectionTest(unittest.TestCase):
 
     def test_check_refuses_a_row_with_the_wrong_cell_count(self):
         self.assert_refused(TASKS + '| T-2 | Short row |\n', 'the row has 2 cells')
+
+    def test_check_accepts_a_pipe_inside_inline_code(self):
+        # A pipe in `code` is not a column. The row used to have 6 cells, not 5.
+        result = self.check(TASKS.replace('Write a lab report', 'Run `a|b` now'))
+        self.assertEqual(result.returncode, 0, result.stdout)
 
     # append ---------------------------------------------------------------
 
