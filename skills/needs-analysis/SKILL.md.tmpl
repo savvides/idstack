@@ -65,6 +65,15 @@ When multiple tiers apply, cite the strongest.
 The shared preamble above already ran the manifest existence check
 (`MANIFEST_EXISTS` / `NO_MANIFEST`), and the skill-specific manifest check above asked this skill's re-run question.
 
+**Manifest stamp:** Before you read the sections that other skills write, run this
+command one time. Write down the value after `MANIFEST_UPDATED:`. The merge command
+in the "Step 7: Write Manifest" section uses it, so that you do not write over a change that
+another session made in the meantime.
+
+```bash
+python3 -c 'import json; print("MANIFEST_UPDATED: " + json.load(open(".idstack/project.json")).get("updated", ""))' 2>/dev/null || echo "MANIFEST_UPDATED: "
+```
+
 ---
 
 ## Workflow
@@ -380,7 +389,11 @@ section. Each payload is the flat section contents, with no enclosing section ke
 IFS= read -r _PROJECT_NAME <<'IDSTACK_PROJECT_NAME'
 <project name>
 IDSTACK_PROJECT_NAME
-"$_IDSTACK/scripts/idstack-manifest-merge" --create --set project_name="$_PROJECT_NAME" \
+IFS= read -r _UPDATED <<'IDSTACK_UPDATED'
+<updated value>
+IDSTACK_UPDATED
+[ -n "$_UPDATED" ] && set -- --expect-updated "$_UPDATED" || set --
+"$_IDSTACK/scripts/idstack-manifest-merge" --create "$@" --set project_name="$_PROJECT_NAME" \
   --section context --payload .idstack/.context-payload.json \
   --section needs_analysis --payload .idstack/.needs_analysis-payload.json \
   && rm -f .idstack/.context-payload.json .idstack/.needs_analysis-payload.json
@@ -389,6 +402,16 @@ IDSTACK_PROJECT_NAME
 `--create` makes a canonical manifest first if `.idstack/project.json` does not
 exist yet (the standalone case). It never replaces a manifest that exists. The tool keeps every other section and
 `created`, and sets `updated`. If either payload is malformed, it writes nothing.
+
+Replace `<updated value>` with the value that you wrote down. If the line had no
+value, leave it empty. If the command exits with code 8, another session changed
+the manifest after you read it, and the tool wrote nothing.
+
+The payload files stay
+in `.idstack/`. Run the stamp command again and read `.idstack/project.json` again.
+For each section that changed, add your changes to the new section and write the
+payload file again. Then run the merge command one more time with the new value.
+If it exits with code 8 again, stop and tell the user.
 
 **CRITICAL — Manifest Integrity Rules:**
 1. Include the COMPLETE section structure from the schema below. Do not omit fields.

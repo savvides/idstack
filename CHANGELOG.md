@@ -16,6 +16,7 @@
 
 ### Fixed
 
+- **`/idstack:needs-analysis` and `/idstack:learning-objectives` pass the manifest stamp to the merge (#226).** Before, a later save replaced `context`, `needs_analysis`, `project_name` or `learning_objectives` when another session had written in the meantime. The merge command now gets `--expect-updated`. On exit code 8, the skill reads the manifest again, adds its changes to the sections that changed, and tries one more time.
 - **idstack works in Git Bash on Windows (#136).** The new Windows CI job found these problems:
   - `scripts/idstack-manifest-merge` stopped with `No module named 'fcntl'`, so no skill could save its results. On Windows it now locks with `msvcrt`.
   - `idstack-manifest-merge --create` could not start `idstack-migrate` (`WinError 193`). On Windows it now starts it with the `bash.exe` from an absolute PATH folder.
@@ -59,6 +60,7 @@
 
 ### Tests
 
+- `test/test-skill-shell-zsh.sh` checks that `/idstack:needs-analysis` and `/idstack:learning-objectives` print the manifest stamp and pass `--expect-updated` (#226).
 - `test/test-status.sh` has 4 new tests for the readiness check and the project name. `test/test-extractor.mjs` tests the quiz pages. `test/mutation-test.sh` has cases 65a and 65b.
 - New tests: `test/test-ste-check.py` (1), `test/test-status.sh` (2), `test/integration-test.sh` (1) and `test/test-manifest-merge.sh` (9: file mode, home folder, the lock, `--expect-updated`). `test/mutation-test.sh` has cases 70a to 70i.
 - `test/test-report-section.py` has 11 new tests for the kept report and the stopped status line (#181). `test/mutation-test.sh` has case 71a.
