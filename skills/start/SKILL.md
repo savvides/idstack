@@ -736,7 +736,7 @@ Then ask with AskUserQuestion: "How do you want to start?"
 **If MANIFEST_EXISTS:** Run this block first.
 
 ```bash
-if _ERR=$(python3 -c 'import json; json.load(open(".idstack/project.json"))' 2>&1); then echo "MANIFEST_OK"; else echo "MANIFEST_INVALID: $(printf '%s\n' "$_ERR" | tail -n 1)"; fi
+if _ERR=$(python3 -c 'import json; json.load(open(".idstack/project.json", encoding="utf-8"))' 2>&1); then echo "MANIFEST_OK"; else echo "MANIFEST_INVALID: $(printf '%s\n' "$_ERR" | tail -n 1)"; fi
 ```
 
 **If MANIFEST_INVALID:** The file `.idstack/project.json` in this folder is

@@ -16,7 +16,7 @@
 
 ### Fixed
 
-- **Manifest preferences apply when the course name is not ASCII.** Before, the preferences block in the preamble opened `.idstack/project.json` in the encoding of the locale. A name that the locale encoding cannot hold made the read fail, and the block showed no error, so the skill ignored `verbosity`, `export_format`, `preferred_lms` and `auto_advance_pipeline`. The block now reads the file as UTF-8.
+- **Skills read the manifest as UTF-8.** Before, four inline reads of `.idstack/project.json` used the encoding of the locale. If that encoding could not hold the course name, the read failed and the skill showed no error. The preamble then ignored `verbosity`, `export_format`, `preferred_lms` and `auto_advance_pipeline`. `/idstack:start` said that a valid manifest was not valid. `/idstack:course-import` and `/idstack:assessment-design` did not get the `updated` time, so the merge did not use `--expect-updated`.
 - **idstack works in Git Bash on Windows (#136).** The new Windows CI job found these problems:
   - `scripts/idstack-manifest-merge` stopped with `No module named 'fcntl'`, so no skill could save its results. On Windows it now locks with `msvcrt`.
   - `idstack-manifest-merge --create` could not start `idstack-migrate` (`WinError 193`). On Windows it now starts it with the `bash.exe` from an absolute PATH folder.
