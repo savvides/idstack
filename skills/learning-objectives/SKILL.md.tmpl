@@ -378,7 +378,9 @@ Write the `learning_objectives` section via
 `scripts/idstack-manifest-merge`. /idstack:course-import and /idstack:assessment-design
 also write this section. The merge tool replaces the named section whole, so read the
 existing section first, add the results of this session to it, and pass the full
-merged section. The tool preserves every other section verbatim, validates JSON,
+merged section. An approved row of this session replaces the existing entry with the
+same ILO ID. Keep the entries that this session did not change. If the user chose
+"start again", replace the full section with the results of this session. The tool preserves every other section verbatim, validates JSON,
 writes atomically (tempfile + rename), and updates the top-level `updated` timestamp
 for you:
 
@@ -402,7 +404,7 @@ IDSTACK_UPDATED
 PAYLOAD
 ```
 
-Replace the placeholder payload above with the actual session data. Include the COMPLETE
+Replace the placeholder payload above with the merged section. Include the COMPLETE
 section structure — do not omit fields. `--create` makes a canonical manifest first if `.idstack/project.json` does not
 exist yet (the standalone case). It never replaces a manifest that exists.
 
