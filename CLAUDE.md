@@ -45,7 +45,7 @@ scripts/idstack-learnings log|search|delete|promote   # Project learnings in .id
 Tests (run in CI on every PR and every push to main — see `.github/workflows/test.yml`. CI starts `smoke-test.sh` and `integration-test.sh`; smoke-test runs the other bash, node and python suites, but not `mutation-test.sh`, which CI runs in its own job):
 
 ```bash
-./test/smoke-test.sh              # 695 assertions: install, SKILL.md freshness, frontmatter, version agreement,
+./test/smoke-test.sh              # 701 assertions: install, SKILL.md freshness, frontmatter, version agreement,
                                   # canonical section names, /idstack: namespacing, resolve-snippet single source, bash -n,
                                   # Claude-Code-only invariant (no dist/, no AGENTS.md, no retired-CLI references)
 ./test/integration-test.sh        # 81 behavioral tests across the scripts/ scripts; also proves the suite
@@ -56,7 +56,7 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-manifest-merge.sh     # scripts/idstack-manifest-merge unit tests
 ./test/test-plugin-status.sh      # scripts/lib/plugin-status.sh unit tests
 ./test/test-preamble-python.sh    # Runs the preamble's Context Recovery (idstack-status --context) on the local python3; CI covers 3.9 and 3.12
-./test/test-skill-shell-zsh.sh    # 275 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
+./test/test-skill-shell-zsh.sh    # 287 tests: runs real skill bash blocks in bash AND zsh (the Bash tool runs the
                                   # user's shell, zsh on macOS; a new shell per call). smoke-test runs it
 ./test/test-extension.sh          # Chrome extension unit tests; import the shipped extension/ modules directly
                                   # (test/extension-harness.mjs stubs browser globals for the ones that need them)
@@ -65,10 +65,10 @@ Tests (run in CI on every PR and every push to main — see `.github/workflows/t
 ./test/test-rendered-landing.js   # Renders docs/index.html in headless Chrome and asserts the outcome:
                                   # no sideways scroll, 44px touch targets, column counts (node + Chrome)
 python3 test/test-ste-check.py          # scripts/idstack-ste-check unit tests (smoke-test also runs them)
-python3 test/test-canvas-diff.py        # 60 tests for scripts/idstack-canvas-diff on the fixtures in test/fixtures/canvas/ with a fake curl: each state,
+python3 test/test-canvas-diff.py        # 61 tests for scripts/idstack-canvas-diff on the fixtures in test/fixtures/canvas/ with a fake curl: each state,
                                         # every request a GET, the token only on stdin (smoke-test also runs them)
 python3 test/test-report-section.py     # 57 tests for scripts/idstack-report-section: init, check, append, approve, finish (smoke-test also runs them)
-python3 test/test-moodle-import.py      # 27 tests for scripts/idstack-moodle-import against a fake Moodle that sends the responses
+python3 test/test-moodle-import.py      # 29 tests for scripts/idstack-moodle-import against a fake Moodle that sends the responses
                                         # recorded from Moodle 4.5 in test/fixtures/moodle/ (see its README). smoke-test also runs them
 python3 test/check-evidence-cards.py . # Verifies landing page evidence cards match evidence/references.md: titles, data-tiers,
                                        # the aria-label shares and tier ranges. Fails on a card that shows a number of studies

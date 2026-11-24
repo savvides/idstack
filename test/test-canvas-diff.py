@@ -647,6 +647,20 @@ class CanvasDiff(unittest.TestCase):
         r = self.run_tool('diff', 'proposal.json')
         self.assertEqual(r.returncode, 0, r.stdout)
 
+    def test_url_with_a_user_name_is_not_sent(self):
+        # curl sends https://canvas.example.edu@evil.example to evil.example, with the token.
+        for base in ('https://canvas.example.edu@evil.example',
+                     'https://user:secret@canvas.example.edu',
+                     'https://%s@evil.example' % TOKEN,
+                     'https://canvas.example.edu%2F@evil.example'):
+            self.write('.idstack/canvas.env', "CANVAS_BASE_URL='%s'\nCANVAS_COURSE_ID='42'\n"
+                       "CANVAS_TOKEN='%s'\n" % (base, TOKEN))
+            r = self.run_tool('snapshot')
+            self.assertEqual(r.returncode, 2, r.stdout)
+            self.assertIn('CANVAS_URL_NOT_HTTPS', r.stdout)
+            self.assertNotIn(TOKEN, r.stdout)
+            self.assertEqual(self.calls(), [], base)
+
     def test_more_bad_settings(self):
         for env in ("CANVAS_BASE_URL='%s'\nCANVAS_COURSE_ID='42'\nCANVAS_TOKEN='a\\b'\n" % BASE,
                     "CANVAS_BASE_URL='%s#x'\nCANVAS_COURSE_ID='42'\nCANVAS_TOKEN='t'\n" % BASE,

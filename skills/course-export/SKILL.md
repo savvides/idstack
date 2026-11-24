@@ -263,7 +263,7 @@ if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
   python3 -c "
 import json, sys
 try:
-    data = json.load(open('.idstack/project.json'))
+    data = json.load(open('.idstack/project.json', encoding='utf-8'))
     prefs = data.get('preferences') or {}
     v = prefs.get('verbosity', 'normal')
     if v in ('concise', 'detailed'):
@@ -1037,7 +1037,9 @@ First, make the staging folder. Replace `<export folder>` with the folder from
 the "Course export folder:" line, then run the command:
 
 ```bash
-_EXPORT_DIR="<export folder>"
+IFS= read -r _EXPORT_DIR <<'IDSTACK_EXPORT_DIR'
+<export folder>
+IDSTACK_EXPORT_DIR
 _STAGE="$_EXPORT_DIR/.imscc-staging"
 rm -rf "$_STAGE"
 mkdir -p "$_STAGE/modules" "$_STAGE/assignments" "$_STAGE/quizzes" "$_STAGE/discussions"
@@ -1059,7 +1061,9 @@ before you make the package.
 Then make the package. Replace `<export folder>` again, then run the command:
 
 ```bash
-_EXPORT_DIR="<export folder>"
+IFS= read -r _EXPORT_DIR <<'IDSTACK_EXPORT_DIR'
+<export folder>
+IDSTACK_EXPORT_DIR
 _STAGE="$_EXPORT_DIR/.imscc-staging"
 _OUT="$(cd "$_EXPORT_DIR" && pwd)/course-export.imscc"
 [ -f "$_STAGE/imsmanifest.xml" ] || { echo "PACKAGE_FAILED: $_STAGE/imsmanifest.xml is missing"; exit 1; }
@@ -1082,7 +1086,9 @@ Replace `<export folder>` with the folder from the "Course export folder:" line,
 then run the command:
 
 ```bash
-_EXPORT_DIR="<export folder>"
+IFS= read -r _EXPORT_DIR <<'IDSTACK_EXPORT_DIR'
+<export folder>
+IDSTACK_EXPORT_DIR
 # Verify it's a valid zip
 file "$_EXPORT_DIR/course-export.imscc"
 # List contents
@@ -1296,7 +1302,10 @@ For each module page (content, syllabus), write the page title to
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 [ -f .idstack/canvas-push/title.txt ] && [ -f .idstack/canvas-push/body.html ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-MODULE_ID=<module id printed in B4>
+IFS= read -r MODULE_ID <<'IDSTACK_MODULE_ID'
+<module id printed in B4>
+IDSTACK_MODULE_ID
+case "$MODULE_ID" in ''|*[!0-9]*) echo "PUSH_VALUE_BAD: module id $MODULE_ID"; rm -rf .idstack/canvas-push; exit 1 ;; esac
 _CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
   _WHAT=$1; shift
   RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
@@ -1353,7 +1362,10 @@ assignment. Then run:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 [ -f .idstack/canvas-push/title.txt ] && [ -f .idstack/canvas-push/body.html ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-MODULE_ID=<module id printed in B4>
+IFS= read -r MODULE_ID <<'IDSTACK_MODULE_ID'
+<module id printed in B4>
+IDSTACK_MODULE_ID
+case "$MODULE_ID" in ''|*[!0-9]*) echo "PUSH_VALUE_BAD: module id $MODULE_ID"; rm -rf .idstack/canvas-push; exit 1 ;; esac
 IFS= read -r _POINTS <<'IDSTACK_POINTS'
 <points>
 IDSTACK_POINTS
@@ -1418,7 +1430,10 @@ and the HTML discussion prompt to `.idstack/canvas-push/body.html`. Then run:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
 [ -f .idstack/canvas-push/title.txt ] && [ -f .idstack/canvas-push/body.html ] || { echo "PUSH_FILE_MISSING"; rm -rf .idstack/canvas-push; exit 1; }
-MODULE_ID=<module id printed in B4>
+IFS= read -r MODULE_ID <<'IDSTACK_MODULE_ID'
+<module id printed in B4>
+IDSTACK_MODULE_ID
+case "$MODULE_ID" in ''|*[!0-9]*) echo "PUSH_VALUE_BAD: module id $MODULE_ID"; rm -rf .idstack/canvas-push; exit 1 ;; esac
 _CALL() { # _CALL <item> <curl args>: sets HTTP_CODE and BODY. A curl error or a code that is not 2xx stops the push.
   _WHAT=$1; shift
   RESPONSE=$(printf 'header = "Authorization: Bearer %s"\nproto = "=https"\n' "$CANVAS_TOKEN" | curl -K - -s --max-time 60 -w "\n%{http_code}" "$@" 2>&1); _RC=$?
@@ -1470,8 +1485,8 @@ echo "TOPIC_ID=$TOPIC_ID"
 Each block in B4 to B7 stops at the first call that fails. It prints
 `PUSH_FAILED: <item>: <reason>`, and it deletes `.idstack/canvas-push/`. The
 reason is `HTTP <code>`, "Canvas did not answer in 60 seconds" (a timeout) or
-`curl error <number>`. A block also stops with `PUSH_VALUE_BAD` when `<position>`
-or `<points>` is not a number. Give the correct number and run the block again.
+`curl error <number>`. A block also stops with `PUSH_VALUE_BAD` when `<position>`,
+`<points>` or the module id is not a number. Give the correct number and run the block again.
 
 Do not run the next block for an item that has a `PUSH_FAILED` line. Handle these
 cases:
@@ -1529,7 +1544,9 @@ Replace `<export folder>` with the folder from the "Course export folder:" line,
 then run the command:
 
 ```bash
-_EXPORT_DIR="<export folder>"
+IFS= read -r _EXPORT_DIR <<'IDSTACK_EXPORT_DIR'
+<export folder>
+IDSTACK_EXPORT_DIR
 _STAGE="$_EXPORT_DIR/.scorm-staging"
 rm -rf "$_STAGE"
 mkdir -p "$_STAGE/content"
@@ -1621,7 +1638,9 @@ Replace `<export folder>` with the folder from the "Course export folder:" line,
 then run the command:
 
 ```bash
-_EXPORT_DIR="<export folder>"
+IFS= read -r _EXPORT_DIR <<'IDSTACK_EXPORT_DIR'
+<export folder>
+IDSTACK_EXPORT_DIR
 _STAGE="$_EXPORT_DIR/.scorm-staging"
 _OUT="$(cd "$_EXPORT_DIR" && pwd)/scorm-export.zip"
 [ -f "$_STAGE/imsmanifest.xml" ] || { echo "PACKAGE_FAILED: $_STAGE/imsmanifest.xml is missing"; exit 1; }
@@ -1642,7 +1661,9 @@ for `scorm-export.zip` and the status "failed: <error>". Then do the last Step R
 Replace `<export folder>` again, then run the command:
 
 ```bash
-_EXPORT_DIR="<export folder>"
+IFS= read -r _EXPORT_DIR <<'IDSTACK_EXPORT_DIR'
+<export folder>
+IDSTACK_EXPORT_DIR
 file "$_EXPORT_DIR/scorm-export.zip"
 unzip -l "$_EXPORT_DIR/scorm-export.zip" | head -20
 echo "Total files: $(unzip -Z1 "$_EXPORT_DIR/scorm-export.zip" | grep -vc '/$')"
@@ -1665,7 +1686,11 @@ module) and the number of files. Keep the package path
 Replace `<export folder>` again, then run the command:
 
 ```bash
-rm -rf "<export folder>/.scorm-staging"
+# Remove the SCORM staging folder.
+IFS= read -r _EXPORT_DIR <<'IDSTACK_EXPORT_DIR'
+<export folder>
+IDSTACK_EXPORT_DIR
+rm -rf "$_EXPORT_DIR/.scorm-staging"
 ```
 
 ---
