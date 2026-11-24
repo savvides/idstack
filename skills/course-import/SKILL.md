@@ -264,7 +264,7 @@ if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
   python3 -c "
 import json, sys
 try:
-    data = json.load(open('.idstack/project.json'))
+    data = json.load(open('.idstack/project.json', encoding='utf-8'))
     prefs = data.get('preferences') or {}
     v = prefs.get('verbosity', 'normal')
     if v in ('concise', 'detailed'):
@@ -609,7 +609,7 @@ in the "Step 6: Write Manifest" section uses it, so that you do not write over a
 another session made in the meantime.
 
 ```bash
-python3 -c 'import json; print("MANIFEST_UPDATED: " + json.load(open(".idstack/project.json")).get("updated", ""))' 2>/dev/null || echo "MANIFEST_UPDATED: "
+python3 -c 'import json; print("MANIFEST_UPDATED: " + json.load(open(".idstack/project.json", encoding="utf-8")).get("updated", ""))' 2>/dev/null || echo "MANIFEST_UPDATED: "
 ```
 
 - If `needs_analysis` has data from /idstack:needs-analysis: note it. You will PRESERVE
@@ -702,7 +702,9 @@ from your LMS again." Then delete the extracted files and stop.
 ### A3. Find and read the manifest
 
 ```bash
-IMPORT_DIR=<IMPORT_DIR printed above>
+IFS= read -r IMPORT_DIR <<'IDSTACK_IMPORT_DIR'
+<IMPORT_DIR printed above>
+IDSTACK_IMPORT_DIR
 if [ -f "$IMPORT_DIR/imsmanifest.xml" ]; then
   echo "MANIFEST_FOUND"
 else
@@ -716,13 +718,19 @@ a Common Cartridge export? Export the course from your LMS again." Then delete t
 extracted files and stop:
 
 ```bash
-rm -rf "<IMPORT_DIR printed above>"
+# Remove the extracted cartridge.
+IFS= read -r IMPORT_DIR <<'IDSTACK_IMPORT_DIR'
+<IMPORT_DIR printed above>
+IDSTACK_IMPORT_DIR
+rm -rf "$IMPORT_DIR"
 ```
 
 Read the manifest XML:
 
 ```bash
-IMPORT_DIR=<IMPORT_DIR printed above>
+IFS= read -r IMPORT_DIR <<'IDSTACK_IMPORT_DIR'
+<IMPORT_DIR printed above>
+IDSTACK_IMPORT_DIR
 cat "$IMPORT_DIR/imsmanifest.xml"
 ```
 
@@ -756,7 +764,9 @@ Extract from the XML:
 Read resource files for additional detail when the manifest references them:
 
 ```bash
-IMPORT_DIR=<IMPORT_DIR printed above>
+IFS= read -r IMPORT_DIR <<'IDSTACK_IMPORT_DIR'
+<IMPORT_DIR printed above>
+IDSTACK_IMPORT_DIR
 # Read assignment details, quiz content, etc.
 find "$IMPORT_DIR" -name '*.xml' | sort | head -20
 ```
@@ -776,7 +786,9 @@ descriptions. Prioritize assignments and quizzes over static content.
 After extracting all needed data:
 
 ```bash
-IMPORT_DIR=<IMPORT_DIR printed above>
+IFS= read -r IMPORT_DIR <<'IDSTACK_IMPORT_DIR'
+<IMPORT_DIR printed above>
+IDSTACK_IMPORT_DIR
 rm -rf "$IMPORT_DIR"
 ```
 
@@ -1049,12 +1061,17 @@ proto = "=https"
 For each outcome group found, fetch individual outcomes:
 ```bash
 . ./.idstack/canvas.env || { echo "CANVAS_ENV_MISSING"; exit 1; }
-GROUP_ID=<outcome group id from the response above>
+IFS= read -r GROUP_ID <<'IDSTACK_GROUP_ID'
+<outcome group id from the response above>
+IDSTACK_GROUP_ID
+case "$GROUP_ID" in ''|*[!0-9]*) echo "GROUP_ID_BAD: $GROUP_ID"; exit 1 ;; esac
 printf 'header = "Authorization: Bearer %s"
 proto = "=https"
 ' "$CANVAS_TOKEN" | curl -K - -s \
   "$CANVAS_BASE_URL/api/v1/courses/$CANVAS_COURSE_ID/outcome_groups/$GROUP_ID/outcomes?per_page=50"
 ```
+
+If the output starts with `GROUP_ID_BAD`, the group id is not a number. Skip that group. Do not put the id in the chat.
 
 **Pagination:** Each call reads only the first page of results (a maximum of 50
 items for each endpoint). The commands do not show response headers, so idstack does
@@ -1132,7 +1149,9 @@ from your authoring tool again." Then delete the extracted files and stop.
 ### E3. Find and read the manifest
 
 ```bash
-IMPORT_DIR=<IMPORT_DIR printed above>
+IFS= read -r IMPORT_DIR <<'IDSTACK_IMPORT_DIR'
+<IMPORT_DIR printed above>
+IDSTACK_IMPORT_DIR
 if [ -f "$IMPORT_DIR/imsmanifest.xml" ]; then
   echo "SCORM_MANIFEST_FOUND"
   cat "$IMPORT_DIR/imsmanifest.xml"
@@ -1171,7 +1190,9 @@ From `imsmanifest.xml`, extract:
 - Read the HTML content of SCO launch files to extract learning content:
 
 ```bash
-IMPORT_DIR=<IMPORT_DIR printed above>
+IFS= read -r IMPORT_DIR <<'IDSTACK_IMPORT_DIR'
+<IMPORT_DIR printed above>
+IDSTACK_IMPORT_DIR
 # For each SCO resource, read its launch file.
 # Put one SCO launch href on each line of SCO_HREFS.
 IFS= read -r -d '' SCO_HREFS <<'IDSTACK_SCO_HREFS' || true
@@ -1219,7 +1240,9 @@ file. Rise packages use a flat structure with a single SCO.
 ### E7. Cleanup
 
 ```bash
-IMPORT_DIR=<IMPORT_DIR printed above>
+IFS= read -r IMPORT_DIR <<'IDSTACK_IMPORT_DIR'
+<IMPORT_DIR printed above>
+IDSTACK_IMPORT_DIR
 rm -rf "$IMPORT_DIR"
 ```
 

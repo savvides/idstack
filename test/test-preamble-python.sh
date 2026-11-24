@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Executes the Context Recovery bash block from templates/preamble.md against a
-# fixture timeline, on THIS machine's python3. The block runs
-# scripts/idstack-status --context, which holds the Python. The block swallows
-# errors with `2>/dev/null || true`, so a SyntaxError there surfaces as empty
-# output rather than a crash — the positive assertions below are what catch it.
-# (A same-type-quote f-string once broke the whole block on every Python < 3.12
+# Executes preamble bash blocks that run Python, on THIS machine's python3.
+# Context Recovery runs scripts/idstack-status --context. The Preferences block
+# runs an inline python3 -c. Both swallow errors (`2>/dev/null` and, in the
+# preferences block, `except Exception: pass`), so a failure surfaces as empty output
+# rather than a crash — the positive assertions below are what catch it.
+# (A same-type-quote f-string once broke Context Recovery on every Python < 3.12
 # and no test noticed; this suite exists so that class of failure can't ship.)
 #
 # Run from the repo root or via smoke-test.sh; CI runs it on Python 3.9 and 3.12.
@@ -66,6 +66,36 @@ OUT2=$(cd "$WORK/proj2" && bash "$WORK/block.sh" 2>&1 || true)
 
 check "import-first project gets SUGGESTED_NEXT: learning-objectives" \
   "echo \"\$OUT2\" | grep -qF 'SUGGESTED_NEXT: learning-objectives'"
+
+# Preferences: open() with no encoding uses the locale. LC_ALL=C and
+# PYTHONUTF8=0 make that encoding ASCII. A UTF-8 course name then raises
+# UnicodeDecodeError, and the block hides it (except Exception: pass, 2>/dev/null),
+# so the known preference lines never print.
+awk '
+  /^## Preamble: Preferences/{s=1}
+  s && /^```bash$/{f=1; next}
+  f && /^```$/{exit}
+  f' "$IDSTACK_DIR/templates/preamble.md" > "$WORK/prefs-block.sh"
+check "extracted a non-empty preferences block" "[ -s '$WORK/prefs-block.sh' ]"
+
+mkdir -p "$WORK/prefs/.idstack"
+python3 - "$WORK/prefs/.idstack/project.json" <<'PY'
+import sys
+open(sys.argv[1], "wb").write(
+    '{"project_name":"Caf\u00e9","preferences":{"verbosity":"concise","export_format":"scorm","preferred_lms":"moodle","auto_advance_pipeline":true}}'.encode("utf-8"))
+PY
+
+OUTP=$(cd "$WORK/prefs" && LC_ALL=C PYTHONUTF8=0 bash "$WORK/prefs-block.sh" 2>&1 || true)
+OUTP=$(printf '%s\n' "$OUTP" | tr -d '\r')
+
+check "preferences survive a non-ASCII manifest when the locale is ASCII" \
+  "printf '%s\n' \"\$OUTP\" | grep -qx 'VERBOSITY:concise'"
+check "export format survives a non-ASCII manifest when the locale is ASCII" \
+  "printf '%s\n' \"\$OUTP\" | grep -qx 'EXPORT_FORMAT:scorm'"
+check "preferred LMS survives a non-ASCII manifest when the locale is ASCII" \
+  "printf '%s\n' \"\$OUTP\" | grep -qx 'PREFERRED_LMS:moodle'"
+check "auto-advance survives a non-ASCII manifest when the locale is ASCII" \
+  "printf '%s\n' \"\$OUTP\" | grep -qx 'AUTO_ADVANCE:true'"
 
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

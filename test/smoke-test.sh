@@ -211,6 +211,9 @@ check "idstack-slugify --from-manifest on a missing manifest → untitled-course
 rm -rf "$SLUG_TMP"
 check "no skill template reads project_name with inline Python" \
   "! grep -l \"get('project_name'\" $IDSTACK_DIR/skills/*/SKILL.md.tmpl | grep -q ."
+# Without an encoding, open() uses the locale: a non-ASCII course name breaks the read.
+check "every inline manifest read names encoding utf-8" \
+  "! grep -nE 'open\\([\"'\\'']\\.idstack/project\\.json[\"'\\'']\\)' $IDSTACK_DIR/templates/preamble.md $IDSTACK_DIR/skills/*/SKILL.md.tmpl | grep -q ."
 check "idstack-slugify: implicit stdin pipeline" \
   "[ \"\$(echo 'Course via Implicit Stdin' | '$IDSTACK_DIR/scripts/idstack-slugify')\" = 'course-via-implicit-stdin' ]"
 check "idstack-slugify: explicit dash stdin pipeline" \
@@ -376,6 +379,19 @@ RESOLVE_SIM_GOT=$({ awk '/^_IDSTACK=""$/{f=1} f{print} f && /^done$/{exit}' "$ID
 check "an empty skill folder token does not resolve to the disk root" "[ -z '$RESOLVE_SIM_GOT' ]"
 rm -rf "$RESOLVE_SIM"
 check "no resolve chain gives the plugin root a default" "! grep -rlF '\${CLAUDE_PLUGIN_ROOT:-' '$IDSTACK_DIR/templates' $IDSTACK_DIR/skills/*/SKILL.md.tmpl $IDSTACK_DIR/skills/*/SKILL.md"
+# A path or id that the model pastes into the next shell must not be shell source.
+# course-import and course-export left these in the script text. A value with
+# $( ) then runs as a command. The blocks read the value with a quoted heredoc.
+check "course-import does not paste the import directory into shell source" \
+  "! grep -qE 'IMPORT_DIR=<|rm -rf \"<IMPORT_DIR' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl'"
+check "course-import does not paste the outcome group id into shell source" \
+  "! grep -qF 'GROUP_ID=<' '$IDSTACK_DIR/skills/course-import/SKILL.md.tmpl'"
+check "course-export does not paste the export folder into a quoted assignment" \
+  "! grep -qF '_EXPORT_DIR=\"<export folder>\"' '$IDSTACK_DIR/skills/course-export/SKILL.md.tmpl'"
+check "course-export does not paste the export folder into a quoted rm" \
+  "! grep -qF 'rm -rf \"<export folder>' '$IDSTACK_DIR/skills/course-export/SKILL.md.tmpl'"
+check "course-export does not paste the module id into shell source" \
+  "! grep -qF 'MODULE_ID=<' '$IDSTACK_DIR/skills/course-export/SKILL.md.tmpl'"
 
 # Pipeline orchestrator must produce index.md under the course folder.
 # Use -E (extended regex) so the `|` alternation works under BSD grep too;

@@ -16,6 +16,8 @@
 
 ### Fixed
 
+- **Skills read the manifest as UTF-8.** Before, four inline reads of `.idstack/project.json` used the encoding of the locale. If that encoding could not hold the course name, the read failed and the skill showed no error. The preamble then ignored `verbosity`, `export_format`, `preferred_lms` and `auto_advance_pipeline`. `/idstack:start` said that a valid manifest was not valid. `/idstack:course-import` and `/idstack:assessment-design` did not get the `updated` time, so the merge did not use `--expect-updated`.
+- **`/idstack:course-import` and `/idstack:course-export` read pasted paths and ids with a quoted heredoc (#220).** Before, the import folder, the export folder, the Canvas module id and the Canvas outcome group id went into the shell text, so a value with `$( )` ran as a command. A module id or group id that is not a number now stops with `PUSH_VALUE_BAD` or `GROUP_ID_BAD` before curl starts.
 - **`scripts/idstack-canvas-diff` does not send the token to a different host.** A Canvas URL with a user name, such as `https://canvas.example.edu@other.example`, is an `https://` address, and curl connects to the host after `@`. The script now stops with `CANVAS_URL_NOT_HTTPS` and sends no request.
 - **`scripts/idstack-moodle-import` keeps the token off a proxy when the scheme is `HTTP://`.** Before, only a lowercase `http://` address skipped the proxy. `HTTP://127.0.0.1` sent the token to the proxy as clear text. Any letter case now skips the proxy for a Moodle on this computer.
 - **A Moodle redirect message does not contain the token.** When the redirect address contains the token, the message shows `[token]`.
