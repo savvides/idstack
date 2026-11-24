@@ -734,7 +734,7 @@ if [ ! -x "$_IDSTACK/scripts/idstack-ste-check" ]; then echo "STE_CHECK_MISSING:
 
 1. If the output is `STE_CHECK_UNAVAILABLE` or starts with `STE_CHECK_MISSING:`, do step 5 or step 6 of "How to use the standard" in the preamble. Continue the export.
 2. If the checker shows no problems, continue the export.
-3. If the checker shows problems, tell the user only the number of problems and the files with problems. Then use AskUserQuestion with two alternatives: "Continue the export" and "Stop the export to correct the content".
+3. If the checker shows problems, tell the user only the number of problems and the files with problems. Then use AskUserQuestion. Ask: "The writing check found problems. Do you want to continue the export?" The options and their descriptions are "Continue the export" ("Make the package with the current text") and "Stop the export to correct the content" ("Stop now so you can correct the files").
 4. If the user selects "Stop the export to correct the content", do the last Step Review (see "Generate Export Report"), with its append and approve commands. In the Summary, tell that the export stopped before the package because the course content has writing problems. Do not write a Top recommendations section. Then run the finish command and stop this skill. Tell the user to correct the files in `.idstack/course-content/` and then run `/idstack:course-export` again.
 5. If the checker shows an error, tell the user which files the checker did not read. Then continue with the steps above for the problems that it shows.
 
@@ -1116,14 +1116,10 @@ idstack keeps your Canvas details in `.idstack/canvas.env`. Each Bash call
 runs in a new shell, so each API command reads this file again. Your token
 does not go into the chat.
 
-Ask the user in plain chat (not AskUserQuestion, because the answers are free
-text) for two items:
+Ask one question at a time in plain chat, and stop for the answer. Do not use AskUserQuestion, because the answers are free text. Do not ask for both values in one message.
 
-1. **Canvas URL** — Your institution's Canvas address
-   (for example, `https://canvas.university.edu`)
-2. **Course ID** — The number in the URL when you open the course
-   (for example, `https://canvas.university.edu/courses/12345` → course ID is `12345`)
-   Use an existing empty course shell, or create a new course first in Canvas.
+1. **Canvas URL** — "What is your institution's Canvas address?" For example, `https://canvas.university.edu`.
+2. **Course ID** — "What is the course ID?" It is the number in the URL when you open the course. For example, `https://canvas.university.edu/courses/12345` means the course ID is `12345`. Use an existing empty course shell, or create a new course first in Canvas.
 
 Do NOT ask for the access token in the chat. If the user pastes a token in the
 chat, tell them to revoke it in Canvas and make a new one.

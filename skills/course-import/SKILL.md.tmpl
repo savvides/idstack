@@ -379,13 +379,10 @@ idstack keeps your Canvas details in `.idstack/canvas.env`. Each Bash call
 runs in a new shell, so each API command reads this file again. Your token
 does not go into the chat.
 
-Ask the user in plain chat (not AskUserQuestion, because the answers are free
-text) for two items:
+Ask one question at a time in plain chat, and stop for the answer. Do not use AskUserQuestion, because the answers are free text. Do not ask for both values in one message.
 
-1. **Canvas URL** — Your institution's Canvas address
-   (for example, `https://canvas.university.edu`)
-2. **Course ID** — The number in the URL when you open the course
-   (for example, `https://canvas.university.edu/courses/12345` → course ID is `12345`)
+1. **Canvas URL** — "What is your institution's Canvas address?" For example, `https://canvas.university.edu`.
+2. **Course ID** — "What is the course ID?" It is the number in the URL when you open the course. For example, `https://canvas.university.edu/courses/12345` means the course ID is `12345`.
 
 Do NOT ask for the access token in the chat. If the user pastes a token in the
 chat, tell them to revoke it in Canvas and make a new one.
@@ -719,13 +716,10 @@ Continue to Step 1b (Prepare the report).
 idstack keeps your Moodle details in `.idstack/moodle.env`. The import reads
 this file each time. Your token does not go into the chat.
 
-Ask the user in plain chat (not AskUserQuestion, because the answers are free
-text) for two items:
+Ask one question at a time in plain chat, and stop for the answer. Do not use AskUserQuestion, because the answers are free text. Do not ask for both values in one message.
 
-1. **Moodle address** — The address of your Moodle home page
-   (for example, `https://moodle.university.edu` or `https://university.edu/moodle`)
-2. **Course ID** — The number after `id=` in the address of the course page
-   (for example, `https://moodle.university.edu/course/view.php?id=123` → course ID is `123`)
+1. **Moodle address** — "What is the address of your Moodle home page?" For example, `https://moodle.university.edu` or `https://university.edu/moodle`.
+2. **Course ID** — "What is the course ID?" It is the number after `id=` in the address of the course page. For example, `https://moodle.university.edu/course/view.php?id=123` means the course ID is `123`.
 
 Do NOT ask for the token in the chat. If the user pastes a token in the chat,
 tell them to reset it in Moodle (Preferences → Security keys → Reset) and to

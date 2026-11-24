@@ -138,11 +138,7 @@ Common gaps and their impact:
 
 **Condition:** No `.idstack/project.json` found.
 
-Tell the user: "No project manifest found. Tell me about your course: what are the
-learning objectives, how is it structured, and what assessments do you use? Or point
-me to a syllabus file."
-
-Also look for course files in the working directory:
+First, look for course files in the working directory:
 
 ```bash
 _FILES=$(find . -maxdepth 1 -type f \( -name '*.md' -o -name '*.docx' -o -name '*.pdf' -o -name '*.txt' -o -name 'syllabus*' -o -name 'outline*' -o -name 'course*' \) | sort)
@@ -150,7 +146,10 @@ if [ -n "$_FILES" ]; then echo "$_FILES"; else echo "NO_COURSE_FILES"; fi
 ```
 
 If you find a syllabus or course outline, read it and use it as the basis for review.
-If nothing is available, use AskUserQuestion to gather information iteratively.
+
+If you find no syllabus or outline, tell the user one question, and stop for the answer: "No project manifest found. Give the path of a syllabus file, or paste the learning objectives."
+
+If the user pastes objectives, ask how the course is structured, and stop for the answer. Then ask what assessments the course uses, and stop for the answer.
 
 ---
 
@@ -211,7 +210,7 @@ For EACH of the 8 QM general standards, evaluate and assign a status with specif
 findings. Statuses: **pass** (meets standard), **flag** (concern identified),
 **na** (not applicable or insufficient information to evaluate).
 
-Ask targeted questions when evidence is insufficient. Use manifest data when available.
+Ask one question at a time when evidence is insufficient, and stop for the answer. Use manifest data when available.
 
 ### Standard 1: Course Overview and Introduction
 
@@ -442,13 +441,11 @@ available. Flag any `gaps` already identified there.
 
 ### If No Alignment Data Available
 
-Ask the user targeted questions:
+Ask one question at a time in plain chat, and stop for the answer. Do not ask the next question until the user answers.
 
-1. "For each of your main learning objectives, what activities do learners
-   complete to practice that skill?"
-2. "How is each objective assessed? What does the learner produce or
-   demonstrate?"
-3. "Do you teach objectives that you do not formally assess?"
+1. "What activities do learners complete to practice each main learning objective?"
+2. "What does the learner produce to show each objective?"
+3. "Do you teach objectives that you do not assess?"
 
 Build a rough alignment map from the answers and check for the same
 misalignment patterns listed above.
