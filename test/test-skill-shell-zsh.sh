@@ -592,10 +592,11 @@ MD
       "[ ! -e '$P/mode2-$s/pwned' ] && grep -rq 'mode: Mode 2\$' '$P/mode2-$s/.idstack/exports'"
   done
 
-  # The merge in course-import and assessment-design passes the manifest stamp
-  # that the skill noted before. The stub below stands in for the real
-  # --expect-updated flag, which the scripts change adds: this tests the skill
-  # text and its shell only. The stub logs its arguments and exits with $STUB_RC.
+  # The merge in course-import, assessment-design, needs-analysis and
+  # learning-objectives passes the manifest stamp that the skill noted before.
+  # The stub below stands in for the real --expect-updated flag, which the
+  # scripts change adds: this tests the skill text and its shell only. The stub
+  # logs its arguments and exits with $STUB_RC.
   mkdir -p "$WORK/stub/scripts"
   cat > "$WORK/stub/scripts/idstack-manifest-merge" <<'EOF'
 #!/bin/sh
@@ -606,8 +607,8 @@ EOF
   chmod +x "$WORK/stub/scripts/"*
   mkdir -p "$P/stamp/.idstack"
   echo '{"updated":"2026-11-13T10:00:00Z"}' > "$P/stamp/.idstack/project.json"
-  for s in course-import assessment-design; do
-    if [ $s = course-import ]; then pn='<project name>=Bio 101'; else pn=; fi
+  for s in course-import assessment-design needs-analysis learning-objectives; do
+    if [ $s = course-import ] || [ $s = needs-analysis ]; then pn='<project name>=Bio 101'; else pn=; fi
     out=$(run "$P/stamp" "$(block $s 'MANIFEST_UPDATED')")
     check "[$sh] $s prints the manifest stamp" \
       "printf '%s\n' \"\$out\" | grep -qx 'MANIFEST_UPDATED: 2026-11-13T10:00:00Z'"
