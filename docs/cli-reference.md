@@ -390,7 +390,7 @@ The path in `REPORT_KEPT:` is relative to the current folder. A second finished 
 `check` refuses a draft for these problems:
 
 - Structure: a `# ` title, a `### Finding` block, a `---` line, text before the first `## `, or text that only the script writes (the in-progress or stopped status line, a placeholder or a draft mark). Also an empty or repeated section, or a section with no table (Summary, Limitations and Next steps can have no table).
-- Tables: the first column is not `ID`, no rows, a wrong number of cells or a repeated ID. Outside the fact sections, the last columns must be `Justification | Evidence`, with a justification in each row.
+- Tables: the first column is not `ID`, no rows, a wrong number of cells or a repeated ID. Outside the fact sections, the last columns must be `Justification | Evidence`, with a justification in each row. Only a `\|` is not a new column. As in GitHub Markdown, a pipe inside `` `code` `` is a new column, so write it as `\|`.
 - Evidence: text other than citations, a code that is not in `evidence/references.md`, or a different tier.
 - Findings: a severity other than `critical`, `warning` or `info`, or rows that are not in that sequence.
 - Writing: a problem from `idstack-ste-check --format markdown`.
@@ -401,7 +401,7 @@ The fact sections are Project context, Course information, Imported structure, R
 |------|---------|
 | 0 | Done |
 | 1 | `check` or `append` found problems, `approve` found no draft, or `finish` found a placeholder or a draft. The problems go to stdout, and the report does not change. |
-| 2 | No subcommand, a bad argument, or a `<placeholder>` left in `--title`, `--project` or `--mode`. Also: a missing draft, a missing or empty `evidence/references.md`, or `idstack-ste-check` did not run. |
+| 2 | No subcommand, a bad argument, or a `<placeholder>` left in `--title`, `--project` or `--mode`. Also a line break in `--title`, `--project`, `--mode`, `--skill`, `--run-id`, `--reserve` or `project_name` (the report does not change). Also: a missing draft, a missing or empty `evidence/references.md`, or `idstack-ste-check` did not run. |
 | 3 | The report does not exist (`append`, `approve`, `finish`) |
 | 4 | A write error. stdout gets `REPORT_WRITE_FAILED: <error>`, and the report does not change. |
 

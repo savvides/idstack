@@ -57,8 +57,11 @@ def check_evidence(cell, refs):
                 problems.append("[%s] is %s in evidence/references.md, not %s."
                                 % (code, refs[code], tier))
         tiers.append(tier)
+    # A group with two tiers is already a problem. When the cell is only
+    # citations, do not also say that it has other text.
     if not tiers or text[pos:].strip(" ,"):
-        problems.append('the Evidence cell must have only citations, for example '
-                        '"[Assessment-8] [T1]". It has "%s".' % text)
+        if text[pos:].strip(" ,") or not problems:
+            problems.append('the Evidence cell must have only citations, for example '
+                            '"[Assessment-8] [T1]". It has "%s".' % text)
         return problems, None
     return problems, min(tiers)
