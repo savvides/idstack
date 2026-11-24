@@ -93,7 +93,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 def opener(url):
     # Plain http is only for this computer: a proxy would get the token as clear text.
-    if url.startswith('http://'):
+    # urlsplit lowercases the scheme, so HTTP:// cannot skip this check.
+    if urllib.parse.urlsplit(url).scheme == 'http':
         return urllib.request.build_opener(NoRedirect, urllib.request.ProxyHandler({}))
     return urllib.request.build_opener(NoRedirect)
 
@@ -113,7 +114,9 @@ def call(url, token, function, params):
             raw = response.read()
     except urllib.error.HTTPError as e:
         if 300 <= e.code < 400:
-            to = printable(e.headers.get('Location') or 'a different address').split('/webservice/')[0]
+            # The other host already saw the token in the POST body. Do not print it.
+            loc = (e.headers.get('Location') or 'a different address').replace(token, '[token]')
+            to = printable(loc).split('/webservice/')[0]
             fail('MOODLE_REDIRECT', 4, 'Moodle sent a redirect to %s. If that is your Moodle, write '
                  'that address in .idstack/moodle.env.' % to)
         fail('MOODLE_HTTP_ERROR', 4, 'Moodle sent HTTP %d for %s. Make sure that the web services '

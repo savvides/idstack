@@ -106,8 +106,12 @@ def load_settings():
     course = vals.get('CANVAS_COURSE_ID', '')
     token = vals.get('CANVAS_TOKEN', '')
     u = urllib.parse.urlsplit(base)
-    if u.scheme != 'https' or not u.netloc or u.query or u.fragment or re.search(r"[\s'\"\\]", base):
-        raise Stop(2, 'CANVAS_URL_NOT_HTTPS: the Canvas URL in %s must be an https:// address.' % SETTINGS)
+    # A user name changes the host. curl sends https://expected@other.example to other.example.
+    if (u.scheme != 'https' or not u.netloc or u.query or u.fragment
+            or u.username is not None or u.password is not None
+            or re.search(r"[\s'\"\\]", base)):
+        raise Stop(2, 'CANVAS_URL_NOT_HTTPS: the Canvas URL in %s must be an https:// address '
+                      'with no user name, no "?" and no "#".' % SETTINGS)
     if not re.fullmatch(r'[0-9]{1,20}', course):
         raise Stop(2, 'CANVAS_COURSE_ID_BAD: the course ID in %s must be a number.' % SETTINGS)
     if not token:

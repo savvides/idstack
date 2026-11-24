@@ -8,8 +8,9 @@
 # the script writes "NEWER_SCHEMA <version>" to stderr and does not change it.
 # If there is no file, the script writes no output and exits 0.
 # If python3 is not available, the script exits 3 and changes nothing.
-# With --init, if the folder that holds .idstack/ is the home folder, the
-# script makes nothing and exits 9.
+# With --init, if the folder that holds .idstack/ is the home folder, or the
+# manifest's real path is the home profile ~/.idstack/, the script makes
+# nothing and exits 9.
 # If it cannot write the manifest, it writes nothing to stdout, does not
 # change the manifest and exits 1.
 # If you give a flag that it does not know, the script writes
@@ -65,9 +66,11 @@ if [ ! -f "$MANIFEST" ] && [ "$INIT" = "1" ]; then
   if python3 -c "
 import os, sys
 folder = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[1])))
-sys.exit(0 if os.environ.get('HOME') and os.path.realpath(folder) == os.path.realpath(os.environ['HOME']) else 1)
+real_dir = os.path.dirname(os.path.realpath(sys.argv[1]))
+profile = os.path.realpath(os.path.join(os.environ['HOME'], '.idstack')) if os.environ.get('HOME') else ''
+sys.exit(0 if os.environ.get('HOME') and (os.path.realpath(folder) == os.path.realpath(os.environ['HOME']) or os.path.realpath(real_dir) == profile) else 1)
 " "$MANIFEST"; then
-    echo "idstack-migrate: this folder is your home folder. idstack does not make a course manifest here. Go to a course folder, then run the skill again." >&2
+    echo "idstack-migrate: idstack does not make a course manifest in your home folder. Go to a course folder, then run the skill again." >&2
     exit 9
   fi
   mkdir -p "$(dirname "$MANIFEST")"
@@ -226,13 +229,19 @@ def migrate_1_3_to_1_4(data):
     if isinstance(rt, dict):
         # Old shape: red_team_audit.summary.{critical_count, warning_count, info_count}
         # New shape: red_team_audit.findings_summary.{critical, warning, info}
+        # An explicit 0 is a real count, so copy an old count only when the
+        # new key is absent. An all-zero findings_summary is the v1.2 seed,
+        # not real counts, so the old summary replaces it.
         old_summary = rt.pop('summary', None)
         if isinstance(old_summary, dict):
-            fs = rt.setdefault('findings_summary', {'critical': 0, 'warning': 0, 'info': 0})
+            fs = rt.get('findings_summary')
+            real = isinstance(fs, dict) and any(fs.get(k) for k in ('critical', 'warning', 'info'))
+            if not isinstance(fs, dict):
+                fs = rt['findings_summary'] = {'critical': 0, 'warning': 0, 'info': 0}
             for old, new in (('critical_count', 'critical'),
                              ('warning_count',  'warning'),
                              ('info_count',     'info')):
-                if old in old_summary and not fs.get(new):
+                if old in old_summary and (not real or new not in fs):
                     fs[new] = old_summary[old]
         # Add the new optional fields introduced in v1.4 (preserve existing values).
         rt.setdefault('focus', '')

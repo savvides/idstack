@@ -264,7 +264,7 @@ if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
   python3 -c "
 import json, sys
 try:
-    data = json.load(open('.idstack/project.json'))
+    data = json.load(open('.idstack/project.json', encoding='utf-8'))
     prefs = data.get('preferences') or {}
     v = prefs.get('verbosity', 'normal')
     if v in ('concise', 'detailed'):
@@ -567,7 +567,7 @@ in the "Write Manifest" section uses it, so that you do not write over a change 
 another session made in the meantime.
 
 ```bash
-python3 -c 'import json; print("MANIFEST_UPDATED: " + json.load(open(".idstack/project.json")).get("updated", ""))' 2>/dev/null || echo "MANIFEST_UPDATED: "
+python3 -c 'import json; print("MANIFEST_UPDATED: " + json.load(open(".idstack/project.json", encoding="utf-8")).get("updated", ""))' 2>/dev/null || echo "MANIFEST_UPDATED: "
 ```
 
 # Assessment Design — Rubrics, Feedback Strategies & Formative Checkpoints
