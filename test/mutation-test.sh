@@ -2620,7 +2620,7 @@ suite_mutation "migrate --init seed ignores the umask" \
   scripts/idstack-migrate 'os.chmod(tmp, 0o666 & ~umask)' 'pass' test-manifest-merge.sh
 # 70e. merge writes a manifest in the home folder again.
 suite_mutation "merge writes in the home folder" \
-  scripts/idstack-manifest-merge 'os.path.realpath(folder) == os.path.realpath(os.environ["HOME"])' 'False' test-manifest-merge.sh
+  scripts/idstack-manifest-merge 'if manifest_in_home(args.manifest):' 'if False:' test-manifest-merge.sh
 # 70f. migrate --init makes a manifest in the home folder again.
 suite_mutation "migrate --init makes a manifest in the home folder" \
   scripts/idstack-migrate "sys.exit(0 if os.environ.get('HOME')" "sys.exit(1 if os.environ.get('HOME')" test-manifest-merge.sh

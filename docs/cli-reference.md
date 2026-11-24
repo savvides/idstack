@@ -233,7 +233,7 @@ scripts/idstack-migrate [--init] [-h | --help] [path]
 | Option | Effect |
 |--------|--------|
 | `path` | The manifest. Default: `.idstack/project.json`. Only the first path is used. |
-| `--init` | If the manifest is missing, write a v1.0 seed and migrate it. Prints `INITIALIZED <path>` on stderr. The seed has the mode of the umask. If the folder that holds `.idstack/` is the home folder, it makes nothing and exits 9. |
+| `--init` | If the manifest is missing, write a v1.0 seed and migrate it. Prints `INITIALIZED <path>` on stderr. The seed has the mode of the umask. If the folder that holds `.idstack/` is the home folder, or the manifest's real path is the home profile `~/.idstack/`, it makes nothing and exits 9. |
 | `-h`, `--help` | Prints the header comment and exits 0. It wins over an unknown flag in any position. |
 
 | Manifest | Result |
@@ -261,7 +261,7 @@ The write is atomic: a tempfile in the folder of the real file, then a rename. A
 | 1 | The script cannot write the manifest. stdout is empty and the manifest does not change. |
 | 2 | An unknown flag. stderr gets `idstack-migrate: unknown flag: <flag>`. |
 | 3 | python3 is missing |
-| 9 | `--init` in the home folder. Nothing is made. |
+| 9 | `--init` in the home folder, or the manifest's real path is the home profile `~/.idstack/`. Nothing is made. |
 
 ```bash
 $ scripts/idstack-migrate --init
@@ -290,7 +290,7 @@ scripts/idstack-manifest-merge [--create] [--set project_name=<value>] \
 | `--set project_name=<value>` | Sets `project_name`. No other key is accepted. |
 | `--create` | If the manifest is missing, run `idstack-migrate --init` first. |
 | `--manifest <path>` | The manifest. Default: `.idstack/project.json`. |
-| `--expect-updated <ts>` | The `updated` value that the skill read. If the manifest has another value when the merge has its lock, it writes nothing and exits 8. The value has a resolution of one second. |
+| `--expect-updated <ts>` | The `updated` value that the skill read. If the manifest has another value when the merge has its lock, it writes nothing and exits 8. `updated` has microseconds and always moves forward, so a second write in the same second still changes it. With `--create`, a missing manifest is not made when this check fails. |
 | `--quiet` | Prints only errors. |
 | `-h`, `--help` | Prints the argparse help and exits 0. |
 
@@ -298,7 +298,7 @@ The section names are `context`, `needs_analysis`, `learning_objectives`, `asses
 
 The merge replaces each named section. It does not merge the fields inside a section. It keeps all other top-level keys and sets `updated` to the current UTC time. The script examines all input before it writes. The sequence is the section names, the `--set` keys, each payload, then the manifest. A bad payload thus leaves the manifest, or its absence, unchanged.
 
-From its read to its write, the merge holds an exclusive lock on `.idstack/.manifest.lock`. Two merges at the same time thus lose no section. The merge keeps the mode of the manifest. It refuses to write when the folder that holds `.idstack/` is the home folder, because the global profile is in `~/.idstack/`.
+From its read to its write, the merge holds an exclusive lock on `.manifest.lock` in the real directory of the manifest. A symlinked manifest and its target thus share one lock, and two merges at the same time lose no section. The merge keeps the mode of the manifest. It refuses to write when the folder that holds `.idstack/` is the home folder, or when the manifest's real path is the home profile `~/.idstack/`.
 
 | Exit | Meaning |
 |------|---------|
@@ -310,10 +310,10 @@ From its read to its write, the merge holds an exclusive lock on `.idstack/.mani
 | 5 | A payload file is missing |
 | 6 | A read or write error, or `--create` cannot make the manifest |
 | 7 | The manifest version is above the latest version that `idstack-migrate` knows: a newer idstack wrote it. Nothing is written. |
-| 8 | `--expect-updated` does not match the manifest. Nothing is written. |
-| 9 | The folder that holds `.idstack/` is the home folder. Nothing is written. |
+| 8 | `--expect-updated` does not match the manifest. Nothing is written. With `--create`, a missing manifest is not made. |
+| 9 | The folder that holds `.idstack/` is the home folder, or the manifest's real path is the home profile `~/.idstack/`. Nothing is written. |
 
-Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads the payloads, the manifest, and `LATEST_VERSION` in `scripts/idstack-migrate`. Writes the manifest through a tempfile in the folder of the real file and a rename. A symlinked manifest stays a link. It keeps `.manifest.lock` in that folder and lists it in the `.gitignore` there (a write error only gives a warning). Makes `.idstack/.manifest.lock`, which stays after the run.
+Errors go to stderr as `idstack-manifest-merge: error: <message>`. Files: reads the payloads, the manifest, and `LATEST_VERSION` in `scripts/idstack-migrate`. Writes the manifest through a tempfile in the folder of the real file and a rename. A symlinked manifest stays a link. It keeps `.manifest.lock` in that folder and lists it in the `.gitignore` there (a write error only gives a warning). The lock file stays after the run.
 
 ```bash
 $ echo '{"audience":"New teachers"}' > ctx.json
@@ -445,7 +445,7 @@ scripts/idstack-canvas-diff -h | --help
 | `snapshot` | Reads the pages (one GET for each page, for the body), the assignments and the course outcomes. Writes `.idstack/canvas-baseline.json`: for each item, the Canvas ID, title, `updated_at` and a sha256 of each field that a push can change. The file keeps the titles, but no body or description text. Run it right after `/idstack:course-import`. | `BASELINE: .idstack/canvas-baseline.json (<n> items)`, then `BASELINE_PARTIAL: <kind>: ...` for a list that has more pages. `BASELINE_SKIPPED: <n> pages ...` is for pages with a URL name that has a character other than `A-Z`, `a-z`, `0-9`, `_` and `-` |
 | `diff` | Validates the proposal, reads each item that it names, and gives each row one state: `CONFLICT`, `NO BASELINE`, `BLOCKED`, `NOT FOUND`, `CHANGE` or `NO CHANGE`. Writes `.idstack/exports/<course-slug>/canvas-sync-dry-run.md` with a unified diff for each change. | `Report path: <report>`, then the count of each state |
 
-Both subcommands read `CANVAS_BASE_URL`, `CANVAS_COURSE_ID` and `CANVAS_TOKEN` from `.idstack/canvas.env`. A UTF-8 BOM and the spaces at the two ends of a line are ignored. The URL must start with `https://`. curl gets the token on stdin (`curl -K -`), never as an argument. The proposal cannot give a URL: the script makes each URL from a fixed template for `page`, `assignment` or `outcome`, and validates the ID.
+Both subcommands read `CANVAS_BASE_URL`, `CANVAS_COURSE_ID` and `CANVAS_TOKEN` from `.idstack/canvas.env`. A UTF-8 BOM and the spaces at the two ends of a line are ignored. The URL must start with `https://` and must not contain a user name or a password. curl gets the token on stdin (`curl -K -`), never as an argument. The proposal cannot give a URL: the script makes each URL from a fixed template for `page`, `assignment` or `outcome`, and validates the ID.
 
 A `{"file": ...}` source must be in the course folder. In `.idstack/`, the script reads only `course-content/`. It compares the folders by identity, so another case of the name does not get past it. No row, file or objective can contain the token. The script does not examine Canvas text or the course name for the token. curl gets `-q` first, so `~/.curlrc` is not read, and `-g`, so `{a,b}` or `[1-2]` in the URL does not make more requests.
 
@@ -522,7 +522,7 @@ scripts/idstack-moodle-import [--env PATH]
 
 The settings file (default `.idstack/moodle.env`) has three lines: `MOODLE_BASE_URL='https://moodle.example.edu'`, `MOODLE_COURSE_ID='123'` and `MOODLE_TOKEN='<token>'`. The skill writes the first two. You paste the token. The token must have only letters and digits.
 
-The token goes only in the body of each POST request to `<address>/webservice/rest/server.php`. It is never in a URL, on a command line or in the output. The address must use `https`. Plain `http` is accepted only for a Moodle on this computer (`localhost`, `127.0.0.1` or `::1`). A redirect stops the import, so the token does not go to a different address. For plain `http`, the script uses no proxy.
+The token goes only in the body of each POST request to `<address>/webservice/rest/server.php`. It is never in a URL, on a command line or in the output. The address must use `https`. Plain `http` is accepted only for a Moodle on this computer (`localhost`, `127.0.0.1` or `::1`). A redirect stops the import, so the token does not go to a different address. If that address contains the token, the message shows `[token]`. For plain `http`, in any letter case, the script uses no proxy.
 
 The script first calls `core_webservice_get_site_info`, which gives the list of functions that the token can call. Then it calls the functions below that are in the list. It writes each function that is not in the list in `not_available`, and each Moodle error or warning in `errors`. Moodle sends an error with HTTP 200, so the script reads the body. A response that idstack cannot read gives `MOODLE_BAD_RESPONSE`.
 

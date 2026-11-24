@@ -37,8 +37,9 @@ Usage:
               another session wrote in between. Nothing is written (exit 8).
   --quiet     Suppress progress output. Errors still go to stderr.
 
-  The merge holds an exclusive lock (.idstack/.manifest.lock) from its read to
-  its write, so two merges at the same time do not lose a section.
+  The merge holds an exclusive lock (.manifest.lock in the real folder of the
+  manifest) from its read to its write, so two merges at the same time do not
+  lose a section.
 
 Exit codes:
   0  success
@@ -52,8 +53,10 @@ Exit codes:
   6  i/o error
   7  the manifest is from a newer idstack (its version is above the latest
      version that idstack-migrate knows); nothing is written
-  8  --expect-updated does not match the manifest; nothing is written
-  9  the course folder is the home folder; nothing is written
+  8  --expect-updated does not match the manifest; nothing is written.
+     With --create, a missing manifest is not made.
+  9  the course folder is the home folder, or the manifest's real path is the
+     home profile ~/.idstack/; nothing is written
 """
 
 import argparse
@@ -65,7 +68,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 # Windows: a native python3 reads and writes a pipe in the ANSI code page, which breaks non-ASCII text (#136).
 for _stream in (sys.stdin, sys.stdout):
@@ -166,6 +169,42 @@ def lock_exclusive(f):
 def die(code, message):
     print(f"idstack-manifest-merge: error: {message}", file=sys.stderr)
     sys.exit(code)
+
+
+def fresh_updated(previous):
+    """A UTC stamp that is later than previous.
+
+    The stamp has microseconds, so a second write in the same second changes
+    updated and --expect-updated can see it. When the clock does not move past
+    previous (a coarse clock, or a clock set back), the stamp is previous plus
+    one microsecond, so updated never takes an earlier value again.
+    """
+    now = datetime.now(timezone.utc)
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            prev = datetime.strptime(previous, fmt).replace(tzinfo=timezone.utc)
+        except (TypeError, ValueError):
+            continue
+        if now <= prev:
+            now = prev + timedelta(microseconds=1)
+        break
+    return now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def manifest_in_home(manifest_path):
+    """True when this write would land in the home folder.
+
+    The course folder is the home folder, or the manifest's real directory is
+    the global profile ~/.idstack (a symlinked .idstack, or a symlinked file).
+    """
+    home = os.environ.get("HOME")
+    if not home:
+        return False
+    folder = os.path.dirname(os.path.dirname(os.path.abspath(manifest_path)))
+    if os.path.realpath(folder) == os.path.realpath(os.environ["HOME"]):
+        return True
+    real_dir = os.path.dirname(os.path.realpath(manifest_path))
+    return os.path.realpath(real_dir) == os.path.realpath(os.path.join(home, ".idstack"))
 
 
 def load_payload(payload_arg):
@@ -273,13 +312,20 @@ def main():
     payloads = [load_payload(path) for path in args.payload]
 
     # The folder that holds .idstack/ must not be the home folder: the global
-    # profile is in ~/.idstack/.
-    folder = os.path.dirname(os.path.dirname(os.path.abspath(args.manifest)))
-    if os.environ.get("HOME") and os.path.realpath(folder) == os.path.realpath(os.environ["HOME"]):
-        die(9, "this folder is your home folder. idstack does not write a course manifest here. "
+    # profile is in ~/.idstack/. A symlinked .idstack is the same profile.
+    if manifest_in_home(args.manifest):
+        die(9, "idstack does not write a course manifest in your home folder. "
                "Go to a course folder, then run the skill again.")
 
-    lock_dir = os.path.dirname(os.path.abspath(args.manifest))
+    # The skill read an updated value, and the file is gone. Do not make a
+    # manifest and then refuse it: exit 8 writes nothing.
+    if args.create and not os.path.isfile(args.manifest) and args.expect_updated is not None:
+        die(8, "the manifest is missing, so it changed after you read it "
+               f"(you read updated {args.expect_updated!r}). Nothing was written. "
+               "Read it again, then merge again.")
+
+    # Lock the real directory, so a symlinked manifest and its target share one lock.
+    lock_dir = os.path.dirname(os.path.realpath(args.manifest))
     if args.create:
         os.makedirs(lock_dir, exist_ok=True)
     if os.path.isdir(lock_dir):
@@ -315,7 +361,7 @@ def main():
     for section, payload in zip(args.section, payloads):
         manifest[section] = payload
     manifest.update(fields)
-    manifest["updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    manifest["updated"] = fresh_updated(manifest.get("updated"))
 
     write_atomic(args.manifest, manifest)
 

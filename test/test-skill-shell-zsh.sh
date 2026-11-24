@@ -148,6 +148,17 @@ m1/index.html")
   check "[$sh] course-import SCO loop skips '..' and absolute hrefs" \
     "! printf '%s' \"\$out\" | grep -q top-secret && [ \"\$(printf '%s\n' \"\$out\" | grep -c '^SCO_HREF_SKIPPED: ')\" = 2 ] && printf '%s' \"\$out\" | grep -qx one"
   check "[$sh] course-import SCO hrefs do not run commands" "[ ! -e '$P/scohost/pwned' ]"
+  # The import directory is a path the model pastes into the next shell.
+  mkdir -p "$P/imphost"
+  bad="$P/imphost/extracted\$(touch pwned)"
+  b=$(block course-import 'MANIFEST_FOUND' "<IMPORT_DIR printed above>=$bad")
+  out=$(run "$P/imphost" "$b")
+  check "[$sh] course-import manifest block does not run a command in the import directory" \
+    "[ ! -e '$P/imphost/pwned' ]"
+  b=$(block course-import 'Remove the extracted cartridge.' "<IMPORT_DIR printed above>=$bad")
+  out=$(run "$P/imphost" "$b")
+  check "[$sh] course-import cleanup block does not run a command in the import directory" \
+    "[ ! -e '$P/imphost/pwned' ]"
   # A package can hold symlinks (Info-ZIP restores them): a symlinked file or
   # folder must not let the loop read a file outside the import folder.
   mkdir -p "$P/scolnk/ok" && echo three > "$P/scolnk/ok/index.html"
@@ -244,6 +255,18 @@ PY
   out=$(run "$P/exp2" "$b")
   check "[$sh] course-export reports PACKAGE_FAILED without imsmanifest.xml" \
     "printf '%s' \"\$out\" | grep -q PACKAGE_FAILED && ! printf '%s' \"\$out\" | grep -q 'Export saved'"
+  # The export folder is a path the model pastes into the next shell. A command
+  # in that path must not run. The slug is safe; the paste is not.
+  mkdir -p "$P/exphost"
+  bad='.idstack/exports/x$(touch pwned)'
+  b=$(block course-export 'mkdir -p "$_STAGE/modules"' "<export folder>=$bad")
+  out=$(run "$P/exphost" "$b")
+  check "[$sh] course-export staging block does not run a command in the export folder" \
+    "[ ! -e '$P/exphost/pwned' ] && printf '%s\n' \"\$out\" | grep -q 'Staging folder:'"
+  b=$(block course-export 'Remove the SCORM staging folder.' "<export folder>=$bad")
+  out=$(run "$P/exphost" "$b")
+  check "[$sh] course-export SCORM cleanup does not run a command in the export folder" \
+    "[ ! -e '$P/exphost/pwned' ]"
 
   # course-export: SCORM staging and packaging.
   b=$(block course-export 'mkdir -p "$_STAGE/content"' "<export folder>=.idstack/exports/demo-course")
@@ -264,6 +287,12 @@ PY
     "ls -l '$P/canvas/.idstack/canvas.env' | grep -q '^-rw-------'"
   check "[$sh] Canvas settings file is git-ignored" \
     "grep -qx canvas.env '$P/canvas/.idstack/.gitignore'"
+  # The outcome group id is a number the model pastes into the next shell.
+  bad='9$(touch pwned)'
+  out=$(PATH="$WORK/fakebin:$PATH" run "$P/canvas" "$(block course-import 'outcome_groups/$GROUP_ID' "<outcome group id from the response above>=$bad")")
+  check "[$sh] course-import outcome block refuses a group id that is not a number, before curl runs" \
+    "printf '%s' \"\$out\" | grep -q '^GROUP_ID_BAD' && [ ! -e '$CURL_LOG' ] && [ ! -e '$P/canvas/pwned' ]"
+  rm -f "$P/canvas/pwned" "$CURL_LOG"
   # A .gitignore with no newline at the end: the new line must not join the last one.
   for s in course-export course-import; do
     for last in 'exports/' 'canvas.env'; do
@@ -374,6 +403,12 @@ PY
   FAKE_LIST="$WORK/list.json" push "$pb" "$P/canvas" "title.txt=$HOSTILE" "body.html=$HOSTILE_PAGE"
   check "[$sh] Canvas page block on a re-run makes no second page and no second module item" \
     "printf '%s' \"\$out\" | grep -qx 'PAGE_URL=old-slug' && [ \"\$(posts)\" = 0 ]"
+  # The module id is a number the model pastes into the next shell. A command in it must not run, and curl must not start.
+  bad='42$(touch pwned)'
+  push "$(block course-export 'wiki_page[body]@' "<module id printed in B4>=$bad")" "$P/canvas" "title.txt=T" "body.html=B"
+  check "[$sh] Canvas page block refuses a module id that is not a number, before curl runs" \
+    "printf '%s' \"\$out\" | grep -q '^PUSH_VALUE_BAD' && [ ! -e '$CURL_LOG' ] && [ ! -e '$P/canvas/pwned' ]"
+  rm -f "$P/canvas/pwned"
   # Assignment: the points are a number.
   ab=$(block course-export 'assignment[name]@' "<module id printed in B4>=42" "<points>=10")
   push "$ab" "$P/canvas" "title.txt=$HOSTILE" "body.html=$HOSTILE_PAGE"
