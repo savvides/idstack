@@ -263,7 +263,7 @@ if [ -f ".idstack/project.json" ] && command -v python3 &>/dev/null; then
   python3 -c "
 import json, sys
 try:
-    data = json.load(open('.idstack/project.json'))
+    data = json.load(open('.idstack/project.json', encoding='utf-8'))
     prefs = data.get('preferences') or {}
     v = prefs.get('verbosity', 'normal')
     if v in ('concise', 'detailed'):

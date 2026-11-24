@@ -211,6 +211,9 @@ check "idstack-slugify --from-manifest on a missing manifest → untitled-course
 rm -rf "$SLUG_TMP"
 check "no skill template reads project_name with inline Python" \
   "! grep -l \"get('project_name'\" $IDSTACK_DIR/skills/*/SKILL.md.tmpl | grep -q ."
+# Without an encoding, open() uses the locale: a non-ASCII course name breaks the read.
+check "every inline manifest read names encoding utf-8" \
+  "! grep -nE 'open\\([\"'\\'']\\.idstack/project\\.json[\"'\\'']\\)' $IDSTACK_DIR/templates/preamble.md $IDSTACK_DIR/skills/*/SKILL.md.tmpl | grep -q ."
 check "idstack-slugify: implicit stdin pipeline" \
   "[ \"\$(echo 'Course via Implicit Stdin' | '$IDSTACK_DIR/scripts/idstack-slugify')\" = 'course-via-implicit-stdin' ]"
 check "idstack-slugify: explicit dash stdin pipeline" \
