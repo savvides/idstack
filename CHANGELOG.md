@@ -26,6 +26,7 @@
 
 - **`scripts/idstack-report-section` keeps a report on one set of lines.** A line break in `--title`, `--project`, `--mode`, `--skill`, `--run-id`, `--reserve` or `project_name` used to become a new heading. `init` now exits 2 and does not change the report. A `project_name` that is not text (for example a number) is `Untitled course`, not a Python traceback. A citation group with two tiers no longer also says that the Evidence cell has text other than citations. When a row has the wrong number of cells, `check` tells you to write each pipe as `\|`, also in `` `code` ``: GitHub Markdown starts a new cell at a pipe in code. A `### Finding` block shows `|`, not `\|`.
 - **`scripts/idstack-ste-check` counts the words in the cell you wrote.** An escaped pipe (`\|`) stayed a column break, so a long sentence could pass and code could fail the check. A bullet inside a numbered list now uses the 25-word limit. A numbered step inside a `div` uses the 20-word limit.
+- **Two more skills pass the manifest stamp to the merge (#226).** These are `/idstack:needs-analysis` and `/idstack:learning-objectives`. Before, a later save replaced `context`, `needs_analysis`, `project_name` or `learning_objectives` when another session had written in the meantime. The merge command now gets `--expect-updated`. On exit code 8, needs-analysis reads the manifest again, adds its changes to the sections that changed, and tries one more time. learning-objectives still replaces the full section. On exit code 8, it tells the user what changed and asks before it replaces the section.
 - **A skill asks one question, then waits.** `/idstack:course-quality-review`, `/idstack:course-builder`, `/idstack:course-import` and `/idstack:course-export` listed several questions in one turn. Each question now comes alone, and the skill stops for the answer. The writing-check question in `/idstack:course-export` gives each option a description, so AskUserQuestion can show it.
 - **idstack works in Git Bash on Windows (#136).** The new Windows CI job found these problems:
   - `scripts/idstack-manifest-merge` stopped with `No module named 'fcntl'`, so no skill could save its results. On Windows it now locks with `msvcrt`.
@@ -70,6 +71,7 @@
 
 ### Tests
 
+- `test/test-skill-shell-zsh.sh` checks that `/idstack:needs-analysis` and `/idstack:learning-objectives` print the manifest stamp and pass `--expect-updated` (#226).
 - `test/test-status.sh` has 4 new tests for the readiness check and the project name. `test/test-extractor.mjs` tests the quiz pages. `test/mutation-test.sh` has cases 65a and 65b.
 - New tests: `test/test-ste-check.py` (1), `test/test-status.sh` (2), `test/integration-test.sh` (1) and `test/test-manifest-merge.sh` (9: file mode, home folder, the lock, `--expect-updated`). `test/mutation-test.sh` has cases 70a to 70i.
 - `test/test-report-section.py` has 11 new tests for the kept report and the stopped status line (#181). `test/mutation-test.sh` has case 71a.
