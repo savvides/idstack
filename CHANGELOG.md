@@ -17,6 +17,7 @@
 ### Fixed
 
 - **Skills read the manifest as UTF-8.** Before, four inline reads of `.idstack/project.json` used the encoding of the locale. If that encoding could not hold the course name, the read failed and the skill showed no error. The preamble then ignored `verbosity`, `export_format`, `preferred_lms` and `auto_advance_pipeline`. `/idstack:start` said that a valid manifest was not valid. `/idstack:course-import` and `/idstack:assessment-design` did not get the `updated` time, so the merge did not use `--expect-updated`.
+- **`/idstack:course-import` and `/idstack:course-export` read pasted paths and ids with a quoted heredoc (#220).** Before, the import folder, the export folder, the Canvas module id and the Canvas outcome group id went into the shell text, so a value with `$( )` ran as a command. A module id or group id that is not a number now stops with `PUSH_VALUE_BAD` or `GROUP_ID_BAD` before curl starts.
 - **idstack works in Git Bash on Windows (#136).** The new Windows CI job found these problems:
   - `scripts/idstack-manifest-merge` stopped with `No module named 'fcntl'`, so no skill could save its results. On Windows it now locks with `msvcrt`.
   - `idstack-manifest-merge --create` could not start `idstack-migrate` (`WinError 193`). On Windows it now starts it with the `bash.exe` from an absolute PATH folder.
